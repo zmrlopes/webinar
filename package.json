@@ -6,6 +6,11 @@
   "scripts": {
     "test:fase1": "tsx scripts/testes-aceitacao-fase1.ts",
     "migrar": "tsx scripts/migrar.ts",
+    "sincronizar-sessoes": "tsx scripts/sincronizar-sessoes.ts",
+    "processar-fila": "tsx scripts/processar-fila-links.ts",
+    "processar-lembretes": "tsx scripts/processar-lembretes.ts",
+    "processar-presencas": "tsx scripts/processar-presencas.ts",
+    "limpar-links": "tsx scripts/limpar-links.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
