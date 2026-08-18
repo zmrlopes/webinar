@@ -4,6 +4,8 @@ Sistema de webinars, integrado com a sala partilhada de Zoom "Vão Quadrado"
 (ver `GUIA-ZOOM-VAO-QUADRADO.md`, entregue à parte — não versionado por conter
 uma credencial viva).
 
+Publicado no Vercel, a partir deste branch (`claude/replica-para-mim-7xg00l`).
+
 ## Estado
 
 Implementação por fases, seguindo a secção 14 do guia. Progresso:
