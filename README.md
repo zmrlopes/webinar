@@ -87,11 +87,28 @@ Além dos processos de fundo, o projeto inclui a aplicação Next.js completa:
 | `/admin` | painel — sessões, contagens de links e presenças |
 | `/admin/webinar/[id]` | inscritos de uma sessão, com correção manual de presença |
 | `/api/cron/*` | endpoints para o Vercel Cron / GitHub Actions |
+| `/api/webinars` | JSON público (sessões futuras), com CORS — para o widget |
+| `/api/inscricoes` | também aceita pedidos de outro domínio (CORS) — para o widget |
 
 ```bash
 npm run dev   # http://localhost:3000
 npm run build && npm run start   # produção
 ```
+
+### Widget para outro site (Elementor/WordPress)
+
+`widgets/elementor-inscricao.html` é um snippet autónomo (HTML+CSS+JS
+inline, sem dependências) para colar num widget "HTML" do Elementor, ou
+qualquer outro sítio que aceite HTML bruto. Mostra sempre a sessão futura
+mais próxima (via `GET /api/webinars`) e inscreve através de `POST
+/api/inscricoes` — os dois únicos endpoints com CORS aberto; `/admin` e
+`/api/cron/*` continuam fechados ao domínio da aplicação.
+
+Antes de colar, troca a constante `APP_URL` no topo do `<script>` pelo
+domínio real onde publicaste a aplicação (ex: a tua app na Vercel).
+Validado com um teste cross-origin a sério (servidor num porto, widget
+noutro, sem nada partilhado) — o pedido atravessa mesmo o CORS, não é só
+teoria.
 
 ### Painel de administração
 

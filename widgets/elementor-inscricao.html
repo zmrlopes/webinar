@@ -1,0 +1,172 @@
+<!--
+  Widget de inscrição para o Elementor (widget "HTML").
+
+  Como usar:
+  1. Troca APP_URL abaixo pelo domínio real onde publicaste a aplicação
+     (ex: "https://o-teu-projeto.vercel.app", sem barra final).
+  2. No Elementor, arrasta um widget "HTML" para a página e cola este
+     ficheiro inteiro lá dentro.
+  3. Mostra sempre a sessão futura mais próxima, sozinho — não precisas de
+     atualizar o ID da sessão manualmente sempre que houver uma nova.
+
+  Nada de credenciais aqui dentro: este ficheiro só fala com o teu próprio
+  backend (/api/webinars e /api/inscricoes), nunca com a sala Zoom.
+-->
+<div id="vq-webinar-widget" class="vq-webinar">
+  <div class="vq-webinar__carregando">A carregar a próxima sessão...</div>
+</div>
+
+<style>
+  .vq-webinar {
+    max-width: 480px;
+    font-family: inherit;
+  }
+  .vq-webinar__titulo {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0 0 0.25rem;
+  }
+  .vq-webinar__data {
+    color: #666;
+    font-size: 0.9rem;
+    margin: 0 0 1rem;
+  }
+  .vq-webinar label {
+    display: block;
+    font-weight: 600;
+    margin-top: 0.9rem;
+    margin-bottom: 0.25rem;
+  }
+  .vq-webinar input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+  }
+  .vq-webinar button {
+    margin-top: 1.25rem;
+    padding: 0.65rem 1.4rem;
+    background: #1f4fd8;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  .vq-webinar button:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+  .vq-webinar__erro {
+    color: #b3261e;
+    margin-top: 0.75rem;
+  }
+  .vq-webinar__sucesso {
+    color: #1e7a34;
+    font-weight: 600;
+  }
+</style>
+
+<script>
+  (function () {
+    var APP_URL = "https://SUBSTITUI-PELO-TEU-DOMINIO.vercel.app";
+
+    var raiz = document.getElementById("vq-webinar-widget");
+
+    function formatarData(iso) {
+      var data = new Date(iso);
+      return data.toLocaleString("pt-PT", { dateStyle: "long", timeStyle: "short" });
+    }
+
+    function mostrarErroCarregamento() {
+      raiz.innerHTML = '<p class="vq-webinar__erro">Não foi possível carregar a próxima sessão. Tenta atualizar a página.</p>';
+    }
+
+    function mostrarSemSessoes() {
+      raiz.innerHTML = "<p>Não há sessões marcadas de momento.</p>";
+    }
+
+    function montarFormulario(webinar) {
+      raiz.innerHTML =
+        '<p class="vq-webinar__titulo"></p>' +
+        '<p class="vq-webinar__data"></p>' +
+        '<form id="vq-webinar-form">' +
+        '<label for="vq-nome">Nome</label>' +
+        '<input id="vq-nome" required maxlength="64">' +
+        '<label for="vq-apelido">Apelido</label>' +
+        '<input id="vq-apelido" maxlength="64">' +
+        '<label for="vq-email">Email</label>' +
+        '<input id="vq-email" type="email" required maxlength="254">' +
+        '<button type="submit">Inscrever-me</button>' +
+        '<div id="vq-webinar-mensagem"></div>' +
+        "</form>";
+
+      raiz.querySelector(".vq-webinar__titulo").textContent = webinar.titulo;
+      raiz.querySelector(".vq-webinar__data").textContent =
+        formatarData(webinar.comecaEm) + " · " + webinar.duracaoMinutos + " min";
+
+      var form = document.getElementById("vq-webinar-form");
+      var mensagem = document.getElementById("vq-webinar-mensagem");
+      var botao = form.querySelector("button");
+
+      form.addEventListener("submit", function (evento) {
+        evento.preventDefault();
+        botao.disabled = true;
+        botao.textContent = "A inscrever...";
+        mensagem.innerHTML = "";
+
+        fetch(APP_URL + "/api/inscricoes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            webinarId: webinar.id,
+            nome: document.getElementById("vq-nome").value,
+            apelido: document.getElementById("vq-apelido").value,
+            email: document.getElementById("vq-email").value,
+          }),
+        })
+          .then(function (resposta) {
+            return resposta.json().then(function (dados) {
+              return { ok: resposta.ok, dados: dados };
+            });
+          })
+          .then(function (resultado) {
+            if (!resultado.ok) {
+              mensagem.innerHTML =
+                '<p class="vq-webinar__erro">' +
+                (resultado.dados.erro || "Não foi possível inscrever.") +
+                "</p>";
+              botao.disabled = false;
+              botao.textContent = "Inscrever-me";
+              return;
+            }
+            form.innerHTML =
+              '<p class="vq-webinar__sucesso">Inscrição feita! Vais receber um email de confirmação com o link de entrada antes da sessão.</p>';
+          })
+          .catch(function () {
+            mensagem.innerHTML = '<p class="vq-webinar__erro">Falha de ligação — tenta outra vez.</p>';
+            botao.disabled = false;
+            botao.textContent = "Inscrever-me";
+          });
+      });
+    }
+
+    fetch(APP_URL + "/api/webinars")
+      .then(function (resposta) {
+        if (!resposta.ok) throw new Error("falha ao carregar sessões");
+        return resposta.json();
+      })
+      .then(function (dados) {
+        var webinars = dados.webinars || [];
+        if (webinars.length === 0) {
+          mostrarSemSessoes();
+          return;
+        }
+        montarFormulario(webinars[0]);
+      })
+      .catch(mostrarErroCarregamento);
+  })();
+</script>

@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
+import { CABECALHOS_CORS, respostaOptionsCors } from "../../../src/lib/cors";
 import { DadosInvalidos, inscrever } from "@/lib/inscricoes";
+
+export async function OPTIONS(): Promise<Response> {
+  return respostaOptionsCors();
+}
 
 export async function POST(request: Request): Promise<Response> {
   let corpo: unknown;
   try {
     corpo = await request.json();
   } catch {
-    return NextResponse.json({ erro: "corpo inválido" }, { status: 400 });
+    return NextResponse.json({ erro: "corpo inválido" }, { status: 400, headers: CABECALHOS_CORS });
   }
 
   if (
@@ -16,7 +21,7 @@ export async function POST(request: Request): Promise<Response> {
     !("nome" in corpo) ||
     !("email" in corpo)
   ) {
-    return NextResponse.json({ erro: "faltam campos" }, { status: 400 });
+    return NextResponse.json({ erro: "faltam campos" }, { status: 400, headers: CABECALHOS_CORS });
   }
 
   const { webinarId, nome, apelido, email } = corpo as Record<string, unknown>;
@@ -27,7 +32,10 @@ export async function POST(request: Request): Promise<Response> {
     typeof email !== "string" ||
     (apelido !== undefined && typeof apelido !== "string")
   ) {
-    return NextResponse.json({ erro: "campos com tipo inválido" }, { status: 400 });
+    return NextResponse.json(
+      { erro: "campos com tipo inválido" },
+      { status: 400, headers: CABECALHOS_CORS },
+    );
   }
 
   try {
@@ -37,12 +45,15 @@ export async function POST(request: Request): Promise<Response> {
       apelido: apelido as string | undefined,
       email,
     });
-    return NextResponse.json({ registrationId }, { status: 200 });
+    return NextResponse.json({ registrationId }, { status: 200, headers: CABECALHOS_CORS });
   } catch (erro) {
     if (erro instanceof DadosInvalidos) {
-      return NextResponse.json({ erro: erro.message }, { status: 400 });
+      return NextResponse.json({ erro: erro.message }, { status: 400, headers: CABECALHOS_CORS });
     }
     console.error("falha ao gravar inscrição:", erro);
-    return NextResponse.json({ erro: "não foi possível gravar a inscrição" }, { status: 500 });
+    return NextResponse.json(
+      { erro: "não foi possível gravar a inscrição" },
+      { status: 500, headers: CABECALHOS_CORS },
+    );
   }
 }
