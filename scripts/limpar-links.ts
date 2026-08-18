@@ -3,8 +3,8 @@
  * Pensado para correr diariamente (secção 9 do guia).
  */
 
-import { fecharDb } from "../src/lib/db.js";
-import { limparLinks } from "../src/lib/limpeza.js";
+import { fecharDb } from "../src/lib/db";
+import { limparLinks } from "../src/lib/limpeza";
 
 async function main(): Promise<void> {
   const resultado = await limparLinks();

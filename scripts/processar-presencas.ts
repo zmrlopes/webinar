@@ -3,8 +3,8 @@
  * Pensado para correr a cada 15 minutos (secção 9 do guia).
  */
 
-import { fecharDb } from "../src/lib/db.js";
-import { processarPresencas } from "../src/lib/presencas.js";
+import { fecharDb } from "../src/lib/db";
+import { processarPresencas } from "../src/lib/presencas";
 
 async function main(): Promise<void> {
   const resultado = await processarPresencas();

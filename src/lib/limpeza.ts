@@ -1,4 +1,4 @@
-import { db } from "./db.js";
+import { db } from "./db";
 
 /**
  * Secção 6/9 do guia: apaga `link_pessoal` das sessões cujo ciclo de

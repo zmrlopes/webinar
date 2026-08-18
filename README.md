@@ -70,11 +70,48 @@ por omissão (`ConsoleEmailSender`) só regista no log — o guia não prescreve
 uma ferramenta de email, por isso troca-a por um `EmailSender` real (Brevo,
 ActiveCampaign, Resend, ...) antes de produção.
 
-Estes scripts correm como processos autónomos (cron/GitHub Actions a chamar
-`npm run ...`), não como endpoints HTTP — por isso não precisam do
-`CRON_SECRET` que a secção 9 do guia recomenda. Se mais tarde os expuseres
-via rota HTTP (ex.: Vercel Cron a chamar uma API route), protege-os com esse
-segredo nessa altura.
+Cada processo tem duas formas de correr: como script standalone (`npm run
+...`, útil em GitHub Actions ou localmente) e como rota HTTP em
+`app/api/cron/*` (para o Vercel Cron), ambas a chamar exatamente a mesma
+função de `src/lib/`. As rotas HTTP estão protegidas por `CRON_SECRET` — ver
+secção seguinte.
+
+## A aplicação web
+
+Além dos processos de fundo, o projeto inclui a aplicação Next.js completa:
+
+| Onde | O quê |
+|---|---|
+| `/` | lista de sessões futuras |
+| `/webinar/[id]` | página de inscrição pública (chama `POST /api/inscricoes`) |
+| `/admin` | painel — sessões, contagens de links e presenças |
+| `/admin/webinar/[id]` | inscritos de uma sessão, com correção manual de presença |
+| `/api/cron/*` | endpoints para o Vercel Cron / GitHub Actions |
+
+```bash
+npm run dev   # http://localhost:3000
+npm run build && npm run start   # produção
+```
+
+### Painel de administração
+
+Protegido por Basic Auth (`ADMIN_USER` / `ADMIN_PASSWORD` em `.env`), via
+`proxy.ts`. **Sem `ADMIN_PASSWORD` definida, o painel fica inacessível** —
+falha fechado, não há password por omissão. O `link_pessoal` nunca é lido
+nem mostrado em nenhuma página de admin (secção 6 do guia) — as consultas em
+`src/lib/admin.ts` nem sequer selecionam essa coluna.
+
+### Cron em produção
+
+`vercel.json` define os cinco crons nas cadências da secção 9 — mas o
+**Vercel Hobby só permite cron diário**, tal como o guia descreve para o
+próprio anfitrião. `.github/workflows/cron.yml` é a alternativa pronta a
+usar (precisa dos secrets `APP_URL` e `CRON_SECRET` no repositório GitHub);
+o guia avisa que o GitHub Actions não é pontual (atrasos entre ~48 min e
+~2h31), e os processos foram desenhados a contar com isso.
+
+Sem `CRON_SECRET` definida, os endpoints `/api/cron/*` devolvem `500` a
+qualquer pedido — também falham fechado.
 
 ### Como isto foi validado
 
@@ -84,5 +121,15 @@ idempotentes, presenças em lote com omissão de quem não foi inscrito) mais
 um Postgres local, e exercitou de facto: sincronização e deteção de
 cancelamento, os erros 400/401/404/503 na fila, o recuo crescente, a
 idempotência do link (teste 7), a regra da secção 10, presenças em lote com
-proteção de correções manuais, e a limpeza dos links. Não substitui a Fase
-10 (ensaio com a sala real).
+proteção de correções manuais, e a limpeza dos links.
+
+A aplicação web foi validada da mesma forma, mas a correr mesmo (`next
+dev`/`next build`, não só leitura de código): inscrição real pelo browser
+(Playwright) do princípio ao fim, painel de admin com Basic Auth a bloquear
+sem password e a aceitar com a password certa, correção manual de presença a
+gravar na base, `/api/cron/*` a exigir o `CRON_SECRET`, e confirmação
+explícita (por grep ao HTML devolvido) de que o `link_pessoal` nunca aparece
+em nenhuma página do painel. `npm run build` corre sem erros.
+
+Isto não substitui a Fase 10 (ensaio com a sala Zoom real e pessoas a
+entrar de verdade) — essa só a sessão real do dia 20/23 de agosto permite.

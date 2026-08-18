@@ -1,5 +1,5 @@
-import { db } from "./db.js";
-import { listarSessoes } from "./sala-zoom.js";
+import { db } from "./db";
+import { listarSessoes } from "./sala-zoom";
 
 export interface ResultadoSincronizacao {
   novas: number;

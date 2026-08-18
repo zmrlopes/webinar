@@ -3,9 +3,9 @@
  * Cadência sugerida: 15-30 em 15-30 min (secção 9 do guia).
  */
 
-import { fecharDb } from "../src/lib/db.js";
-import { ConsoleEmailSender } from "../src/lib/email.js";
-import { processarLembretes } from "../src/lib/lembretes.js";
+import { fecharDb } from "../src/lib/db";
+import { ConsoleEmailSender } from "../src/lib/email";
+import { processarLembretes } from "../src/lib/lembretes";
 
 async function main(): Promise<void> {
   const resultado = await processarLembretes({ sender: new ConsoleEmailSender() });

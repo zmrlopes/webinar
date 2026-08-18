@@ -3,8 +3,8 @@
  * Pensado para correr de hora a hora (secção 9 do guia).
  */
 
-import { fecharDb } from "../src/lib/db.js";
-import { sincronizarSessoes } from "../src/lib/sessoes.js";
+import { fecharDb } from "../src/lib/db";
+import { sincronizarSessoes } from "../src/lib/sessoes";
 
 async function main(): Promise<void> {
   const resultado = await sincronizarSessoes();

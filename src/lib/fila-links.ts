@@ -1,7 +1,7 @@
-import { db } from "./db.js";
-import { enviarConfirmacao, type EmailSender } from "./email.js";
-import { pedirLinkPessoal, proximaTentativa, SalaError } from "./sala-zoom.js";
-import { sincronizarSessoes } from "./sessoes.js";
+import { db } from "./db";
+import { enviarConfirmacao, type EmailSender } from "./email";
+import { pedirLinkPessoal, proximaTentativa, SalaError } from "./sala-zoom";
+import { sincronizarSessoes } from "./sessoes";
 
 interface LinhaFila {
   id: string;

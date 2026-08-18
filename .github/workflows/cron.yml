@@ -1,0 +1,55 @@
+name: Cron (alternativa ao Vercel Hobby)
+
+# O Vercel Hobby só permite cron diário (secção 9 do guia). Se estiveres
+# num plano Pro, usa antes o vercel.json — este workflow é só para quem
+# não tem essa opção. Requer os secrets APP_URL e CRON_SECRET no
+# repositório (Settings > Secrets and variables > Actions).
+#
+# O GitHub Actions não é pontual: um agendamento a 5 min pode disparar
+# entre ~48 min e ~2h31 de atraso. Os processos foram desenhados para
+# aguentar isso (ver secção 5 e 9 do guia) — não precisas de te preocupar
+# com a imprecisão, só de saber que ela existe.
+
+on:
+  schedule:
+    - cron: "0 * * * *"    # sincronizar sessões — de hora a hora
+    - cron: "*/5 * * * *"  # fila dos links
+    - cron: "*/15 * * * *" # lembretes e presenças
+    - cron: "0 3 * * *"    # limpeza dos links — diária
+  workflow_dispatch:
+    inputs:
+      endpoint:
+        description: "Endpoint a chamar (deixa vazio para correr todos)"
+        required: false
+        type: choice
+        options:
+          - ""
+          - sincronizar-sessoes
+          - fila-links
+          - lembretes
+          - presencas
+          - limpar-links
+
+jobs:
+  chamar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sincronizar sessões
+        if: github.event.schedule == '0 * * * *' || github.event.inputs.endpoint == 'sincronizar-sessoes' || (github.event_name == 'workflow_dispatch' && github.event.inputs.endpoint == '')
+        run: curl -sf -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "${{ secrets.APP_URL }}/api/cron/sincronizar-sessoes"
+
+      - name: Processar fila dos links
+        if: github.event.schedule == '*/5 * * * *' || github.event.inputs.endpoint == 'fila-links' || (github.event_name == 'workflow_dispatch' && github.event.inputs.endpoint == '')
+        run: curl -sf -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "${{ secrets.APP_URL }}/api/cron/fila-links"
+
+      - name: Processar lembretes
+        if: github.event.schedule == '*/15 * * * *' || github.event.inputs.endpoint == 'lembretes' || (github.event_name == 'workflow_dispatch' && github.event.inputs.endpoint == '')
+        run: curl -sf -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "${{ secrets.APP_URL }}/api/cron/lembretes"
+
+      - name: Processar presenças
+        if: github.event.schedule == '*/15 * * * *' || github.event.inputs.endpoint == 'presencas' || (github.event_name == 'workflow_dispatch' && github.event.inputs.endpoint == '')
+        run: curl -sf -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "${{ secrets.APP_URL }}/api/cron/presencas"
+
+      - name: Limpar links antigos
+        if: github.event.schedule == '0 3 * * *' || github.event.inputs.endpoint == 'limpar-links' || (github.event_name == 'workflow_dispatch' && github.event.inputs.endpoint == '')
+        run: curl -sf -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "${{ secrets.APP_URL }}/api/cron/limpar-links"

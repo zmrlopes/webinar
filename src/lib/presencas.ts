@@ -1,5 +1,5 @@
-import { db } from "./db.js";
-import { pedirPresencas } from "./sala-zoom.js";
+import { db } from "./db";
+import { pedirPresencas } from "./sala-zoom";
 
 interface SessaoTerminada {
   id: string;

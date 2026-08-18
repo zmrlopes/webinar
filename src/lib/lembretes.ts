@@ -1,5 +1,5 @@
-import { db } from "./db.js";
-import { enviarLembrete, type EmailSender } from "./email.js";
+import { db } from "./db";
+import { enviarLembrete, type EmailSender } from "./email";
 
 /**
  * Secção 7 / 9 do guia: o lembrete usa o mesmo link da confirmação e não

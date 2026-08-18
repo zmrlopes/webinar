@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
     "test:fase1": "tsx scripts/testes-aceitacao-fase1.ts",
     "migrar": "tsx scripts/migrar.ts",
     "sincronizar-sessoes": "tsx scripts/sincronizar-sessoes.ts",
@@ -14,11 +17,16 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "pg": "^8.13.1"
+    "next": "^16.3.1",
+    "pg": "^8.13.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",
     "@types/pg": "^8.11.10",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   }

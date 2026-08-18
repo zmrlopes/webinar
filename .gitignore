@@ -4,3 +4,10 @@ dist/
 .env.*
 !.env.example
 *.log
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+.vercel
