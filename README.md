@@ -125,16 +125,24 @@ teoria.
 ### Códigos de referência para consultores
 
 `/consultor` é uma página pública (sem password) onde cada consultor
-escreve o nome e recebe o link de inscrição da sessão mais próxima, com
-`?ref=codigo-gerado-do-nome` (ex: "João Silva" → `joao-silva`). O `ref` é
-capturado tanto pela página `/webinar/[id]` como pelo widget do Elementor
-(via `location.search`), e gravado na inscrição (`referencia`, coluna da
+escreve o **email registado na equipa** e recebe o link de inscrição da
+sessão mais próxima, com `?ref=codigo-gerado-do-nome` (ex: "João Silva" →
+`joao-silva`). O email é validado contra os contactos da Brevo
+(`GET /v3/contacts/{email}`) — se não existir lá, mostra erro e não gera
+nada. O link também é enviado por email ao consultor (mesmo endpoint de
+envio da secção anterior).
+
+O `ref` é capturado tanto pela página `/webinar/[id]` como pelo widget do
+Elementor (via `location.search`), e gravado na inscrição (`referencia`,
 migration `005`). O painel `/admin/webinar/[id]` mostra essa referência por
 inscrito e um resumo com o total por consultor.
 
-Não há lista de consultores nem validação — qualquer nome gera um link.
-Se precisares de restringir quem pode gerar links, ou de páginas próprias
-por consultor com os seus leads, isso fica para depois (ainda não pedido).
+Cada inscrição bem sucedida (depois de obter o link do Zoom) sincroniza
+também um contacto na Brevo — `src/lib/brevo-contatos.ts`,
+`sincronizarContactoInscrito()` — upsert por email, na lista
+`BREVO_LISTA_INSCRITOS_ID`, com `NOME`, `SMS` (telemóvel) e `CONSULTOR`
+(a referência). Corre depois de `marcarObtido`, com o próprio try/catch —
+uma falha aqui não pode reabrir uma inscrição já bem sucedida.
 
 ### Painel de administração
 

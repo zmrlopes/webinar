@@ -97,9 +97,9 @@
         '<form id="vq-webinar-form">' +
         '<label for="vq-nome">Nome</label>' +
         '<input id="vq-nome" required maxlength="64">' +
-        '<label for="vq-apelido">Apelido</label>' +
-        '<input id="vq-apelido" maxlength="64">' +
-        '<label for="vq-email">Email</label>' +
+        '<label for="vq-telemovel">Telemóvel</label>' +
+        '<input id="vq-telemovel" type="tel" required maxlength="32">' +
+        '<label for="vq-email">E-mail</label>' +
         '<input id="vq-email" type="email" required maxlength="254">' +
         '<button type="submit">Inscrever-me</button>' +
         '<div id="vq-webinar-mensagem"></div>' +
@@ -125,7 +125,7 @@
           body: JSON.stringify({
             webinarId: webinar.id,
             nome: document.getElementById("vq-nome").value,
-            apelido: document.getElementById("vq-apelido").value,
+            telemovel: document.getElementById("vq-telemovel").value,
             email: document.getElementById("vq-email").value,
             referencia: referencia,
           }),

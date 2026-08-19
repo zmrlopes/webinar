@@ -5,7 +5,7 @@ export class DadosInvalidos extends Error {}
 export interface DadosInscricao {
   webinarId: string;
   nome: string;
-  apelido?: string;
+  telemovel?: string;
   email: string;
   referencia?: string;
 }
@@ -34,12 +34,13 @@ export async function inscrever(dados: DadosInscricao): Promise<{ registrationId
   if (!validarEmail(email)) throw new DadosInvalidos("email inválido");
 
   const referencia = dados.referencia?.trim().slice(0, 64) || null;
+  const telemovel = dados.telemovel?.trim().slice(0, 32) || null;
 
   const { rows } = await db().query<{ id: string }>(
-    `insert into registrations (webinar_id, nome, apelido, email, referencia)
-     values ($1, $2, $3, $4, $5)
+    `insert into registrations (webinar_id, nome, apelido, email, referencia, telemovel)
+     values ($1, $2, $3, $4, $5, $6)
      returning id`,
-    [dados.webinarId, nome, dados.apelido?.trim() ?? "", email, referencia],
+    [dados.webinarId, nome, "", email, referencia, telemovel],
   );
 
   const linha = rows[0];

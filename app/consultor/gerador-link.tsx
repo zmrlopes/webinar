@@ -2,30 +2,40 @@
 
 import { useState } from "react";
 
-const MARCAS_DIACRITICAS = /[\u0300-\u036f]/g;
-
-function gerarCodigo(nome: string): string {
-  return nome
-    .normalize("NFD")
-    .replace(MARCAS_DIACRITICAS, "")
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 40);
-}
-
-export function GeradorLink({ baseUrl }: { baseUrl: string }) {
-  const [nome, setNome] = useState("");
+export function GeradorLink() {
+  const [email, setEmail] = useState("");
+  const [estado, setEstado] = useState<"pronto" | "a-pedir" | "feito" | "erro">("pronto");
+  const [mensagemErro, setMensagemErro] = useState("");
   const [link, setLink] = useState<string | null>(null);
   const [copiado, setCopiado] = useState(false);
 
-  function obterLink(evento: React.FormEvent): void {
+  async function obterLink(evento: React.FormEvent): Promise<void> {
     evento.preventDefault();
-    const codigo = gerarCodigo(nome);
-    if (!codigo) return;
-    setLink(`${baseUrl}?ref=${codigo}`);
-    setCopiado(false);
+    setEstado("a-pedir");
+    setMensagemErro("");
+    setLink(null);
+
+    try {
+      const resposta = await fetch("/api/consultor/link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const dados = await resposta.json().catch(() => ({}));
+
+      if (!resposta.ok) {
+        setMensagemErro(typeof dados.erro === "string" ? dados.erro : "não foi possível gerar o link");
+        setEstado("erro");
+        return;
+      }
+
+      setLink(dados.link);
+      setEstado("feito");
+      setCopiado(false);
+    } catch {
+      setMensagemErro("falha de ligação — tenta outra vez");
+      setEstado("erro");
+    }
   }
 
   async function copiar(): Promise<void> {
@@ -37,22 +47,27 @@ export function GeradorLink({ baseUrl }: { baseUrl: string }) {
   return (
     <div>
       <form onSubmit={obterLink}>
-        <label htmlFor="nome-consultor">O teu nome</label>
+        <label htmlFor="email-consultor">O teu email (o mesmo registado na equipa)</label>
         <input
-          id="nome-consultor"
+          id="email-consultor"
+          type="email"
           required
-          maxLength={64}
-          value={nome}
-          onChange={(e) => setNome(e.target.value)}
-          placeholder="Ex: João Silva"
+          maxLength={254}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="joao.silva@exemplo.pt"
         />
-        <button type="submit">Obter link</button>
+        <button type="submit" disabled={estado === "a-pedir"}>
+          {estado === "a-pedir" ? "A verificar..." : "Obter link"}
+        </button>
       </form>
+
+      {estado === "erro" && <p className="erro">{mensagemErro}</p>}
 
       {link && (
         <div className="cartao" style={{ marginTop: "1.5rem" }}>
           <p className="mudo" style={{ marginTop: 0 }}>
-            O teu link de inscrição:
+            O teu link de inscrição (também te enviámos por email):
           </p>
           <p style={{ wordBreak: "break-all", fontFamily: "monospace" }}>{link}</p>
           <button type="button" onClick={copiar}>

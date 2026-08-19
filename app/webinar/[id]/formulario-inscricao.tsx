@@ -5,7 +5,7 @@ import { useState } from "react";
 
 export function FormularioInscricao({ webinarId }: { webinarId: string }) {
   const [nome, setNome] = useState("");
-  const [apelido, setApelido] = useState("");
+  const [telemovel, setTelemovel] = useState("");
   const [email, setEmail] = useState("");
   const [estado, setEstado] = useState<"pronto" | "a-enviar" | "feito" | "erro">("pronto");
   const [mensagemErro, setMensagemErro] = useState("");
@@ -20,7 +20,7 @@ export function FormularioInscricao({ webinarId }: { webinarId: string }) {
       const resposta = await fetch("/api/inscricoes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ webinarId, nome, apelido, email, referencia }),
+        body: JSON.stringify({ webinarId, nome, telemovel, email, referencia }),
       });
 
       if (!resposta.ok) {
@@ -57,15 +57,17 @@ export function FormularioInscricao({ webinarId }: { webinarId: string }) {
         onChange={(e) => setNome(e.target.value)}
       />
 
-      <label htmlFor="apelido">Apelido</label>
+      <label htmlFor="telemovel">Telemóvel</label>
       <input
-        id="apelido"
-        maxLength={64}
-        value={apelido}
-        onChange={(e) => setApelido(e.target.value)}
+        id="telemovel"
+        type="tel"
+        required
+        maxLength={32}
+        value={telemovel}
+        onChange={(e) => setTelemovel(e.target.value)}
       />
 
-      <label htmlFor="email">Email</label>
+      <label htmlFor="email">E-mail</label>
       <input
         id="email"
         type="email"

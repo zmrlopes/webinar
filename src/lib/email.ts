@@ -33,7 +33,8 @@ export class BrevoEmailSender implements EmailSender {
       throw new Error("variável de ambiente em falta: BREVO_API_KEY");
     }
 
-    const resposta = await fetch("https://api.brevo.com/v3/smtp/email", {
+    const base = process.env.BREVO_API_BASE_URL ?? "https://api.brevo.com";
+    const resposta = await fetch(`${base}/v3/smtp/email`, {
       method: "POST",
       headers: {
         "api-key": chave,

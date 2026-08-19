@@ -48,6 +48,7 @@ export default async function AdminWebinar({
         <thead>
           <tr>
             <th>Nome</th>
+            <th>Telemóvel</th>
             <th>Email</th>
             <th>Referência</th>
             <th>Link</th>
@@ -60,9 +61,10 @@ export default async function AdminWebinar({
           {inscricoes.map((i) => (
             <tr key={i.id}>
               <td>
-                {i.nome} {i.apelido}
+                {i.nome}
                 {i.cancelada && <span className="etiqueta"> cancelada</span>}
               </td>
+              <td>{i.telemovel ?? "—"}</td>
               <td>{i.email}</td>
               <td>{i.referencia ?? "—"}</td>
               <td>

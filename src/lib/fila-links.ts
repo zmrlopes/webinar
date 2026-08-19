@@ -1,3 +1,4 @@
+import { sincronizarContactoInscrito } from "./brevo-contatos";
 import { db } from "./db";
 import { enviarConfirmacao, type EmailSender } from "./email";
 import { pedirLinkPessoal, proximaTentativa, SalaError } from "./sala-zoom";
@@ -8,6 +9,8 @@ interface LinhaFila {
   nome: string;
   apelido: string;
   email: string;
+  telemovel: string | null;
+  referencia: string | null;
   link_tentativas: number;
   sessao_externa_id: string;
 }
@@ -20,7 +23,7 @@ export interface ResultadoFila {
 
 async function buscarLote(tamanho: number): Promise<LinhaFila[]> {
   const { rows } = await db().query<LinhaFila>(
-    `select r.id, r.nome, r.apelido, r.email, r.link_tentativas, w.sessao_externa_id
+    `select r.id, r.nome, r.apelido, r.email, r.telemovel, r.referencia, r.link_tentativas, w.sessao_externa_id
      from registrations r
      join webinars w on w.id = r.webinar_id
      where r.link_estado = 'pendente'
@@ -104,6 +107,20 @@ export async function processarFilaLinks(opts?: {
       if (opts?.sender) {
         await enviarConfirmacao(opts.sender, linha.id);
       }
+
+      // Falha aqui não pode reabrir uma inscrição já bem sucedida (o link já
+      // foi obtido) — por isso tem o try/catch próprio, só regista o erro.
+      try {
+        await sincronizarContactoInscrito({
+          email: linha.email,
+          nome: linha.nome,
+          telemovel: linha.telemovel,
+          referencia: linha.referencia,
+        });
+      } catch (erroBrevo) {
+        console.error("falha ao sincronizar contacto na Brevo:", erroBrevo);
+      }
+
       continue;
     } catch (erro) {
       if (erro instanceof SalaError) {
