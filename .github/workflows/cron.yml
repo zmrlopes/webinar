@@ -11,6 +11,15 @@ name: Cron (alternativa ao Vercel Hobby)
 # com a imprecisão, só de saber que ela existe.
 
 on:
+  # O GitHub cria uma "tentativa fantasma" (0 jobs, reportada como falha por
+  # email) em cada push, para qualquer workflow que não tenha `push` na
+  # lista de gatilhos, quando é o único workflow do repositório. Declarar
+  # `push` aqui, mas filtrado a um caminho que normalmente não muda, evita
+  # essas notificações sem alterar o comportamento real (só corre por
+  # agendamento ou manualmente).
+  push:
+    paths:
+      - ".github/workflows/cron.yml"
   schedule:
     - cron: "0 * * * *"    # sincronizar sessões — de hora a hora
     - cron: "*/5 * * * *"  # fila dos links
