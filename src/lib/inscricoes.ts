@@ -8,6 +8,7 @@ export interface DadosInscricao {
   telemovel?: string;
   email: string;
   referencia?: string;
+  referenciaEmail?: string;
 }
 
 function validarEmail(email: string): boolean {
@@ -35,12 +36,13 @@ export async function inscrever(dados: DadosInscricao): Promise<{ registrationId
 
   const referencia = dados.referencia?.trim().slice(0, 64) || null;
   const telemovel = dados.telemovel?.trim().slice(0, 32) || null;
+  const referenciaEmail = dados.referenciaEmail?.trim().toLowerCase().slice(0, 254) || null;
 
   const { rows } = await db().query<{ id: string }>(
-    `insert into registrations (webinar_id, nome, apelido, email, referencia, telemovel)
-     values ($1, $2, $3, $4, $5, $6)
+    `insert into registrations (webinar_id, nome, apelido, email, referencia, telemovel, referencia_email)
+     values ($1, $2, $3, $4, $5, $6, $7)
      returning id`,
-    [dados.webinarId, nome, "", email, referencia, telemovel],
+    [dados.webinarId, nome, "", email, referencia, telemovel, referenciaEmail],
   );
 
   const linha = rows[0];

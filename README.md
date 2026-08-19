@@ -144,6 +144,13 @@ também um contacto na Brevo — `src/lib/brevo-contatos.ts`,
 (a referência). Corre depois de `marcarObtido`, com o próprio try/catch —
 uma falha aqui não pode reabrir uma inscrição já bem sucedida.
 
+O link gerado em `/consultor` leva também `&refEmail=` (o email do
+consultor, não só o código legível) — é o que permite, no mesmo momento em
+que o link do Zoom é obtido, notificar esse consultor por email com os
+dados que o lead deixou no formulário (`notificarConsultorSobreLead()` em
+`src/lib/email.ts`). Sem `refEmail` na inscrição (alguém que se inscreveu
+sem vir de um link de consultor), não há notificação — não há para quem.
+
 ### Painel de administração
 
 Protegido por Basic Auth (`ADMIN_USER` / `ADMIN_PASSWORD` em `.env`), via

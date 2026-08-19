@@ -37,7 +37,8 @@ export async function POST(request: Request): Promise<Response> {
 
     const host = request.headers.get("host") ?? "";
     const protocolo = host.startsWith("localhost") ? "http" : "https";
-    const link = `${protocolo}://${host}/webinar/${proximo.id}?ref=${referencia}`;
+    const parametros = new URLSearchParams({ ref: referencia, refEmail: emailNormalizado });
+    const link = `${protocolo}://${host}/webinar/${proximo.id}?${parametros.toString()}`;
 
     await criarEmailSender().enviar({
       destinatario: emailNormalizado,

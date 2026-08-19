@@ -9,7 +9,9 @@ export function FormularioInscricao({ webinarId }: { webinarId: string }) {
   const [email, setEmail] = useState("");
   const [estado, setEstado] = useState<"pronto" | "a-enviar" | "feito" | "erro">("pronto");
   const [mensagemErro, setMensagemErro] = useState("");
-  const referencia = useSearchParams().get("ref") ?? undefined;
+  const parametros = useSearchParams();
+  const referencia = parametros.get("ref") ?? undefined;
+  const referenciaEmail = parametros.get("refEmail") ?? undefined;
 
   async function submeter(evento: React.FormEvent): Promise<void> {
     evento.preventDefault();
@@ -20,7 +22,7 @@ export function FormularioInscricao({ webinarId }: { webinarId: string }) {
       const resposta = await fetch("/api/inscricoes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ webinarId, nome, telemovel, email, referencia }),
+        body: JSON.stringify({ webinarId, nome, telemovel, email, referencia, referenciaEmail }),
       });
 
       if (!resposta.ok) {

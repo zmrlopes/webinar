@@ -73,7 +73,9 @@
 <script>
   (function () {
     var APP_URL = "https://SUBSTITUI-PELO-TEU-DOMINIO.vercel.app";
-    var referencia = new URLSearchParams(window.location.search).get("ref") || undefined;
+    var parametrosUrl = new URLSearchParams(window.location.search);
+    var referencia = parametrosUrl.get("ref") || undefined;
+    var referenciaEmail = parametrosUrl.get("refEmail") || undefined;
 
     var raiz = document.getElementById("vq-webinar-widget");
 
@@ -128,6 +130,7 @@
             telemovel: document.getElementById("vq-telemovel").value,
             email: document.getElementById("vq-email").value,
             referencia: referencia,
+            referenciaEmail: referenciaEmail,
           }),
         })
           .then(function (resposta) {

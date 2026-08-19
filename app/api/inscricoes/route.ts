@@ -24,14 +24,18 @@ export async function POST(request: Request): Promise<Response> {
     return NextResponse.json({ erro: "faltam campos" }, { status: 400, headers: CABECALHOS_CORS });
   }
 
-  const { webinarId, nome, telemovel, email, referencia } = corpo as Record<string, unknown>;
+  const { webinarId, nome, telemovel, email, referencia, referenciaEmail } = corpo as Record<
+    string,
+    unknown
+  >;
 
   if (
     typeof webinarId !== "string" ||
     typeof nome !== "string" ||
     typeof email !== "string" ||
     (telemovel !== undefined && typeof telemovel !== "string") ||
-    (referencia !== undefined && typeof referencia !== "string")
+    (referencia !== undefined && typeof referencia !== "string") ||
+    (referenciaEmail !== undefined && typeof referenciaEmail !== "string")
   ) {
     return NextResponse.json(
       { erro: "campos com tipo inválido" },
@@ -46,6 +50,7 @@ export async function POST(request: Request): Promise<Response> {
       telemovel: telemovel as string | undefined,
       email,
       referencia: referencia as string | undefined,
+      referenciaEmail: referenciaEmail as string | undefined,
     });
     return NextResponse.json({ registrationId }, { status: 200, headers: CABECALHOS_CORS });
   } catch (erro) {

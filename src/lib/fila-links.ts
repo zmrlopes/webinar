@@ -1,6 +1,6 @@
 import { sincronizarContactoInscrito } from "./brevo-contatos";
 import { db } from "./db";
-import { enviarConfirmacao, type EmailSender } from "./email";
+import { enviarConfirmacao, notificarConsultorSobreLead, type EmailSender } from "./email";
 import { pedirLinkPessoal, proximaTentativa, SalaError } from "./sala-zoom";
 import { sincronizarSessoes } from "./sessoes";
 
@@ -108,8 +108,8 @@ export async function processarFilaLinks(opts?: {
         await enviarConfirmacao(opts.sender, linha.id);
       }
 
-      // Falha aqui não pode reabrir uma inscrição já bem sucedida (o link já
-      // foi obtido) — por isso tem o try/catch próprio, só regista o erro.
+      // Falhas aqui não podem reabrir uma inscrição já bem sucedida (o link
+      // já foi obtido) — por isso têm o try/catch próprio, só registam o erro.
       try {
         await sincronizarContactoInscrito({
           email: linha.email,
@@ -119,6 +119,14 @@ export async function processarFilaLinks(opts?: {
         });
       } catch (erroBrevo) {
         console.error("falha ao sincronizar contacto na Brevo:", erroBrevo);
+      }
+
+      if (opts?.sender) {
+        try {
+          await notificarConsultorSobreLead(opts.sender, linha.id);
+        } catch (erroNotificacao) {
+          console.error("falha ao notificar consultor:", erroNotificacao);
+        }
       }
 
       continue;

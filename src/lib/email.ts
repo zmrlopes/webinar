@@ -143,3 +143,43 @@ export async function enviarLembrete(
 
   await registarEnvio(registrationId, "lembrete");
 }
+
+interface RegistroParaNotificacaoConsultor {
+  nome: string;
+  telemovel: string | null;
+  email: string;
+  referencia_email: string | null;
+  titulo: string;
+}
+
+/**
+ * Avisa o consultor de origem (se o link que usou tinha o email dele) de que
+ * alguém se inscreveu, com os dados que o lead deixou no formulário. Corre
+ * uma vez, no mesmo momento em que a inscrição obtém o link do Zoom — não
+ * tem tabela de deduplicação própria porque só é chamada nesse momento único
+ * (a fila nunca reprocessa uma inscrição já com link_estado = 'obtido').
+ */
+export async function notificarConsultorSobreLead(
+  sender: EmailSender,
+  registrationId: string,
+): Promise<void> {
+  const { rows } = await db().query<RegistroParaNotificacaoConsultor>(
+    `select r.nome, r.telemovel, r.email, r.referencia_email, w.titulo
+     from registrations r
+     join webinars w on w.id = r.webinar_id
+     where r.id = $1`,
+    [registrationId],
+  );
+  const registro = rows[0];
+  if (!registro || !registro.referencia_email) return;
+
+  await sender.enviar({
+    destinatario: registro.referencia_email,
+    assunto: `Nova inscrição via o teu link — "${registro.titulo}"`,
+    corpoTexto:
+      `Alguém inscreveu-se em "${registro.titulo}" através do teu link:\n\n` +
+      `Nome: ${registro.nome}\n` +
+      `Telemóvel: ${registro.telemovel ?? "(não indicado)"}\n` +
+      `Email: ${registro.email}`,
+  });
+}
