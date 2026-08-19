@@ -104,12 +104,19 @@ export async function processarFilaLinks(opts?: {
       await marcarObtido(linha.id, link);
       resultado.obtidos += 1;
 
+      // A partir daqui o link já está gravado — uma falha num destes três
+      // passos (email de confirmação, sincronização Brevo, aviso ao
+      // consultor) não pode ser confundida com falha a obter o link, nem
+      // reabrir uma inscrição já bem sucedida. Por isso cada um tem o seu
+      // próprio try/catch, só regista o erro.
       if (opts?.sender) {
-        await enviarConfirmacao(opts.sender, linha.id);
+        try {
+          await enviarConfirmacao(opts.sender, linha.id);
+        } catch (erroEmail) {
+          console.error("falha ao enviar confirmação:", erroEmail);
+        }
       }
 
-      // Falhas aqui não podem reabrir uma inscrição já bem sucedida (o link
-      // já foi obtido) — por isso têm o try/catch próprio, só registam o erro.
       try {
         await sincronizarContactoInscrito({
           email: linha.email,
