@@ -17,36 +17,44 @@ export async function POST(request: Request): Promise<Response> {
   }
   const emailNormalizado = email.trim().toLowerCase();
 
-  const contacto = await procurarContactoBrevo(emailNormalizado);
-  if (!contacto) {
+  try {
+    const contacto = await procurarContactoBrevo(emailNormalizado);
+    if (!contacto) {
+      return NextResponse.json(
+        { erro: "não encontrámos esse email na equipa — confirma se está certo" },
+        { status: 404 },
+      );
+    }
+
+    const webinars = await listarWebinarsFuturos();
+    const proximo = webinars[0];
+    if (!proximo) {
+      return NextResponse.json({ erro: "não há sessões agendadas de momento" }, { status: 404 });
+    }
+
+    const nomeCompleto = [contacto.nome, contacto.apelido].filter(Boolean).join(" ").trim();
+    const referencia = gerarSlug(nomeCompleto) || gerarSlug(emailNormalizado.split("@")[0] ?? "");
+
+    const host = request.headers.get("host") ?? "";
+    const protocolo = host.startsWith("localhost") ? "http" : "https";
+    const link = `${protocolo}://${host}/webinar/${proximo.id}?ref=${referencia}`;
+
+    await criarEmailSender().enviar({
+      destinatario: emailNormalizado,
+      assunto: `O teu link de inscrição para "${proximo.titulo}"`,
+      corpoTexto:
+        `Olá${contacto.nome ? ` ${contacto.nome}` : ""},\n\n` +
+        `O teu link de inscrição para "${proximo.titulo}" (${formatarData(proximo.sessaoExternaEm)}):\n${link}\n\n` +
+        `Partilha este link com os teus convidados — as inscrições feitas por ele ficam associadas a ti.`,
+    });
+
+    return NextResponse.json({ link, nome: contacto.nome });
+  } catch (erro) {
+    console.error("falha ao gerar link de consultor:", erro);
+    const mensagem = erro instanceof Error ? erro.message : String(erro);
     return NextResponse.json(
-      { erro: "não encontrámos esse email na equipa — confirma se está certo" },
-      { status: 404 },
+      { erro: `não foi possível gerar o link (${mensagem})` },
+      { status: 500 },
     );
   }
-
-  const webinars = await listarWebinarsFuturos();
-  const proximo = webinars[0];
-  if (!proximo) {
-    return NextResponse.json({ erro: "não há sessões agendadas de momento" }, { status: 404 });
-  }
-
-  const nomeCompleto = [contacto.nome, contacto.apelido].filter(Boolean).join(" ").trim();
-  const referencia = gerarSlug(nomeCompleto) || gerarSlug(emailNormalizado.split("@")[0] ?? "");
-
-  const cabecalhos = request.headers;
-  const host = cabecalhos.get("host") ?? "";
-  const protocolo = host.startsWith("localhost") ? "http" : "https";
-  const link = `${protocolo}://${host}/webinar/${proximo.id}?ref=${referencia}`;
-
-  await criarEmailSender().enviar({
-    destinatario: emailNormalizado,
-    assunto: `O teu link de inscrição para "${proximo.titulo}"`,
-    corpoTexto:
-      `Olá${contacto.nome ? ` ${contacto.nome}` : ""},\n\n` +
-      `O teu link de inscrição para "${proximo.titulo}" (${formatarData(proximo.sessaoExternaEm)}):\n${link}\n\n` +
-      `Partilha este link com os teus convidados — as inscrições feitas por ele ficam associadas a ti.`,
-  });
-
-  return NextResponse.json({ link, nome: contacto.nome });
 }
