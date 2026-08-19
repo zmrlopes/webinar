@@ -14,12 +14,12 @@ on:
   # O GitHub cria uma "tentativa fantasma" (0 jobs, reportada como falha por
   # email) em cada push, para qualquer workflow que não tenha `push` na
   # lista de gatilhos, quando é o único workflow do repositório. Declarar
-  # `push` aqui, mas filtrado a um caminho que normalmente não muda, evita
-  # essas notificações sem alterar o comportamento real (só corre por
-  # agendamento ou manualmente).
+  # `push` aqui — com o job a saltar-se logo a si próprio nesse caso, ver
+  # `if` abaixo — evita essas notificações sem alterar o comportamento real
+  # (só corre a sério por agendamento ou manualmente). Só passa a fazer
+  # efeito a partir do push seguinte a este: o GitHub avalia os gatilhos de
+  # cada push com a versão do ficheiro anterior a esse mesmo push.
   push:
-    paths:
-      - ".github/workflows/cron.yml"
   schedule:
     - cron: "0 * * * *"    # sincronizar sessões — de hora a hora
     - cron: "*/5 * * * *"  # fila dos links
@@ -42,6 +42,7 @@ on:
 jobs:
   chamar:
     runs-on: ubuntu-latest
+    if: github.event_name != 'push'
     steps:
       - name: Sincronizar sessões
         if: github.event.schedule == '0 * * * *' || github.event.inputs.endpoint == 'sincronizar-sessoes' || (github.event_name == 'workflow_dispatch' && github.event.inputs.endpoint == '')
