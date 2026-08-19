@@ -130,8 +130,17 @@ export async function pedirPresencas(
   return resultado;
 }
 
-/** 5 min → 25 min → 2 h → 12 h. Depois disto, desiste e alerta. */
-const RECUOS_MINUTOS = [5, 25, 120, 720];
+/**
+ * No máx. 2 tentativas por pessoa, com pelo menos 24h entre elas.
+ *
+ * O Zoom limita a 3 pedidos por email por dia (reinicia à meia-noite UTC) —
+ * não é por reunião nem por equipa, é por pessoa. Um recuo rápido (era
+ * 5min → 25min → 2h → 12h) esgota essa quota em menos de uma hora, e a
+ * partir daí tudo falha até ao dia seguinte mesmo que o problema original já
+ * estivesse resolvido — foi o que aconteceu a 19/08 (confirmado pelo
+ * Patrick). Falhar duas vezes é terminal: desiste e alerta, não tenta mais.
+ */
+const RECUOS_MINUTOS = [1440];
 
 export function proximaTentativa(tentativas: number, agora: Date): Date | null {
   const minutos = RECUOS_MINUTOS[tentativas];
