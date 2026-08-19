@@ -111,6 +111,14 @@
       raiz.querySelector(".vq-webinar__data").textContent =
         formatarData(webinar.comecaEm) + " · " + webinar.duracaoMinutos + " min";
 
+      if (referenciaEmail) {
+        fetch(APP_URL + "/api/consultor/clique", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ webinarId: webinar.id, referenciaEmail: referenciaEmail }),
+        }).catch(function () {});
+      }
+
       var form = document.getElementById("vq-webinar-form");
       var mensagem = document.getElementById("vq-webinar-mensagem");
       var botao = form.querySelector("button");

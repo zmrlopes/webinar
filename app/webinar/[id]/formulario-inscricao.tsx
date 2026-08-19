@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export function FormularioInscricao({ webinarId }: { webinarId: string }) {
   const [nome, setNome] = useState("");
@@ -12,6 +12,16 @@ export function FormularioInscricao({ webinarId }: { webinarId: string }) {
   const parametros = useSearchParams();
   const referencia = parametros.get("ref") ?? undefined;
   const referenciaEmail = parametros.get("refEmail") ?? undefined;
+
+  useEffect(() => {
+    if (!referenciaEmail) return;
+    fetch("/api/consultor/clique", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ webinarId, referenciaEmail }),
+    }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function submeter(evento: React.FormEvent): Promise<void> {
     evento.preventDefault();

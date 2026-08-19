@@ -97,8 +97,7 @@ Além dos processos de fundo, o projeto inclui a aplicação Next.js completa:
 | `/webinar/[id]` | página de inscrição pública (chama `POST /api/inscricoes`) |
 | `/admin` | painel — sessões, contagens de links e presenças |
 | `/admin/webinar/[id]` | inscritos de uma sessão, com correção manual de presença |
-| `/consultor` | gera um link de inscrição com `?ref=` por consultor |
-| `/consultor/painel` | inscrições e presenças da próxima sessão, por consultor |
+| `/consultor` | painel do consultor — link de inscrição, aberturas, inscrições e presenças |
 | `/api/cron/*` | endpoints para o Vercel Cron / GitHub Actions |
 | `/api/webinars` | JSON público (sessões futuras), com CORS — para o widget |
 | `/api/inscricoes` | também aceita pedidos de outro domínio (CORS) — para o widget |
@@ -152,11 +151,16 @@ dados que o lead deixou no formulário (`notificarConsultorSobreLead()` em
 `src/lib/email.ts`). Sem `refEmail` na inscrição (alguém que se inscreveu
 sem vir de um link de consultor), não há notificação — não há para quem.
 
-Em `/consultor/painel`, o mesmo email (validado da mesma forma na Brevo) dá
-acesso aos números da próxima sessão: quantos se inscreveram pelo link do
-consultor (`referencia_email`), quantos estiveram presentes e quantos não
-— estes dois últimos só ficam corretos depois de a sessão acontecer e o
-processo de presenças correr (`src/lib/consultor.ts`).
+A mesma página `/consultor` mostra também um painel com os números da
+próxima sessão (`src/lib/consultor.ts`): quantas vezes o link foi aberto,
+quantos se inscreveram pelo link do consultor (`referencia_email`), quantos
+estiveram presentes e a percentagem de comparência. As aberturas vêm de
+`cliques_link` (migration `008`) — a página `/webinar/[id]` e o widget do
+Elementor registam um clique (`POST /api/consultor/clique`, sem
+autenticação, com CORS) sempre que a página é aberta com `refEmail` na
+URL, antes de a pessoa chegar a inscrever-se. As presenças só ficam
+corretas depois de a sessão acontecer e o processo de presenças correr;
+antes disso contam como "não entraram".
 
 ### Painel de administração
 
