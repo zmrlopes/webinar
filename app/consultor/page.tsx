@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { GeradorLink } from "./gerador-link";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +12,9 @@ export default function PaginaConsultor() {
         inscrição da próxima sessão, já identificado como teu.
       </p>
       <GeradorLink />
+      <p className="mudo" style={{ marginTop: "2rem" }}>
+        <Link href="/consultor/painel">Ver as minhas inscrições e presenças</Link>
+      </p>
     </main>
   );
 }
