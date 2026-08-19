@@ -68,10 +68,15 @@ a secção 6 do guia não cobre porque assume um sistema já existente.
 
 `src/lib/email.ts` define a interface `EmailSender` e a regra da secção 10
 ("nunca enviar a confirmação antes de ter o `link_pessoal`"): sem link, a
-função não envia nada, nem repete o envio a quem já recebeu. A implementação
-por omissão (`ConsoleEmailSender`) só regista no log — o guia não prescreve
-uma ferramenta de email, por isso troca-a por um `EmailSender` real (Brevo,
-ActiveCampaign, Resend, ...) antes de produção.
+função não envia nada, nem repete o envio a quem já recebeu.
+
+`criarEmailSender()` escolhe sozinho entre duas implementações: com
+`BREVO_API_KEY` definida, envia a sério pela API transacional da Brevo
+(`BrevoEmailSender`); sem ela, usa o `ConsoleEmailSender`, que só regista no
+log — seguro para desenvolvimento, sem custos nem risco de mandar email a
+ninguém. `BREVO_SENDER_EMAIL`/`BREVO_SENDER_NAME` escolhem o remetente (por
+omissão, `geral@viajareviver.net` / "Viajar é Viver" — tem de ser um
+remetente já verificado na conta Brevo).
 
 Cada processo tem duas formas de correr: como script standalone (`npm run
 ...`, útil em GitHub Actions ou localmente) e como rota HTTP em

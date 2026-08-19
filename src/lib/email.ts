@@ -13,14 +13,58 @@ export interface EmailSender {
 /**
  * Implementação por omissão: só regista no log, não envia nada a sério.
  *
- * O guia não prescreve uma ferramenta de email — isso é escolha de quem
- * implementa. Substitui por um `EmailSender` real (Brevo, ActiveCampaign,
- * Resend, etc.) antes de ires para produção.
+ * Usada como recurso (fallback) quando não há `BREVO_API_KEY` configurada —
+ * ver `criarEmailSender()` mais abaixo.
  */
 export class ConsoleEmailSender implements EmailSender {
   async enviar(mensagem: Mensagem): Promise<void> {
     console.log(`[email] para ${mensagem.destinatario} — ${mensagem.assunto}`);
   }
+}
+
+/**
+ * Envia a sério, pela API transacional da Brevo (v3/smtp/email).
+ * https://developers.brevo.com/reference/sendtransacemail
+ */
+export class BrevoEmailSender implements EmailSender {
+  async enviar(mensagem: Mensagem): Promise<void> {
+    const chave = process.env.BREVO_API_KEY;
+    if (!chave) {
+      throw new Error("variável de ambiente em falta: BREVO_API_KEY");
+    }
+
+    const resposta = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "api-key": chave,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        sender: {
+          email: process.env.BREVO_SENDER_EMAIL ?? "geral@viajareviver.net",
+          name: process.env.BREVO_SENDER_NAME ?? "Viajar é Viver",
+        },
+        to: [{ email: mensagem.destinatario }],
+        subject: mensagem.assunto,
+        textContent: mensagem.corpoTexto,
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+
+    if (!resposta.ok) {
+      const corpo = await resposta.text();
+      throw new Error(`Brevo devolveu ${resposta.status} ao enviar email: ${corpo}`);
+    }
+  }
+}
+
+/**
+ * Com BREVO_API_KEY definida, envia a sério; sem ela, só regista no log
+ * (útil em desenvolvimento, sem custos nem risco de mandar email a ninguém).
+ */
+export function criarEmailSender(): EmailSender {
+  return process.env.BREVO_API_KEY ? new BrevoEmailSender() : new ConsoleEmailSender();
 }
 
 interface RegistroParaEmail {

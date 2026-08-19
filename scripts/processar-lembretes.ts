@@ -4,11 +4,11 @@
  */
 
 import { fecharDb } from "../src/lib/db";
-import { ConsoleEmailSender } from "../src/lib/email";
+import { criarEmailSender } from "../src/lib/email";
 import { processarLembretes } from "../src/lib/lembretes";
 
 async function main(): Promise<void> {
-  const resultado = await processarLembretes({ sender: new ConsoleEmailSender() });
+  const resultado = await processarLembretes({ sender: criarEmailSender() });
   console.log(`lembretes: ${resultado.enviados} enviado(s)`);
 }
 
