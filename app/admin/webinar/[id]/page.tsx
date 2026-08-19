@@ -16,14 +16,40 @@ export default async function AdminWebinar({
 
   const inscricoes = await listarInscricoesAdmin(id);
 
+  const porConsultor = new Map<string, number>();
+  for (const i of inscricoes) {
+    const chave = i.referencia ?? "(sem referência)";
+    porConsultor.set(chave, (porConsultor.get(chave) ?? 0) + 1);
+  }
+
   return (
     <main style={{ maxWidth: 900 }}>
       <h1>{webinar.titulo}</h1>
+
+      {porConsultor.size > 0 && (
+        <div className="cartao">
+          <strong>Por consultor</strong>
+          <table>
+            <tbody>
+              {[...porConsultor.entries()]
+                .sort((a, b) => b[1] - a[1])
+                .map(([referencia, total]) => (
+                  <tr key={referencia}>
+                    <td>{referencia}</td>
+                    <td>{total}</td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       <table>
         <thead>
           <tr>
             <th>Nome</th>
             <th>Email</th>
+            <th>Referência</th>
             <th>Link</th>
             <th>Presença</th>
             <th>Minutos</th>
@@ -38,6 +64,7 @@ export default async function AdminWebinar({
                 {i.cancelada && <span className="etiqueta"> cancelada</span>}
               </td>
               <td>{i.email}</td>
+              <td>{i.referencia ?? "—"}</td>
               <td>
                 <span className="etiqueta">{i.linkEstado}</span>
               </td>

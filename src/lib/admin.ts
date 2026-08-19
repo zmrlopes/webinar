@@ -66,6 +66,7 @@ export interface InscricaoAdmin {
   presenca: "unknown" | "attended" | "absent";
   presencaMinutos: number | null;
   cancelada: boolean;
+  referencia: string | null;
 }
 
 export async function listarInscricoesAdmin(webinarId: string): Promise<InscricaoAdmin[]> {
@@ -78,8 +79,9 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
     presenca: "unknown" | "attended" | "absent";
     presenca_minutos: number | null;
     cancelada_em: Date | null;
+    referencia: string | null;
   }>(
-    `select id, nome, apelido, email, link_estado, presenca, presenca_minutos, cancelada_em
+    `select id, nome, apelido, email, link_estado, presenca, presenca_minutos, cancelada_em, referencia
      from registrations
      where webinar_id = $1
      order by criado_em asc`,
@@ -95,6 +97,7 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
     presenca: r.presenca,
     presencaMinutos: r.presenca_minutos,
     cancelada: r.cancelada_em !== null,
+    referencia: r.referencia,
   }));
 }
 

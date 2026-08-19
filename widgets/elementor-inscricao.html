@@ -73,6 +73,7 @@
 <script>
   (function () {
     var APP_URL = "https://SUBSTITUI-PELO-TEU-DOMINIO.vercel.app";
+    var referencia = new URLSearchParams(window.location.search).get("ref") || undefined;
 
     var raiz = document.getElementById("vq-webinar-widget");
 
@@ -126,6 +127,7 @@
             nome: document.getElementById("vq-nome").value,
             apelido: document.getElementById("vq-apelido").value,
             email: document.getElementById("vq-email").value,
+            referencia: referencia,
           }),
         })
           .then(function (resposta) {

@@ -22,6 +22,9 @@ Implementação por fases, seguindo a secção 14 do guia. Progresso:
 - [x] **Fase 9** — limpeza dos links (`src/lib/limpeza.ts`)
 - [ ] Fase 10 — ensaio de ponta a ponta (precisa da sala Zoom real — ver nota abaixo)
 
+Além do guia: envio real de emails (Brevo), widget para outro site
+(Elementor/WordPress), e página de códigos de referência para consultores.
+
 ## Fase 1 — cliente da API e testes de aceitação
 
 ```bash
@@ -94,6 +97,7 @@ Além dos processos de fundo, o projeto inclui a aplicação Next.js completa:
 | `/webinar/[id]` | página de inscrição pública (chama `POST /api/inscricoes`) |
 | `/admin` | painel — sessões, contagens de links e presenças |
 | `/admin/webinar/[id]` | inscritos de uma sessão, com correção manual de presença |
+| `/consultor` | gera um link de inscrição com `?ref=` por consultor |
 | `/api/cron/*` | endpoints para o Vercel Cron / GitHub Actions |
 | `/api/webinars` | JSON público (sessões futuras), com CORS — para o widget |
 | `/api/inscricoes` | também aceita pedidos de outro domínio (CORS) — para o widget |
@@ -117,6 +121,20 @@ domínio real onde publicaste a aplicação (ex: a tua app na Vercel).
 Validado com um teste cross-origin a sério (servidor num porto, widget
 noutro, sem nada partilhado) — o pedido atravessa mesmo o CORS, não é só
 teoria.
+
+### Códigos de referência para consultores
+
+`/consultor` é uma página pública (sem password) onde cada consultor
+escreve o nome e recebe o link de inscrição da sessão mais próxima, com
+`?ref=codigo-gerado-do-nome` (ex: "João Silva" → `joao-silva`). O `ref` é
+capturado tanto pela página `/webinar/[id]` como pelo widget do Elementor
+(via `location.search`), e gravado na inscrição (`referencia`, coluna da
+migration `005`). O painel `/admin/webinar/[id]` mostra essa referência por
+inscrito e um resumo com o total por consultor.
+
+Não há lista de consultores nem validação — qualquer nome gera um link.
+Se precisares de restringir quem pode gerar links, ou de páginas próprias
+por consultor com os seus leads, isso fica para depois (ainda não pedido).
 
 ### Painel de administração
 

@@ -7,6 +7,7 @@ export interface DadosInscricao {
   nome: string;
   apelido?: string;
   email: string;
+  referencia?: string;
 }
 
 function validarEmail(email: string): boolean {
@@ -32,11 +33,13 @@ export async function inscrever(dados: DadosInscricao): Promise<{ registrationId
   if (!nome) throw new DadosInvalidos("nome em falta");
   if (!validarEmail(email)) throw new DadosInvalidos("email inválido");
 
+  const referencia = dados.referencia?.trim().slice(0, 64) || null;
+
   const { rows } = await db().query<{ id: string }>(
-    `insert into registrations (webinar_id, nome, apelido, email)
-     values ($1, $2, $3, $4)
+    `insert into registrations (webinar_id, nome, apelido, email, referencia)
+     values ($1, $2, $3, $4, $5)
      returning id`,
-    [dados.webinarId, nome, dados.apelido?.trim() ?? "", email],
+    [dados.webinarId, nome, dados.apelido?.trim() ?? "", email, referencia],
   );
 
   const linha = rows[0];
