@@ -19,12 +19,13 @@ export async function POST(request: Request): Promise<Response> {
     corpo === null ||
     !("webinarId" in corpo) ||
     !("nome" in corpo) ||
+    !("apelido" in corpo) ||
     !("email" in corpo)
   ) {
     return NextResponse.json({ erro: "faltam campos" }, { status: 400, headers: CABECALHOS_CORS });
   }
 
-  const { webinarId, nome, telemovel, email, referencia, referenciaEmail } = corpo as Record<
+  const { webinarId, nome, apelido, telemovel, email, referencia, referenciaEmail } = corpo as Record<
     string,
     unknown
   >;
@@ -32,6 +33,7 @@ export async function POST(request: Request): Promise<Response> {
   if (
     typeof webinarId !== "string" ||
     typeof nome !== "string" ||
+    typeof apelido !== "string" ||
     typeof email !== "string" ||
     (telemovel !== undefined && typeof telemovel !== "string") ||
     (referencia !== undefined && typeof referencia !== "string") ||
@@ -47,6 +49,7 @@ export async function POST(request: Request): Promise<Response> {
     const { registrationId } = await inscrever({
       webinarId,
       nome,
+      apelido,
       telemovel: telemovel as string | undefined,
       email,
       referencia: referencia as string | undefined,

@@ -60,6 +60,7 @@ export async function listarWebinarsAdmin(): Promise<WebinarAdmin[]> {
 export interface InscricaoAdmin {
   id: string;
   nome: string;
+  apelido: string;
   telemovel: string | null;
   email: string;
   linkEstado: "pendente" | "obtido" | "falhado";
@@ -75,6 +76,7 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
   const { rows } = await db().query<{
     id: string;
     nome: string;
+    apelido: string;
     telemovel: string | null;
     email: string;
     link_estado: "pendente" | "obtido" | "falhado";
@@ -85,7 +87,7 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
     cancelada_em: Date | null;
     referencia: string | null;
   }>(
-    `select id, nome, telemovel, email, link_estado, link_tentativas, link_ultimo_erro,
+    `select id, nome, apelido, telemovel, email, link_estado, link_tentativas, link_ultimo_erro,
             presenca, presenca_minutos, cancelada_em, referencia
      from registrations
      where webinar_id = $1
@@ -96,6 +98,7 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
   return rows.map((r) => ({
     id: r.id,
     nome: r.nome,
+    apelido: r.apelido,
     telemovel: r.telemovel,
     email: r.email,
     linkEstado: r.link_estado,

@@ -5,6 +5,7 @@ export class DadosInvalidos extends Error {}
 export interface DadosInscricao {
   webinarId: string;
   nome: string;
+  apelido: string;
   telemovel?: string;
   email: string;
   referencia?: string;
@@ -29,9 +30,11 @@ function validarEmail(email: string): boolean {
  */
 export async function inscrever(dados: DadosInscricao): Promise<{ registrationId: string }> {
   const nome = dados.nome.trim();
+  const apelido = dados.apelido.trim();
   const email = dados.email.trim().toLowerCase();
 
   if (!nome) throw new DadosInvalidos("nome em falta");
+  if (!apelido) throw new DadosInvalidos("apelido em falta");
   if (!validarEmail(email)) throw new DadosInvalidos("email inválido");
 
   const referencia = dados.referencia?.trim().slice(0, 64) || null;
@@ -42,7 +45,7 @@ export async function inscrever(dados: DadosInscricao): Promise<{ registrationId
     `insert into registrations (webinar_id, nome, apelido, email, referencia, telemovel, referencia_email)
      values ($1, $2, $3, $4, $5, $6, $7)
      returning id`,
-    [dados.webinarId, nome, "", email, referencia, telemovel, referenciaEmail],
+    [dados.webinarId, nome, apelido.slice(0, 64), email, referencia, telemovel, referenciaEmail],
   );
 
   const linha = rows[0];

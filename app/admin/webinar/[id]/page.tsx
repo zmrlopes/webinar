@@ -48,6 +48,7 @@ export default async function AdminWebinar({
         <thead>
           <tr>
             <th>Nome</th>
+            <th>Apelido</th>
             <th>Telemóvel</th>
             <th>Email</th>
             <th>Referência</th>
@@ -65,6 +66,7 @@ export default async function AdminWebinar({
                 {i.nome}
                 {i.cancelada && <span className="etiqueta"> cancelada</span>}
               </td>
+              <td>{i.apelido}</td>
               <td>{i.telemovel ?? "—"}</td>
               <td>{i.email}</td>
               <td>{i.referencia ?? "—"}</td>
