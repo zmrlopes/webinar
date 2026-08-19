@@ -40,6 +40,17 @@ export async function procurarContactoBrevo(email: string): Promise<ContactoBrev
 }
 
 /**
+ * O campo SMS da Brevo exige formato E.164 (+<indicativo><número>) — os
+ * telemóveis que recolhemos vêm em formato local português (9 dígitos,
+ * sem indicativo), o que a Brevo rejeitava com "Invalid phone number".
+ * Assume Portugal quando não há indicativo próprio.
+ */
+function paraE164(telemovel: string): string {
+  const limpo = telemovel.replace(/[^\d+]/g, "");
+  return limpo.startsWith("+") ? limpo : `+351${limpo}`;
+}
+
+/**
  * Cria/atualiza (upsert) o contacto de quem se inscreveu, na lista de
  * inscritos, com o consultor de origem gravado no campo CONSULTOR.
  */
@@ -65,7 +76,7 @@ export async function sincronizarContactoInscrito(dados: {
       listIds: [listaId],
       attributes: {
         NOME: dados.nome,
-        ...(dados.telemovel ? { SMS: dados.telemovel } : {}),
+        ...(dados.telemovel ? { SMS: paraE164(dados.telemovel) } : {}),
         ...(dados.referencia ? { CONSULTOR: dados.referencia } : {}),
       },
     }),
