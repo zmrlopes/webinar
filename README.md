@@ -98,6 +98,7 @@ Além dos processos de fundo, o projeto inclui a aplicação Next.js completa:
 | `/admin` | painel — sessões, contagens de links e presenças |
 | `/admin/webinar/[id]` | inscritos de uma sessão, com correção manual de presença |
 | `/consultor` | gera um link de inscrição com `?ref=` por consultor |
+| `/consultor/painel` | inscrições e presenças da próxima sessão, por consultor |
 | `/api/cron/*` | endpoints para o Vercel Cron / GitHub Actions |
 | `/api/webinars` | JSON público (sessões futuras), com CORS — para o widget |
 | `/api/inscricoes` | também aceita pedidos de outro domínio (CORS) — para o widget |
@@ -150,6 +151,12 @@ que o link do Zoom é obtido, notificar esse consultor por email com os
 dados que o lead deixou no formulário (`notificarConsultorSobreLead()` em
 `src/lib/email.ts`). Sem `refEmail` na inscrição (alguém que se inscreveu
 sem vir de um link de consultor), não há notificação — não há para quem.
+
+Em `/consultor/painel`, o mesmo email (validado da mesma forma na Brevo) dá
+acesso aos números da próxima sessão: quantos se inscreveram pelo link do
+consultor (`referencia_email`), quantos estiveram presentes e quantos não
+— estes dois últimos só ficam corretos depois de a sessão acontecer e o
+processo de presenças correr (`src/lib/consultor.ts`).
 
 ### Painel de administração
 
