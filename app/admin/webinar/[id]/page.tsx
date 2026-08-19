@@ -52,6 +52,7 @@ export default async function AdminWebinar({
             <th>Email</th>
             <th>Referência</th>
             <th>Link</th>
+            <th>Erro do link</th>
             <th>Presença</th>
             <th>Minutos</th>
             <th>Corrigir</th>
@@ -69,6 +70,11 @@ export default async function AdminWebinar({
               <td>{i.referencia ?? "—"}</td>
               <td>
                 <span className="etiqueta">{i.linkEstado}</span>
+              </td>
+              <td style={{ maxWidth: 260, fontSize: "0.85rem" }}>
+                {i.linkUltimoErro
+                  ? `(${i.linkTentativas}x) ${i.linkUltimoErro}`
+                  : "—"}
               </td>
               <td>{i.presenca}</td>
               <td>{i.presencaMinutos ?? "—"}</td>

@@ -63,6 +63,8 @@ export interface InscricaoAdmin {
   telemovel: string | null;
   email: string;
   linkEstado: "pendente" | "obtido" | "falhado";
+  linkTentativas: number;
+  linkUltimoErro: string | null;
   presenca: "unknown" | "attended" | "absent";
   presencaMinutos: number | null;
   cancelada: boolean;
@@ -76,12 +78,15 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
     telemovel: string | null;
     email: string;
     link_estado: "pendente" | "obtido" | "falhado";
+    link_tentativas: number;
+    link_ultimo_erro: string | null;
     presenca: "unknown" | "attended" | "absent";
     presenca_minutos: number | null;
     cancelada_em: Date | null;
     referencia: string | null;
   }>(
-    `select id, nome, telemovel, email, link_estado, presenca, presenca_minutos, cancelada_em, referencia
+    `select id, nome, telemovel, email, link_estado, link_tentativas, link_ultimo_erro,
+            presenca, presenca_minutos, cancelada_em, referencia
      from registrations
      where webinar_id = $1
      order by criado_em asc`,
@@ -94,6 +99,8 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
     telemovel: r.telemovel,
     email: r.email,
     linkEstado: r.link_estado,
+    linkTentativas: r.link_tentativas,
+    linkUltimoErro: r.link_ultimo_erro,
     presenca: r.presenca,
     presencaMinutos: r.presenca_minutos,
     cancelada: r.cancelada_em !== null,
