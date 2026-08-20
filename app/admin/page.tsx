@@ -67,6 +67,16 @@ export default async function AdminDashboard() {
           box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
         }
         .ad-sessao-topo { display: flex; justify-content: space-between; align-items: start; gap: 0.5rem; }
+        .ad-cartao-link {
+          display: block;
+          text-decoration: none;
+          transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .ad-cartao-link:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+        }
+        .ad-cartao-seta { color: #a67c1e; font-size: 0.8rem; margin-top: 0.35rem; }
         .ad-etiqueta {
           display: inline-block;
           background: #f1e6c9;
@@ -88,10 +98,11 @@ export default async function AdminDashboard() {
             <div className="ad-numero">{visaoGeral.inscricoesTotais}</div>
             <div className="ad-legenda">Inscrições no total</div>
           </div>
-          <div className="ad-cartao">
+          <Link href="/admin/consultores" className="ad-cartao ad-cartao-link">
             <div className="ad-numero">{visaoGeral.consultoresAtivos}</div>
             <div className="ad-legenda">Consultores ativos</div>
-          </div>
+            <div className="ad-cartao-seta">Ver todos →</div>
+          </Link>
         </div>
 
         <h1>Sessões</h1>

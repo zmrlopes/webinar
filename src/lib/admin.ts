@@ -110,8 +110,15 @@ export interface InscricaoAdmin {
   presencaMinutos: number | null;
   cancelada: boolean;
   referencia: string | null;
+  referenciaNome: string | null;
 }
 
+/**
+ * `referenciaNome` vem de `links_consultor` (o nome que o consultor tinha
+ * na Brevo quando gerou o link) — "quem convidou", em vez de só o código.
+ * Fica a null quando não há correspondência (inscrição sem link de
+ * consultor, ou de antes de o nome passar a ser guardado).
+ */
 export async function listarInscricoesAdmin(webinarId: string): Promise<InscricaoAdmin[]> {
   const { rows } = await db().query<{
     id: string;
@@ -126,12 +133,15 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
     presenca_minutos: number | null;
     cancelada_em: Date | null;
     referencia: string | null;
+    referencia_nome: string | null;
   }>(
-    `select id, nome, apelido, telemovel, email, link_estado, link_tentativas, link_ultimo_erro,
-            presenca, presenca_minutos, cancelada_em, referencia
-     from registrations
-     where webinar_id = $1
-     order by criado_em asc`,
+    `select r.id, r.nome, r.apelido, r.telemovel, r.email, r.link_estado, r.link_tentativas,
+            r.link_ultimo_erro, r.presenca, r.presenca_minutos, r.cancelada_em, r.referencia,
+            lc.nome as referencia_nome
+     from registrations r
+     left join links_consultor lc on lc.referencia = r.referencia
+     where r.webinar_id = $1
+     order by r.criado_em asc`,
     [webinarId],
   );
 
@@ -148,6 +158,45 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
     presencaMinutos: r.presenca_minutos,
     cancelada: r.cancelada_em !== null,
     referencia: r.referencia,
+    referenciaNome: r.referencia_nome,
+  }));
+}
+
+export interface ConsultorAdmin {
+  referencia: string;
+  nome: string | null;
+  email: string;
+  ativoDesde: Date;
+  inscricoesTotais: number;
+}
+
+/**
+ * Um consultor por linha, para quem "se ativou" pelo menos uma vez (gerou o
+ * link em /consultor). `inscricoesTotais` soma inscrições de todas as
+ * sessões, não só da mais próxima.
+ */
+export async function listarConsultoresAdmin(): Promise<ConsultorAdmin[]> {
+  const { rows } = await db().query<{
+    referencia: string;
+    nome: string | null;
+    referencia_email: string;
+    atualizado_em: Date;
+    inscricoes_totais: string;
+  }>(
+    `select lc.referencia, lc.nome, lc.referencia_email, lc.atualizado_em,
+            count(r.id) filter (where r.cancelada_em is null) as inscricoes_totais
+     from links_consultor lc
+     left join registrations r on r.referencia_email = lc.referencia_email
+     group by lc.referencia, lc.nome, lc.referencia_email, lc.atualizado_em
+     order by lc.atualizado_em desc`,
+  );
+
+  return rows.map((r) => ({
+    referencia: r.referencia,
+    nome: r.nome,
+    email: r.referencia_email,
+    ativoDesde: r.atualizado_em,
+    inscricoesTotais: Number(r.inscricoes_totais),
   }));
 }
 

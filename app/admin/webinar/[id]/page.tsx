@@ -270,7 +270,7 @@ export default async function AdminWebinar({
                 <th>Apelido</th>
                 <th>Telemóvel</th>
                 <th>Email</th>
-                <th>Referência</th>
+                <th>Convidado por</th>
                 <th>Link</th>
                 <th>Erro do link</th>
                 <th>Presença</th>
@@ -288,7 +288,20 @@ export default async function AdminWebinar({
                   <td>{i.apelido}</td>
                   <td>{i.telemovel ?? "—"}</td>
                   <td>{i.email}</td>
-                  <td>{i.referencia ?? "—"}</td>
+                  <td>
+                    {i.referencia ? (
+                      <>
+                        <div>{i.referenciaNome ?? i.referencia}</div>
+                        {i.referenciaNome && (
+                          <div className="ad-legenda" style={{ margin: 0 }}>
+                            {i.referencia}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
                   <td>
                     <span className="ad-etiqueta">{i.linkEstado}</span>
                   </td>
