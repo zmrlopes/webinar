@@ -108,6 +108,12 @@ npm run dev   # http://localhost:3000
 npm run build && npm run start   # produção
 ```
 
+O formulário de inscrição (página e widget) exige um checkbox de aceitação
+da política de privacidade antes de deixar submeter — `required`, tanto no
+browser como no servidor (`inscrever()` recusa sem isso, com
+`DadosInvalidos`). O momento exato fica gravado em
+`consentimento_privacidade_em` (migration `010`).
+
 ### Widget para outro site (Elementor/WordPress)
 
 `widgets/elementor-inscricao.html` é um snippet autónomo (HTML+CSS+JS

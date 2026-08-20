@@ -8,6 +8,7 @@ export function FormularioInscricao({ webinarId }: { webinarId: string }) {
   const [apelido, setApelido] = useState("");
   const [telemovel, setTelemovel] = useState("");
   const [email, setEmail] = useState("");
+  const [consentimentoPrivacidade, setConsentimentoPrivacidade] = useState(false);
   const [estado, setEstado] = useState<"pronto" | "a-enviar" | "feito" | "erro">("pronto");
   const [mensagemErro, setMensagemErro] = useState("");
   const parametros = useSearchParams();
@@ -41,6 +42,7 @@ export function FormularioInscricao({ webinarId }: { webinarId: string }) {
           email,
           referencia,
           referenciaEmail,
+          consentimentoPrivacidade,
         }),
       });
 
@@ -107,8 +109,29 @@ export function FormularioInscricao({ webinarId }: { webinarId: string }) {
         onChange={(e) => setEmail(e.target.value)}
       />
 
+      <label style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", fontWeight: 400 }}>
+        <input
+          type="checkbox"
+          required
+          checked={consentimentoPrivacidade}
+          onChange={(e) => setConsentimentoPrivacidade(e.target.checked)}
+          style={{ width: "auto", marginTop: "0.2rem" }}
+        />
+        <span>
+          Li e aceito a{" "}
+          <a
+            href="https://freelancer.viajareviver.net/politica-de-privacidade-2/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            política de privacidade
+          </a>
+          .
+        </span>
+      </label>
+
       <button type="submit" disabled={estado === "a-enviar"}>
-        {estado === "a-enviar" ? "A inscrever..." : "Inscrever-me"}
+        {estado === "a-enviar" ? "A inscrever..." : "Quero participar"}
       </button>
 
       {estado === "erro" && <p className="erro">{mensagemErro}</p>}

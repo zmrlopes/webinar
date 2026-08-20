@@ -37,7 +37,7 @@
     margin-top: 0.9rem;
     margin-bottom: 0.25rem;
   }
-  .vq-webinar input {
+  .vq-webinar input:not([type="checkbox"]) {
     display: block;
     width: 100%;
     box-sizing: border-box;
@@ -45,6 +45,17 @@
     border: 1px solid #ccc;
     border-radius: 6px;
     font-size: 1rem;
+  }
+  .vq-webinar label.vq-webinar__consentimento {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    font-weight: 400;
+  }
+  .vq-webinar__consentimento input {
+    width: auto;
+    margin-top: 0.2rem;
   }
   .vq-webinar button {
     margin-top: 1.25rem;
@@ -105,7 +116,11 @@
         '<input id="vq-telemovel" type="tel" required maxlength="32">' +
         '<label for="vq-email">E-mail</label>' +
         '<input id="vq-email" type="email" required maxlength="254">' +
-        '<button type="submit">Inscrever-me</button>' +
+        '<label class="vq-webinar__consentimento" for="vq-consentimento">' +
+        '<input id="vq-consentimento" type="checkbox" required>' +
+        '<span>Li e aceito a <a href="https://freelancer.viajareviver.net/politica-de-privacidade-2/" target="_blank" rel="noopener noreferrer">política de privacidade</a>.</span>' +
+        "</label>" +
+        '<button type="submit">Quero participar</button>' +
         '<div id="vq-webinar-mensagem"></div>' +
         "</form>";
 
@@ -142,6 +157,7 @@
             email: document.getElementById("vq-email").value,
             referencia: referencia,
             referenciaEmail: referenciaEmail,
+            consentimentoPrivacidade: document.getElementById("vq-consentimento").checked,
           }),
         })
           .then(function (resposta) {
@@ -156,7 +172,7 @@
                 (resultado.dados.erro || "Não foi possível inscrever.") +
                 "</p>";
               botao.disabled = false;
-              botao.textContent = "Inscrever-me";
+              botao.textContent = "Quero participar";
               return;
             }
             form.innerHTML =
@@ -165,7 +181,7 @@
           .catch(function () {
             mensagem.innerHTML = '<p class="vq-webinar__erro">Falha de ligação — tenta outra vez.</p>';
             botao.disabled = false;
-            botao.textContent = "Inscrever-me";
+            botao.textContent = "Quero participar";
           });
       });
     }

@@ -10,6 +10,7 @@ export interface DadosInscricao {
   email: string;
   referencia?: string;
   referenciaEmail?: string;
+  consentimentoPrivacidade: boolean;
 }
 
 function validarEmail(email: string): boolean {
@@ -36,14 +37,18 @@ export async function inscrever(dados: DadosInscricao): Promise<{ registrationId
   if (!nome) throw new DadosInvalidos("nome em falta");
   if (!apelido) throw new DadosInvalidos("apelido em falta");
   if (!validarEmail(email)) throw new DadosInvalidos("email inválido");
+  if (!dados.consentimentoPrivacidade) {
+    throw new DadosInvalidos("é preciso aceitar a política de privacidade");
+  }
 
   const referencia = dados.referencia?.trim().slice(0, 64) || null;
   const telemovel = dados.telemovel?.trim().slice(0, 32) || null;
   const referenciaEmail = dados.referenciaEmail?.trim().toLowerCase().slice(0, 254) || null;
 
   const { rows } = await db().query<{ id: string }>(
-    `insert into registrations (webinar_id, nome, apelido, email, referencia, telemovel, referencia_email)
-     values ($1, $2, $3, $4, $5, $6, $7)
+    `insert into registrations
+       (webinar_id, nome, apelido, email, referencia, telemovel, referencia_email, consentimento_privacidade_em)
+     values ($1, $2, $3, $4, $5, $6, $7, now())
      returning id`,
     [dados.webinarId, nome, apelido.slice(0, 64), email, referencia, telemovel, referenciaEmail],
   );

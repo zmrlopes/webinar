@@ -25,10 +25,16 @@ export async function POST(request: Request): Promise<Response> {
     return NextResponse.json({ erro: "faltam campos" }, { status: 400, headers: CABECALHOS_CORS });
   }
 
-  const { webinarId, nome, apelido, telemovel, email, referencia, referenciaEmail } = corpo as Record<
-    string,
-    unknown
-  >;
+  const {
+    webinarId,
+    nome,
+    apelido,
+    telemovel,
+    email,
+    referencia,
+    referenciaEmail,
+    consentimentoPrivacidade,
+  } = corpo as Record<string, unknown>;
 
   if (
     typeof webinarId !== "string" ||
@@ -54,6 +60,7 @@ export async function POST(request: Request): Promise<Response> {
       email,
       referencia: referencia as string | undefined,
       referenciaEmail: referenciaEmail as string | undefined,
+      consentimentoPrivacidade: consentimentoPrivacidade === true,
     });
     return NextResponse.json({ registrationId }, { status: 200, headers: CABECALHOS_CORS });
   } catch (erro) {
