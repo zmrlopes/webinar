@@ -148,6 +148,13 @@ curto. Pedir o link outra vez com o mesmo nome atualiza a mesma linha
 (upsert); nomes que gerassem um código igual a uma rota existente
 (`admin`, `consultor`, `webinar`, `api`) levam um sufixo automático.
 
+`links_consultor` também guarda o primeiro nome do consultor (migration
+`011`), para o cartão de inscrição mostrar "Convite de &lt;nome&gt;" no
+topo — em `/webinar/[id]` via consulta direta à base (a página já lê
+`ref` dos `searchParams`); no widget do Elementor via
+`GET /api/consultor/nome?ref=...`, o único endpoint que devolve esse
+nome (nunca o email) para quem não tem acesso direto à base de dados.
+
 O `ref` é capturado tanto pela página `/webinar/[id]` como pelo widget do
 Elementor (via `location.search`), e gravado na inscrição (`referencia`,
 migration `005`). O painel `/admin/webinar/[id]` mostra essa referência por

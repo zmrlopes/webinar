@@ -38,7 +38,7 @@ export async function POST(request: Request): Promise<Response> {
       gerarSlug(nomeCompleto) || gerarSlug(emailNormalizado.split("@")[0] ?? "");
     const referencia = referenciaSemColisao(referenciaBase);
 
-    await guardarLinkConsultor(referencia, emailNormalizado);
+    await guardarLinkConsultor(referencia, emailNormalizado, contacto.nome);
 
     const host = request.headers.get("host") ?? "";
     const protocolo = host.startsWith("localhost") ? "http" : "https";

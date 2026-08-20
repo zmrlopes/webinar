@@ -12,26 +12,27 @@ const CODIGOS_RESERVADOS = new Set(["admin", "consultor", "webinar", "api"]);
 export async function guardarLinkConsultor(
   referencia: string,
   referenciaEmail: string,
+  nome: string | null,
 ): Promise<void> {
   await db().query(
-    `insert into links_consultor (referencia, referencia_email)
-     values ($1, $2)
+    `insert into links_consultor (referencia, referencia_email, nome)
+     values ($1, $2, $3)
      on conflict (referencia) do update
-       set referencia_email = excluded.referencia_email, atualizado_em = now()`,
-    [referencia, referenciaEmail],
+       set referencia_email = excluded.referencia_email, nome = excluded.nome, atualizado_em = now()`,
+    [referencia, referenciaEmail, nome],
   );
 }
 
 export async function procurarLinkConsultor(
   referencia: string,
-): Promise<{ referenciaEmail: string } | null> {
+): Promise<{ referenciaEmail: string; nome: string | null } | null> {
   if (CODIGOS_RESERVADOS.has(referencia)) return null;
-  const { rows } = await db().query<{ referencia_email: string }>(
-    `select referencia_email from links_consultor where referencia = $1`,
+  const { rows } = await db().query<{ referencia_email: string; nome: string | null }>(
+    `select referencia_email, nome from links_consultor where referencia = $1`,
     [referencia],
   );
   const linha = rows[0];
-  return linha ? { referenciaEmail: linha.referencia_email } : null;
+  return linha ? { referenciaEmail: linha.referencia_email, nome: linha.nome } : null;
 }
 
 /** Evita que um nome que gere um código igual a uma rota existente parta o link curto. */

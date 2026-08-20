@@ -26,6 +26,15 @@
     padding: 2rem 1.75rem;
     box-sizing: border-box;
   }
+  .vq-webinar__convite {
+    background: #f1e6c9;
+    color: #4a3c10;
+    border: 1px solid #e2cf94;
+    border-radius: 999px;
+    padding: 0.3rem 0.85rem;
+    font-size: 0.85rem;
+    margin: 0 0 0.9rem;
+  }
   .vq-webinar__kicker {
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -143,6 +152,7 @@
 
     function montarFormulario(webinar) {
       raiz.innerHTML =
+        '<p class="vq-webinar__convite" style="display:none"></p>' +
         '<p class="vq-webinar__kicker">Reserva o teu lugar</p>' +
         '<p class="vq-webinar__titulo"></p>' +
         '<p class="vq-webinar__data"></p>' +
@@ -166,6 +176,23 @@
       raiz.querySelector(".vq-webinar__titulo").textContent = webinar.titulo;
       raiz.querySelector(".vq-webinar__data").textContent =
         formatarData(webinar.comecaEm) + " · " + webinar.duracaoMinutos + " min";
+
+      if (referencia) {
+        fetch(APP_URL + "/api/consultor/nome?ref=" + encodeURIComponent(referencia))
+          .then(function (resposta) {
+            return resposta.json();
+          })
+          .then(function (dados) {
+            if (!dados.nome) return;
+            var convite = raiz.querySelector(".vq-webinar__convite");
+            convite.textContent = "Convite de ";
+            var forte = document.createElement("strong");
+            forte.textContent = dados.nome;
+            convite.appendChild(forte);
+            convite.style.display = "inline-block";
+          })
+          .catch(function () {});
+      }
 
       if (referenciaEmail) {
         fetch(APP_URL + "/api/consultor/clique", {

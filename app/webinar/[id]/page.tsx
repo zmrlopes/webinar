@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { procurarLinkConsultor } from "@/lib/consultor";
 import { buscarWebinar } from "@/lib/webinars";
 import { FormularioInscricao } from "./formulario-inscricao";
 
@@ -13,12 +14,18 @@ function formatarData(data: Date): string {
 
 export default async function PaginaWebinar({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ ref?: string }>;
 }) {
   const { id } = await params;
+  const { ref } = await searchParams;
   const webinar = await buscarWebinar(id);
   if (!webinar) notFound();
+
+  const link = ref ? await procurarLinkConsultor(ref) : null;
+  const convidadoPor = link?.nome ?? null;
 
   return (
     <main className="wf-pagina">
@@ -39,6 +46,17 @@ export default async function PaginaWebinar({
           color: #a67c1e;
           margin: 0 0 0.5rem;
         }
+        .wf-convite {
+          display: inline-block;
+          background: #f1e6c9;
+          color: #4a3c10;
+          border: 1px solid #e2cf94;
+          border-radius: 999px;
+          padding: 0.3rem 0.85rem;
+          font-size: 0.85rem;
+          margin: 0 0 0.9rem;
+        }
+        .wf-convite strong { font-weight: 700; }
         .wf-pagina h1 {
           font-size: 1.65rem;
           font-weight: 800;
@@ -120,6 +138,11 @@ export default async function PaginaWebinar({
         .wf-pagina .sucesso { color: #1e7a34; font-weight: 600; }
       `}</style>
 
+      {convidadoPor && (
+        <p className="wf-convite">
+          Convite de <strong>{convidadoPor}</strong>
+        </p>
+      )}
       <p className="wf-kicker">Reserva o teu lugar</p>
       <h1>{webinar.titulo}</h1>
       <p className="wf-data">
