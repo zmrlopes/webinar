@@ -15,6 +15,8 @@ interface DadosEstatisticas {
   naoEntraram: number;
 }
 
+type EstadoPedido = "pronto" | "a-pedir" | "feito";
+
 function formatarData(iso: string): string {
   return new Date(iso).toLocaleString("pt-PT", { dateStyle: "long", timeStyle: "short" });
 }
@@ -26,67 +28,63 @@ function comparencia(estatisticas: DadosEstatisticas): string {
 
 export function PainelConsultor() {
   const [email, setEmail] = useState("");
-  const [estado, setEstado] = useState<"pronto" | "a-pedir" | "feito">("pronto");
-  const [erroGeral, setErroGeral] = useState("");
+
+  const [estadoLink, setEstadoLink] = useState<EstadoPedido>("pronto");
   const [link, setLink] = useState<DadosLink | null>(null);
   const [erroLink, setErroLink] = useState("");
-  const [estatisticas, setEstatisticas] = useState<DadosEstatisticas | null>(null);
-  const [erroEstatisticas, setErroEstatisticas] = useState("");
   const [copiado, setCopiado] = useState(false);
 
-  async function consultar(evento: React.FormEvent): Promise<void> {
-    evento.preventDefault();
-    setEstado("a-pedir");
-    setErroGeral("");
+  const [estadoEstatisticas, setEstadoEstatisticas] = useState<EstadoPedido>("pronto");
+  const [estatisticas, setEstatisticas] = useState<DadosEstatisticas | null>(null);
+  const [erroEstatisticas, setErroEstatisticas] = useState("");
+
+  async function obterLink(): Promise<void> {
+    setEstadoLink("a-pedir");
     setErroLink("");
-    setErroEstatisticas("");
     setLink(null);
-    setEstatisticas(null);
     setCopiado(false);
 
-    const [respostaLink, respostaEstatisticas] = await Promise.allSettled([
-      fetch("/api/consultor/link", {
+    try {
+      const resposta = await fetch("/api/consultor/link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
-      }),
-      fetch("/api/consultor/estatisticas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      }),
-    ]);
-
-    let algumSucesso = false;
-
-    if (respostaLink.status === "fulfilled") {
-      const dados = await respostaLink.value.json().catch(() => ({}));
-      if (respostaLink.value.ok) {
-        setLink(dados);
-        algumSucesso = true;
-      } else {
+      });
+      const dados = await resposta.json().catch(() => ({}));
+      if (!resposta.ok) {
         setErroLink(typeof dados.erro === "string" ? dados.erro : "não foi possível gerar o link");
+      } else {
+        setLink(dados);
       }
-    } else {
+    } catch {
       setErroLink("falha de ligação — tenta outra vez");
     }
+    setEstadoLink("feito");
+  }
 
-    if (respostaEstatisticas.status === "fulfilled") {
-      const dados = await respostaEstatisticas.value.json().catch(() => ({}));
-      if (respostaEstatisticas.value.ok) {
-        setEstatisticas(dados);
-        algumSucesso = true;
+  async function verNumeros(): Promise<void> {
+    setEstadoEstatisticas("a-pedir");
+    setErroEstatisticas("");
+    setEstatisticas(null);
+
+    try {
+      const resposta = await fetch("/api/consultor/estatisticas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const dados = await resposta.json().catch(() => ({}));
+      if (!resposta.ok) {
+        setErroEstatisticas(
+          typeof dados.erro === "string" ? dados.erro : "não foi possível obter os números",
+        );
       } else {
-        setErroEstatisticas(typeof dados.erro === "string" ? dados.erro : "não foi possível obter os números");
+        setEstatisticas(dados);
       }
-    } else {
+    } catch {
       setErroEstatisticas("falha de ligação — tenta outra vez");
     }
-
-    if (!algumSucesso) {
-      setErroGeral("não encontrámos esse email na equipa — confirma se está certo");
-    }
-    setEstado("feito");
+    setEstadoEstatisticas("feito");
   }
 
   async function copiar(): Promise<void> {
@@ -94,6 +92,8 @@ export function PainelConsultor() {
     await navigator.clipboard.writeText(link.link);
     setCopiado(true);
   }
+
+  const aPedirAlgo = estadoLink === "a-pedir" || estadoEstatisticas === "a-pedir";
 
   return (
     <div className="vqc-pagina">
@@ -117,7 +117,7 @@ export function PainelConsultor() {
           margin: 2.5rem 0 0.4rem;
         }
         .vqc-pagina .vqc-mudo { color: #c9c6e8; font-size: 0.9rem; margin: 0 0 1.25rem; }
-        .vqc-pagina form { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end; }
+        .vqc-pagina .vqc-linha { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end; }
         .vqc-pagina label { display: block; font-weight: 600; margin: 0 0 0.35rem; color: #e8e6f7; }
         .vqc-pagina input {
           padding: 0.6rem 0.75rem;
@@ -140,6 +140,11 @@ export function PainelConsultor() {
           font-size: 1rem;
           cursor: pointer;
           margin: 0;
+        }
+        .vqc-pagina button.vqc-secundario {
+          background: transparent;
+          color: #f6e05e;
+          border: 1px solid #f6e05e;
         }
         .vqc-pagina button:disabled { opacity: 0.6; cursor: default; }
         .vqc-pagina .vqc-erro { color: #ff9b9b; margin-top: 0.75rem; }
@@ -171,11 +176,11 @@ export function PainelConsultor() {
       <div className="vqc-caixa">
         <h1>O painel do consultor</h1>
         <p className="vqc-mudo">
-          Escreve o teu email (o mesmo registado na equipa) para veres o teu link de inscrição e os
-          teus números da próxima sessão.
+          Escreve o teu email (o mesmo registado na equipa). &ldquo;Obter link&rdquo; envia-te o link
+          por email; &ldquo;Painel de leads&rdquo; só mostra os teus números, sem enviar nada.
         </p>
 
-        <form onSubmit={consultar}>
+        <div className="vqc-linha">
           <div>
             <label htmlFor="email-painel-consultor">O teu email</label>
             <input
@@ -188,12 +193,18 @@ export function PainelConsultor() {
               placeholder="joao.silva@exemplo.pt"
             />
           </div>
-          <button type="submit" disabled={estado === "a-pedir"}>
-            {estado === "a-pedir" ? "A verificar..." : "Ver o meu painel"}
+          <button type="button" onClick={obterLink} disabled={!email || aPedirAlgo}>
+            {estadoLink === "a-pedir" ? "A gerar..." : "Obter link"}
           </button>
-        </form>
-
-        {estado === "feito" && erroGeral && <p className="vqc-erro">{erroGeral}</p>}
+          <button
+            type="button"
+            className="vqc-secundario"
+            onClick={verNumeros}
+            disabled={!email || aPedirAlgo}
+          >
+            {estadoEstatisticas === "a-pedir" ? "A consultar..." : "Painel de leads"}
+          </button>
+        </div>
 
         {link && (
           <>
@@ -207,7 +218,7 @@ export function PainelConsultor() {
             </div>
           </>
         )}
-        {estado === "feito" && erroLink && <p className="vqc-erro">{erroLink}</p>}
+        {estadoLink === "feito" && erroLink && <p className="vqc-erro">{erroLink}</p>}
 
         {estatisticas && (
           <>
@@ -235,7 +246,9 @@ export function PainelConsultor() {
             </div>
           </>
         )}
-        {estado === "feito" && erroEstatisticas && <p className="vqc-erro">{erroEstatisticas}</p>}
+        {estadoEstatisticas === "feito" && erroEstatisticas && (
+          <p className="vqc-erro">{erroEstatisticas}</p>
+        )}
       </div>
     </div>
   );
