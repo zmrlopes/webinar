@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { procurarContactoBrevo } from "@/lib/brevo-contatos";
+import { guardarLinkConsultor, referenciaSemColisao } from "@/lib/consultor";
 import { criarEmailSender } from "@/lib/email";
 import { gerarSlug } from "@/lib/slug";
 import { listarWebinarsFuturos } from "@/lib/webinars";
@@ -33,12 +34,15 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     const nomeCompleto = [contacto.nome, contacto.apelido].filter(Boolean).join(" ").trim();
-    const referencia = gerarSlug(nomeCompleto) || gerarSlug(emailNormalizado.split("@")[0] ?? "");
+    const referenciaBase =
+      gerarSlug(nomeCompleto) || gerarSlug(emailNormalizado.split("@")[0] ?? "");
+    const referencia = referenciaSemColisao(referenciaBase);
+
+    await guardarLinkConsultor(referencia, emailNormalizado);
 
     const host = request.headers.get("host") ?? "";
     const protocolo = host.startsWith("localhost") ? "http" : "https";
-    const parametros = new URLSearchParams({ ref: referencia, refEmail: emailNormalizado });
-    const link = `${protocolo}://${host}/webinar/${proximo.id}?${parametros.toString()}`;
+    const link = `${protocolo}://${host}/${referencia}`;
 
     await criarEmailSender().enviar({
       destinatario: emailNormalizado,

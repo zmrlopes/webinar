@@ -98,6 +98,7 @@ Além dos processos de fundo, o projeto inclui a aplicação Next.js completa:
 | `/admin` | painel — sessões, contagens de links e presenças |
 | `/admin/webinar/[id]` | inscritos de uma sessão, com correção manual de presença |
 | `/consultor` | painel do consultor — link de inscrição, aberturas, inscrições e presenças |
+| `/[codigo]` | link curto de um consultor (ex: `/joao-silva`) — redireciona para a inscrição |
 | `/api/cron/*` | endpoints para o Vercel Cron / GitHub Actions |
 | `/api/webinars` | JSON público (sessões futuras), com CORS — para o widget |
 | `/api/inscricoes` | também aceita pedidos de outro domínio (CORS) — para o widget |
@@ -125,12 +126,21 @@ teoria.
 ### Códigos de referência para consultores
 
 `/consultor` é uma página pública (sem password) onde cada consultor
-escreve o **email registado na equipa** e recebe o link de inscrição da
-sessão mais próxima, com `?ref=codigo-gerado-do-nome` (ex: "João Silva" →
-`joao-silva`). O email é validado contra os contactos da Brevo
-(`GET /v3/contacts/{email}`) — se não existir lá, mostra erro e não gera
-nada. O link também é enviado por email ao consultor (mesmo endpoint de
-envio da secção anterior).
+escreve o **email registado na equipa** e recebe um link de inscrição
+curto: `/joao-silva` em vez de `/webinar/<uuid>?ref=...&refEmail=...`. O
+email é validado contra os contactos da Brevo (`GET /v3/contacts/{email}`)
+— se não existir lá, mostra erro e não gera nada. O link também é enviado
+por email ao consultor (mesmo endpoint de envio da secção anterior).
+
+O código curto (a "referencia", gerada do nome — ex: "João Silva" →
+`joao-silva`) fica gravado em `links_consultor` (migration `009`), a
+apontar para o email do consultor. `app/[codigo]/page.tsx` resolve esse
+código e redireciona para `/webinar/<id-da-sessão-mais-próxima>?ref=...&
+refEmail=...` — o resto do fluxo (formulário, tracking de cliques,
+notificação ao consultor) não muda, só o link que se partilha é mais
+curto. Pedir o link outra vez com o mesmo nome atualiza a mesma linha
+(upsert); nomes que gerassem um código igual a uma rota existente
+(`admin`, `consultor`, `webinar`, `api`) levam um sufixo automático.
 
 O `ref` é capturado tanto pela página `/webinar/[id]` como pelo widget do
 Elementor (via `location.search`), e gravado na inscrição (`referencia`,

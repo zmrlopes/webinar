@@ -1,6 +1,44 @@
 import { contarCliques } from "./cliques";
 import { db } from "./db";
 
+/** Nomes de rotas já existentes — uma referência nunca pode ficar igual a uma delas. */
+const CODIGOS_RESERVADOS = new Set(["admin", "consultor", "webinar", "api"]);
+
+/**
+ * Liga o código curto (a "referencia") ao email do consultor, para o link
+ * de inscrição poder ser só "/<referencia>" (ver app/[codigo]/page.tsx).
+ * Upsert: pedir o link outra vez com o mesmo nome atualiza a mesma linha.
+ */
+export async function guardarLinkConsultor(
+  referencia: string,
+  referenciaEmail: string,
+): Promise<void> {
+  await db().query(
+    `insert into links_consultor (referencia, referencia_email)
+     values ($1, $2)
+     on conflict (referencia) do update
+       set referencia_email = excluded.referencia_email, atualizado_em = now()`,
+    [referencia, referenciaEmail],
+  );
+}
+
+export async function procurarLinkConsultor(
+  referencia: string,
+): Promise<{ referenciaEmail: string } | null> {
+  if (CODIGOS_RESERVADOS.has(referencia)) return null;
+  const { rows } = await db().query<{ referencia_email: string }>(
+    `select referencia_email from links_consultor where referencia = $1`,
+    [referencia],
+  );
+  const linha = rows[0];
+  return linha ? { referenciaEmail: linha.referencia_email } : null;
+}
+
+/** Evita que um nome que gere um código igual a uma rota existente parta o link curto. */
+export function referenciaSemColisao(referencia: string): string {
+  return CODIGOS_RESERVADOS.has(referencia) ? `${referencia}-consultor` : referencia;
+}
+
 export interface EstatisticasConsultor {
   aberturas: number;
   totalInscricoes: number;
