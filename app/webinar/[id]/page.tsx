@@ -28,15 +28,62 @@ export default async function PaginaWebinar({
   const convidadoPor = link?.nome ?? null;
 
   return (
-    <main className="wf-pagina">
+    <main className="wf-container">
       <style>{`
+        .wf-container {
+          max-width: 1080px;
+          display: grid;
+          grid-template-columns: 1.1fr 1fr;
+          gap: 2rem;
+          align-items: start;
+          margin-top: 2rem;
+          margin-bottom: 2rem;
+        }
+        @media (max-width: 800px) {
+          .wf-container {
+            grid-template-columns: 1fr;
+          }
+        }
+        .wf-hero {
+          background: linear-gradient(160deg, #1c1a16, #000);
+          border-radius: 16px;
+          padding: 2.5rem 2.25rem;
+          color: #f2f0ea;
+        }
+        .wf-hero-kicker {
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          font-size: 0.8rem;
+          font-weight: 700;
+          color: #d4af37;
+          margin: 0 0 0.75rem;
+        }
+        .wf-hero h1 {
+          font-size: 2rem;
+          font-weight: 800;
+          line-height: 1.15;
+          color: #fff;
+          margin: 0 0 0.75rem;
+        }
+        .wf-hero-data {
+          color: #d4af37;
+          font-weight: 700;
+          font-size: 0.95rem;
+          margin: 0 0 1.5rem;
+        }
+        .wf-hero-descricao {
+          color: #cfccc3;
+          font-size: 1rem;
+          line-height: 1.6;
+          margin: 0 0 1rem;
+        }
+        .wf-hero-descricao:last-child { margin-bottom: 0; }
+
         .wf-pagina {
           background: #f7f6f3;
           border: 1px solid #eae7de;
           border-radius: 16px;
           padding: 2.25rem 2rem;
-          margin-top: 2rem;
-          margin-bottom: 2rem;
         }
         .wf-kicker {
           text-transform: uppercase;
@@ -57,16 +104,11 @@ export default async function PaginaWebinar({
           margin: 0 0 0.9rem;
         }
         .wf-convite strong { font-weight: 700; }
-        .wf-pagina h1 {
-          font-size: 1.65rem;
+        .wf-pagina h2 {
+          font-size: 1.4rem;
           font-weight: 800;
           color: #15130f;
-          margin: 0 0 0.35rem;
-        }
-        .wf-data {
-          color: #6b6a63;
-          font-size: 0.9rem;
-          margin: 0 0 1.5rem;
+          margin: 0 0 1.25rem;
         }
         .wf-pagina label {
           display: block;
@@ -138,17 +180,32 @@ export default async function PaginaWebinar({
         .wf-pagina .sucesso { color: #1e7a34; font-weight: 600; }
       `}</style>
 
-      {convidadoPor && (
-        <p className="wf-convite">
-          Convite de <strong>{convidadoPor}</strong>
+      <div className="wf-hero">
+        <p className="wf-hero-kicker">Apresentação</p>
+        <h1>{webinar.titulo}</h1>
+        <p className="wf-hero-data">
+          {formatarData(webinar.sessaoExternaEm)} · {webinar.duracaoMinutos} min
         </p>
-      )}
-      <p className="wf-kicker">Reserva o teu lugar</p>
-      <h1>{webinar.titulo}</h1>
-      <p className="wf-data">
-        {formatarData(webinar.sessaoExternaEm)} · {webinar.duracaoMinutos} min
-      </p>
-      <FormularioInscricao webinarId={webinar.id} />
+        <p className="wf-hero-descricao">
+          Mais do que um extra ao fim do mês: um negócio que cabe na tua mala, ao lado de gente
+          que também quer ir mais longe, com tempo de sobra para o que importa — sem depender
+          de trocar horas por dinheiro.
+        </p>
+        <p className="wf-hero-descricao">
+          Não te falta esforço, falta-te um modelo diferente do que já conheces. Junta-te a esta
+          sessão e vê como funciona.
+        </p>
+      </div>
+
+      <div className="wf-pagina">
+        {convidadoPor && (
+          <p className="wf-convite">
+            Convite de <strong>{convidadoPor}</strong>
+          </p>
+        )}
+        <h2>Reserva o teu lugar</h2>
+        <FormularioInscricao webinarId={webinar.id} />
+      </div>
     </main>
   );
 }
