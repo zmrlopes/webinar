@@ -7,6 +7,7 @@ function formatarData(data: Date): string {
   return new Date(data).toLocaleString("pt-PT", {
     dateStyle: "long",
     timeStyle: "short",
+    timeZone: "Europe/Lisbon",
   });
 }
 

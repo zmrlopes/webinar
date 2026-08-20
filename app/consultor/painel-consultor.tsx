@@ -34,7 +34,11 @@ function textoAbriuLink(estado: LeadConsultor["abriuLink"]): string {
 type EstadoPedido = "pronto" | "a-pedir" | "feito";
 
 function formatarData(iso: string): string {
-  return new Date(iso).toLocaleString("pt-PT", { dateStyle: "long", timeStyle: "short" });
+  return new Date(iso).toLocaleString("pt-PT", {
+    dateStyle: "long",
+    timeStyle: "short",
+    timeZone: "Europe/Lisbon",
+  });
 }
 
 function comparencia(estatisticas: DadosEstatisticas): string {

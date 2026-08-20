@@ -7,7 +7,11 @@ const COR_PRESENTE = "#0ca30c";
 
 function formatarData(data: Date | null): string {
   if (!data) return "—";
-  return new Date(data).toLocaleString("pt-PT", { dateStyle: "short", timeStyle: "short" });
+  return new Date(data).toLocaleString("pt-PT", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "Europe/Lisbon",
+  });
 }
 
 export default async function AdminDashboard() {

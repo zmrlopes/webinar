@@ -139,7 +139,11 @@
 
     function formatarData(iso) {
       var data = new Date(iso);
-      return data.toLocaleString("pt-PT", { dateStyle: "long", timeStyle: "short" });
+      return data.toLocaleString("pt-PT", {
+        dateStyle: "long",
+        timeStyle: "short",
+        timeZone: "Europe/Lisbon",
+      });
     }
 
     function mostrarErroCarregamento() {

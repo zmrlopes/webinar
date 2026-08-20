@@ -4,7 +4,11 @@ import { listarConsultoresAdmin } from "@/lib/admin";
 export const dynamic = "force-dynamic";
 
 function formatarData(data: Date): string {
-  return new Date(data).toLocaleString("pt-PT", { dateStyle: "short", timeStyle: "short" });
+  return new Date(data).toLocaleString("pt-PT", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "Europe/Lisbon",
+  });
 }
 
 export default async function AdminConsultores() {

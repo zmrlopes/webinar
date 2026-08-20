@@ -6,7 +6,11 @@ import { gerarSlug } from "@/lib/slug";
 import { listarWebinarsFuturos } from "@/lib/webinars";
 
 function formatarData(data: Date): string {
-  return new Date(data).toLocaleString("pt-PT", { dateStyle: "long", timeStyle: "short" });
+  return new Date(data).toLocaleString("pt-PT", {
+    dateStyle: "long",
+    timeStyle: "short",
+    timeZone: "Europe/Lisbon",
+  });
 }
 
 export async function POST(request: Request): Promise<Response> {
