@@ -20,20 +20,35 @@
   .vq-webinar {
     max-width: 480px;
     font-family: inherit;
+    background: #f7f6f3;
+    border: 1px solid #eae7de;
+    border-radius: 16px;
+    padding: 2rem 1.75rem;
+    box-sizing: border-box;
+  }
+  .vq-webinar__kicker {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #a67c1e;
+    margin: 0 0 0.5rem;
   }
   .vq-webinar__titulo {
-    font-size: 1.25rem;
-    font-weight: 700;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #15130f;
     margin: 0 0 0.25rem;
   }
   .vq-webinar__data {
-    color: #666;
+    color: #6b6a63;
     font-size: 0.9rem;
     margin: 0 0 1rem;
   }
   .vq-webinar label {
     display: block;
-    font-weight: 600;
+    font-weight: 700;
+    color: #15130f;
     margin-top: 0.9rem;
     margin-bottom: 0.25rem;
   }
@@ -41,31 +56,54 @@
     display: block;
     width: 100%;
     box-sizing: border-box;
-    padding: 0.55rem 0.7rem;
-    border: 1px solid #ccc;
-    border-radius: 6px;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid #ddd9cd;
+    border-radius: 8px;
     font-size: 1rem;
+    background: #fff;
+    color: #15130f;
+  }
+  .vq-webinar input:not([type="checkbox"]):focus {
+    outline: none;
+    border-color: #b8902f;
+    box-shadow: 0 0 0 3px rgba(184, 144, 47, 0.18);
   }
   .vq-webinar label.vq-webinar__consentimento {
     display: flex;
     align-items: flex-start;
     gap: 0.5rem;
-    margin-top: 1rem;
+    margin-top: 1.25rem;
     font-weight: 400;
+    color: #3a382f;
+    font-size: 0.88rem;
+    line-height: 1.4;
   }
   .vq-webinar__consentimento input {
     width: auto;
     margin-top: 0.2rem;
+    accent-color: #b8902f;
+  }
+  .vq-webinar__consentimento a {
+    color: #96731f;
+    font-weight: 700;
+    text-decoration: underline;
   }
   .vq-webinar button {
     margin-top: 1.25rem;
-    padding: 0.65rem 1.4rem;
-    background: #1f4fd8;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
+    width: 100%;
+    padding: 0.8rem 1.4rem;
+    background: linear-gradient(135deg, #201d18, #000);
+    color: #d4af37;
+    border: 1px solid #2c2820;
+    border-radius: 8px;
     font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
     cursor: pointer;
+    box-sizing: border-box;
+  }
+  .vq-webinar button:hover:not(:disabled) {
+    filter: brightness(1.2);
   }
   .vq-webinar button:disabled {
     opacity: 0.6;
@@ -105,22 +143,23 @@
 
     function montarFormulario(webinar) {
       raiz.innerHTML =
+        '<p class="vq-webinar__kicker">Reserva o teu lugar</p>' +
         '<p class="vq-webinar__titulo"></p>' +
         '<p class="vq-webinar__data"></p>' +
         '<form id="vq-webinar-form">' +
-        '<label for="vq-nome">Nome próprio</label>' +
+        '<label for="vq-nome">Primeiro nome</label>' +
         '<input id="vq-nome" required maxlength="64">' +
-        '<label for="vq-apelido">Apelido</label>' +
+        '<label for="vq-apelido">Último nome</label>' +
         '<input id="vq-apelido" required maxlength="64">' +
+        '<label for="vq-email">Email</label>' +
+        '<input id="vq-email" type="email" required maxlength="254">' +
         '<label for="vq-telemovel">Telemóvel</label>' +
         '<input id="vq-telemovel" type="tel" required maxlength="32">' +
-        '<label for="vq-email">E-mail</label>' +
-        '<input id="vq-email" type="email" required maxlength="254">' +
         '<label class="vq-webinar__consentimento" for="vq-consentimento">' +
         '<input id="vq-consentimento" type="checkbox" required>' +
-        '<span>Li e aceito a <a href="https://freelancer.viajareviver.net/politica-de-privacidade-2/" target="_blank" rel="noopener noreferrer">política de privacidade</a>.</span>' +
+        '<span>Li e aceito a <a href="https://freelancer.viajareviver.net/politica-de-privacidade-2/" target="_blank" rel="noopener noreferrer">Política de Privacidade</a> e autorizo que os meus dados sejam tratados para gerir a inscrição e receber comunicações relacionadas com esta oportunidade.</span>' +
         "</label>" +
-        '<button type="submit">Quero participar</button>' +
+        '<button type="submit">Inscrever-me</button>' +
         '<div id="vq-webinar-mensagem"></div>' +
         "</form>";
 
@@ -172,7 +211,7 @@
                 (resultado.dados.erro || "Não foi possível inscrever.") +
                 "</p>";
               botao.disabled = false;
-              botao.textContent = "Quero participar";
+              botao.textContent = "Inscrever-me";
               return;
             }
             form.innerHTML =
@@ -181,7 +220,7 @@
           .catch(function () {
             mensagem.innerHTML = '<p class="vq-webinar__erro">Falha de ligação — tenta outra vez.</p>';
             botao.disabled = false;
-            botao.textContent = "Quero participar";
+            botao.textContent = "Inscrever-me";
           });
       });
     }

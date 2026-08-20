@@ -71,7 +71,7 @@ export function FormularioInscricao({ webinarId }: { webinarId: string }) {
 
   return (
     <form onSubmit={submeter}>
-      <label htmlFor="nome">Nome próprio</label>
+      <label htmlFor="nome">Primeiro nome</label>
       <input
         id="nome"
         required
@@ -80,13 +80,23 @@ export function FormularioInscricao({ webinarId }: { webinarId: string }) {
         onChange={(e) => setNome(e.target.value)}
       />
 
-      <label htmlFor="apelido">Apelido</label>
+      <label htmlFor="apelido">Último nome</label>
       <input
         id="apelido"
         required
         maxLength={64}
         value={apelido}
         onChange={(e) => setApelido(e.target.value)}
+      />
+
+      <label htmlFor="email">Email</label>
+      <input
+        id="email"
+        type="email"
+        required
+        maxLength={254}
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
       />
 
       <label htmlFor="telemovel">Telemóvel</label>
@@ -99,23 +109,13 @@ export function FormularioInscricao({ webinarId }: { webinarId: string }) {
         onChange={(e) => setTelemovel(e.target.value)}
       />
 
-      <label htmlFor="email">E-mail</label>
-      <input
-        id="email"
-        type="email"
-        required
-        maxLength={254}
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-
-      <label style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", fontWeight: 400 }}>
+      <label className="wf-consentimento" htmlFor="consentimento">
         <input
+          id="consentimento"
           type="checkbox"
           required
           checked={consentimentoPrivacidade}
           onChange={(e) => setConsentimentoPrivacidade(e.target.checked)}
-          style={{ width: "auto", marginTop: "0.2rem" }}
         />
         <span>
           Li e aceito a{" "}
@@ -124,14 +124,15 @@ export function FormularioInscricao({ webinarId }: { webinarId: string }) {
             target="_blank"
             rel="noopener noreferrer"
           >
-            política de privacidade
-          </a>
-          .
+            Política de Privacidade
+          </a>{" "}
+          e autorizo que os meus dados sejam tratados para gerir a inscrição e receber
+          comunicações relacionadas com esta oportunidade.
         </span>
       </label>
 
       <button type="submit" disabled={estado === "a-enviar"}>
-        {estado === "a-enviar" ? "A inscrever..." : "Quero participar"}
+        {estado === "a-enviar" ? "A inscrever..." : "Inscrever-me"}
       </button>
 
       {estado === "erro" && <p className="erro">{mensagemErro}</p>}
