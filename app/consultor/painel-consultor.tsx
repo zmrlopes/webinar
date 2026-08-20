@@ -7,12 +7,27 @@ interface DadosLink {
   nome: string | null;
 }
 
+interface LeadConsultor {
+  nome: string;
+  telemovel: string | null;
+  email: string;
+  abriuLink: "sim" | "nao" | "por-confirmar";
+  percentagemAssistencia: number | null;
+}
+
 interface DadosEstatisticas {
   webinar: { titulo: string; sessaoExternaEm: string };
   aberturas: number;
   totalInscricoes: number;
   presencas: number;
   naoEntraram: number;
+  leads: LeadConsultor[];
+}
+
+function textoAbriuLink(estado: LeadConsultor["abriuLink"]): string {
+  if (estado === "sim") return "Sim";
+  if (estado === "nao") return "Não";
+  return "Por confirmar";
 }
 
 type EstadoPedido = "pronto" | "a-pedir" | "feito";
@@ -171,6 +186,28 @@ export function PainelConsultor() {
         }
         .vqc-cartao .vqc-numero { font-size: 1.9rem; font-weight: 800; line-height: 1.1; }
         .vqc-cartao .vqc-legenda { color: #5d5a80; font-size: 0.85rem; margin-top: 0.25rem; }
+        .vqc-tabela {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 1.25rem;
+          background: #fff;
+          border-radius: 10px;
+          overflow: hidden;
+        }
+        .vqc-tabela th, .vqc-tabela td {
+          text-align: left;
+          padding: 0.6rem 0.9rem;
+          color: #201d4a;
+          border-bottom: 1px solid #eceaf5;
+          font-size: 0.9rem;
+        }
+        .vqc-tabela th {
+          color: #5d5a80;
+          font-size: 0.8rem;
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
+        }
+        .vqc-tabela tr:last-child td { border-bottom: none; }
       `}</style>
 
       <div className="vqc-caixa">
@@ -244,6 +281,37 @@ export function PainelConsultor() {
                 <div className="vqc-legenda">Comparência</div>
               </div>
             </div>
+
+            {estatisticas.leads.length > 0 && (
+              <table className="vqc-tabela">
+                <thead>
+                  <tr>
+                    <th>Lead</th>
+                    <th>Abriu o link do Zoom</th>
+                    <th>% de assistência</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {estatisticas.leads.map((lead) => (
+                    <tr key={lead.email}>
+                      <td>
+                        <div>{lead.nome}</div>
+                        <div className="vqc-mudo" style={{ margin: 0, fontSize: "0.8rem" }}>
+                          {lead.email}
+                          {lead.telemovel ? ` · ${lead.telemovel}` : ""}
+                        </div>
+                      </td>
+                      <td>{textoAbriuLink(lead.abriuLink)}</td>
+                      <td>
+                        {lead.percentagemAssistencia !== null
+                          ? `${lead.percentagemAssistencia}%`
+                          : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </>
         )}
         {estadoEstatisticas === "feito" && erroEstatisticas && (

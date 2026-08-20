@@ -11,6 +11,8 @@ export interface WebinarAdmin {
   linksObtidos: number;
   linksPendentes: number;
   linksFalhados: number;
+  presentes: number;
+  mediaAssistencia: number | null;
 }
 
 /**
@@ -29,14 +31,20 @@ export async function listarWebinarsAdmin(): Promise<WebinarAdmin[]> {
     links_obtidos: string;
     links_pendentes: string;
     links_falhados: string;
+    presentes: string;
+    media_assistencia: string | null;
   }>(
     `select
        w.id, w.titulo, w.sessao_externa_em, w.duracao_minutos,
        w.cancelada_em, w.presencas_fechadas,
-       count(r.id) as total_inscritos,
+       count(r.id) filter (where r.cancelada_em is null) as total_inscritos,
        count(r.id) filter (where r.link_estado = 'obtido')   as links_obtidos,
        count(r.id) filter (where r.link_estado = 'pendente') as links_pendentes,
-       count(r.id) filter (where r.link_estado = 'falhado')  as links_falhados
+       count(r.id) filter (where r.link_estado = 'falhado')  as links_falhados,
+       count(r.id) filter (where r.cancelada_em is null and r.presenca = 'attended') as presentes,
+       avg(r.presenca_minutos) filter (
+         where r.cancelada_em is null and r.presenca = 'attended' and r.presenca_minutos is not null
+       ) as media_assistencia
      from webinars w
      left join registrations r on r.webinar_id = w.id
      group by w.id
@@ -54,6 +62,11 @@ export async function listarWebinarsAdmin(): Promise<WebinarAdmin[]> {
     linksObtidos: Number(r.links_obtidos),
     linksPendentes: Number(r.links_pendentes),
     linksFalhados: Number(r.links_falhados),
+    presentes: Number(r.presentes),
+    mediaAssistencia:
+      r.media_assistencia !== null && r.duracao_minutos
+        ? Math.min(100, Math.round((Number(r.media_assistencia) / r.duracao_minutos) * 100))
+        : null,
   }));
 }
 

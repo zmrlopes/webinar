@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { procurarContactoBrevo } from "@/lib/brevo-contatos";
-import { estatisticasConsultor } from "@/lib/consultor";
+import { estatisticasConsultor, listarLeadsConsultor } from "@/lib/consultor";
 import { listarWebinarsFuturos } from "@/lib/webinars";
 
 export async function POST(request: Request): Promise<Response> {
@@ -27,11 +27,15 @@ export async function POST(request: Request): Promise<Response> {
       return NextResponse.json({ erro: "não há sessões agendadas de momento" }, { status: 404 });
     }
 
-    const numeros = await estatisticasConsultor(proximo.id, emailNormalizado);
+    const [numeros, leads] = await Promise.all([
+      estatisticasConsultor(proximo.id, emailNormalizado),
+      listarLeadsConsultor(proximo.id, emailNormalizado, proximo.duracaoMinutos),
+    ]);
 
     return NextResponse.json({
       webinar: { titulo: proximo.titulo, sessaoExternaEm: proximo.sessaoExternaEm },
       ...numeros,
+      leads,
     });
   } catch (erro) {
     console.error("falha ao calcular estatísticas do consultor:", erro);
