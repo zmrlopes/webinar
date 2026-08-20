@@ -70,6 +70,33 @@ export async function listarWebinarsAdmin(): Promise<WebinarAdmin[]> {
   }));
 }
 
+export interface VisaoGeralAdmin {
+  inscricoesTotais: number;
+  consultoresAtivos: number;
+}
+
+/**
+ * Números globais para o topo do painel. "Consultores ativos" conta quem
+ * já gerou o link pelo menos uma vez em /consultor (uma linha por
+ * consultor em `links_consultor`) — não implica que tenha trazido
+ * inscrições, só que já se "ativou".
+ */
+export async function buscarVisaoGeralAdmin(): Promise<VisaoGeralAdmin> {
+  const { rows } = await db().query<{
+    inscricoes_totais: string;
+    consultores_ativos: string;
+  }>(
+    `select
+       (select count(*) from registrations where cancelada_em is null) as inscricoes_totais,
+       (select count(*) from links_consultor) as consultores_ativos`,
+  );
+  const linha = rows[0];
+  return {
+    inscricoesTotais: Number(linha?.inscricoes_totais ?? 0),
+    consultoresAtivos: Number(linha?.consultores_ativos ?? 0),
+  };
+}
+
 export interface InscricaoAdmin {
   id: string;
   nome: string;
