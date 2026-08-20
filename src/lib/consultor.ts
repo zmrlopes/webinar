@@ -84,6 +84,7 @@ export interface LeadConsultor {
   email: string;
   abriuLink: "sim" | "nao" | "por-confirmar";
   percentagemAssistencia: number | null;
+  linkZoom: string | null;
 }
 
 /**
@@ -91,6 +92,13 @@ export interface LeadConsultor {
  * quem chegou a abrir o link do Zoom. `percentagemAssistencia` só existe
  * para quem esteve presente e com minutos registados — antes da sessão
  * acontecer, ou para quem não entrou, fica a null.
+ *
+ * Exceção deliberada e pedida à regra "nunca expor link_pessoal" (que
+ * continua válida em todo o resto do sistema, incluindo /admin): o
+ * consultor pode copiar o link do lead que ele próprio trouxe, para lhe
+ * reenviar diretamente (ex: WhatsApp) se a pessoa não tiver visto o email.
+ * Só sai daqui para esse consultor, nunca aparece em nenhum painel de
+ * administração nem em exportações.
  */
 export async function listarLeadsConsultor(
   webinarId: string,
@@ -103,8 +111,9 @@ export async function listarLeadsConsultor(
     email: string;
     presenca: "unknown" | "attended" | "absent";
     presenca_minutos: number | null;
+    link_pessoal: string | null;
   }>(
-    `select nome, telemovel, email, presenca, presenca_minutos
+    `select nome, telemovel, email, presenca, presenca_minutos, link_pessoal
      from registrations
      where webinar_id = $1 and referencia_email = $2 and cancelada_em is null
      order by criado_em asc`,
@@ -120,5 +129,6 @@ export async function listarLeadsConsultor(
       r.presenca === "attended" && r.presenca_minutos !== null && duracaoMinutos > 0
         ? Math.min(100, Math.round((r.presenca_minutos / duracaoMinutos) * 100))
         : null,
+    linkZoom: r.link_pessoal,
   }));
 }

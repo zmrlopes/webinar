@@ -13,6 +13,7 @@ interface LeadConsultor {
   email: string;
   abriuLink: "sim" | "nao" | "por-confirmar";
   percentagemAssistencia: number | null;
+  linkZoom: string | null;
 }
 
 interface DadosEstatisticas {
@@ -52,6 +53,7 @@ export function PainelConsultor() {
   const [estadoEstatisticas, setEstadoEstatisticas] = useState<EstadoPedido>("pronto");
   const [estatisticas, setEstatisticas] = useState<DadosEstatisticas | null>(null);
   const [erroEstatisticas, setErroEstatisticas] = useState("");
+  const [emailCopiado, setEmailCopiado] = useState<string | null>(null);
 
   async function obterLink(): Promise<void> {
     setEstadoLink("a-pedir");
@@ -106,6 +108,12 @@ export function PainelConsultor() {
     if (!link) return;
     await navigator.clipboard.writeText(link.link);
     setCopiado(true);
+  }
+
+  async function copiarLinkZoom(lead: LeadConsultor): Promise<void> {
+    if (!lead.linkZoom) return;
+    await navigator.clipboard.writeText(lead.linkZoom);
+    setEmailCopiado(lead.email);
   }
 
   const aPedirAlgo = estadoLink === "a-pedir" || estadoEstatisticas === "a-pedir";
@@ -208,6 +216,7 @@ export function PainelConsultor() {
           letter-spacing: 0.03em;
         }
         .vqc-tabela tr:last-child td { border-bottom: none; }
+        .vqc-botao-tabela { padding: 0.4rem 0.8rem; font-size: 0.8rem; white-space: nowrap; }
       `}</style>
 
       <div className="vqc-caixa">
@@ -289,6 +298,7 @@ export function PainelConsultor() {
                     <th>Lead</th>
                     <th>Abriu o link do Zoom</th>
                     <th>% de assistência</th>
+                    <th>Link do Zoom</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -306,6 +316,21 @@ export function PainelConsultor() {
                         {lead.percentagemAssistencia !== null
                           ? `${lead.percentagemAssistencia}%`
                           : "—"}
+                      </td>
+                      <td>
+                        {lead.linkZoom ? (
+                          <button
+                            type="button"
+                            className="vqc-secundario vqc-botao-tabela"
+                            onClick={() => copiarLinkZoom(lead)}
+                          >
+                            {emailCopiado === lead.email ? "Copiado!" : "Copiar link do Zoom"}
+                          </button>
+                        ) : (
+                          <span className="vqc-mudo" style={{ margin: 0 }}>
+                            ainda sem link
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}

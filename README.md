@@ -172,6 +172,14 @@ URL, antes de a pessoa chegar a inscrever-se. As presenças só ficam
 corretas depois de a sessão acontecer e o processo de presenças correr;
 antes disso contam como "não entraram".
 
+No "Painel de leads" há também um botão **"Copiar link do Zoom"** por
+lead, para o consultor reenviar diretamente (ex: WhatsApp) a quem não viu
+o email de confirmação. É uma exceção deliberada e pedida à regra de nunca
+expor `link_pessoal` — só existe aqui, só para os leads desse próprio
+consultor (`referencia_email`), nunca em `/admin` nem em exportações; o
+link nunca passa pelo servidor de novo, só é copiado no browser do
+consultor a partir da resposta de `/api/consultor/estatisticas`.
+
 ### Painel de administração
 
 Protegido por Basic Auth (`ADMIN_USER` / `ADMIN_PASSWORD` em `.env`), via
