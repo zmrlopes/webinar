@@ -46,6 +46,7 @@ export default async function AdminWebinar({
 
   const porConsultor = new Map<string, number>();
   for (const i of ativas) {
+    if (i.ehConsultor) continue; // consultor a inscrever-se não é um lead
     const chave = i.referencia ?? "(sem referência)";
     porConsultor.set(chave, (porConsultor.get(chave) ?? 0) + 1);
   }
