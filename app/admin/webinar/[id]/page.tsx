@@ -23,6 +23,7 @@ export default async function AdminWebinar({
   const ativas = inscricoes.filter((i) => !i.cancelada);
 
   const total = ativas.length;
+  const consultoresInscritos = ativas.filter((i) => i.ehConsultor).length;
   const presentes = ativas.filter((i) => i.presenca === "attended").length;
   const ausentes = ativas.filter((i) => i.presenca === "absent").length;
   const porConfirmar = total - presentes - ausentes;
@@ -90,6 +91,12 @@ export default async function AdminWebinar({
           padding: 0.15rem 0.65rem;
           font-size: 0.75rem;
           white-space: nowrap;
+          margin-left: 0.4rem;
+        }
+        .ad-etiqueta-consultor {
+          background: #e4e0f6;
+          color: #3a2f77;
+          border-color: #cac2ec;
         }
         .ad-tabela-wrap {
           margin-top: 0;
@@ -142,7 +149,10 @@ export default async function AdminWebinar({
         <div className="ad-grid">
           <div className="ad-cartao">
             <div className="ad-numero">{total}</div>
-            <div className="ad-legenda">Inscritos</div>
+            <div className="ad-legenda">
+              Inscritos
+              {consultoresInscritos > 0 && ` (${consultoresInscritos} são consultores)`}
+            </div>
           </div>
           <div className="ad-cartao">
             <div className="ad-numero" style={{ color: COR_PRESENTE }}>
@@ -283,6 +293,9 @@ export default async function AdminWebinar({
                 <tr key={i.id}>
                   <td>
                     {i.nome}
+                    {i.ehConsultor && (
+                      <span className="ad-etiqueta ad-etiqueta-consultor"> consultor</span>
+                    )}
                     {i.cancelada && <span className="ad-etiqueta"> cancelada</span>}
                   </td>
                   <td>{i.apelido}</td>

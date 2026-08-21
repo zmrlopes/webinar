@@ -111,6 +111,7 @@ export interface InscricaoAdmin {
   cancelada: boolean;
   referencia: string | null;
   referenciaNome: string | null;
+  ehConsultor: boolean;
 }
 
 /**
@@ -118,6 +119,10 @@ export interface InscricaoAdmin {
  * na Brevo quando gerou o link) — "quem convidou", em vez de só o código.
  * Fica a null quando não há correspondência (inscrição sem link de
  * consultor, ou de antes de o nome passar a ser guardado).
+ *
+ * `ehConsultor` distingue quem se inscreveu mas já é consultor (o email da
+ * inscrição coincide com o email de alguém que já gerou o link em
+ * /consultor) — é um lead a mais na lista, mas não é um lead "verdadeiro".
  */
 export async function listarInscricoesAdmin(webinarId: string): Promise<InscricaoAdmin[]> {
   const { rows } = await db().query<{
@@ -134,12 +139,15 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
     cancelada_em: Date | null;
     referencia: string | null;
     referencia_nome: string | null;
+    eh_consultor: boolean;
   }>(
     `select r.id, r.nome, r.apelido, r.telemovel, r.email, r.link_estado, r.link_tentativas,
             r.link_ultimo_erro, r.presenca, r.presenca_minutos, r.cancelada_em, r.referencia,
-            lc.nome as referencia_nome
+            lc.nome as referencia_nome,
+            lc_proprio.referencia is not null as eh_consultor
      from registrations r
      left join links_consultor lc on lc.referencia = r.referencia
+     left join links_consultor lc_proprio on lc_proprio.referencia_email = r.email
      where r.webinar_id = $1
      order by r.criado_em asc`,
     [webinarId],
@@ -159,6 +167,7 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
     cancelada: r.cancelada_em !== null,
     referencia: r.referencia,
     referenciaNome: r.referencia_nome,
+    ehConsultor: r.eh_consultor,
   }));
 }
 
