@@ -44,11 +44,14 @@ export default async function AdminWebinar({
         )
       : null;
 
-  const porConsultor = new Map<string, number>();
+  const porConsultor = new Map<string, { total: number; presentes: number }>();
   for (const i of ativas) {
     if (i.ehConsultor) continue; // consultor a inscrever-se não é um lead
     const chave = i.referencia ?? "(sem referência)";
-    porConsultor.set(chave, (porConsultor.get(chave) ?? 0) + 1);
+    const atual = porConsultor.get(chave) ?? { total: 0, presentes: 0 };
+    atual.total += 1;
+    if (i.presenca === "attended") atual.presentes += 1;
+    porConsultor.set(chave, atual);
   }
 
   const pct = (n: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
@@ -259,13 +262,23 @@ export default async function AdminWebinar({
           <div className="ad-cartao" style={{ marginBottom: "1.5rem" }}>
             <strong>Por consultor</strong>
             <table>
+              <thead>
+                <tr>
+                  <th>Consultor</th>
+                  <th>Inscritos</th>
+                  <th>Presentes</th>
+                  <th>%</th>
+                </tr>
+              </thead>
               <tbody>
                 {[...porConsultor.entries()]
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([referencia, total]) => (
+                  .sort((a, b) => b[1].total - a[1].total)
+                  .map(([referencia, { total, presentes }]) => (
                     <tr key={referencia}>
                       <td>{referencia}</td>
                       <td>{total}</td>
+                      <td>{presentes}</td>
+                      <td>{total > 0 ? Math.round((presentes / total) * 100) : 0}%</td>
                     </tr>
                   ))}
               </tbody>
