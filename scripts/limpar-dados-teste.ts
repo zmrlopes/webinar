@@ -10,6 +10,7 @@
  * Sem essa variável, só mostra o que iria apagar (nada é gravado).
  */
 
+import "./_env";
 import { db, fecharDb } from "../src/lib/db";
 
 async function contar(tabela: string): Promise<number> {

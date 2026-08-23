@@ -13,6 +13,7 @@
  * (nada é enviado).
  */
 
+import "./_env";
 import { criarEmailSender } from "../src/lib/email";
 import { estatisticasConsultor, listarLeadsConsultor, type LeadConsultor } from "../src/lib/consultor";
 import { buscarDescendentesEmails } from "../src/lib/equipa";

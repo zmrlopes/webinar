@@ -8,6 +8,7 @@
  * margem, mas continua a só tocar em quem está `unknown`.
  */
 
+import "./_env";
 import { fecharDb } from "../src/lib/db";
 import { processarPresencas } from "../src/lib/presencas";
 

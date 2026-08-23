@@ -7,6 +7,7 @@
  * Requer DATABASE_URL no ambiente.
  */
 
+import "./_env";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { Client } from "pg";

@@ -13,6 +13,7 @@
  * Corre com: npm run verificar-presencas-agora
  */
 
+import "./_env";
 import { db, fecharDb } from "../src/lib/db";
 import { pedirPresencas } from "../src/lib/sala-zoom";
 import { buscarWebinarRelevante } from "../src/lib/webinars";

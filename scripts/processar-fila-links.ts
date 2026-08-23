@@ -3,6 +3,7 @@
  * Pensado para correr a cada 5 minutos (secção 9 do guia).
  */
 
+import "./_env";
 import { fecharDb } from "../src/lib/db";
 import { criarEmailSender } from "../src/lib/email";
 import { processarFilaLinks } from "../src/lib/fila-links";

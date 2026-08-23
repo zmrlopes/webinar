@@ -3,6 +3,7 @@
  * Pensado para correr diariamente (secção 9 do guia).
  */
 
+import "./_env";
 import { fecharDb } from "../src/lib/db";
 import { limparLinks } from "../src/lib/limpeza";
 

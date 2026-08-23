@@ -12,6 +12,7 @@
  * Exemplo:   npm run diagnosticar-equipa -- "marisa rocha"
  */
 
+import "./_env";
 import { db, fecharDb } from "../src/lib/db";
 
 async function main(): Promise<void> {

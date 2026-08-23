@@ -3,6 +3,7 @@
  * Pensado para correr de hora a hora (secção 9 do guia).
  */
 
+import "./_env";
 import { fecharDb } from "../src/lib/db";
 import { sincronizarSessoes } from "../src/lib/sessoes";
 

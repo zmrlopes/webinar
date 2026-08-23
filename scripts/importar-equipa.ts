@@ -12,6 +12,7 @@
  * Sem CONFIRMAR=sim, só mostra o que iria fazer (nada é gravado).
  */
 
+import "./_env";
 import { readFile } from "node:fs/promises";
 import { db, fecharDb } from "../src/lib/db";
 

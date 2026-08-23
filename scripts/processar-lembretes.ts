@@ -3,6 +3,7 @@
  * Cadência sugerida: 15-30 em 15-30 min (secção 9 do guia).
  */
 
+import "./_env";
 import { fecharDb } from "../src/lib/db";
 import { criarEmailSender } from "../src/lib/email";
 import { processarLembretes } from "../src/lib/lembretes";

@@ -6,6 +6,8 @@
  * Usa apenas dados fictícios — não inscreve ninguém real.
  */
 
+import "./_env";
+
 const BASE = process.env.SALA_BASE_URL;
 const CHAVE = process.env.SALA_API_KEY;
 
