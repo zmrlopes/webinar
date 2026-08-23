@@ -17,7 +17,7 @@ import { criarEmailSender } from "../src/lib/email";
 import { estatisticasConsultor, listarLeadsConsultor, type LeadConsultor } from "../src/lib/consultor";
 import { buscarDescendentesEmails } from "../src/lib/equipa";
 import { db, fecharDb } from "../src/lib/db";
-import { listarWebinarsFuturos } from "../src/lib/webinars";
+import { buscarWebinarRelevante } from "../src/lib/webinars";
 
 function formatarData(data: Date): string {
   return new Date(data).toLocaleString("pt-PT", {
@@ -54,10 +54,9 @@ function corpoEmail(
 async function main(): Promise<void> {
   const confirmar = process.env.CONFIRMAR === "sim";
 
-  const webinars = await listarWebinarsFuturos();
-  const proximo = webinars[0];
+  const proximo = await buscarWebinarRelevante();
   if (!proximo) {
-    console.log("Não há nenhuma sessão futura agendada — nada a enviar.");
+    console.log("Não há nenhuma sessão agendada — nada a enviar.");
     return;
   }
 

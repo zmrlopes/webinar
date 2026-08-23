@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { procurarContactoBrevo } from "@/lib/brevo-contatos";
 import { estatisticasConsultor, listarLeadsConsultor } from "@/lib/consultor";
 import { buscarArvoreEquipa, buscarDescendentesEmails } from "@/lib/equipa";
-import { listarWebinarsFuturos } from "@/lib/webinars";
+import { buscarWebinarRelevante } from "@/lib/webinars";
 
 export async function POST(request: Request): Promise<Response> {
   const corpo = (await request.json().catch(() => null)) as Record<string, unknown> | null;
@@ -22,8 +22,7 @@ export async function POST(request: Request): Promise<Response> {
       );
     }
 
-    const webinars = await listarWebinarsFuturos();
-    const proximo = webinars[0];
+    const proximo = await buscarWebinarRelevante();
     if (!proximo) {
       return NextResponse.json({ erro: "não há sessões agendadas de momento" }, { status: 404 });
     }
