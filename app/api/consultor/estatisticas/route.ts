@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { procurarContactoBrevo } from "@/lib/brevo-contatos";
 import { estatisticasConsultor, listarLeadsConsultor } from "@/lib/consultor";
-import { buscarDescendentesEmails } from "@/lib/equipa";
+import { buscarArvoreEquipa, buscarDescendentesEmails } from "@/lib/equipa";
 import { listarWebinarsFuturos } from "@/lib/webinars";
 
 export async function POST(request: Request): Promise<Response> {
@@ -31,9 +31,10 @@ export async function POST(request: Request): Promise<Response> {
     const descendentes = await buscarDescendentesEmails(emailNormalizado);
     const referenciaEmails = [emailNormalizado, ...descendentes];
 
-    const [numeros, leads] = await Promise.all([
+    const [numeros, leads, arvoreEquipa] = await Promise.all([
       estatisticasConsultor(proximo.id, referenciaEmails),
       listarLeadsConsultor(proximo.id, emailNormalizado, referenciaEmails, proximo.duracaoMinutos),
+      descendentes.length > 0 ? buscarArvoreEquipa(proximo.id, emailNormalizado) : null,
     ]);
 
     return NextResponse.json({
@@ -41,6 +42,7 @@ export async function POST(request: Request): Promise<Response> {
       ...numeros,
       equipaTotal: descendentes.length,
       leads,
+      equipa: arvoreEquipa,
     });
   } catch (erro) {
     console.error("falha ao calcular estatísticas do consultor:", erro);
