@@ -17,6 +17,7 @@
     "limpar-dados-teste": "tsx scripts/limpar-dados-teste.ts",
     "importar-equipa": "tsx scripts/importar-equipa.ts",
     "diagnosticar-equipa": "tsx scripts/diagnosticar-equipa.ts",
+    "enviar-relatorio-consultores": "tsx scripts/enviar-relatorio-consultores.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
