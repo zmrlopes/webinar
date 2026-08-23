@@ -63,7 +63,10 @@ export async function buscarArvoreEquipa(webinarId: string, email: string): Prom
        join descendentes d on ea.upline_email = d.email
      )
      select d.email, d.nome, d.upline_email, d.nivel, d.estado,
-            count(r.id) filter (where r.webinar_id = $2 and r.cancelada_em is null) as leads_proprios
+            count(r.id) filter (
+              where r.webinar_id = $2 and r.cancelada_em is null
+                and not exists (select 1 from equipa_afiliados ea2 where ea2.email = r.email)
+            ) as leads_proprios
      from descendentes d
      left join registrations r on r.referencia_email = d.email
      group by d.email, d.nome, d.upline_email, d.nivel, d.estado`,

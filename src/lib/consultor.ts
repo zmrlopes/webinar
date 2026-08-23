@@ -55,6 +55,9 @@ export interface EstatisticasConsultor {
  * sessão acontecer e o processo de presenças (secção 7-D) correr; antes
  * disso, tudo conta como "não entraram" porque ainda não há registo de
  * presença.
+ *
+ * Exclui quem se inscreveu a se próprio sendo também consultor (está em
+ * `equipa_afiliados`) — não é um lead, é um colega a testar/assistir.
  */
 export async function estatisticasConsultor(
   webinarId: string,
@@ -68,8 +71,9 @@ export async function estatisticasConsultor(
       `select
          count(*) filter (where cancelada_em is null) as total_inscricoes,
          count(*) filter (where cancelada_em is null and presenca = 'attended') as presencas
-       from registrations
-       where webinar_id = $1 and referencia_email = any($2::text[])`,
+       from registrations r
+       where webinar_id = $1 and referencia_email = any($2::text[])
+         and not exists (select 1 from equipa_afiliados ea where ea.email = r.email)`,
       [webinarId, referenciaEmails],
     ),
     contarCliques(webinarId, referenciaEmails),
@@ -106,6 +110,9 @@ export interface LeadConsultor {
  * equipa, para reenviar diretamente (ex: WhatsApp) se a pessoa não tiver
  * visto o email. Só sai daqui, nunca aparece em nenhum painel de
  * administração nem em exportações.
+ *
+ * Exclui quem se inscreveu a si próprio sendo também consultor (está em
+ * `equipa_afiliados`) — não é um lead, é um colega a testar/assistir.
  */
 export async function listarLeadsConsultor(
   webinarId: string,
@@ -128,6 +135,7 @@ export async function listarLeadsConsultor(
      from registrations r
      left join equipa_afiliados ea on ea.email = r.referencia_email
      where r.webinar_id = $1 and r.referencia_email = any($2::text[]) and r.cancelada_em is null
+       and not exists (select 1 from equipa_afiliados ea2 where ea2.email = r.email)
      order by r.criado_em asc`,
     [webinarId, referenciaEmails],
   );
