@@ -14,6 +14,7 @@ interface LeadConsultor {
   abriuLink: "sim" | "nao" | "por-confirmar";
   percentagemAssistencia: number | null;
   linkZoom: string | null;
+  trazidoPor: string | null;
 }
 
 interface DadosEstatisticas {
@@ -22,6 +23,7 @@ interface DadosEstatisticas {
   totalInscricoes: number;
   presencas: number;
   naoEntraram: number;
+  equipaTotal: number;
   leads: LeadConsultor[];
 }
 
@@ -292,14 +294,18 @@ export function PainelConsultor() {
 
         {estatisticas && (
           <>
-            <h2>Os meus números</h2>
+            <h2>{estatisticas.equipaTotal > 0 ? "Os números (eu + equipa)" : "Os meus números"}</h2>
             <p className="vqc-mudo">
               {estatisticas.webinar.titulo} — {formatarData(estatisticas.webinar.sessaoExternaEm)}
+              {estatisticas.equipaTotal > 0 &&
+                ` · inclui a tua equipa (${estatisticas.equipaTotal} pessoas)`}
             </p>
             <div className="vqc-grid">
               <div className="vqc-cartao">
                 <div className="vqc-numero">{estatisticas.aberturas}</div>
-                <div className="vqc-legenda">Aberturas do meu link</div>
+                <div className="vqc-legenda">
+                  {estatisticas.equipaTotal > 0 ? "Aberturas do link (eu + equipa)" : "Aberturas do meu link"}
+                </div>
               </div>
               <div className="vqc-cartao">
                 <div className="vqc-numero">{estatisticas.totalInscricoes}</div>
@@ -321,6 +327,7 @@ export function PainelConsultor() {
                   <thead>
                     <tr>
                       <th>Lead</th>
+                      {estatisticas.equipaTotal > 0 && <th>Trazido por</th>}
                       <th>Abriu o link do Zoom</th>
                       <th>% de assistência</th>
                       <th>Link do Zoom</th>
@@ -336,6 +343,7 @@ export function PainelConsultor() {
                             {lead.telemovel ? ` · ${lead.telemovel}` : ""}
                           </div>
                         </td>
+                        {estatisticas.equipaTotal > 0 && <td>{lead.trazidoPor ?? "Eu"}</td>}
                         <td>{textoAbriuLink(lead.abriuLink)}</td>
                         <td>
                           {lead.percentagemAssistencia !== null

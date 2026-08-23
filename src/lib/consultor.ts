@@ -48,15 +48,17 @@ export interface EstatisticasConsultor {
 }
 
 /**
- * Números de um consultor para uma sessão: quantas vezes o link foi aberto,
- * quantos se inscreveram (`referencia_email`), quantos estiveram presentes
- * e quantos não — os dois últimos só ficam corretos depois de a sessão
- * acontecer e o processo de presenças (secção 7-D) correr; antes disso,
- * tudo conta como "não entraram" porque ainda não há registo de presença.
+ * Números de um consultor (ou de um consultor + toda a equipa descendente,
+ * ver `buscarDescendentesEmails`) para uma sessão: quantas vezes o link foi
+ * aberto, quantos se inscreveram (`referencia_email`), quantos estiveram
+ * presentes e quantos não — os dois últimos só ficam corretos depois de a
+ * sessão acontecer e o processo de presenças (secção 7-D) correr; antes
+ * disso, tudo conta como "não entraram" porque ainda não há registo de
+ * presença.
  */
 export async function estatisticasConsultor(
   webinarId: string,
-  referenciaEmail: string,
+  referenciaEmails: string[],
 ): Promise<EstatisticasConsultor> {
   const [{ rows }, aberturas] = await Promise.all([
     db().query<{
@@ -67,10 +69,10 @@ export async function estatisticasConsultor(
          count(*) filter (where cancelada_em is null) as total_inscricoes,
          count(*) filter (where cancelada_em is null and presenca = 'attended') as presencas
        from registrations
-       where webinar_id = $1 and referencia_email = $2`,
-      [webinarId, referenciaEmail],
+       where webinar_id = $1 and referencia_email = any($2::text[])`,
+      [webinarId, referenciaEmails],
     ),
-    contarCliques(webinarId, referenciaEmail),
+    contarCliques(webinarId, referenciaEmails),
   ]);
 
   const linha = rows[0];
@@ -86,24 +88,29 @@ export interface LeadConsultor {
   abriuLink: "sim" | "nao" | "por-confirmar";
   percentagemAssistencia: number | null;
   linkZoom: string | null;
+  trazidoPor: string | null;
 }
 
 /**
- * Um lead por linha, para o consultor ver quem se inscreveu pelo link dele e
- * quem chegou a abrir o link do Zoom. `percentagemAssistencia` só existe
- * para quem esteve presente e com minutos registados — antes da sessão
- * acontecer, ou para quem não entrou, fica a null.
+ * Um lead por linha, para o consultor ver quem se inscreveu pelo link dele
+ * (ou de alguém da equipa dele, ver `buscarDescendentesEmails`) e quem
+ * chegou a abrir o link do Zoom. `percentagemAssistencia` só existe para
+ * quem esteve presente e com minutos registados — antes da sessão
+ * acontecer, ou para quem não entrou, fica a null. `trazidoPor` é o nome do
+ * membro da equipa (de `equipa_afiliados`) cujo link gerou o lead, ou null
+ * quando é o próprio consultor que está a ver o painel.
  *
  * Exceção deliberada e pedida à regra "nunca expor link_pessoal" (que
  * continua válida em todo o resto do sistema, incluindo /admin): o
- * consultor pode copiar o link do lead que ele próprio trouxe, para lhe
- * reenviar diretamente (ex: WhatsApp) se a pessoa não tiver visto o email.
- * Só sai daqui para esse consultor, nunca aparece em nenhum painel de
+ * consultor pode copiar o link de um lead trazido por ele ou pela sua
+ * equipa, para reenviar diretamente (ex: WhatsApp) se a pessoa não tiver
+ * visto o email. Só sai daqui, nunca aparece em nenhum painel de
  * administração nem em exportações.
  */
 export async function listarLeadsConsultor(
   webinarId: string,
-  referenciaEmail: string,
+  proprioEmail: string,
+  referenciaEmails: string[],
   duracaoMinutos: number,
 ): Promise<LeadConsultor[]> {
   const { rows } = await db().query<{
@@ -113,12 +120,16 @@ export async function listarLeadsConsultor(
     presenca: "unknown" | "attended" | "absent";
     presenca_minutos: number | null;
     link_pessoal: string | null;
+    referencia_email: string;
+    trazido_por_nome: string | null;
   }>(
-    `select nome, telemovel, email, presenca, presenca_minutos, link_pessoal
-     from registrations
-     where webinar_id = $1 and referencia_email = $2 and cancelada_em is null
-     order by criado_em asc`,
-    [webinarId, referenciaEmail],
+    `select r.nome, r.telemovel, r.email, r.presenca, r.presenca_minutos, r.link_pessoal,
+            r.referencia_email, ea.nome as trazido_por_nome
+     from registrations r
+     left join equipa_afiliados ea on ea.email = r.referencia_email
+     where r.webinar_id = $1 and r.referencia_email = any($2::text[]) and r.cancelada_em is null
+     order by r.criado_em asc`,
+    [webinarId, referenciaEmails],
   );
 
   return rows.map((r) => ({
@@ -131,5 +142,6 @@ export async function listarLeadsConsultor(
         ? Math.min(100, Math.round((r.presenca_minutos / duracaoMinutos) * 100))
         : null,
     linkZoom: r.link_pessoal,
+    trazidoPor: r.referencia_email === proprioEmail ? null : (r.trazido_por_nome ?? r.referencia_email),
   }));
 }

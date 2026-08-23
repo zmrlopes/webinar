@@ -15,6 +15,7 @@
     "processar-presencas": "tsx scripts/processar-presencas.ts",
     "limpar-links": "tsx scripts/limpar-links.ts",
     "limpar-dados-teste": "tsx scripts/limpar-dados-teste.ts",
+    "importar-equipa": "tsx scripts/importar-equipa.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
