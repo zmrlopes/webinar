@@ -89,7 +89,7 @@ export interface LeadConsultor {
   nome: string;
   telemovel: string | null;
   email: string;
-  abriuLink: "sim" | "nao" | "por-confirmar";
+  abriuLink: "sim" | "nao";
   percentagemAssistencia: number | null;
   linkZoom: string | null;
   trazidoPor: string | null;
@@ -98,7 +98,9 @@ export interface LeadConsultor {
 /**
  * Um lead por linha, para o consultor ver quem se inscreveu pelo link dele
  * (ou de alguém da equipa dele, ver `buscarDescendentesEmails`) e quem
- * chegou a abrir o link do Zoom. `percentagemAssistencia` só existe para
+ * chegou a clicar no link de entrada do Zoom que recebeu por email
+ * (`link_zoom_clicado_em`, gravado por /api/entrar/[id] — ver
+ * src/lib/entrada.ts). `percentagemAssistencia` só existe para
  * quem esteve presente e com minutos registados — antes da sessão
  * acontecer, ou para quem não entrou, fica a null. `trazidoPor` é o nome do
  * membro da equipa (de `equipa_afiliados`) cujo link gerou o lead, ou null
@@ -127,11 +129,12 @@ export async function listarLeadsConsultor(
     presenca: "unknown" | "attended" | "absent";
     presenca_minutos: number | null;
     link_pessoal: string | null;
+    link_zoom_clicado_em: Date | null;
     referencia_email: string;
     trazido_por_nome: string | null;
   }>(
     `select r.nome, r.telemovel, r.email, r.presenca, r.presenca_minutos, r.link_pessoal,
-            r.referencia_email, ea.nome as trazido_por_nome
+            r.link_zoom_clicado_em, r.referencia_email, ea.nome as trazido_por_nome
      from registrations r
      left join equipa_afiliados ea on ea.email = r.referencia_email
      where r.webinar_id = $1 and r.referencia_email = any($2::text[]) and r.cancelada_em is null
@@ -144,7 +147,7 @@ export async function listarLeadsConsultor(
     nome: r.nome,
     telemovel: r.telemovel,
     email: r.email,
-    abriuLink: r.presenca === "attended" ? "sim" : r.presenca === "absent" ? "nao" : "por-confirmar",
+    abriuLink: r.link_zoom_clicado_em !== null ? "sim" : "nao",
     percentagemAssistencia:
       r.presenca === "attended" && r.presenca_minutos !== null && duracaoMinutos > 0
         ? Math.min(100, Math.round((r.presenca_minutos / duracaoMinutos) * 100))

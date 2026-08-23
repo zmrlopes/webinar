@@ -185,6 +185,15 @@ URL, antes de a pessoa chegar a inscrever-se. As presenças só ficam
 corretas depois de a sessão acontecer e o processo de presenças correr;
 antes disso contam como "não entraram".
 
+A coluna "Abriu o link do Zoom" reflete um clique real, não a presença: os
+emails de confirmação/lembrete (`src/lib/email.ts`) já não mandam o link do
+Zoom cru, mandam `/api/entrar/<id>` (`app/api/entrar/[id]/route.ts`), que
+regista `registrations.link_zoom_clicado_em` (migration `013`, só na
+primeira vez) e só depois redireciona a sério para o `link_pessoal`. O
+`link_pessoal` continua a nunca sair daí para lado nenhum. `SITE_BASE_URL`
+(`.env`) define o domínio usado nesse link; sem a variável, usa o domínio
+principal atual.
+
 No "Painel de leads" há também um botão **"Copiar link do Zoom"** por
 lead, para o consultor reenviar diretamente (ex: WhatsApp) a quem não viu
 o email de confirmação. É uma exceção deliberada e pedida à regra de nunca

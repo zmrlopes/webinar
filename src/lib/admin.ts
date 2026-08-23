@@ -112,6 +112,7 @@ export interface InscricaoAdmin {
   referencia: string | null;
   referenciaNome: string | null;
   ehConsultor: boolean;
+  clicouZoom: boolean;
 }
 
 /**
@@ -140,11 +141,13 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
     referencia: string | null;
     referencia_nome: string | null;
     eh_consultor: boolean;
+    link_zoom_clicado_em: Date | null;
   }>(
     `select r.id, r.nome, r.apelido, r.telemovel, r.email, r.link_estado, r.link_tentativas,
             r.link_ultimo_erro, r.presenca, r.presenca_minutos, r.cancelada_em, r.referencia,
             lc.nome as referencia_nome,
-            lc_proprio.referencia is not null as eh_consultor
+            lc_proprio.referencia is not null as eh_consultor,
+            r.link_zoom_clicado_em
      from registrations r
      left join links_consultor lc on lc.referencia = r.referencia
      left join links_consultor lc_proprio on lc_proprio.referencia_email = r.email
@@ -168,6 +171,7 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
     referencia: r.referencia,
     referenciaNome: r.referencia_nome,
     ehConsultor: r.eh_consultor,
+    clicouZoom: r.link_zoom_clicado_em !== null,
   }));
 }
 

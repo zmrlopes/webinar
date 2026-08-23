@@ -103,6 +103,17 @@ async function registarEnvio(registrationId: string, tipo: "confirmacao" | "lemb
 }
 
 /**
+ * Em vez do link do Zoom cru, os emails mandam este — passa por
+ * /api/entrar/<id>, que regista o clique e só depois redireciona a sério
+ * (ver src/lib/entrada.ts). `SITE_BASE_URL` cobre o domínio à prova de
+ * futuro; sem a variável, cai no domínio principal atual.
+ */
+function linkEntrada(registrationId: string): string {
+  const base = process.env.SITE_BASE_URL ?? "https://webinar.viajareviver.net";
+  return `${base}/api/entrar/${registrationId}`;
+}
+
+/**
  * Secção 10 — a regra que não se quebra: nunca enviar a confirmação antes de
  * ter o `link_pessoal`. Se o campo estiver vazio, esta função não envia nada
  * — nem um email genérico, nem um "enviamos depois".
@@ -119,7 +130,7 @@ export async function enviarConfirmacao(
   await sender.enviar({
     destinatario: registro.email,
     assunto: `A tua entrada para "${registro.titulo}"`,
-    corpoTexto: `Olá ${registro.nome},\n\nO teu link pessoal de entrada:\n${registro.link_pessoal}\n\nEste link é só teu — não o partilhes.`,
+    corpoTexto: `Olá ${registro.nome},\n\nO teu link pessoal de entrada:\n${linkEntrada(registrationId)}\n\nEste link é só teu — não o partilhes.`,
   });
 
   await registarEnvio(registrationId, "confirmacao");
@@ -138,7 +149,7 @@ export async function enviarLembrete(
   await sender.enviar({
     destinatario: registro.email,
     assunto: `A sessão "${registro.titulo}" está a começar em breve`,
-    corpoTexto: `Olá ${registro.nome},\n\nO teu link pessoal de entrada:\n${registro.link_pessoal}\n\nEste link é só teu — não o partilhes.`,
+    corpoTexto: `Olá ${registro.nome},\n\nO teu link pessoal de entrada:\n${linkEntrada(registrationId)}\n\nEste link é só teu — não o partilhes.`,
   });
 
   await registarEnvio(registrationId, "lembrete");

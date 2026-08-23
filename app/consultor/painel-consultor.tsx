@@ -11,7 +11,7 @@ interface LeadConsultor {
   nome: string;
   telemovel: string | null;
   email: string;
-  abriuLink: "sim" | "nao" | "por-confirmar";
+  abriuLink: "sim" | "nao";
   percentagemAssistencia: number | null;
   linkZoom: string | null;
   trazidoPor: string | null;
@@ -47,9 +47,7 @@ interface DadosEstatisticas {
 }
 
 function textoAbriuLink(estado: LeadConsultor["abriuLink"]): string {
-  if (estado === "sim") return "Sim";
-  if (estado === "nao") return "Não";
-  return "Por confirmar";
+  return estado === "sim" ? "Sim" : "Não";
 }
 
 const NOME_NIVEL: Record<string, string> = {

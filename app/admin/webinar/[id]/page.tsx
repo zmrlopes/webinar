@@ -283,6 +283,7 @@ export default async function AdminWebinar({
                 <th>Email</th>
                 <th>Convidado por</th>
                 <th>Link</th>
+                <th>Clicou no Zoom</th>
                 <th>Erro do link</th>
                 <th>Presença</th>
                 <th>Minutos</th>
@@ -319,6 +320,7 @@ export default async function AdminWebinar({
                   <td>
                     <span className="ad-etiqueta">{i.linkEstado}</span>
                   </td>
+                  <td>{i.clicouZoom ? "Sim" : "—"}</td>
                   <td style={{ maxWidth: 260, fontSize: "0.85rem" }}>
                     {i.linkUltimoErro ? `(${i.linkTentativas}x) ${i.linkUltimoErro}` : "—"}
                   </td>
