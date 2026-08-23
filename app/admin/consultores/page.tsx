@@ -25,7 +25,7 @@ export default async function AdminConsultores() {
           padding: 2.5rem 1.25rem 4rem;
           min-height: calc(100vh - 4rem);
         }
-        .ad-caixa { max-width: 900px; margin: 0 auto; }
+        .ad-caixa { max-width: 1400px; margin: 0 auto; }
         .ad-voltar { color: #d4af37; font-size: 0.85rem; text-decoration: none; }
         .ad-voltar:hover { text-decoration: underline; }
         .ad-pagina h1 { color: #fff; font-size: 1.5rem; margin: 0.75rem 0 0.4rem; }
