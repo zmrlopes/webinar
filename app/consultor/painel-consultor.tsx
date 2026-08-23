@@ -143,13 +143,11 @@ function NoArvoreEquipa({
           </span>
         )}
         <span className="vqc-eq-leads">
-          {temFilhos ? (
+          <strong>{no.leadsProprios}</strong> leads
+          {temFilhos && (
             <>
+              {" · "}
               <strong>{no.leadsEquipa}</strong> na equipa
-            </>
-          ) : (
-            <>
-              <strong>{no.leadsProprios}</strong> leads
             </>
           )}
         </span>
