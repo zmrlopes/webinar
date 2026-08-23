@@ -18,6 +18,7 @@
     "importar-equipa": "tsx scripts/importar-equipa.ts",
     "diagnosticar-equipa": "tsx scripts/diagnosticar-equipa.ts",
     "enviar-relatorio-consultores": "tsx scripts/enviar-relatorio-consultores.ts",
+    "verificar-presencas-agora": "tsx scripts/verificar-presencas-agora.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
