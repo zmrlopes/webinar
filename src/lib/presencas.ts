@@ -16,16 +16,21 @@ export interface ResultadoPresencas {
 /**
  * Secção 7-D do guia: só sessões terminadas há ≥45 min, em lotes de até 1000
  * emails, e a automação só toca em quem está `unknown` — nunca sobrepõe uma
- * correção feita à mão.
+ * correção feita à mão. `esperaMinutos` (por omissão 45) existe para permitir
+ * um pedido manual mais cedo — por exemplo quando o Patrick já confirmou que
+ * os dados do lado dele estão prontos antes da margem habitual.
  */
-export async function processarPresencas(): Promise<ResultadoPresencas> {
+export async function processarPresencas(opts?: { esperaMinutos?: number }): Promise<ResultadoPresencas> {
+  const esperaMinutos = opts?.esperaMinutos ?? 45;
   const { rows: sessoes } = await db().query<SessaoTerminada>(
     `select id, sessao_externa_id, sessao_externa_em, duracao_minutos
      from webinars
      where presencas_fechadas = false
        and sessao_externa_id is not null
        and duracao_minutos is not null
-       and sessao_externa_em + (duracao_minutos || ' minutes')::interval <= now() - interval '45 minutes'`,
+       and sessao_externa_em + (duracao_minutos || ' minutes')::interval
+             <= now() - ($1 || ' minutes')::interval`,
+    [esperaMinutos],
   );
 
   let presencasAtualizadas = 0;
