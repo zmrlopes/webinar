@@ -35,8 +35,14 @@ interface ArvoreEquipa {
   raiz: NoEquipa[];
 }
 
+interface SessaoResumo {
+  id: string;
+  titulo: string;
+  sessaoExternaEm: string;
+}
+
 interface DadosEstatisticas {
-  webinar: { titulo: string; sessaoExternaEm: string };
+  webinar: { id: string; titulo: string; sessaoExternaEm: string };
   aberturas: number;
   totalInscricoes: number;
   presencas: number;
@@ -44,6 +50,7 @@ interface DadosEstatisticas {
   equipaTotal: number;
   leads: LeadConsultor[];
   equipa: ArvoreEquipa | null;
+  sessoesDisponiveis: SessaoResumo[];
 }
 
 function textoAbriuLink(estado: LeadConsultor["abriuLink"]): string {
@@ -63,6 +70,14 @@ type EstadoPedido = "pronto" | "a-pedir" | "feito";
 function formatarData(iso: string): string {
   return new Date(iso).toLocaleString("pt-PT", {
     dateStyle: "long",
+    timeStyle: "short",
+    timeZone: "Europe/Lisbon",
+  });
+}
+
+function formatarDataCurta(iso: string): string {
+  return new Date(iso).toLocaleString("pt-PT", {
+    dateStyle: "short",
     timeStyle: "short",
     timeZone: "Europe/Lisbon",
   });
@@ -209,10 +224,9 @@ export function PainelConsultor() {
     setEstadoLink("feito");
   }
 
-  async function verNumeros(): Promise<void> {
+  async function verNumeros(webinarId?: string): Promise<void> {
     setEstadoEstatisticas("a-pedir");
     setErroEstatisticas("");
-    setEstatisticas(null);
     setPesquisaEquipa("");
     setSoAtivosEquipa(false);
     setAbertosEquipa(new Set());
@@ -221,7 +235,7 @@ export function PainelConsultor() {
       const resposta = await fetch("/api/consultor/estatisticas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify(webinarId ? { email, webinarId } : { email }),
       });
       const dados = await resposta.json().catch(() => ({}));
       if (!resposta.ok) {
@@ -377,6 +391,27 @@ export function PainelConsultor() {
         .vqc-tabela tr:last-child td { border-bottom: none; }
         .vqc-botao-tabela { padding: 0.4rem 0.8rem; font-size: 0.8rem; white-space: nowrap; }
 
+        .vqc-sessoes-abas {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.4rem;
+          margin: 1.5rem 0 0;
+        }
+        .vqc-pagina button.vqc-aba {
+          background: rgba(255,255,255,0.06);
+          color: #b3b0a6;
+          border: 1px solid rgba(255,255,255,0.18);
+          border-radius: 999px;
+          padding: 0.4rem 0.9rem;
+          font-size: 0.8rem;
+          font-weight: 600;
+        }
+        .vqc-pagina button.vqc-aba.vqc-aba-ativa {
+          background: linear-gradient(135deg, #e8c96a, #b8902f);
+          color: #1a1712;
+          border-color: transparent;
+        }
+
         .vqc-eq-ferramentas {
           display: flex;
           gap: 0.6rem;
@@ -513,7 +548,7 @@ export function PainelConsultor() {
           <button
             type="button"
             className="vqc-secundario"
-            onClick={verNumeros}
+            onClick={() => verNumeros()}
             disabled={!email || aPedirAlgo}
           >
             {estadoEstatisticas === "a-pedir" ? "A consultar..." : "Painel de leads"}
@@ -536,6 +571,23 @@ export function PainelConsultor() {
 
         {estatisticas && (
           <>
+            {estatisticas.sessoesDisponiveis.length > 1 && (
+              <div className="vqc-sessoes-abas">
+                {estatisticas.sessoesDisponiveis.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    className={
+                      s.id === estatisticas.webinar.id ? "vqc-aba vqc-aba-ativa" : "vqc-aba"
+                    }
+                    onClick={() => verNumeros(s.id)}
+                    disabled={estadoEstatisticas === "a-pedir"}
+                  >
+                    {formatarDataCurta(s.sessaoExternaEm)}
+                  </button>
+                ))}
+              </div>
+            )}
             <h2>{estatisticas.equipaTotal > 0 ? "Os números (eu + equipa)" : "Os meus números"}</h2>
             <p className="vqc-mudo">
               {estatisticas.webinar.titulo} — {formatarData(estatisticas.webinar.sessaoExternaEm)}

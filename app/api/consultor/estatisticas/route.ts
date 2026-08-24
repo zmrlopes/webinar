@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { procurarContactoBrevo } from "@/lib/brevo-contatos";
 import { estatisticasConsultor, listarLeadsConsultor } from "@/lib/consultor";
 import { buscarArvoreEquipa, buscarDescendentesEmails } from "@/lib/equipa";
-import { buscarWebinarRelevante } from "@/lib/webinars";
+import { buscarWebinar, buscarWebinarRelevante, listarWebinarsParaPainel } from "@/lib/webinars";
 
 export async function POST(request: Request): Promise<Response> {
   const corpo = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   const email = corpo?.email;
+  const webinarId = corpo?.webinarId;
 
   if (typeof email !== "string" || !email.includes("@")) {
     return NextResponse.json({ erro: "email inválido" }, { status: 400 });
@@ -22,7 +23,9 @@ export async function POST(request: Request): Promise<Response> {
       );
     }
 
-    const proximo = await buscarWebinarRelevante();
+    const sessoesDisponiveis = await listarWebinarsParaPainel();
+    const proximo =
+      typeof webinarId === "string" ? await buscarWebinar(webinarId) : await buscarWebinarRelevante();
     if (!proximo) {
       return NextResponse.json({ erro: "não há sessões agendadas de momento" }, { status: 404 });
     }
@@ -37,11 +40,16 @@ export async function POST(request: Request): Promise<Response> {
     ]);
 
     return NextResponse.json({
-      webinar: { titulo: proximo.titulo, sessaoExternaEm: proximo.sessaoExternaEm },
+      webinar: { id: proximo.id, titulo: proximo.titulo, sessaoExternaEm: proximo.sessaoExternaEm },
       ...numeros,
       equipaTotal: descendentes.length,
       leads,
       equipa: arvoreEquipa,
+      sessoesDisponiveis: sessoesDisponiveis.map((s) => ({
+        id: s.id,
+        titulo: s.titulo,
+        sessaoExternaEm: s.sessaoExternaEm,
+      })),
     });
   } catch (erro) {
     console.error("falha ao calcular estatísticas do consultor:", erro);
