@@ -23,6 +23,7 @@ export default async function AdminEventos() {
     (soma, i) => soma + i.adultos + i.criancasMais10 + i.criancasMenos10,
     0,
   );
+  const totalPresentes = inscricoes.filter((i) => i.presente).length;
 
   return (
     <main className="ad-pagina">
@@ -79,6 +80,16 @@ export default async function AdminEventos() {
           text-decoration: none;
           white-space: nowrap;
         }
+        .ad-presenca {
+          display: inline-block;
+          border-radius: 999px;
+          padding: 0.2rem 0.65rem;
+          font-size: 0.8rem;
+          font-weight: 700;
+          white-space: nowrap;
+        }
+        .ad-presenca-sim { background: #e4f3e4; color: #0ca30c; }
+        .ad-presenca-nao { background: #eee; color: #999; }
       `}</style>
 
       <div className="ad-caixa">
@@ -88,7 +99,8 @@ export default async function AdminEventos() {
         <h1>{EVENTO_TITULO}</h1>
         <p className="ad-subtitulo">
           {EVENTO_DATA_TEXTO} · {EVENTO_LOCAL} · {EVENTO_PRECO_ADULTO}€ por pessoa — {totalPessoas}{" "}
-          {totalPessoas === 1 ? "pessoa inscrita" : "pessoas inscritas"}
+          {totalPessoas === 1 ? "pessoa inscrita" : "pessoas inscritas"} · {totalPresentes} de{" "}
+          {inscricoes.length} {inscricoes.length === 1 ? "inscrição compareceu" : "inscrições compareceram"}
         </p>
 
         <h2>Todas as inscrições</h2>
@@ -106,6 +118,7 @@ export default async function AdminEventos() {
                   <th>Crianças +10</th>
                   <th>Crianças -10</th>
                   <th>Total</th>
+                  <th>Compareceu</th>
                   <th>Inscrito em</th>
                   <th>Comprovativo</th>
                 </tr>
@@ -120,6 +133,11 @@ export default async function AdminEventos() {
                     <td>{i.criancasMais10}</td>
                     <td>{i.criancasMenos10}</td>
                     <td>{i.totalPagar}€</td>
+                    <td>
+                      <span className={i.presente ? "ad-presenca ad-presenca-sim" : "ad-presenca ad-presenca-nao"}>
+                        {i.presente ? "Sim" : "Não"}
+                      </span>
+                    </td>
                     <td>{formatarData(i.criadoEm)}</td>
                     <td>
                       <a href={`/api/admin/eventos/comprovativo/${i.id}`} className="ad-download">

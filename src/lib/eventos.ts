@@ -23,13 +23,14 @@ interface DadosInscricaoEvento {
   comprovativoTipo: string;
 }
 
-export async function registarInscricaoEvento(dados: DadosInscricaoEvento): Promise<void> {
+export async function registarInscricaoEvento(dados: DadosInscricaoEvento): Promise<string> {
   const total = calcularTotalEvento(dados.adultos, dados.criancasMais10);
-  await db().query(
+  const { rows } = await db().query<{ id: string }>(
     `insert into evento_inscricoes
        (nome, telemovel, email, adultos, criancas_mais10, criancas_menos10,
         total_pagar, comprovativo, comprovativo_nome, comprovativo_tipo)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+     returning id`,
     [
       dados.nome,
       dados.telemovel,
@@ -43,6 +44,7 @@ export async function registarInscricaoEvento(dados: DadosInscricaoEvento): Prom
       dados.comprovativoTipo,
     ],
   );
+  return rows[0]!.id;
 }
 
 export interface InscricaoEvento {
@@ -55,6 +57,8 @@ export interface InscricaoEvento {
   criancasMenos10: number;
   totalPagar: number;
   comprovativoNome: string | null;
+  presente: boolean;
+  presenteEm: Date | null;
   criadoEm: Date;
 }
 
@@ -70,10 +74,12 @@ export async function listarInscricoesEvento(): Promise<InscricaoEvento[]> {
     criancas_menos10: number;
     total_pagar: string;
     comprovativo_nome: string | null;
+    presente: boolean;
+    presente_em: Date | null;
     criado_em: Date;
   }>(
     `select id, nome, telemovel, email, adultos, criancas_mais10, criancas_menos10,
-            total_pagar, comprovativo_nome, criado_em
+            total_pagar, comprovativo_nome, presente, presente_em, criado_em
      from evento_inscricoes
      order by criado_em desc`,
   );
@@ -87,8 +93,35 @@ export async function listarInscricoesEvento(): Promise<InscricaoEvento[]> {
     criancasMenos10: r.criancas_menos10,
     totalPagar: Number(r.total_pagar),
     comprovativoNome: r.comprovativo_nome,
+    presente: r.presente,
+    presenteEm: r.presente_em,
     criadoEm: r.criado_em,
   }));
+}
+
+/**
+ * Marca a presença ao ler o QR code do email de confirmação (ver
+ * /api/eventos/checkin/[id]) — idempotente, para ler o mesmo código duas
+ * vezes não ser um erro. Devolve o nome (para a página de confirmação) e se
+ * já estava marcado antes desta chamada.
+ */
+export async function marcarPresencaEvento(
+  id: string,
+): Promise<{ nome: string; jaEstavaPresente: boolean } | undefined> {
+  const { rows: antes } = await db().query<{ nome: string; presente: boolean }>(
+    `select nome, presente from evento_inscricoes where id = $1`,
+    [id],
+  );
+  const inscricao = antes[0];
+  if (!inscricao) return undefined;
+
+  if (!inscricao.presente) {
+    await db().query(
+      `update evento_inscricoes set presente = true, presente_em = now() where id = $1`,
+      [id],
+    );
+  }
+  return { nome: inscricao.nome, jaEstavaPresente: inscricao.presente };
 }
 
 export async function buscarComprovativoEvento(

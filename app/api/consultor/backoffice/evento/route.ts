@@ -1,5 +1,13 @@
 import { NextResponse } from "next/server";
-import { calcularTotalEvento, registarInscricaoEvento } from "@/lib/eventos";
+import QRCode from "qrcode";
+import { criarEmailSender } from "@/lib/email";
+import {
+  calcularTotalEvento,
+  EVENTO_DATA_TEXTO,
+  EVENTO_LOCAL,
+  EVENTO_TITULO,
+  registarInscricaoEvento,
+} from "@/lib/eventos";
 
 const TAMANHO_MAXIMO_COMPROVATIVO = 4 * 1024 * 1024; // 4MB — margem sob o limite de payload do Vercel
 const TIPOS_ACEITES = new Set(["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"]);
@@ -60,11 +68,13 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     const comprovativoBytes = Buffer.from(await comprovativo.arrayBuffer());
+    const nomeTratado = nome.trim();
+    const emailTratado = email.trim().toLowerCase();
 
-    await registarInscricaoEvento({
-      nome: nome.trim(),
+    const id = await registarInscricaoEvento({
+      nome: nomeTratado,
       telemovel: telemovel.trim(),
-      email: email.trim().toLowerCase(),
+      email: emailTratado,
       adultos,
       criancasMais10,
       criancasMenos10,
@@ -73,7 +83,29 @@ export async function POST(request: Request): Promise<Response> {
       comprovativoTipo: comprovativo.type,
     });
 
-    return NextResponse.json({ total: calcularTotalEvento(adultos, criancasMais10) });
+    let emailEnviado = true;
+    try {
+      const host = request.headers.get("host") ?? "";
+      const protocolo = host.startsWith("localhost") ? "http" : "https";
+      const linkCheckin = `${protocolo}://${host}/api/eventos/checkin/${id}`;
+      const qrBuffer = await QRCode.toBuffer(linkCheckin, { width: 500, margin: 2 });
+
+      await criarEmailSender().enviar({
+        destinatario: emailTratado,
+        assunto: `A tua inscrição no ${EVENTO_TITULO}`,
+        corpoTexto:
+          `Olá ${nomeTratado},\n\n` +
+          `A tua inscrição no ${EVENTO_TITULO} (${EVENTO_DATA_TEXTO}, ${EVENTO_LOCAL}) está confirmada.\n\n` +
+          `Leva o QR code em anexo contigo no dia do evento — vai ser lido à entrada para confirmar a tua presença.\n\n` +
+          `Até lá!`,
+        anexo: { nome: "bilhete-teambuilding.png", conteudoBase64: qrBuffer.toString("base64") },
+      });
+    } catch (erroEmail) {
+      console.error("falha ao enviar o email com o QR code do evento:", erroEmail);
+      emailEnviado = false;
+    }
+
+    return NextResponse.json({ total: calcularTotalEvento(adultos, criancasMais10), emailEnviado });
   } catch (erro) {
     console.error("falha ao registar inscrição no evento:", erro);
     const mensagem = erro instanceof Error ? erro.message : String(erro);

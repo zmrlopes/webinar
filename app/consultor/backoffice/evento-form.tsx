@@ -20,6 +20,7 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
   const [ficheiro, setFicheiro] = useState<File | null>(null);
   const [estado, setEstado] = useState<Estado>("pronto");
   const [erro, setErro] = useState("");
+  const [emailEnviado, setEmailEnviado] = useState(true);
 
   const total = adultos * PRECO_ADULTO + criancasMais10 * PRECO_CRIANCA_MAIS10;
   const valido =
@@ -53,6 +54,7 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
         setEstado("erro");
         return;
       }
+      setEmailEnviado(resultado.emailEnviado !== false);
       setEstado("enviado");
     } catch {
       setErro("falha de ligação — tenta outra vez");
@@ -64,6 +66,16 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
     return (
       <div className="vqe-cartao">
         <p className="vqe-sucesso">Inscrição registada! Obrigado — vemo-nos em Fátima.</p>
+        {emailEnviado ? (
+          <p style={{ marginTop: "0.5rem" }}>
+            Enviámos-te um email com o QR code do teu bilhete — leva-o contigo no dia do evento.
+          </p>
+        ) : (
+          <p className="vqe-erro" style={{ marginTop: "0.5rem" }}>
+            A inscrição ficou registada, mas não conseguimos enviar o email com o QR code. Contacta-nos
+            para o receberes de outra forma.
+          </p>
+        )}
       </div>
     );
   }
