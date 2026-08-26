@@ -41,11 +41,20 @@ const ESTADOS: { valor: EstadoLead; rotulo: string }[] = [
   { valor: "desistiu", rotulo: "Desistiu" },
 ];
 
+const ROTULOS_ESTADO: Record<EstadoLead, string> = {
+  follow_up: "Follow up",
+  convertido: "Converteu",
+  desistiu: "Desistiu",
+};
+
+type Aba = "pessoais" | "equipa";
+
 export function WebinaresPagina() {
   const [email, setEmail] = useState<string | null>(null);
   const [dados, setDados] = useState<ResumoLeads | null>(null);
   const [erro, setErro] = useState("");
   const [aAtualizar, setAAtualizar] = useState<string | null>(null);
+  const [aba, setAba] = useState<Aba>("pessoais");
 
   async function carregar(emailAtual: string): Promise<void> {
     setErro("");
@@ -88,6 +97,10 @@ export function WebinaresPagina() {
       setAAtualizar(null);
     }
   }
+
+  const leadsPessoais = dados ? dados.leads.filter((l) => l.trazidoPor === null) : [];
+  const leadsEquipa = dados ? dados.leads.filter((l) => l.trazidoPor !== null) : [];
+  const leadsVisiveis = aba === "pessoais" ? leadsPessoais : leadsEquipa;
 
   return (
     <div className="vqw-pagina">
@@ -161,6 +174,25 @@ export function WebinaresPagina() {
         .vqw-tabela button.vqw-pilula.vqw-ativa-follow_up { background: #f1e6c9; color: #4a3c10; border-color: #e2cf94; }
         .vqw-tabela button.vqw-pilula.vqw-ativa-convertido { background: #e4f3e4; color: #0ca30c; border-color: #c9e8c9; }
         .vqw-tabela button.vqw-pilula.vqw-ativa-desistiu { background: #f8e2e0; color: #a33; border-color: #f0c4c1; }
+        .vqw-pilula.vqw-ativa-follow_up { background: #f1e6c9; color: #4a3c10; border-color: #e2cf94; }
+        .vqw-pilula.vqw-ativa-convertido { background: #e4f3e4; color: #0ca30c; border-color: #c9e8c9; }
+        .vqw-pilula.vqw-ativa-desistiu { background: #f8e2e0; color: #a33; border-color: #f0c4c1; }
+        .vqw-abas { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; }
+        .vqw-aba {
+          background: transparent;
+          color: #b3b0a6;
+          border: 1px solid rgba(255,255,255,0.18);
+          border-radius: 999px;
+          padding: 0.45rem 1.1rem;
+          font-size: 0.85rem;
+          font-weight: 600;
+          cursor: pointer;
+        }
+        .vqw-aba.vqw-aba-ativa {
+          background: linear-gradient(135deg, #e8c96a, #b8902f);
+          color: #1a1712;
+          border-color: transparent;
+        }
       `}</style>
 
       <div className="vqw-caixa">
@@ -197,15 +229,34 @@ export function WebinaresPagina() {
               </div>
             </div>
 
-            {dados.leads.length === 0 ? (
-              <p className="vqw-mudo">Ainda sem leads em nenhuma sessão pública.</p>
+            <div className="vqw-abas">
+              <button
+                type="button"
+                className={aba === "pessoais" ? "vqw-aba vqw-aba-ativa" : "vqw-aba"}
+                onClick={() => setAba("pessoais")}
+              >
+                Leads pessoais ({leadsPessoais.length})
+              </button>
+              <button
+                type="button"
+                className={aba === "equipa" ? "vqw-aba vqw-aba-ativa" : "vqw-aba"}
+                onClick={() => setAba("equipa")}
+              >
+                Leads equipa ({leadsEquipa.length})
+              </button>
+            </div>
+
+            {leadsVisiveis.length === 0 ? (
+              <p className="vqw-mudo">
+                {aba === "pessoais" ? "Ainda sem leads pessoais." : "Ainda sem leads trazidas pela equipa."}
+              </p>
             ) : (
               <div className="vqw-tabela-wrap">
                 <table className="vqw-tabela">
                   <thead>
                     <tr>
                       <th>Lead</th>
-                      <th>Trazido por</th>
+                      {aba === "equipa" && <th>Trazido por</th>}
                       <th>Sessões</th>
                       <th>% assistência</th>
                       <th>Última sessão assistida</th>
@@ -213,7 +264,7 @@ export function WebinaresPagina() {
                     </tr>
                   </thead>
                   <tbody>
-                    {dados.leads.map((lead) => (
+                    {leadsVisiveis.map((lead) => (
                       <tr key={lead.email}>
                         <td>
                           <div>{lead.nome}</div>
@@ -222,7 +273,7 @@ export function WebinaresPagina() {
                             {lead.telemovel ? ` · ${lead.telemovel}` : ""}
                           </div>
                         </td>
-                        <td>{lead.trazidoPor ?? "Eu"}</td>
+                        {aba === "equipa" && <td>{lead.trazidoPor}</td>}
                         <td>{lead.sessoesFeitas}</td>
                         <td>
                           {lead.percentagemAssistencia !== null ? `${lead.percentagemAssistencia}%` : "—"}
@@ -235,7 +286,7 @@ export function WebinaresPagina() {
                             <span className={lead.assistiu ? "vqw-pilula vqw-pilula-assistiu" : "vqw-pilula vqw-pilula-assistiu vqw-inativa"}>
                               Assistiu
                             </span>
-                            {lead.podeEditar &&
+                            {aba === "pessoais" ? (
                               ESTADOS.map((e) => (
                                 <button
                                   key={e.valor}
@@ -250,7 +301,14 @@ export function WebinaresPagina() {
                                 >
                                   {e.rotulo}
                                 </button>
-                              ))}
+                              ))
+                            ) : (
+                              lead.estado && (
+                                <span className={`vqw-pilula vqw-ativa-${lead.estado}`}>
+                                  {ROTULOS_ESTADO[lead.estado]}
+                                </span>
+                              )
+                            )}
                           </div>
                         </td>
                       </tr>
