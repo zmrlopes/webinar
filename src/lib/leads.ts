@@ -38,15 +38,10 @@ export interface ResumoLeads {
  *
  * Exclui, como em todo o resto do sistema, quem se inscreveu a si próprio
  * sendo também consultor.
- *
- * `webinarId`, quando indicado, restringe a agregação a uma única sessão
- * (para os separadores "por sessão" da página) em vez de todas — cada
- * pessoa continua a aparecer no máximo uma vez.
  */
 export async function listarLeadsConsolidado(
   referenciaEmails: string[],
   proprioEmail: string,
-  webinarId?: string,
 ): Promise<ResumoLeads> {
   const { rows } = await db().query<{
     email: string;
@@ -87,10 +82,9 @@ export async function listarLeadsConsolidado(
        and r.cancelada_em is null
        and r.referencia_email = any($2::text[])
        and not exists (select 1 from equipa_afiliados ea2 where ea2.email = r.email)
-       and ($4::uuid is null or w.id = $4)
      group by r.email, el.estado
      order by max(r.criado_em) desc`,
-    [TITULO_WEBINAR_PUBLICO, referenciaEmails, proprioEmail, webinarId ?? null],
+    [TITULO_WEBINAR_PUBLICO, referenciaEmails, proprioEmail],
   );
 
   const leads: LeadConsolidado[] = rows.map((r) => ({

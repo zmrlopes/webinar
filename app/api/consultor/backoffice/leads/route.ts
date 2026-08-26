@@ -7,13 +7,13 @@ import { listarSessoesPublicasParaPainel } from "@/lib/webinars";
 /**
  * A tabela consolidada da página "Webinares" do backoffice: uma linha por
  * pessoa, juntando todas as sessões públicas (do consultor + da equipa
- * descendente dele) em que apareceu como lead — ou, quando `webinarId` é
- * indicado, só dessa sessão (separadores por sessão na página).
+ * descendente dele) em que apareceu como lead. `sessoesDisponiveis` serve
+ * só para os separadores "por sessão" da página (cada um usa
+ * /api/consultor/estatisticas, a mesma vista do painel /consultor).
  */
 export async function POST(request: Request): Promise<Response> {
   const corpo = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   const email = corpo?.email;
-  const webinarId = corpo?.webinarId;
 
   if (typeof email !== "string" || !email.includes("@")) {
     return NextResponse.json({ erro: "email inválido" }, { status: 400 });
@@ -33,11 +33,7 @@ export async function POST(request: Request): Promise<Response> {
     const referenciaEmails = [emailNormalizado, ...descendentes];
 
     const [resumo, sessoesDisponiveis] = await Promise.all([
-      listarLeadsConsolidado(
-        referenciaEmails,
-        emailNormalizado,
-        typeof webinarId === "string" ? webinarId : undefined,
-      ),
+      listarLeadsConsolidado(referenciaEmails, emailNormalizado),
       listarSessoesPublicasParaPainel(),
     ]);
     return NextResponse.json({
