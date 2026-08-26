@@ -63,7 +63,7 @@ export async function listarLeadsConsolidado(
        max(
          case
            when r.presenca = 'attended' and r.presenca_minutos is not null and w.duracao_minutos > 0
-           then round((r.presenca_minutos::numeric / w.duracao_minutos) * 100)
+           then least(100, round((r.presenca_minutos::numeric / w.duracao_minutos) * 100))
            else null
          end
        ) as percentagem_assistencia,
