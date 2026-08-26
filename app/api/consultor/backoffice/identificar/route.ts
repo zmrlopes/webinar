@@ -3,13 +3,15 @@ import { procurarContactoBrevo } from "@/lib/brevo-contatos";
 import { db } from "@/lib/db";
 import { guardarLinkConsultor, referenciaSemColisao } from "@/lib/consultor";
 import { gerarSlug } from "@/lib/slug";
-import { buscarWebinarFormacao } from "@/lib/webinars";
+import { buscarProximoWebinarPublico, buscarWebinarFormacao } from "@/lib/webinars";
 
 /**
  * Identifica o consultor no backoffice: valida o email na Brevo, garante o
  * link de partilha dele (upsert silencioso — ao contrário de
- * /api/consultor/link, nunca envia email; é só para mostrar já no ecrã) e
- * diz se está na equipa_afiliados (controla o acesso à Formação de segunda).
+ * /api/consultor/link, nunca envia email; é só para mostrar já no ecrã),
+ * diz se está na equipa_afiliados (controla o acesso à Formação de segunda)
+ * e devolve a próxima sessão pública, para o cartão de entrar diretamente
+ * no webinar.
  */
 export async function POST(request: Request): Promise<Response> {
   const corpo = (await request.json().catch(() => null)) as Record<string, unknown> | null;
@@ -44,7 +46,10 @@ export async function POST(request: Request): Promise<Response> {
       [emailNormalizado],
     );
     const ehConsultorEquipa = rows[0]?.existe ?? false;
-    const formacao = ehConsultorEquipa ? await buscarWebinarFormacao() : undefined;
+    const [formacao, proximoWebinar] = await Promise.all([
+      ehConsultorEquipa ? buscarWebinarFormacao() : Promise.resolve(undefined),
+      buscarProximoWebinarPublico(),
+    ]);
 
     return NextResponse.json({
       nome: contacto.nome,
@@ -52,6 +57,9 @@ export async function POST(request: Request): Promise<Response> {
       ehConsultorEquipa,
       formacao: formacao
         ? { titulo: formacao.titulo, sessaoExternaEm: formacao.sessaoExternaEm }
+        : null,
+      proximoWebinar: proximoWebinar
+        ? { titulo: proximoWebinar.titulo, sessaoExternaEm: proximoWebinar.sessaoExternaEm }
         : null,
     });
   } catch (erro) {

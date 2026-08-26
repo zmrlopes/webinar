@@ -9,6 +9,7 @@ interface DadosIdentificacao {
   link: string;
   ehConsultorEquipa: boolean;
   formacao: { titulo: string; sessaoExternaEm: string } | null;
+  proximoWebinar: { titulo: string; sessaoExternaEm: string } | null;
 }
 
 type Estado = "a-carregar" | "por-identificar" | "pronto" | "erro";
@@ -29,6 +30,8 @@ export function BackofficeHome() {
   const [linkCopiado, setLinkCopiado] = useState(false);
   const [aPedirFormacao, setAPedirFormacao] = useState(false);
   const [erroFormacao, setErroFormacao] = useState("");
+  const [aPedirWebinar, setAPedirWebinar] = useState(false);
+  const [erroWebinar, setErroWebinar] = useState("");
 
   async function identificar(emailParaIdentificar: string): Promise<void> {
     setEstado("a-carregar");
@@ -90,6 +93,28 @@ export function BackofficeHome() {
     } catch {
       setErroFormacao("falha de ligação — tenta outra vez");
       setAPedirFormacao(false);
+    }
+  }
+
+  async function pedirWebinar(): Promise<void> {
+    setAPedirWebinar(true);
+    setErroWebinar("");
+    try {
+      const resposta = await fetch("/api/consultor/backoffice/webinar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const corpo = await resposta.json().catch(() => ({}));
+      if (!resposta.ok) {
+        setErroWebinar(typeof corpo.erro === "string" ? corpo.erro : "não foi possível obter o link");
+        setAPedirWebinar(false);
+        return;
+      }
+      window.location.href = corpo.url;
+    } catch {
+      setErroWebinar("falha de ligação — tenta outra vez");
+      setAPedirWebinar(false);
     }
   }
 
@@ -172,7 +197,7 @@ export function BackofficeHome() {
         }
         .vqb-cartao h3 { margin: 0 0 0.25rem; font-size: 1.1rem; }
         .vqb-cartao p { margin: 0; color: #6b6a63; font-size: 0.9rem; }
-        .vqb-formacao-etiqueta {
+        .vqb-destaque-etiqueta {
           display: block;
           color: #b8902f;
           font-size: 0.75rem;
@@ -181,14 +206,14 @@ export function BackofficeHome() {
           text-transform: uppercase;
           margin: 0 0 0.4rem;
         }
-        .vqb-formacao-titulo {
+        .vqb-destaque-titulo {
           margin: 0 0 0.3rem;
           font-size: 1.3rem;
           text-transform: uppercase;
         }
-        .vqb-formacao-data { margin: 0 0 0.75rem; color: #6b6a63; font-size: 0.95rem; }
-        .vqb-formacao-texto { margin: 0 0 1.1rem; color: #6b6a63; font-size: 0.9rem; }
-        .vqb-formacao-botao { display: block; width: 100%; text-align: center; padding: 0.85rem; font-size: 1.05rem; }
+        .vqb-destaque-data { margin: 0 0 0.75rem; color: #6b6a63; font-size: 0.95rem; }
+        .vqb-destaque-texto { margin: 0 0 1.1rem; color: #6b6a63; font-size: 0.9rem; }
+        .vqb-destaque-botao { display: block; width: 100%; text-align: center; padding: 0.85rem; font-size: 1.05rem; }
         .vqb-botao-webinares {
           display: block;
           background: #f7f6f3;
@@ -253,13 +278,13 @@ export function BackofficeHome() {
               <>
                 <h2>Formação de segunda</h2>
                 <div className="vqb-cartao">
-                  <span className="vqb-formacao-etiqueta">Próxima formação</span>
-                  <h3 className="vqb-formacao-titulo">{dados.formacao.titulo}</h3>
-                  <p className="vqb-formacao-data">{formatarData(dados.formacao.sessaoExternaEm)}</p>
-                  <p className="vqb-formacao-texto">É só para travel partners — não é para convidados.</p>
+                  <span className="vqb-destaque-etiqueta">Próxima formação</span>
+                  <h3 className="vqb-destaque-titulo">{dados.formacao.titulo}</h3>
+                  <p className="vqb-destaque-data">{formatarData(dados.formacao.sessaoExternaEm)}</p>
+                  <p className="vqb-destaque-texto">É só para travel partners — não é para convidados.</p>
                   <button
                     type="button"
-                    className="vqb-formacao-botao"
+                    className="vqb-destaque-botao"
                     onClick={pedirFormacao}
                     disabled={aPedirFormacao}
                   >
@@ -270,8 +295,31 @@ export function BackofficeHome() {
               </>
             )}
 
+            {dados.proximoWebinar && (
+              <>
+                <h2>Próximo webinar</h2>
+                <div className="vqb-cartao">
+                  <span className="vqb-destaque-etiqueta">Próximo webinar</span>
+                  <h3 className="vqb-destaque-titulo">{dados.proximoWebinar.titulo}</h3>
+                  <p className="vqb-destaque-data">{formatarData(dados.proximoWebinar.sessaoExternaEm)}</p>
+                  <p className="vqb-destaque-texto">
+                    Entra diretamente no Zoom — ficas automaticamente inscrito.
+                  </p>
+                  <button
+                    type="button"
+                    className="vqb-destaque-botao"
+                    onClick={pedirWebinar}
+                    disabled={aPedirWebinar}
+                  >
+                    {aPedirWebinar ? "A preparar..." : "Entrar no webinar"}
+                  </button>
+                  {erroWebinar && <p className="vqb-erro" style={{ marginTop: "0.75rem" }}>{erroWebinar}</p>}
+                </div>
+              </>
+            )}
+
             <Link href="/consultor/backoffice/webinares" className="vqb-botao-webinares">
-              Webinares
+              Leads
               <span>Ver todos os teus leads e da tua equipa, sessão a sessão</span>
             </Link>
           </>

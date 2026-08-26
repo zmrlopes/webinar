@@ -99,6 +99,40 @@ export async function listarWebinarsParaPainel(): Promise<WebinarResumo[]> {
 export const TITULO_WEBINAR_PUBLICO = "A tua oportunidade de negócio no turismo";
 
 /**
+ * A próxima sessão pública (a que ainda não aconteceu, mais próxima no
+ * tempo) — usada pelo cartão do backoffice que deixa o consultor entrar
+ * diretamente no Zoom do webinar público, inscrevendo-se a si próprio de
+ * caminho. Ao contrário de `buscarWebinarRelevante`, nunca aponta para uma
+ * sessão já passada — não faz sentido "entrar" numa que já aconteceu.
+ */
+export async function buscarProximoWebinarPublico(): Promise<WebinarResumo | undefined> {
+  const { rows } = await db().query<{
+    id: string;
+    titulo: string;
+    sessao_externa_em: Date;
+    duracao_minutos: number;
+  }>(
+    `select id, titulo, sessao_externa_em, duracao_minutos
+     from webinars
+     where cancelada_em is null
+       and sessao_externa_id is not null
+       and titulo = $1
+       and sessao_externa_em > now()
+     order by sessao_externa_em asc
+     limit 1`,
+    [TITULO_WEBINAR_PUBLICO],
+  );
+  const r = rows[0];
+  if (!r) return undefined;
+  return {
+    id: r.id,
+    titulo: r.titulo,
+    sessaoExternaEm: r.sessao_externa_em,
+    duracaoMinutos: r.duracao_minutos,
+  };
+}
+
+/**
  * Sessões públicas (excluindo formação interna da equipa) para os
  * separadores da página de webinares do backoffice — mesma janela de
  * `listarWebinarsParaPainel` (últimos 60 dias + futuras), mas só do
