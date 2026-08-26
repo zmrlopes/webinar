@@ -76,25 +76,21 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
     <div className="vqe-cartao">
       <style>{`
         .vqe-cartao {
+          box-sizing: border-box;
           background: #f7f6f3;
           color: #15130f;
           border: 1px solid #eae7de;
           border-radius: 12px;
           padding: 1.25rem 1.5rem;
           max-width: 420px;
+          width: 100%;
           margin: 0 auto;
+          overflow: hidden;
         }
         .vqe-cartao h3 { margin: 0 0 0.3rem; font-size: 1.3rem; }
         .vqe-cartao p { margin: 0; color: #6b6a63; font-size: 0.9rem; }
-        .vqe-linha-topo { margin-bottom: 0.3rem; }
+        .vqe-linha-topo { margin-bottom: 1.1rem; }
         .vqe-sucesso { color: #0ca30c; font-weight: 600; font-size: 1rem; }
-        .vqe-grid-numeros {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 0.75rem;
-          margin: 1.25rem 0;
-        }
-        .vqe-grid-numeros > .vqe-campo { min-width: 0; margin-bottom: 0; }
         .vqe-campo { margin-bottom: 1rem; }
         .vqe-campo label {
           display: block;
@@ -148,27 +144,26 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
         </p>
       </div>
 
-      <div className="vqe-grid-numeros">
-        <div className="vqe-campo" style={{ marginBottom: 0 }}>
-          <label htmlFor="evento-adultos">Adultos</label>
-          <input
-            id="evento-adultos"
-            type="number"
-            min={1}
-            value={adultos}
-            onChange={(e) => setAdultos(Math.max(1, Number(e.target.value) || 1))}
-          />
-        </div>
-        <div className="vqe-campo" style={{ marginBottom: 0 }}>
-          <label htmlFor="evento-criancas-mais10">Crianças +10 anos (17€)</label>
-          <input
-            id="evento-criancas-mais10"
-            type="number"
-            min={0}
-            value={criancasMais10}
-            onChange={(e) => setCriancasMais10(Math.max(0, Number(e.target.value) || 0))}
-          />
-        </div>
+      <div className="vqe-campo">
+        <label htmlFor="evento-adultos">Adultos</label>
+        <input
+          id="evento-adultos"
+          type="number"
+          min={1}
+          value={adultos}
+          onChange={(e) => setAdultos(Math.max(1, Number(e.target.value) || 1))}
+        />
+      </div>
+
+      <div className="vqe-campo">
+        <label htmlFor="evento-criancas-mais10">Crianças +10 anos (17€)</label>
+        <input
+          id="evento-criancas-mais10"
+          type="number"
+          min={0}
+          value={criancasMais10}
+          onChange={(e) => setCriancasMais10(Math.max(0, Number(e.target.value) || 0))}
+        />
       </div>
 
       <div className="vqe-campo">
