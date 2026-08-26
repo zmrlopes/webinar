@@ -7,7 +7,6 @@ const EVENTO_DATA_TEXTO = "14 de novembro de 2026";
 const EVENTO_LOCAL = "Fátima";
 const PRECO_ADULTO = 35;
 const PRECO_CRIANCA_MAIS10 = 17;
-const ORGANIZACOES = ["Sara e Zé", "Ana Custódia", "Lara Rodrigues", "Ludmila"] as const;
 
 type Estado = "pronto" | "a-enviar" | "enviado" | "erro";
 
@@ -15,7 +14,6 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
   const [nomeCompleto, setNomeCompleto] = useState(nome ?? "");
   const [telemovel, setTelemovel] = useState("");
   const [emailForm, setEmailForm] = useState(email);
-  const [organizacao, setOrganizacao] = useState("");
   const [adultos, setAdultos] = useState(1);
   const [criancasMais10, setCriancasMais10] = useState(0);
   const [criancasMenos10, setCriancasMenos10] = useState(0);
@@ -28,7 +26,6 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
     nomeCompleto.trim() !== "" &&
     telemovel.trim() !== "" &&
     emailForm.includes("@") &&
-    organizacao !== "" &&
     adultos >= 1 &&
     ficheiro !== null;
 
@@ -41,7 +38,6 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
       corpo.set("nome", nomeCompleto.trim());
       corpo.set("telemovel", telemovel.trim());
       corpo.set("email", emailForm.trim());
-      corpo.set("organizacao", organizacao);
       corpo.set("adultos", String(adultos));
       corpo.set("criancasMais10", String(criancasMais10));
       corpo.set("criancasMenos10", String(criancasMenos10));
@@ -99,8 +95,7 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
           color: #15130f;
           margin: 0 0 0.35rem;
         }
-        .vqe-campo input,
-        .vqe-campo select {
+        .vqe-campo input {
           box-sizing: border-box;
           width: 100%;
           padding: 0.6rem 0.75rem;
@@ -206,22 +201,6 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
           onChange={(e) => setEmailForm(e.target.value)}
         />
         <p className="vqe-nota">O mesmo que tens registado na Icligo.</p>
-      </div>
-
-      <div className="vqe-campo">
-        <label htmlFor="evento-organizacao">Organização</label>
-        <select
-          id="evento-organizacao"
-          value={organizacao}
-          onChange={(e) => setOrganizacao(e.target.value)}
-        >
-          <option value="">Escolhe...</option>
-          {ORGANIZACOES.map((o) => (
-            <option key={o} value={o}>
-              {o}
-            </option>
-          ))}
-        </select>
       </div>
 
       <div className="vqe-campo">

@@ -2,15 +2,12 @@ import Link from "next/link";
 import {
   EVENTO_DATA_TEXTO,
   EVENTO_LOCAL,
-  EVENTO_ORGANIZACOES,
   EVENTO_PRECO_ADULTO,
   EVENTO_TITULO,
   listarInscricoesEvento,
 } from "@/lib/eventos";
 
 export const dynamic = "force-dynamic";
-
-const CORES_ORGANIZACAO = ["#b8902f", "#3a2f77", "#2f7568", "#a33333"];
 
 function formatarData(data: Date): string {
   return new Date(data).toLocaleString("pt-PT", {
@@ -22,26 +19,10 @@ function formatarData(data: Date): string {
 
 export default async function AdminEventos() {
   const inscricoes = await listarInscricoesEvento();
-
-  function pessoas(i: (typeof inscricoes)[number]): number {
-    return i.adultos + i.criancasMais10 + i.criancasMenos10;
-  }
-  const totalPessoas = inscricoes.reduce((soma, i) => soma + pessoas(i), 0);
-
-  let acumulado = 0;
-  const porOrganizacao = EVENTO_ORGANIZACOES.map((organizacao, indice) => {
-    const total = inscricoes
-      .filter((i) => i.organizacao === organizacao)
-      .reduce((soma, i) => soma + pessoas(i), 0);
-    const percentagem = totalPessoas > 0 ? (total / totalPessoas) * 100 : 0;
-    const inicio = acumulado;
-    acumulado += percentagem;
-    return { organizacao, total, percentagem, inicio, fim: acumulado, cor: CORES_ORGANIZACAO[indice] };
-  });
-  const gradienteCircular =
-    totalPessoas > 0
-      ? `conic-gradient(${porOrganizacao.map((o) => `${o.cor} ${o.inicio}% ${o.fim}%`).join(", ")})`
-      : "#eae7de";
+  const totalPessoas = inscricoes.reduce(
+    (soma, i) => soma + i.adultos + i.criancasMais10 + i.criancasMenos10,
+    0,
+  );
 
   return (
     <main className="ad-pagina">
@@ -61,37 +42,6 @@ export default async function AdminEventos() {
         .ad-pagina h2 { color: #d4af37; font-size: 1.1rem; margin: 2rem 0 0.75rem; }
         .ad-legenda { color: #6b6a63; font-size: 0.85rem; margin-top: 0.25rem; }
         .ad-pagina > .ad-caixa > p.ad-subtitulo { color: #b3b0a6; font-size: 0.9rem; margin: 0 0 1.5rem; }
-        .ad-grafico {
-          background: #f7f6f3;
-          border: 1px solid #eae7de;
-          border-radius: 12px;
-          padding: 1.5rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 2rem;
-          flex-wrap: wrap;
-        }
-        .ad-circulo-wrap { position: relative; width: 200px; height: 200px; flex: none; }
-        .ad-circulo { width: 200px; height: 200px; border-radius: 50%; }
-        .ad-circulo-centro {
-          position: absolute;
-          inset: 32px;
-          background: #f7f6f3;
-          border-radius: 50%;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-        }
-        .ad-circulo-centro-numero { font-size: 1.8rem; font-weight: 800; color: #15130f; line-height: 1.1; }
-        .ad-circulo-centro-legenda { color: #6b6a63; font-size: 0.75rem; margin-top: 0.15rem; }
-        .ad-legenda-lista { display: flex; flex-direction: column; gap: 0.6rem; }
-        .ad-legenda-item { display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem; color: #15130f; }
-        .ad-legenda-ponto { width: 12px; height: 12px; border-radius: 50%; flex: none; }
-        .ad-legenda-nome { min-width: 130px; }
-        .ad-legenda-numero { font-weight: 700; }
-        .ad-legenda-percentagem { color: #6b6a63; font-size: 0.8rem; }
         .ad-tabela-wrap {
           border-radius: 10px;
           overflow-x: auto;
@@ -99,7 +49,7 @@ export default async function AdminEventos() {
         }
         .ad-tabela {
           width: 100%;
-          min-width: 900px;
+          min-width: 800px;
           border-collapse: collapse;
           background: #f7f6f3;
         }
@@ -141,29 +91,6 @@ export default async function AdminEventos() {
           {totalPessoas === 1 ? "pessoa inscrita" : "pessoas inscritas"}
         </p>
 
-        <h2>Inscrições por organização</h2>
-        <div className="ad-grafico">
-          <div className="ad-circulo-wrap">
-            <div className="ad-circulo" style={{ background: gradienteCircular }} />
-            <div className="ad-circulo-centro">
-              <span className="ad-circulo-centro-numero">{totalPessoas}</span>
-              <span className="ad-circulo-centro-legenda">
-                {totalPessoas === 1 ? "pessoa" : "pessoas"}
-              </span>
-            </div>
-          </div>
-          <div className="ad-legenda-lista">
-            {porOrganizacao.map((o) => (
-              <div key={o.organizacao} className="ad-legenda-item">
-                <span className="ad-legenda-ponto" style={{ background: o.cor }} />
-                <span className="ad-legenda-nome">{o.organizacao}</span>
-                <span className="ad-legenda-numero">{o.total}</span>
-                <span className="ad-legenda-percentagem">({Math.round(o.percentagem)}%)</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
         <h2>Todas as inscrições</h2>
         {inscricoes.length === 0 ? (
           <p className="ad-legenda">Ainda sem inscrições.</p>
@@ -175,7 +102,6 @@ export default async function AdminEventos() {
                   <th>Nome</th>
                   <th>Telemóvel</th>
                   <th>Email</th>
-                  <th>Organização</th>
                   <th>Adultos</th>
                   <th>Crianças +10</th>
                   <th>Crianças -10</th>
@@ -190,7 +116,6 @@ export default async function AdminEventos() {
                     <td>{i.nome}</td>
                     <td>{i.telemovel}</td>
                     <td>{i.email}</td>
-                    <td>{i.organizacao}</td>
                     <td>{i.adultos}</td>
                     <td>{i.criancasMais10}</td>
                     <td>{i.criancasMenos10}</td>

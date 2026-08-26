@@ -1,9 +1,5 @@
 import { NextResponse } from "next/server";
-import {
-  calcularTotalEvento,
-  organizacaoEventoValida,
-  registarInscricaoEvento,
-} from "@/lib/eventos";
+import { calcularTotalEvento, registarInscricaoEvento } from "@/lib/eventos";
 
 const TAMANHO_MAXIMO_COMPROVATIVO = 4 * 1024 * 1024; // 4MB — margem sob o limite de payload do Vercel
 const TIPOS_ACEITES = new Set(["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"]);
@@ -27,7 +23,6 @@ export async function POST(request: Request): Promise<Response> {
     const nome = dados.get("nome");
     const telemovel = dados.get("telemovel");
     const email = dados.get("email");
-    const organizacao = dados.get("organizacao");
     const comprovativo = dados.get("comprovativo");
 
     if (typeof nome !== "string" || !nome.trim()) {
@@ -38,9 +33,6 @@ export async function POST(request: Request): Promise<Response> {
     }
     if (typeof email !== "string" || !email.includes("@")) {
       return NextResponse.json({ erro: "email inválido" }, { status: 400 });
-    }
-    if (!organizacaoEventoValida(organizacao)) {
-      return NextResponse.json({ erro: "organização inválida" }, { status: 400 });
     }
     const adultos = inteiroValido(dados.get("adultos"), 1);
     if (adultos === null) {
@@ -73,7 +65,6 @@ export async function POST(request: Request): Promise<Response> {
       nome: nome.trim(),
       telemovel: telemovel.trim(),
       email: email.trim().toLowerCase(),
-      organizacao,
       adultos,
       criancasMais10,
       criancasMenos10,

@@ -7,19 +7,6 @@ export const EVENTO_LOCAL = "Fátima";
 export const EVENTO_PRECO_ADULTO = 35;
 export const EVENTO_PRECO_CRIANCA_MAIS10 = 17;
 
-export const EVENTO_ORGANIZACOES = [
-  "Sara e Zé",
-  "Ana Custódia",
-  "Lara Rodrigues",
-  "Ludmila",
-] as const;
-
-export type OrganizacaoEvento = (typeof EVENTO_ORGANIZACOES)[number];
-
-export function organizacaoEventoValida(valor: unknown): valor is OrganizacaoEvento {
-  return typeof valor === "string" && (EVENTO_ORGANIZACOES as readonly string[]).includes(valor);
-}
-
 export function calcularTotalEvento(adultos: number, criancasMais10: number): number {
   return adultos * EVENTO_PRECO_ADULTO + criancasMais10 * EVENTO_PRECO_CRIANCA_MAIS10;
 }
@@ -28,7 +15,6 @@ interface DadosInscricaoEvento {
   nome: string;
   telemovel: string;
   email: string;
-  organizacao: OrganizacaoEvento;
   adultos: number;
   criancasMais10: number;
   criancasMenos10: number;
@@ -41,14 +27,13 @@ export async function registarInscricaoEvento(dados: DadosInscricaoEvento): Prom
   const total = calcularTotalEvento(dados.adultos, dados.criancasMais10);
   await db().query(
     `insert into evento_inscricoes
-       (nome, telemovel, email, organizacao, adultos, criancas_mais10, criancas_menos10,
+       (nome, telemovel, email, adultos, criancas_mais10, criancas_menos10,
         total_pagar, comprovativo, comprovativo_nome, comprovativo_tipo)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
     [
       dados.nome,
       dados.telemovel,
       dados.email,
-      dados.organizacao,
       dados.adultos,
       dados.criancasMais10,
       dados.criancasMenos10,
@@ -65,7 +50,6 @@ export interface InscricaoEvento {
   nome: string;
   telemovel: string;
   email: string;
-  organizacao: string;
   adultos: number;
   criancasMais10: number;
   criancasMenos10: number;
@@ -81,7 +65,6 @@ export async function listarInscricoesEvento(): Promise<InscricaoEvento[]> {
     nome: string;
     telemovel: string;
     email: string;
-    organizacao: string;
     adultos: number;
     criancas_mais10: number;
     criancas_menos10: number;
@@ -89,7 +72,7 @@ export async function listarInscricoesEvento(): Promise<InscricaoEvento[]> {
     comprovativo_nome: string | null;
     criado_em: Date;
   }>(
-    `select id, nome, telemovel, email, organizacao, adultos, criancas_mais10, criancas_menos10,
+    `select id, nome, telemovel, email, adultos, criancas_mais10, criancas_menos10,
             total_pagar, comprovativo_nome, criado_em
      from evento_inscricoes
      order by criado_em desc`,
@@ -99,7 +82,6 @@ export async function listarInscricoesEvento(): Promise<InscricaoEvento[]> {
     nome: r.nome,
     telemovel: r.telemovel,
     email: r.email,
-    organizacao: r.organizacao,
     adultos: r.adultos,
     criancasMais10: r.criancas_mais10,
     criancasMenos10: r.criancas_menos10,
