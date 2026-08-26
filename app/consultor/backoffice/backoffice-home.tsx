@@ -293,7 +293,8 @@ export function BackofficeHome() {
 
             <h2>O teu link de partilha</h2>
             <p className="vqb-mudo">
-              É este o endereço que partilhas. Quem se inscrever por ele fica atribuído a ti.
+              É este o link que partilhas para as pessoas se inscreverem no webinar. Quem se inscrever
+              por ele fica atribuído a ti.
             </p>
             <div className="vqb-linkbox">{dados.link}</div>
             <div style={{ marginTop: "0.75rem" }}>
