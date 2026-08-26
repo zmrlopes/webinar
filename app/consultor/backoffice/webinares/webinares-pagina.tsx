@@ -13,6 +13,7 @@ interface LeadConsolidado {
   sessoesFeitas: number;
   assistiu: boolean;
   percentagemAssistencia: number | null;
+  ultimaSessaoAssistida: string | null;
   trazidoPor: string | null;
   estado: EstadoLead | null;
   podeEditar: boolean;
@@ -25,6 +26,13 @@ interface ResumoLeads {
   convertidos: number;
   desistiram: number;
   leads: LeadConsolidado[];
+}
+
+function formatarData(iso: string): string {
+  return new Date(iso).toLocaleDateString("pt-PT", {
+    dateStyle: "medium",
+    timeZone: "Europe/Lisbon",
+  });
 }
 
 const ESTADOS: { valor: EstadoLead; rotulo: string }[] = [
@@ -117,7 +125,7 @@ export function WebinaresPagina() {
           overflow-x: auto;
           border: 1px solid #eae7de;
         }
-        .vqw-tabela { width: 100%; min-width: 800px; border-collapse: collapse; background: #f7f6f3; }
+        .vqw-tabela { width: 100%; min-width: 950px; border-collapse: collapse; background: #f7f6f3; }
         .vqw-tabela th, .vqw-tabela td {
           text-align: left;
           padding: 0.6rem 0.9rem;
@@ -200,6 +208,7 @@ export function WebinaresPagina() {
                       <th>Trazido por</th>
                       <th>Sessões</th>
                       <th>% assistência</th>
+                      <th>Última sessão assistida</th>
                       <th>Estado</th>
                     </tr>
                   </thead>
@@ -217,6 +226,9 @@ export function WebinaresPagina() {
                         <td>{lead.sessoesFeitas}</td>
                         <td>
                           {lead.percentagemAssistencia !== null ? `${lead.percentagemAssistencia}%` : "—"}
+                        </td>
+                        <td>
+                          {lead.ultimaSessaoAssistida ? formatarData(lead.ultimaSessaoAssistida) : "—"}
                         </td>
                         <td>
                           <div className="vqw-estados">

@@ -15,6 +15,7 @@ export interface LeadConsolidado {
   sessoesFeitas: number;
   assistiu: boolean;
   percentagemAssistencia: number | null;
+  ultimaSessaoAssistida: string | null;
   trazidoPor: string | null;
   estado: EstadoLead | null;
   podeEditar: boolean;
@@ -49,6 +50,7 @@ export async function listarLeadsConsolidado(
     sessoes_feitas: string;
     assistiu: boolean;
     percentagem_assistencia: string | null;
+    ultima_sessao_assistida: string | null;
     trazido_por_nome: string | null;
     referencia_email_mais_recente: string | null;
     pode_editar: boolean;
@@ -67,6 +69,7 @@ export async function listarLeadsConsolidado(
            else null
          end
        ) as percentagem_assistencia,
+       max(case when r.presenca = 'attended' then w.sessao_externa_em end) as ultima_sessao_assistida,
        (array_agg(ea.nome order by r.criado_em desc))[1] as trazido_por_nome,
        (array_agg(r.referencia_email order by r.criado_em desc))[1] as referencia_email_mais_recente,
        bool_or(r.referencia_email = $3) as pode_editar,
@@ -92,6 +95,7 @@ export async function listarLeadsConsolidado(
     assistiu: r.assistiu,
     percentagemAssistencia:
       r.percentagem_assistencia !== null ? Number(r.percentagem_assistencia) : null,
+    ultimaSessaoAssistida: r.ultima_sessao_assistida,
     trazidoPor: r.referencia_email_mais_recente === proprioEmail ? null : r.trazido_por_nome,
     estado: r.estado,
     podeEditar: r.pode_editar,
