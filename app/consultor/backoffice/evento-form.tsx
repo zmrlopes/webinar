@@ -88,10 +88,11 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
         .vqe-sucesso { color: #0ca30c; font-weight: 600; font-size: 1rem; }
         .vqe-grid-numeros {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 0.75rem;
           margin: 1.25rem 0;
         }
+        .vqe-grid-numeros > .vqe-campo { min-width: 0; margin-bottom: 0; }
         .vqe-campo { margin-bottom: 1rem; }
         .vqe-campo label {
           display: block;
@@ -166,16 +167,17 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
             onChange={(e) => setCriancasMais10(Math.max(0, Number(e.target.value) || 0))}
           />
         </div>
-        <div className="vqe-campo" style={{ marginBottom: 0 }}>
-          <label htmlFor="evento-criancas-menos10">Crianças -10 anos (grátis)</label>
-          <input
-            id="evento-criancas-menos10"
-            type="number"
-            min={0}
-            value={criancasMenos10}
-            onChange={(e) => setCriancasMenos10(Math.max(0, Number(e.target.value) || 0))}
-          />
-        </div>
+      </div>
+
+      <div className="vqe-campo">
+        <label htmlFor="evento-criancas-menos10">Crianças -10 anos (grátis)</label>
+        <input
+          id="evento-criancas-menos10"
+          type="number"
+          min={0}
+          value={criancasMenos10}
+          onChange={(e) => setCriancasMenos10(Math.max(0, Number(e.target.value) || 0))}
+        />
       </div>
 
       <div className="vqe-campo">
