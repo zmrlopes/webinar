@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { buscarVisaoGeralAdmin, listarWebinarsAdmin } from "@/lib/admin";
+import { listarInscricoesEvento } from "@/lib/eventos";
 
 export const dynamic = "force-dynamic";
 
@@ -15,9 +16,10 @@ function formatarData(data: Date | null): string {
 }
 
 export default async function AdminDashboard() {
-  const [webinars, visaoGeral] = await Promise.all([
+  const [webinars, visaoGeral, inscricoesEvento] = await Promise.all([
     listarWebinarsAdmin(),
     buscarVisaoGeralAdmin(),
+    listarInscricoesEvento(),
   ]);
 
   return (
@@ -106,6 +108,11 @@ export default async function AdminDashboard() {
             <div className="ad-numero">{visaoGeral.consultoresAtivos}</div>
             <div className="ad-legenda">Consultores ativos</div>
             <div className="ad-cartao-seta">Ver todos →</div>
+          </Link>
+          <Link href="/admin/eventos" className="ad-cartao ad-cartao-link">
+            <div className="ad-numero">{inscricoesEvento.length}</div>
+            <div className="ad-legenda">Inscrições em eventos</div>
+            <div className="ad-cartao-seta">Ver eventos →</div>
           </Link>
         </div>
 

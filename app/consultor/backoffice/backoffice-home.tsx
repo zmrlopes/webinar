@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { guardarEmail, lerEmailGuardado, limparEmailGuardado } from "./armazenamento";
+import { EventoForm } from "./evento-form";
 
 interface DadosIdentificacao {
   nome: string | null;
@@ -398,7 +399,8 @@ export function BackofficeHome() {
 
             {seccaoAtiva === "eventos" && (
               <div className="vqb-seccao">
-                <p className="vqb-mudo">Em breve.</p>
+                <h2>Teambuilding Tropa de Elite</h2>
+                <EventoForm email={email} nome={dados.nome} />
               </div>
             )}
           </>
