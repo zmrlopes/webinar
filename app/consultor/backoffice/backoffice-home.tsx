@@ -13,6 +13,7 @@ interface DadosIdentificacao {
 }
 
 type Estado = "a-carregar" | "por-identificar" | "pronto" | "erro";
+type Seccao = "sessoes" | "eventos" | null;
 
 function formatarData(iso: string): string {
   return new Date(iso).toLocaleString("pt-PT", {
@@ -32,6 +33,11 @@ export function BackofficeHome() {
   const [erroFormacao, setErroFormacao] = useState("");
   const [aPedirWebinar, setAPedirWebinar] = useState(false);
   const [erroWebinar, setErroWebinar] = useState("");
+  const [seccaoAtiva, setSeccaoAtiva] = useState<Seccao>(null);
+
+  function alternarSeccao(seccao: Seccao): void {
+    setSeccaoAtiva((atual) => (atual === seccao ? null : seccao));
+  }
 
   async function identificar(emailParaIdentificar: string): Promise<void> {
     setEstado("a-carregar");
@@ -214,18 +220,35 @@ export function BackofficeHome() {
         .vqb-destaque-data { margin: 0 0 0.75rem; color: #6b6a63; font-size: 0.95rem; }
         .vqb-destaque-texto { margin: 0 0 1.1rem; color: #6b6a63; font-size: 0.9rem; }
         .vqb-destaque-botao { display: block; width: 100%; text-align: center; padding: 0.85rem; font-size: 1.05rem; }
-        .vqb-botao-webinares {
-          display: block;
-          background: #f7f6f3;
-          color: #15130f;
-          border: 1px solid #eae7de;
-          border-radius: 12px;
-          padding: 1.25rem 1.5rem;
-          text-decoration: none;
-          margin-top: 1.25rem;
+        .vqb-pagina a.vqb-destaque-botao {
+          background: linear-gradient(135deg, #e8c96a, #b8902f);
+          color: #1a1712;
+          border-radius: 8px;
           font-weight: 700;
+          text-decoration: none;
+          box-sizing: border-box;
         }
-        .vqb-botao-webinares span { display: block; color: #6b6a63; font-weight: 400; font-size: 0.85rem; margin-top: 0.2rem; }
+        .vqb-menu { display: flex; gap: 0.6rem; flex-wrap: wrap; margin: 1.75rem 0 0; }
+        .vqb-pagina button.vqb-menu-item,
+        .vqb-pagina a.vqb-menu-item {
+          flex: 1 1 140px;
+          background: transparent;
+          color: #d4af37;
+          border: 1px solid #6b5c2e;
+          border-radius: 999px;
+          padding: 0.6rem 1rem;
+          font-size: 0.9rem;
+          font-weight: 700;
+          text-align: center;
+          text-decoration: none;
+          box-sizing: border-box;
+        }
+        .vqb-pagina button.vqb-menu-item.vqb-menu-ativo {
+          background: linear-gradient(135deg, #e8c96a, #b8902f);
+          color: #1a1712;
+          border-color: transparent;
+        }
+        .vqb-seccao { margin-top: 1.5rem; }
       `}</style>
 
       <div className="vqb-caixa">
@@ -274,54 +297,106 @@ export function BackofficeHome() {
               </button>
             </div>
 
-            {dados.ehConsultorEquipa && dados.formacao && (
-              <>
-                <h2>Formação de segunda</h2>
-                <div className="vqb-cartao">
-                  <span className="vqb-destaque-etiqueta">Próxima formação</span>
-                  <h3 className="vqb-destaque-titulo">{dados.formacao.titulo}</h3>
-                  <p className="vqb-destaque-data">{formatarData(dados.formacao.sessaoExternaEm)}</p>
-                  <p className="vqb-destaque-texto">É só para travel partners — não é para convidados.</p>
-                  <button
-                    type="button"
-                    className="vqb-destaque-botao"
-                    onClick={pedirFormacao}
-                    disabled={aPedirFormacao}
-                  >
-                    {aPedirFormacao ? "A preparar..." : "Entrar na formação"}
-                  </button>
-                  {erroFormacao && <p className="vqb-erro" style={{ marginTop: "0.75rem" }}>{erroFormacao}</p>}
-                </div>
-              </>
+            <h2>Página da Equipa</h2>
+            <div className="vqb-cartao">
+              <p className="vqb-destaque-texto" style={{ marginBottom: "1.1rem" }}>
+                Informações importantes, agenda semanal, incentivos, formações gravadas e muito mais.
+              </p>
+              <a
+                href="https://viajareviver.net/equipa"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="vqb-destaque-botao"
+              >
+                Entrar na página
+              </a>
+            </div>
+
+            <div className="vqb-menu">
+              <button
+                type="button"
+                className={
+                  seccaoAtiva === "sessoes" ? "vqb-menu-item vqb-menu-ativo" : "vqb-menu-item"
+                }
+                onClick={() => alternarSeccao("sessoes")}
+              >
+                Próximas sessões
+              </button>
+              <Link href="/consultor/backoffice/webinares" className="vqb-menu-item">
+                Leads
+              </Link>
+              <button
+                type="button"
+                className={
+                  seccaoAtiva === "eventos" ? "vqb-menu-item vqb-menu-ativo" : "vqb-menu-item"
+                }
+                onClick={() => alternarSeccao("eventos")}
+              >
+                Eventos
+              </button>
+            </div>
+
+            {seccaoAtiva === "sessoes" && (
+              <div className="vqb-seccao">
+                {dados.ehConsultorEquipa && dados.formacao && (
+                  <>
+                    <h2>Formação de segunda</h2>
+                    <div className="vqb-cartao">
+                      <span className="vqb-destaque-etiqueta">Próxima formação</span>
+                      <h3 className="vqb-destaque-titulo">{dados.formacao.titulo}</h3>
+                      <p className="vqb-destaque-data">{formatarData(dados.formacao.sessaoExternaEm)}</p>
+                      <p className="vqb-destaque-texto">É só para travel partners — não é para convidados.</p>
+                      <button
+                        type="button"
+                        className="vqb-destaque-botao"
+                        onClick={pedirFormacao}
+                        disabled={aPedirFormacao}
+                      >
+                        {aPedirFormacao ? "A preparar..." : "Entrar na formação"}
+                      </button>
+                      {erroFormacao && (
+                        <p className="vqb-erro" style={{ marginTop: "0.75rem" }}>{erroFormacao}</p>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {dados.proximoWebinar && (
+                  <>
+                    <h2>Próximo webinar</h2>
+                    <div className="vqb-cartao">
+                      <span className="vqb-destaque-etiqueta">Próximo webinar</span>
+                      <h3 className="vqb-destaque-titulo">{dados.proximoWebinar.titulo}</h3>
+                      <p className="vqb-destaque-data">{formatarData(dados.proximoWebinar.sessaoExternaEm)}</p>
+                      <p className="vqb-destaque-texto">
+                        Entra diretamente no Zoom — ficas automaticamente inscrito.
+                      </p>
+                      <button
+                        type="button"
+                        className="vqb-destaque-botao"
+                        onClick={pedirWebinar}
+                        disabled={aPedirWebinar}
+                      >
+                        {aPedirWebinar ? "A preparar..." : "Entrar no webinar"}
+                      </button>
+                      {erroWebinar && (
+                        <p className="vqb-erro" style={{ marginTop: "0.75rem" }}>{erroWebinar}</p>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {!(dados.ehConsultorEquipa && dados.formacao) && !dados.proximoWebinar && (
+                  <p className="vqb-mudo">Sem sessões agendadas de momento.</p>
+                )}
+              </div>
             )}
 
-            {dados.proximoWebinar && (
-              <>
-                <h2>Próximo webinar</h2>
-                <div className="vqb-cartao">
-                  <span className="vqb-destaque-etiqueta">Próximo webinar</span>
-                  <h3 className="vqb-destaque-titulo">{dados.proximoWebinar.titulo}</h3>
-                  <p className="vqb-destaque-data">{formatarData(dados.proximoWebinar.sessaoExternaEm)}</p>
-                  <p className="vqb-destaque-texto">
-                    Entra diretamente no Zoom — ficas automaticamente inscrito.
-                  </p>
-                  <button
-                    type="button"
-                    className="vqb-destaque-botao"
-                    onClick={pedirWebinar}
-                    disabled={aPedirWebinar}
-                  >
-                    {aPedirWebinar ? "A preparar..." : "Entrar no webinar"}
-                  </button>
-                  {erroWebinar && <p className="vqb-erro" style={{ marginTop: "0.75rem" }}>{erroWebinar}</p>}
-                </div>
-              </>
+            {seccaoAtiva === "eventos" && (
+              <div className="vqb-seccao">
+                <p className="vqb-mudo">Em breve.</p>
+              </div>
             )}
-
-            <Link href="/consultor/backoffice/webinares" className="vqb-botao-webinares">
-              Leads
-              <span>Ver todos os teus leads e da tua equipa, sessão a sessão</span>
-            </Link>
           </>
         )}
       </div>
