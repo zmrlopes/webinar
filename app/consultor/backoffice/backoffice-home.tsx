@@ -231,22 +231,26 @@ export function BackofficeHome() {
         .vqb-menu { display: flex; gap: 0.6rem; flex-wrap: wrap; margin: 1.75rem 0 0; }
         .vqb-pagina button.vqb-menu-item,
         .vqb-pagina a.vqb-menu-item {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
           flex: 1 1 140px;
-          background: transparent;
-          color: #d4af37;
-          border: 1px solid #6b5c2e;
+          box-sizing: border-box;
+          background: linear-gradient(135deg, #e8c96a, #b8902f);
+          color: #1a1712;
+          border: 1px solid transparent;
           border-radius: 999px;
           padding: 0.6rem 1rem;
           font-size: 0.9rem;
+          font-family: inherit;
+          line-height: 1.3;
           font-weight: 700;
           text-align: center;
           text-decoration: none;
-          box-sizing: border-box;
+          margin: 0;
         }
         .vqb-pagina button.vqb-menu-item.vqb-menu-ativo {
-          background: linear-gradient(135deg, #e8c96a, #b8902f);
-          color: #1a1712;
-          border-color: transparent;
+          background: linear-gradient(135deg, #b8902f, #8a6a1f);
         }
         .vqb-seccao { margin-top: 1.5rem; }
       `}</style>
