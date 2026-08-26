@@ -170,9 +170,25 @@ export function BackofficeHome() {
           border-radius: 12px;
           padding: 1.25rem 1.5rem;
         }
-        .vqb-cartao-topo { display: flex; justify-content: space-between; align-items: start; gap: 1rem; flex-wrap: wrap; }
         .vqb-cartao h3 { margin: 0 0 0.25rem; font-size: 1.1rem; }
         .vqb-cartao p { margin: 0; color: #6b6a63; font-size: 0.9rem; }
+        .vqb-formacao-etiqueta {
+          display: block;
+          color: #b8902f;
+          font-size: 0.75rem;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          margin: 0 0 0.4rem;
+        }
+        .vqb-formacao-titulo {
+          margin: 0 0 0.3rem;
+          font-size: 1.3rem;
+          text-transform: uppercase;
+        }
+        .vqb-formacao-data { margin: 0 0 0.75rem; color: #6b6a63; font-size: 0.95rem; }
+        .vqb-formacao-texto { margin: 0 0 1.1rem; color: #6b6a63; font-size: 0.9rem; }
+        .vqb-formacao-botao { display: block; width: 100%; text-align: center; padding: 0.85rem; font-size: 1.05rem; }
         .vqb-botao-webinares {
           display: block;
           background: #f7f6f3;
@@ -237,15 +253,18 @@ export function BackofficeHome() {
               <>
                 <h2>Formação de segunda</h2>
                 <div className="vqb-cartao">
-                  <div className="vqb-cartao-topo">
-                    <div>
-                      <h3>{dados.formacao.titulo}</h3>
-                      <p>{formatarData(dados.formacao.sessaoExternaEm)}</p>
-                    </div>
-                    <button type="button" onClick={pedirFormacao} disabled={aPedirFormacao}>
-                      {aPedirFormacao ? "A preparar..." : "Quero assistir"}
-                    </button>
-                  </div>
+                  <span className="vqb-formacao-etiqueta">Próxima formação</span>
+                  <h3 className="vqb-formacao-titulo">{dados.formacao.titulo}</h3>
+                  <p className="vqb-formacao-data">{formatarData(dados.formacao.sessaoExternaEm)}</p>
+                  <p className="vqb-formacao-texto">É só para travel partners — não é para convidados.</p>
+                  <button
+                    type="button"
+                    className="vqb-formacao-botao"
+                    onClick={pedirFormacao}
+                    disabled={aPedirFormacao}
+                  >
+                    {aPedirFormacao ? "A preparar..." : "Entrar na formação"}
+                  </button>
                   {erroFormacao && <p className="vqb-erro" style={{ marginTop: "0.75rem" }}>{erroFormacao}</p>}
                 </div>
               </>
