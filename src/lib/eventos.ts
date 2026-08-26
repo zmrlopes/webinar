@@ -23,7 +23,20 @@ interface DadosInscricaoEvento {
   comprovativoTipo: string;
 }
 
-export async function registarInscricaoEvento(dados: DadosInscricaoEvento): Promise<string> {
+export interface BilheteNovo {
+  id: string;
+  rotulo: string;
+}
+
+/**
+ * Cria a inscrição e um bilhete por cada pessoa que precisa de ser
+ * confirmada individualmente à entrada: um por adulto, um por cada criança
+ * que paga (+10 anos) — as crianças que não pagam (-10 anos) não têm
+ * bilhete próprio, seguem com o adulto que as trouxe.
+ */
+export async function registarInscricaoEvento(
+  dados: DadosInscricaoEvento,
+): Promise<{ id: string; bilhetes: BilheteNovo[] }> {
   const total = calcularTotalEvento(dados.adultos, dados.criancasMais10);
   const { rows } = await db().query<{ id: string }>(
     `insert into evento_inscricoes
@@ -44,7 +57,29 @@ export async function registarInscricaoEvento(dados: DadosInscricaoEvento): Prom
       dados.comprovativoTipo,
     ],
   );
-  return rows[0]!.id;
+  const inscricaoId = rows[0]!.id;
+
+  const rotulos: string[] = [];
+  for (let n = 1; n <= dados.adultos; n++) rotulos.push(`Adulto ${n}`);
+  for (let n = 1; n <= dados.criancasMais10; n++) rotulos.push(`Criança +10 anos ${n}`);
+
+  const bilhetes: BilheteNovo[] = [];
+  for (const rotulo of rotulos) {
+    const { rows: bilheteRows } = await db().query<{ id: string }>(
+      `insert into evento_bilhetes (inscricao_id, rotulo) values ($1, $2) returning id`,
+      [inscricaoId, rotulo],
+    );
+    bilhetes.push({ id: bilheteRows[0]!.id, rotulo });
+  }
+
+  return { id: inscricaoId, bilhetes };
+}
+
+export interface BilheteEvento {
+  id: string;
+  rotulo: string;
+  presente: boolean;
+  presenteEm: Date | null;
 }
 
 export interface InscricaoEvento {
@@ -57,33 +92,47 @@ export interface InscricaoEvento {
   criancasMenos10: number;
   totalPagar: number;
   comprovativoNome: string | null;
-  presente: boolean;
-  presenteEm: Date | null;
   criadoEm: Date;
+  bilhetes: BilheteEvento[];
 }
 
 /** Sem os bytes do comprovativo — só o essencial para a tabela do admin. */
 export async function listarInscricoesEvento(): Promise<InscricaoEvento[]> {
-  const { rows } = await db().query<{
-    id: string;
-    nome: string;
-    telemovel: string;
-    email: string;
-    adultos: number;
-    criancas_mais10: number;
-    criancas_menos10: number;
-    total_pagar: string;
-    comprovativo_nome: string | null;
-    presente: boolean;
-    presente_em: Date | null;
-    criado_em: Date;
-  }>(
-    `select id, nome, telemovel, email, adultos, criancas_mais10, criancas_menos10,
-            total_pagar, comprovativo_nome, presente, presente_em, criado_em
-     from evento_inscricoes
-     order by criado_em desc`,
-  );
-  return rows.map((r) => ({
+  const [{ rows: inscricoes }, { rows: bilhetes }] = await Promise.all([
+    db().query<{
+      id: string;
+      nome: string;
+      telemovel: string;
+      email: string;
+      adultos: number;
+      criancas_mais10: number;
+      criancas_menos10: number;
+      total_pagar: string;
+      comprovativo_nome: string | null;
+      criado_em: Date;
+    }>(
+      `select id, nome, telemovel, email, adultos, criancas_mais10, criancas_menos10,
+              total_pagar, comprovativo_nome, criado_em
+       from evento_inscricoes
+       order by criado_em desc`,
+    ),
+    db().query<{
+      id: string;
+      inscricao_id: string;
+      rotulo: string;
+      presente: boolean;
+      presente_em: Date | null;
+    }>(`select id, inscricao_id, rotulo, presente, presente_em from evento_bilhetes order by rotulo asc`),
+  ]);
+
+  const bilhetesPorInscricao = new Map<string, BilheteEvento[]>();
+  for (const b of bilhetes) {
+    const lista = bilhetesPorInscricao.get(b.inscricao_id) ?? [];
+    lista.push({ id: b.id, rotulo: b.rotulo, presente: b.presente, presenteEm: b.presente_em });
+    bilhetesPorInscricao.set(b.inscricao_id, lista);
+  }
+
+  return inscricoes.map((r) => ({
     id: r.id,
     nome: r.nome,
     telemovel: r.telemovel,
@@ -93,35 +142,9 @@ export async function listarInscricoesEvento(): Promise<InscricaoEvento[]> {
     criancasMenos10: r.criancas_menos10,
     totalPagar: Number(r.total_pagar),
     comprovativoNome: r.comprovativo_nome,
-    presente: r.presente,
-    presenteEm: r.presente_em,
     criadoEm: r.criado_em,
+    bilhetes: bilhetesPorInscricao.get(r.id) ?? [],
   }));
-}
-
-/**
- * Marca a presença ao ler o QR code do email de confirmação (ver
- * /api/eventos/checkin/[id]) — idempotente, para ler o mesmo código duas
- * vezes não ser um erro. Devolve o nome (para a página de confirmação) e se
- * já estava marcado antes desta chamada.
- */
-export async function marcarPresencaEvento(
-  id: string,
-): Promise<{ nome: string; jaEstavaPresente: boolean } | undefined> {
-  const { rows: antes } = await db().query<{ nome: string; presente: boolean }>(
-    `select nome, presente from evento_inscricoes where id = $1`,
-    [id],
-  );
-  const inscricao = antes[0];
-  if (!inscricao) return undefined;
-
-  if (!inscricao.presente) {
-    await db().query(
-      `update evento_inscricoes set presente = true, presente_em = now() where id = $1`,
-      [id],
-    );
-  }
-  return { nome: inscricao.nome, jaEstavaPresente: inscricao.presente };
 }
 
 export async function buscarComprovativoEvento(
@@ -142,4 +165,32 @@ export async function buscarComprovativoEvento(
     nome: r.comprovativo_nome ?? "comprovativo",
     tipo: r.comprovativo_tipo ?? "application/octet-stream",
   };
+}
+
+/**
+ * Marca a presença de um bilhete ao ler o QR code (ver
+ * /api/eventos/checkin/[id]) — idempotente, ler o mesmo código duas vezes
+ * não é erro. Devolve o nome de quem se inscreveu + o rótulo do bilhete
+ * (ex: "Adulto 2"), para a página de confirmação.
+ */
+export async function marcarPresencaBilhete(
+  bilheteId: string,
+): Promise<{ nomeInscricao: string; rotulo: string; jaEstavaPresente: boolean } | undefined> {
+  const { rows } = await db().query<{ rotulo: string; presente: boolean; nome: string }>(
+    `select b.rotulo, b.presente, i.nome
+     from evento_bilhetes b
+     join evento_inscricoes i on i.id = b.inscricao_id
+     where b.id = $1`,
+    [bilheteId],
+  );
+  const linha = rows[0];
+  if (!linha) return undefined;
+
+  if (!linha.presente) {
+    await db().query(
+      `update evento_bilhetes set presente = true, presente_em = now() where id = $1`,
+      [bilheteId],
+    );
+  }
+  return { nomeInscricao: linha.nome, rotulo: linha.rotulo, jaEstavaPresente: linha.presente };
 }

@@ -9,7 +9,7 @@ export interface Mensagem {
   destinatario: string;
   assunto: string;
   corpoTexto: string;
-  anexo?: AnexoMensagem;
+  anexos?: AnexoMensagem[];
 }
 
 export interface EmailSender {
@@ -24,8 +24,11 @@ export interface EmailSender {
  */
 export class ConsoleEmailSender implements EmailSender {
   async enviar(mensagem: Mensagem): Promise<void> {
-    const anexo = mensagem.anexo ? ` (anexo: ${mensagem.anexo.nome})` : "";
-    console.log(`[email] para ${mensagem.destinatario} — ${mensagem.assunto}${anexo}`);
+    const anexos =
+      mensagem.anexos && mensagem.anexos.length > 0
+        ? ` (anexos: ${mensagem.anexos.map((a) => a.nome).join(", ")})`
+        : "";
+    console.log(`[email] para ${mensagem.destinatario} — ${mensagem.assunto}${anexos}`);
   }
 }
 
@@ -56,8 +59,10 @@ export class BrevoEmailSender implements EmailSender {
         to: [{ email: mensagem.destinatario }],
         subject: mensagem.assunto,
         textContent: mensagem.corpoTexto,
-        ...(mensagem.anexo
-          ? { attachment: [{ name: mensagem.anexo.nome, content: mensagem.anexo.conteudoBase64 }] }
+        ...(mensagem.anexos && mensagem.anexos.length > 0
+          ? {
+              attachment: mensagem.anexos.map((a) => ({ name: a.nome, content: a.conteudoBase64 })),
+            }
           : {}),
       }),
       signal: AbortSignal.timeout(15_000),

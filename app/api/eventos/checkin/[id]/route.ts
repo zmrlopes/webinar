@@ -1,4 +1,4 @@
-import { marcarPresencaEvento } from "@/lib/eventos";
+import { marcarPresencaBilhete } from "@/lib/eventos";
 
 const FORMATO_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -45,11 +45,12 @@ function pagina(titulo: string, corpo: string): Response {
 }
 
 /**
- * O que o QR code do bilhete do evento aponta para: ao ser lido por
+ * O que o QR code de cada bilhete do evento aponta para: ao ser lido por
  * qualquer câmara de telemóvel (sem app nenhuma), abre este link e marca a
- * presença. Idempotente — ler duas vezes não é erro, só mostra "já
- * confirmado". Sem autenticação, tal como /api/entrar/[id] — o id (uuid)
- * não é adivinhável, e é esse o risco aceite pedido para este fluxo.
+ * presença desse bilhete (uma pessoa, ex: "Adulto 2"). Idempotente — ler o
+ * mesmo código duas vezes não é erro, só mostra "já confirmado". Sem
+ * autenticação, tal como /api/entrar/[id] — o id (uuid) não é adivinhável,
+ * e é esse o risco aceite pedido para este fluxo.
  */
 export async function GET(
   _request: Request,
@@ -61,24 +62,26 @@ export async function GET(
     return pagina("Bilhete inválido", `<h1>Bilhete inválido</h1><p>Este código não é reconhecido.</p>`);
   }
 
-  const resultado = await marcarPresencaEvento(id).catch((erro) => {
+  const resultado = await marcarPresencaBilhete(id).catch((erro) => {
     console.error("falha ao marcar presença no evento:", erro);
     return undefined;
   });
 
   if (!resultado) {
-    return pagina("Bilhete não encontrado", `<h1>Bilhete não encontrado</h1><p>Não encontrámos esta inscrição.</p>`);
+    return pagina("Bilhete não encontrado", `<h1>Bilhete não encontrado</h1><p>Não encontrámos este bilhete.</p>`);
   }
+
+  const identificacao = `${escaparHtml(resultado.nomeInscricao)} — ${escaparHtml(resultado.rotulo)}`;
 
   if (resultado.jaEstavaPresente) {
     return pagina(
       "Já confirmado",
-      `<div class="marca">↻</div><h1>${escaparHtml(resultado.nome)}</h1><p>Presença já tinha sido confirmada antes.</p>`,
+      `<div class="marca">↻</div><h1>${identificacao}</h1><p>Presença já tinha sido confirmada antes.</p>`,
     );
   }
 
   return pagina(
     "Presença confirmada",
-    `<div class="marca">✅</div><h1>${escaparHtml(resultado.nome)}</h1><p>Presença confirmada. Bem-vindo(a) ao Teambuilding Tropa de Elite!</p>`,
+    `<div class="marca">✅</div><h1>${identificacao}</h1><p>Presença confirmada. Bem-vindo(a) ao Teambuilding Tropa de Elite!</p>`,
   );
 }

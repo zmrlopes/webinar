@@ -23,7 +23,11 @@ export default async function AdminEventos() {
     (soma, i) => soma + i.adultos + i.criancasMais10 + i.criancasMenos10,
     0,
   );
-  const totalPresentes = inscricoes.filter((i) => i.presente).length;
+  const totalBilhetes = inscricoes.reduce((soma, i) => soma + i.bilhetes.length, 0);
+  const totalPresentes = inscricoes.reduce(
+    (soma, i) => soma + i.bilhetes.filter((b) => b.presente).length,
+    0,
+  );
 
   return (
     <main className="ad-pagina">
@@ -90,6 +94,7 @@ export default async function AdminEventos() {
         }
         .ad-presenca-sim { background: #e4f3e4; color: #0ca30c; }
         .ad-presenca-nao { background: #eee; color: #999; }
+        .ad-bilhetes { display: flex; flex-direction: column; gap: 0.25rem; }
       `}</style>
 
       <div className="ad-caixa">
@@ -99,8 +104,8 @@ export default async function AdminEventos() {
         <h1>{EVENTO_TITULO}</h1>
         <p className="ad-subtitulo">
           {EVENTO_DATA_TEXTO} · {EVENTO_LOCAL} · {EVENTO_PRECO_ADULTO}€ por pessoa — {totalPessoas}{" "}
-          {totalPessoas === 1 ? "pessoa inscrita" : "pessoas inscritas"} · {totalPresentes} de{" "}
-          {inscricoes.length} {inscricoes.length === 1 ? "inscrição compareceu" : "inscrições compareceram"}
+          {totalPessoas === 1 ? "pessoa inscrita" : "pessoas inscritas"} · {totalPresentes} de {totalBilhetes}{" "}
+          {totalBilhetes === 1 ? "bilhete confirmado" : "bilhetes confirmados"}
         </p>
 
         <h2>Todas as inscrições</h2>
@@ -134,9 +139,16 @@ export default async function AdminEventos() {
                     <td>{i.criancasMenos10}</td>
                     <td>{i.totalPagar}€</td>
                     <td>
-                      <span className={i.presente ? "ad-presenca ad-presenca-sim" : "ad-presenca ad-presenca-nao"}>
-                        {i.presente ? "Sim" : "Não"}
-                      </span>
+                      <div className="ad-bilhetes">
+                        {i.bilhetes.map((b) => (
+                          <span
+                            key={b.id}
+                            className={b.presente ? "ad-presenca ad-presenca-sim" : "ad-presenca ad-presenca-nao"}
+                          >
+                            {b.rotulo} {b.presente ? "✓" : "—"}
+                          </span>
+                        ))}
+                      </div>
                     </td>
                     <td>{formatarData(i.criadoEm)}</td>
                     <td>

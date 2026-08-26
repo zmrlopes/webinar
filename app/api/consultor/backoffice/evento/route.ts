@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import QRCode from "qrcode";
-import { criarEmailSender } from "@/lib/email";
+import { criarEmailSender, type AnexoMensagem } from "@/lib/email";
 import {
   calcularTotalEvento,
   EVENTO_DATA_TEXTO,
@@ -8,6 +8,7 @@ import {
   EVENTO_TITULO,
   registarInscricaoEvento,
 } from "@/lib/eventos";
+import { gerarSlug } from "@/lib/slug";
 
 const TAMANHO_MAXIMO_COMPROVATIVO = 4 * 1024 * 1024; // 4MB — margem sob o limite de payload do Vercel
 const TIPOS_ACEITES = new Set(["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"]);
@@ -71,7 +72,7 @@ export async function POST(request: Request): Promise<Response> {
     const nomeTratado = nome.trim();
     const emailTratado = email.trim().toLowerCase();
 
-    const id = await registarInscricaoEvento({
+    const { bilhetes } = await registarInscricaoEvento({
       nome: nomeTratado,
       telemovel: telemovel.trim(),
       email: emailTratado,
@@ -87,8 +88,14 @@ export async function POST(request: Request): Promise<Response> {
     try {
       const host = request.headers.get("host") ?? "";
       const protocolo = host.startsWith("localhost") ? "http" : "https";
-      const linkCheckin = `${protocolo}://${host}/api/eventos/checkin/${id}`;
-      const qrBuffer = await QRCode.toBuffer(linkCheckin, { width: 500, margin: 2 });
+
+      const anexos: AnexoMensagem[] = await Promise.all(
+        bilhetes.map(async (bilhete) => {
+          const linkCheckin = `${protocolo}://${host}/api/eventos/checkin/${bilhete.id}`;
+          const qrBuffer = await QRCode.toBuffer(linkCheckin, { width: 500, margin: 2 });
+          return { nome: `${gerarSlug(bilhete.rotulo)}.png`, conteudoBase64: qrBuffer.toString("base64") };
+        }),
+      );
 
       await criarEmailSender().enviar({
         destinatario: emailTratado,
@@ -96,12 +103,13 @@ export async function POST(request: Request): Promise<Response> {
         corpoTexto:
           `Olá ${nomeTratado},\n\n` +
           `A tua inscrição no ${EVENTO_TITULO} (${EVENTO_DATA_TEXTO}, ${EVENTO_LOCAL}) está confirmada.\n\n` +
-          `Leva o QR code em anexo contigo no dia do evento — vai ser lido à entrada para confirmar a tua presença.\n\n` +
+          `Em anexo vai um QR code por cada pessoa (${bilhetes.map((b) => b.rotulo).join(", ")}) — ` +
+          `leva-os contigo no dia do evento, cada um vai ser lido à entrada para confirmar essa pessoa.\n\n` +
           `Até lá!`,
-        anexo: { nome: "bilhete-teambuilding.png", conteudoBase64: qrBuffer.toString("base64") },
+        anexos,
       });
     } catch (erroEmail) {
-      console.error("falha ao enviar o email com o QR code do evento:", erroEmail);
+      console.error("falha ao enviar o email com os QR codes do evento:", erroEmail);
       emailEnviado = false;
     }
 
