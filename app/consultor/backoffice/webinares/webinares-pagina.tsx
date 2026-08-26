@@ -129,12 +129,18 @@ export function WebinaresPagina() {
         .vqw-tabela tr:last-child td { border-bottom: none; }
         .vqw-estados { display: flex; gap: 0.35rem; flex-wrap: wrap; }
         .vqw-pilula {
+          display: inline-flex;
+          align-items: center;
+          box-sizing: border-box;
           border-radius: 999px;
           padding: 0.25rem 0.65rem;
           font-size: 0.75rem;
+          font-family: inherit;
+          line-height: 1.4;
           font-weight: 600;
           border: 1px solid transparent;
           white-space: nowrap;
+          margin: 0;
         }
         .vqw-pilula-assistiu { background: #e4f3e4; color: #0ca30c; border-color: #c9e8c9; }
         .vqw-pilula-assistiu.vqw-inativa { background: #eee; color: #999; border-color: #ddd; }
