@@ -19,6 +19,11 @@ interface LeadConsolidado {
   podeEditar: boolean;
 }
 
+interface SessaoResumo {
+  id: string;
+  sessaoExternaEm: string;
+}
+
 interface ResumoLeads {
   leadsTotais: number;
   assistiram: number;
@@ -26,11 +31,20 @@ interface ResumoLeads {
   convertidos: number;
   desistiram: number;
   leads: LeadConsolidado[];
+  sessoesDisponiveis: SessaoResumo[];
 }
 
 function formatarData(iso: string): string {
   return new Date(iso).toLocaleDateString("pt-PT", {
     dateStyle: "medium",
+    timeZone: "Europe/Lisbon",
+  });
+}
+
+function formatarDataCurta(iso: string): string {
+  return new Date(iso).toLocaleString("pt-PT", {
+    dateStyle: "short",
+    timeStyle: "short",
     timeZone: "Europe/Lisbon",
   });
 }
@@ -55,14 +69,15 @@ export function WebinaresPagina() {
   const [erro, setErro] = useState("");
   const [aAtualizar, setAAtualizar] = useState<string | null>(null);
   const [aba, setAba] = useState<Aba>("pessoais");
+  const [sessaoSelecionada, setSessaoSelecionada] = useState<string | null>(null);
 
-  async function carregar(emailAtual: string): Promise<void> {
+  async function carregar(emailAtual: string, webinarId?: string | null): Promise<void> {
     setErro("");
     try {
       const resposta = await fetch("/api/consultor/backoffice/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailAtual }),
+        body: JSON.stringify(webinarId ? { email: emailAtual, webinarId } : { email: emailAtual }),
       });
       const corpo = await resposta.json().catch(() => ({}));
       if (!resposta.ok) {
@@ -81,6 +96,11 @@ export function WebinaresPagina() {
     if (guardado) void carregar(guardado);
   }, []);
 
+  function mudarSessao(webinarId: string | null): void {
+    setSessaoSelecionada(webinarId);
+    if (email) void carregar(email, webinarId);
+  }
+
   async function mudarEstado(leadEmail: string, estado: EstadoLead): Promise<void> {
     if (!email) return;
     setAAtualizar(leadEmail);
@@ -91,7 +111,7 @@ export function WebinaresPagina() {
         body: JSON.stringify({ email, leadEmail, estado }),
       });
       if (resposta.ok) {
-        await carregar(email);
+        await carregar(email, sessaoSelecionada);
       }
     } finally {
       setAAtualizar(null);
@@ -210,6 +230,28 @@ export function WebinaresPagina() {
 
         {dados && (
           <>
+            {dados.sessoesDisponiveis.length > 0 && (
+              <div className="vqw-abas">
+                <button
+                  type="button"
+                  className={sessaoSelecionada === null ? "vqw-aba vqw-aba-ativa" : "vqw-aba"}
+                  onClick={() => mudarSessao(null)}
+                >
+                  Todas as sessões
+                </button>
+                {dados.sessoesDisponiveis.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    className={sessaoSelecionada === s.id ? "vqw-aba vqw-aba-ativa" : "vqw-aba"}
+                    onClick={() => mudarSessao(s.id)}
+                  >
+                    {formatarDataCurta(s.sessaoExternaEm)}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <div className="vqw-grid">
               <div className="vqw-cartao">
                 <div className="vqw-numero">{dados.leadsTotais}</div>

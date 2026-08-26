@@ -99,6 +99,36 @@ export async function listarWebinarsParaPainel(): Promise<WebinarResumo[]> {
 export const TITULO_WEBINAR_PUBLICO = "A tua oportunidade de negócio no turismo";
 
 /**
+ * Sessões públicas (excluindo formação interna da equipa) para os
+ * separadores da página de webinares do backoffice — mesma janela de
+ * `listarWebinarsParaPainel` (últimos 60 dias + futuras), mas só do
+ * webinar público.
+ */
+export async function listarSessoesPublicasParaPainel(): Promise<WebinarResumo[]> {
+  const { rows } = await db().query<{
+    id: string;
+    titulo: string;
+    sessao_externa_em: Date;
+    duracao_minutos: number;
+  }>(
+    `select id, titulo, sessao_externa_em, duracao_minutos
+     from webinars
+     where cancelada_em is null
+       and sessao_externa_id is not null
+       and titulo = $1
+       and sessao_externa_em > now() - interval '60 days'
+     order by sessao_externa_em asc`,
+    [TITULO_WEBINAR_PUBLICO],
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    titulo: r.titulo,
+    sessaoExternaEm: r.sessao_externa_em,
+    duracaoMinutos: r.duracao_minutos,
+  }));
+}
+
+/**
  * A sessão de formação interna (só para quem já é consultor) mais próxima
  * no tempo — mesma lógica de `buscarWebinarRelevante`, mas filtrada pelo
  * título. Identificada por conter "potencial" no título (case-insensitive),
