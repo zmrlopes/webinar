@@ -10,7 +10,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const COR_BARRA = "#3a2f77";
+const CORES_ORGANIZACAO = ["#b8902f", "#3a2f77", "#2f7568", "#a33333"];
 
 function formatarData(data: Date): string {
   return new Date(data).toLocaleString("pt-PT", {
@@ -23,11 +23,18 @@ function formatarData(data: Date): string {
 export default async function AdminEventos() {
   const inscricoes = await listarInscricoesEvento();
 
-  const porOrganizacao = EVENTO_ORGANIZACOES.map((organizacao) => ({
-    organizacao,
-    total: inscricoes.filter((i) => i.organizacao === organizacao).length,
-  }));
-  const maximoOrganizacao = Math.max(1, ...porOrganizacao.map((o) => o.total));
+  let acumulado = 0;
+  const porOrganizacao = EVENTO_ORGANIZACOES.map((organizacao, indice) => {
+    const total = inscricoes.filter((i) => i.organizacao === organizacao).length;
+    const percentagem = inscricoes.length > 0 ? (total / inscricoes.length) * 100 : 0;
+    const inicio = acumulado;
+    acumulado += percentagem;
+    return { organizacao, total, percentagem, inicio, fim: acumulado, cor: CORES_ORGANIZACAO[indice] };
+  });
+  const gradienteCircular =
+    inscricoes.length > 0
+      ? `conic-gradient(${porOrganizacao.map((o) => `${o.cor} ${o.inicio}% ${o.fim}%`).join(", ")})`
+      : "#eae7de";
 
   return (
     <main className="ad-pagina">
@@ -37,7 +44,7 @@ export default async function AdminEventos() {
           background: linear-gradient(160deg, #1c1a16, #000);
           color: #e8e6df;
           margin: -2rem -1.25rem;
-          padding: 2.5rem 1.25rem 4rem;
+          padding: 2.5rem clamp(1.25rem, 5vw, 4rem) 4rem;
           min-height: calc(100vh - 4rem);
         }
         .ad-caixa { max-width: 1400px; margin: 0 auto; }
@@ -51,14 +58,32 @@ export default async function AdminEventos() {
           background: #f7f6f3;
           border: 1px solid #eae7de;
           border-radius: 12px;
-          padding: 1.25rem 1.5rem;
+          padding: 1.5rem;
+          display: flex;
+          align-items: center;
+          gap: 2rem;
+          flex-wrap: wrap;
         }
-        .ad-grafico-linha { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.9rem; }
-        .ad-grafico-linha:last-child { margin-bottom: 0; }
-        .ad-grafico-rotulo { width: 130px; flex: none; color: #15130f; font-size: 0.9rem; }
-        .ad-grafico-barra-fundo { flex: 1; height: 20px; background: #eae7de; border-radius: 6px; overflow: hidden; }
-        .ad-grafico-barra { height: 100%; background: ${COR_BARRA}; border-radius: 6px; }
-        .ad-grafico-numero { width: 28px; flex: none; text-align: right; color: #15130f; font-weight: 700; font-size: 0.9rem; }
+        .ad-circulo-wrap { position: relative; width: 200px; height: 200px; flex: none; }
+        .ad-circulo { width: 200px; height: 200px; border-radius: 50%; }
+        .ad-circulo-centro {
+          position: absolute;
+          inset: 32px;
+          background: #f7f6f3;
+          border-radius: 50%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        }
+        .ad-circulo-centro-numero { font-size: 1.8rem; font-weight: 800; color: #15130f; line-height: 1.1; }
+        .ad-circulo-centro-legenda { color: #6b6a63; font-size: 0.75rem; margin-top: 0.15rem; }
+        .ad-legenda-lista { display: flex; flex-direction: column; gap: 0.6rem; }
+        .ad-legenda-item { display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem; color: #15130f; }
+        .ad-legenda-ponto { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+        .ad-legenda-nome { min-width: 130px; }
+        .ad-legenda-numero { font-weight: 700; }
+        .ad-legenda-percentagem { color: #6b6a63; font-size: 0.8rem; }
         .ad-tabela-wrap {
           border-radius: 10px;
           overflow-x: auto;
@@ -110,18 +135,25 @@ export default async function AdminEventos() {
 
         <h2>Inscrições por organização</h2>
         <div className="ad-grafico">
-          {porOrganizacao.map((o) => (
-            <div key={o.organizacao} className="ad-grafico-linha">
-              <span className="ad-grafico-rotulo">{o.organizacao}</span>
-              <div className="ad-grafico-barra-fundo">
-                <div
-                  className="ad-grafico-barra"
-                  style={{ width: `${(o.total / maximoOrganizacao) * 100}%` }}
-                />
-              </div>
-              <span className="ad-grafico-numero">{o.total}</span>
+          <div className="ad-circulo-wrap">
+            <div className="ad-circulo" style={{ background: gradienteCircular }} />
+            <div className="ad-circulo-centro">
+              <span className="ad-circulo-centro-numero">{inscricoes.length}</span>
+              <span className="ad-circulo-centro-legenda">
+                {inscricoes.length === 1 ? "inscrição" : "inscrições"}
+              </span>
             </div>
-          ))}
+          </div>
+          <div className="ad-legenda-lista">
+            {porOrganizacao.map((o) => (
+              <div key={o.organizacao} className="ad-legenda-item">
+                <span className="ad-legenda-ponto" style={{ background: o.cor }} />
+                <span className="ad-legenda-nome">{o.organizacao}</span>
+                <span className="ad-legenda-numero">{o.total}</span>
+                <span className="ad-legenda-percentagem">({Math.round(o.percentagem)}%)</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         <h2>Todas as inscrições</h2>

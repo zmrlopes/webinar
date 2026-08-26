@@ -81,6 +81,8 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
           border: 1px solid #eae7de;
           border-radius: 12px;
           padding: 1.25rem 1.5rem;
+          max-width: 420px;
+          margin: 0 auto;
         }
         .vqe-cartao h3 { margin: 0 0 0.3rem; font-size: 1.3rem; }
         .vqe-cartao p { margin: 0; color: #6b6a63; font-size: 0.9rem; }
