@@ -23,16 +23,23 @@ function formatarData(data: Date): string {
 export default async function AdminEventos() {
   const inscricoes = await listarInscricoesEvento();
 
+  function pessoas(i: (typeof inscricoes)[number]): number {
+    return i.adultos + i.criancasMais10 + i.criancasMenos10;
+  }
+  const totalPessoas = inscricoes.reduce((soma, i) => soma + pessoas(i), 0);
+
   let acumulado = 0;
   const porOrganizacao = EVENTO_ORGANIZACOES.map((organizacao, indice) => {
-    const total = inscricoes.filter((i) => i.organizacao === organizacao).length;
-    const percentagem = inscricoes.length > 0 ? (total / inscricoes.length) * 100 : 0;
+    const total = inscricoes
+      .filter((i) => i.organizacao === organizacao)
+      .reduce((soma, i) => soma + pessoas(i), 0);
+    const percentagem = totalPessoas > 0 ? (total / totalPessoas) * 100 : 0;
     const inicio = acumulado;
     acumulado += percentagem;
     return { organizacao, total, percentagem, inicio, fim: acumulado, cor: CORES_ORGANIZACAO[indice] };
   });
   const gradienteCircular =
-    inscricoes.length > 0
+    totalPessoas > 0
       ? `conic-gradient(${porOrganizacao.map((o) => `${o.cor} ${o.inicio}% ${o.fim}%`).join(", ")})`
       : "#eae7de";
 
@@ -61,6 +68,7 @@ export default async function AdminEventos() {
           padding: 1.5rem;
           display: flex;
           align-items: center;
+          justify-content: center;
           gap: 2rem;
           flex-wrap: wrap;
         }
@@ -129,8 +137,8 @@ export default async function AdminEventos() {
         </Link>
         <h1>{EVENTO_TITULO}</h1>
         <p className="ad-subtitulo">
-          {EVENTO_DATA_TEXTO} · {EVENTO_LOCAL} · {EVENTO_PRECO_ADULTO}€ por pessoa — {inscricoes.length}{" "}
-          {inscricoes.length === 1 ? "inscrição" : "inscrições"}
+          {EVENTO_DATA_TEXTO} · {EVENTO_LOCAL} · {EVENTO_PRECO_ADULTO}€ por pessoa — {totalPessoas}{" "}
+          {totalPessoas === 1 ? "pessoa inscrita" : "pessoas inscritas"}
         </p>
 
         <h2>Inscrições por organização</h2>
@@ -138,9 +146,9 @@ export default async function AdminEventos() {
           <div className="ad-circulo-wrap">
             <div className="ad-circulo" style={{ background: gradienteCircular }} />
             <div className="ad-circulo-centro">
-              <span className="ad-circulo-centro-numero">{inscricoes.length}</span>
+              <span className="ad-circulo-centro-numero">{totalPessoas}</span>
               <span className="ad-circulo-centro-legenda">
-                {inscricoes.length === 1 ? "inscrição" : "inscrições"}
+                {totalPessoas === 1 ? "pessoa" : "pessoas"}
               </span>
             </div>
           </div>
