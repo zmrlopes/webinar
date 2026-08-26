@@ -328,7 +328,7 @@ export function BackofficeHome() {
               >
                 Próximas sessões
               </button>
-              <Link href="/consultor/backoffice/webinares" className="vqb-menu-item">
+              <Link href="/consultor/webinares" className="vqb-menu-item">
                 Leads
               </Link>
               <button

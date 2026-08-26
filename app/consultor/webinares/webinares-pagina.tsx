@@ -212,14 +212,14 @@ export function WebinaresPagina() {
       `}</style>
 
       <div className="vqw-caixa">
-        <Link href="/consultor/backoffice" className="vqw-voltar">
+        <Link href="/consultor" className="vqw-voltar">
           ← Backoffice
         </Link>
         <h1>Webinares</h1>
 
         {!email && (
           <p className="vqw-mudo">
-            Não estás identificado — <Link href="/consultor/backoffice">entra aqui primeiro</Link>.
+            Não estás identificado — <Link href="/consultor">entra aqui primeiro</Link>.
           </p>
         )}
         {erro && <p className="vqw-erro">{erro}</p>}
