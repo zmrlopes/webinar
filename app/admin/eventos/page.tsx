@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   EVENTO_DATA_TEXTO,
   EVENTO_LOCAL,
@@ -41,8 +40,6 @@ export default async function AdminEventos() {
           min-height: calc(100vh - 4rem);
         }
         .ad-caixa { max-width: 1400px; margin: 0 auto; }
-        .ad-voltar { color: #4b5320; font-size: 0.85rem; text-decoration: none; }
-        .ad-voltar:hover { text-decoration: underline; }
         .ad-pagina h1 { color: #000000; font-size: 1.5rem; margin: 0.75rem 0 0.4rem; }
         .ad-pagina h2 { color: #4b5320; font-size: 1.1rem; margin: 2rem 0 0.75rem; }
         .ad-legenda { color: #6b6a63; font-size: 0.85rem; margin-top: 0.25rem; }
@@ -98,9 +95,6 @@ export default async function AdminEventos() {
       `}</style>
 
       <div className="ad-caixa">
-        <Link href="/admin" className="ad-voltar">
-          ← Sessões
-        </Link>
         <h1>{EVENTO_TITULO}</h1>
         <p className="ad-subtitulo">
           {EVENTO_DATA_TEXTO} · {EVENTO_LOCAL} · {EVENTO_PRECO_ADULTO}€ por pessoa — {totalPessoas}{" "}

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { listarInscricoesAdmin } from "@/lib/admin";
 import { buscarWebinar } from "@/lib/webinars";
@@ -76,8 +75,6 @@ export default async function AdminWebinar({
           min-height: calc(100vh - 4rem);
         }
         .ad-caixa { max-width: 1400px; margin: 0 auto; }
-        .ad-voltar { color: #4b5320; font-size: 0.85rem; text-decoration: none; }
-        .ad-voltar:hover { text-decoration: underline; }
         .ad-pagina h1 { color: #000000; font-size: 1.5rem; margin: 0.75rem 0 1.25rem; }
         .ad-grid {
           display: grid;
@@ -149,9 +146,6 @@ export default async function AdminWebinar({
       `}</style>
 
       <div className="ad-caixa">
-        <Link href="/admin" className="ad-voltar">
-          ← Sessões
-        </Link>
         <h1>{webinar.titulo}</h1>
 
         <div className="ad-grid">
