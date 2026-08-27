@@ -14,20 +14,24 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
   const [nomeCompleto, setNomeCompleto] = useState(nome ?? "");
   const [telemovel, setTelemovel] = useState("");
   const [emailForm, setEmailForm] = useState(email);
-  const [adultos, setAdultos] = useState(1);
-  const [criancasMais10, setCriancasMais10] = useState(0);
-  const [criancasMenos10, setCriancasMenos10] = useState(0);
+  const [adultos, setAdultos] = useState("1");
+  const [criancasMais10, setCriancasMais10] = useState("0");
+  const [criancasMenos10, setCriancasMenos10] = useState("0");
   const [ficheiro, setFicheiro] = useState<File | null>(null);
   const [estado, setEstado] = useState<Estado>("pronto");
   const [erro, setErro] = useState("");
   const [emailEnviado, setEmailEnviado] = useState(true);
 
-  const total = adultos * PRECO_ADULTO + criancasMais10 * PRECO_CRIANCA_MAIS10;
+  const adultosNum = Math.max(0, Number(adultos) || 0);
+  const criancasMais10Num = Math.max(0, Number(criancasMais10) || 0);
+  const criancasMenos10Num = Math.max(0, Number(criancasMenos10) || 0);
+
+  const total = adultosNum * PRECO_ADULTO + criancasMais10Num * PRECO_CRIANCA_MAIS10;
   const valido =
     nomeCompleto.trim() !== "" &&
     telemovel.trim() !== "" &&
     emailForm.includes("@") &&
-    adultos >= 1 &&
+    adultosNum >= 1 &&
     ficheiro !== null;
 
   async function submeter(): Promise<void> {
@@ -39,9 +43,9 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
       corpo.set("nome", nomeCompleto.trim());
       corpo.set("telemovel", telemovel.trim());
       corpo.set("email", emailForm.trim());
-      corpo.set("adultos", String(adultos));
-      corpo.set("criancasMais10", String(criancasMais10));
-      corpo.set("criancasMenos10", String(criancasMenos10));
+      corpo.set("adultos", String(adultosNum));
+      corpo.set("criancasMais10", String(criancasMais10Num));
+      corpo.set("criancasMenos10", String(criancasMenos10Num));
       corpo.set("comprovativo", ficheiro);
 
       const resposta = await fetch("/api/consultor/backoffice/evento", {
@@ -167,7 +171,8 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
           type="number"
           min={1}
           value={adultos}
-          onChange={(e) => setAdultos(Math.max(1, Number(e.target.value) || 1))}
+          onChange={(e) => setAdultos(e.target.value)}
+          onBlur={() => setAdultos(String(Math.max(1, Number(adultos) || 1)))}
         />
       </div>
 
@@ -178,7 +183,8 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
           type="number"
           min={0}
           value={criancasMais10}
-          onChange={(e) => setCriancasMais10(Math.max(0, Number(e.target.value) || 0))}
+          onChange={(e) => setCriancasMais10(e.target.value)}
+          onBlur={() => setCriancasMais10(String(Math.max(0, Number(criancasMais10) || 0)))}
         />
       </div>
 
@@ -189,7 +195,8 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
           type="number"
           min={0}
           value={criancasMenos10}
-          onChange={(e) => setCriancasMenos10(Math.max(0, Number(e.target.value) || 0))}
+          onChange={(e) => setCriancasMenos10(e.target.value)}
+          onBlur={() => setCriancasMenos10(String(Math.max(0, Number(criancasMenos10) || 0)))}
         />
       </div>
 
