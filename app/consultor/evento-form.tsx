@@ -118,6 +118,15 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
           font-size: 1rem;
         }
         .vqe-nota { font-size: 0.8rem; margin-top: 0.3rem; }
+        .vqe-pagamento-info {
+          background: #eef1e4;
+          border: 1px solid #8a9a5b;
+          border-radius: 8px;
+          padding: 0.6rem 0.75rem;
+          margin-bottom: 0.6rem;
+          font-size: 0.85rem;
+          color: #000000;
+        }
         .vqe-total {
           font-size: 1rem;
           color: #000000;
@@ -216,6 +225,9 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
       </div>
 
       <div className="vqe-campo">
+        <p className="vqe-pagamento-info">
+          Efetuar pagamento por MBWAY para o número 913550475 (Sara).
+        </p>
         <label htmlFor="evento-comprovativo">Comprovativo de pagamento</label>
         <input
           id="evento-comprovativo"
