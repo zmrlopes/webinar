@@ -1,5 +1,24 @@
 import { db } from "./db";
 
+export interface MembroEquipa {
+  nome: string;
+}
+
+/**
+ * Confirma que `email` é um membro real da equipa — existe em
+ * `equipa_afiliados`, a tabela importada do CSV da plataforma de afiliados
+ * (scripts/importar-equipa.ts), não a Brevo (que também tem emails de leads
+ * que nunca deviam ter acesso ao painel do consultor). É o gate usado em
+ * todas as rotas de /api/consultor.
+ */
+export async function buscarMembroEquipa(email: string): Promise<MembroEquipa | null> {
+  const { rows } = await db().query<{ nome: string }>(
+    `select nome from equipa_afiliados where email = $1`,
+    [email],
+  );
+  return rows[0] ? { nome: rows[0].nome } : null;
+}
+
 /**
  * Todos os emails que estão, direta ou indiretamente, abaixo de `email` na
  * hierarquia importada por scripts/importar-equipa.ts — a "equipa

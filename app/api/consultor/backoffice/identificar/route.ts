@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
-import { procurarContactoBrevo } from "@/lib/brevo-contatos";
-import { db } from "@/lib/db";
 import { guardarLinkConsultor, referenciaSemColisao } from "@/lib/consultor";
+import { buscarMembroEquipa } from "@/lib/equipa";
 import { gerarSlug } from "@/lib/slug";
 import { buscarProximoWebinarPublico, buscarWebinarFormacao } from "@/lib/webinars";
 
 /**
- * Identifica o consultor no backoffice: valida o email na Brevo, garante o
- * link de partilha dele (upsert silencioso — ao contrário de
- * /api/consultor/link, nunca envia email; é só para mostrar já no ecrã),
- * diz se está na equipa_afiliados (controla o acesso à Formação de segunda)
- * e devolve a próxima sessão pública, para o cartão de entrar diretamente
- * no webinar.
+ * Identifica o consultor no backoffice: valida o email em `equipa_afiliados`
+ * (a equipa real, importada do CSV da plataforma de afiliados por
+ * scripts/importar-equipa.ts — não a Brevo, que também tem emails de leads
+ * que nunca deviam entrar aqui), garante o link de partilha dele (upsert
+ * silencioso — ao contrário de /api/consultor/link, nunca envia email; é só
+ * para mostrar já no ecrã) e devolve a próxima sessão pública, para o
+ * cartão de entrar diretamente no webinar.
  */
 export async function POST(request: Request): Promise<Response> {
   const corpo = (await request.json().catch(() => null)) as Record<string, unknown> | null;
@@ -23,38 +23,31 @@ export async function POST(request: Request): Promise<Response> {
   const emailNormalizado = email.trim().toLowerCase();
 
   try {
-    const contacto = await procurarContactoBrevo(emailNormalizado);
-    if (!contacto) {
+    const membro = await buscarMembroEquipa(emailNormalizado);
+    if (!membro) {
       return NextResponse.json(
         { erro: "não encontrámos esse email na equipa — confirma se está certo" },
         { status: 404 },
       );
     }
 
-    const nomeCompleto = [contacto.nome, contacto.apelido].filter(Boolean).join(" ").trim();
-    const referenciaBase =
-      gerarSlug(nomeCompleto) || gerarSlug(emailNormalizado.split("@")[0] ?? "");
+    const referenciaBase = gerarSlug(membro.nome) || gerarSlug(emailNormalizado.split("@")[0] ?? "");
     const referencia = referenciaSemColisao(referenciaBase);
-    await guardarLinkConsultor(referencia, emailNormalizado, contacto.nome);
+    await guardarLinkConsultor(referencia, emailNormalizado, membro.nome);
 
     const host = request.headers.get("host") ?? "";
     const protocolo = host.startsWith("localhost") ? "http" : "https";
     const link = `${protocolo}://${host}/${referencia}`;
 
-    const { rows } = await db().query<{ existe: boolean }>(
-      `select exists(select 1 from equipa_afiliados where email = $1) as existe`,
-      [emailNormalizado],
-    );
-    const ehConsultorEquipa = rows[0]?.existe ?? false;
     const [formacao, proximoWebinar] = await Promise.all([
-      ehConsultorEquipa ? buscarWebinarFormacao() : Promise.resolve(undefined),
+      buscarWebinarFormacao(),
       buscarProximoWebinarPublico(),
     ]);
 
     return NextResponse.json({
-      nome: contacto.nome,
+      nome: membro.nome,
       link,
-      ehConsultorEquipa,
+      ehConsultorEquipa: true,
       formacao: formacao
         ? { titulo: formacao.titulo, sessaoExternaEm: formacao.sessaoExternaEm }
         : null,

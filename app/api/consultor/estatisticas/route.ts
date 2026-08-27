@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { procurarContactoBrevo } from "@/lib/brevo-contatos";
 import { estatisticasConsultor, listarLeadsConsultor } from "@/lib/consultor";
-import { buscarArvoreEquipa, buscarDescendentesEmails } from "@/lib/equipa";
+import { buscarArvoreEquipa, buscarDescendentesEmails, buscarMembroEquipa } from "@/lib/equipa";
 import { buscarWebinar, buscarWebinarRelevante, listarWebinarsParaPainel } from "@/lib/webinars";
 
 export async function POST(request: Request): Promise<Response> {
@@ -15,8 +14,8 @@ export async function POST(request: Request): Promise<Response> {
   const emailNormalizado = email.trim().toLowerCase();
 
   try {
-    const contacto = await procurarContactoBrevo(emailNormalizado);
-    if (!contacto) {
+    const membro = await buscarMembroEquipa(emailNormalizado);
+    if (!membro) {
       return NextResponse.json(
         { erro: "não encontrámos esse email na equipa — confirma se está certo" },
         { status: 404 },

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { procurarContactoBrevo } from "@/lib/brevo-contatos";
-import { buscarDescendentesEmails } from "@/lib/equipa";
+import { buscarDescendentesEmails, buscarMembroEquipa } from "@/lib/equipa";
 import { listarLeadsConsolidado } from "@/lib/leads";
 import { listarSessoesPublicasParaPainel } from "@/lib/webinars";
 
@@ -21,8 +20,8 @@ export async function POST(request: Request): Promise<Response> {
   const emailNormalizado = email.trim().toLowerCase();
 
   try {
-    const contacto = await procurarContactoBrevo(emailNormalizado);
-    if (!contacto) {
+    const membro = await buscarMembroEquipa(emailNormalizado);
+    if (!membro) {
       return NextResponse.json(
         { erro: "não encontrámos esse email na equipa — confirma se está certo" },
         { status: 404 },

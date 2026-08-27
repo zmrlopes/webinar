@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { procurarContactoBrevo } from "@/lib/brevo-contatos";
 import { db } from "@/lib/db";
+import { buscarMembroEquipa } from "@/lib/equipa";
 import { pedirLinkPessoal } from "@/lib/sala-zoom";
 import { buscarWebinarFormacao } from "@/lib/webinars";
 
@@ -22,11 +22,8 @@ export async function POST(request: Request): Promise<Response> {
   const emailNormalizado = email.trim().toLowerCase();
 
   try {
-    const { rows: naEquipa } = await db().query<{ existe: boolean }>(
-      `select exists(select 1 from equipa_afiliados where email = $1) as existe`,
-      [emailNormalizado],
-    );
-    if (!naEquipa[0]?.existe) {
+    const membro = await buscarMembroEquipa(emailNormalizado);
+    if (!membro) {
       return NextResponse.json(
         { erro: "esta sessão é só para consultores já na equipa" },
         { status: 403 },
@@ -46,15 +43,8 @@ export async function POST(request: Request): Promise<Response> {
     );
     const sessaoExternaId = sessaoRows[0]!.sessao_externa_id;
 
-    const contacto = await procurarContactoBrevo(emailNormalizado);
-    if (!contacto) {
-      return NextResponse.json(
-        { erro: "não encontrámos esse email na equipa — confirma se está certo" },
-        { status: 404 },
-      );
-    }
-    const nome = contacto.nome ?? "Consultor";
-    const apelido = contacto.apelido || contacto.nome || "Consultor";
+    const nome = membro.nome || "Consultor";
+    const apelido = membro.nome || "Consultor";
 
     const { rows: existentes } = await db().query<{
       id: string;

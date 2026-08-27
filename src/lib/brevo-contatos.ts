@@ -6,39 +6,6 @@ function chave(): string {
   return valor;
 }
 
-export interface ContactoBrevo {
-  email: string;
-  nome: string | null;
-  apelido: string | null;
-}
-
-/**
- * Procura um contacto pelo email. Devolve `null` se não existir — é o caso
- * normal de alguém que ainda não está na equipa, não um erro.
- */
-export async function procurarContactoBrevo(email: string): Promise<ContactoBrevo | null> {
-  const resposta = await fetch(`${BASE}/v3/contacts/${encodeURIComponent(email)}`, {
-    headers: { "api-key": chave(), Accept: "application/json" },
-    signal: AbortSignal.timeout(15_000),
-  });
-
-  if (resposta.status === 404) return null;
-  if (!resposta.ok) {
-    throw new Error(`Brevo devolveu ${resposta.status} ao procurar contacto: ${await resposta.text()}`);
-  }
-
-  const dados = (await resposta.json()) as {
-    email: string;
-    attributes?: Record<string, unknown>;
-  };
-  const atributos = dados.attributes ?? {};
-  return {
-    email: dados.email,
-    nome: typeof atributos.NOME === "string" ? atributos.NOME : null,
-    apelido: typeof atributos.SOBRENOME === "string" ? atributos.SOBRENOME : null,
-  };
-}
-
 /**
  * O campo SMS da Brevo exige formato E.164 (+<indicativo><número>) — os
  * telemóveis que recolhemos vêm em formato local português (9 dígitos,

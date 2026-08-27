@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { procurarContactoBrevo } from "@/lib/brevo-contatos";
 import { db } from "@/lib/db";
+import { buscarMembroEquipa } from "@/lib/equipa";
 import { pedirLinkPessoal } from "@/lib/sala-zoom";
 import { buscarProximoWebinarPublico } from "@/lib/webinars";
 
@@ -31,15 +31,15 @@ export async function POST(request: Request): Promise<Response> {
     );
     const sessaoExternaId = sessaoRows[0]!.sessao_externa_id;
 
-    const contacto = await procurarContactoBrevo(emailNormalizado);
-    if (!contacto) {
+    const membro = await buscarMembroEquipa(emailNormalizado);
+    if (!membro) {
       return NextResponse.json(
         { erro: "não encontrámos esse email na equipa — confirma se está certo" },
         { status: 404 },
       );
     }
-    const nome = contacto.nome ?? "Consultor";
-    const apelido = contacto.apelido || contacto.nome || "Consultor";
+    const nome = membro.nome || "Consultor";
+    const apelido = membro.nome || "Consultor";
 
     const { rows: existentes } = await db().query<{
       id: string;

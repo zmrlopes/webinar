@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { procurarContactoBrevo } from "@/lib/brevo-contatos";
 import { guardarLinkConsultor, referenciaSemColisao } from "@/lib/consultor";
 import { criarEmailSender } from "@/lib/email";
+import { buscarMembroEquipa } from "@/lib/equipa";
 import { gerarSlug } from "@/lib/slug";
 import { listarWebinarsFuturos } from "@/lib/webinars";
 
@@ -23,8 +23,8 @@ export async function POST(request: Request): Promise<Response> {
   const emailNormalizado = email.trim().toLowerCase();
 
   try {
-    const contacto = await procurarContactoBrevo(emailNormalizado);
-    if (!contacto) {
+    const membro = await buscarMembroEquipa(emailNormalizado);
+    if (!membro) {
       return NextResponse.json(
         { erro: "não encontrámos esse email na equipa — confirma se está certo" },
         { status: 404 },
@@ -37,12 +37,11 @@ export async function POST(request: Request): Promise<Response> {
       return NextResponse.json({ erro: "não há sessões agendadas de momento" }, { status: 404 });
     }
 
-    const nomeCompleto = [contacto.nome, contacto.apelido].filter(Boolean).join(" ").trim();
     const referenciaBase =
-      gerarSlug(nomeCompleto) || gerarSlug(emailNormalizado.split("@")[0] ?? "");
+      gerarSlug(membro.nome) || gerarSlug(emailNormalizado.split("@")[0] ?? "");
     const referencia = referenciaSemColisao(referenciaBase);
 
-    await guardarLinkConsultor(referencia, emailNormalizado, contacto.nome);
+    await guardarLinkConsultor(referencia, emailNormalizado, membro.nome);
 
     const host = request.headers.get("host") ?? "";
     const protocolo = host.startsWith("localhost") ? "http" : "https";
@@ -52,12 +51,12 @@ export async function POST(request: Request): Promise<Response> {
       destinatario: emailNormalizado,
       assunto: `O teu link de inscrição para "${proximo.titulo}"`,
       corpoTexto:
-        `Olá${contacto.nome ? ` ${contacto.nome}` : ""},\n\n` +
+        `Olá${membro.nome ? ` ${membro.nome}` : ""},\n\n` +
         `O teu link de inscrição para "${proximo.titulo}" (${formatarData(proximo.sessaoExternaEm)}):\n${link}\n\n` +
         `Partilha este link com os teus convidados — as inscrições feitas por ele ficam associadas a ti.`,
     });
 
-    return NextResponse.json({ link, nome: contacto.nome });
+    return NextResponse.json({ link, nome: membro.nome });
   } catch (erro) {
     console.error("falha ao gerar link de consultor:", erro);
     const mensagem = erro instanceof Error ? erro.message : String(erro);
