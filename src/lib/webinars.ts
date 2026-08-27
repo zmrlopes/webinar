@@ -3,6 +3,7 @@ import { db } from "./db";
 export interface WebinarResumo {
   id: string;
   titulo: string;
+  tipo: string;
   sessaoExternaEm: Date;
   duracaoMinutos: number;
 }
@@ -11,10 +12,11 @@ export async function listarWebinarsFuturos(): Promise<WebinarResumo[]> {
   const { rows } = await db().query<{
     id: string;
     titulo: string;
+    tipo: string;
     sessao_externa_em: Date;
     duracao_minutos: number;
   }>(
-    `select id, titulo, sessao_externa_em, duracao_minutos
+    `select id, titulo, tipo, sessao_externa_em, duracao_minutos
      from webinars
      where cancelada_em is null
        and sessao_externa_id is not null
@@ -24,6 +26,7 @@ export async function listarWebinarsFuturos(): Promise<WebinarResumo[]> {
   return rows.map((r) => ({
     id: r.id,
     titulo: r.titulo,
+    tipo: r.tipo,
     sessaoExternaEm: r.sessao_externa_em,
     duracaoMinutos: r.duracao_minutos,
   }));
@@ -46,10 +49,11 @@ export async function buscarWebinarRelevante(): Promise<WebinarResumo | undefine
   const { rows } = await db().query<{
     id: string;
     titulo: string;
+    tipo: string;
     sessao_externa_em: Date;
     duracao_minutos: number;
   }>(
-    `select id, titulo, sessao_externa_em, duracao_minutos
+    `select id, titulo, tipo, sessao_externa_em, duracao_minutos
      from webinars
      where cancelada_em is null
        and sessao_externa_id is not null
@@ -61,6 +65,7 @@ export async function buscarWebinarRelevante(): Promise<WebinarResumo | undefine
   return {
     id: r.id,
     titulo: r.titulo,
+    tipo: r.tipo,
     sessaoExternaEm: r.sessao_externa_em,
     duracaoMinutos: r.duracao_minutos,
   };
@@ -77,10 +82,11 @@ export async function listarWebinarsParaPainel(): Promise<WebinarResumo[]> {
   const { rows } = await db().query<{
     id: string;
     titulo: string;
+    tipo: string;
     sessao_externa_em: Date;
     duracao_minutos: number;
   }>(
-    `select id, titulo, sessao_externa_em, duracao_minutos
+    `select id, titulo, tipo, sessao_externa_em, duracao_minutos
      from webinars
      where cancelada_em is null
        and sessao_externa_id is not null
@@ -90,6 +96,7 @@ export async function listarWebinarsParaPainel(): Promise<WebinarResumo[]> {
   return rows.map((r) => ({
     id: r.id,
     titulo: r.titulo,
+    tipo: r.tipo,
     sessaoExternaEm: r.sessao_externa_em,
     duracaoMinutos: r.duracao_minutos,
   }));
@@ -109,10 +116,11 @@ export async function buscarProximoWebinarPublico(): Promise<WebinarResumo | und
   const { rows } = await db().query<{
     id: string;
     titulo: string;
+    tipo: string;
     sessao_externa_em: Date;
     duracao_minutos: number;
   }>(
-    `select id, titulo, sessao_externa_em, duracao_minutos
+    `select id, titulo, tipo, sessao_externa_em, duracao_minutos
      from webinars
      where cancelada_em is null
        and sessao_externa_id is not null
@@ -127,6 +135,7 @@ export async function buscarProximoWebinarPublico(): Promise<WebinarResumo | und
   return {
     id: r.id,
     titulo: r.titulo,
+    tipo: r.tipo,
     sessaoExternaEm: r.sessao_externa_em,
     duracaoMinutos: r.duracao_minutos,
   };
@@ -142,10 +151,11 @@ export async function listarSessoesPublicasParaPainel(): Promise<WebinarResumo[]
   const { rows } = await db().query<{
     id: string;
     titulo: string;
+    tipo: string;
     sessao_externa_em: Date;
     duracao_minutos: number;
   }>(
-    `select id, titulo, sessao_externa_em, duracao_minutos
+    `select id, titulo, tipo, sessao_externa_em, duracao_minutos
      from webinars
      where cancelada_em is null
        and sessao_externa_id is not null
@@ -157,6 +167,7 @@ export async function listarSessoesPublicasParaPainel(): Promise<WebinarResumo[]
   return rows.map((r) => ({
     id: r.id,
     titulo: r.titulo,
+    tipo: r.tipo,
     sessaoExternaEm: r.sessao_externa_em,
     duracaoMinutos: r.duracao_minutos,
   }));
@@ -174,10 +185,11 @@ export async function buscarWebinarFormacao(): Promise<WebinarResumo | undefined
   const { rows } = await db().query<{
     id: string;
     titulo: string;
+    tipo: string;
     sessao_externa_em: Date;
     duracao_minutos: number;
   }>(
-    `select id, titulo, sessao_externa_em, duracao_minutos
+    `select id, titulo, tipo, sessao_externa_em, duracao_minutos
      from webinars
      where cancelada_em is null
        and sessao_externa_id is not null
@@ -190,6 +202,7 @@ export async function buscarWebinarFormacao(): Promise<WebinarResumo | undefined
   return {
     id: r.id,
     titulo: r.titulo,
+    tipo: r.tipo,
     sessaoExternaEm: r.sessao_externa_em,
     duracaoMinutos: r.duracao_minutos,
   };
@@ -223,14 +236,29 @@ export async function criarFormacao(dados: DadosNovaFormacao): Promise<{ id: str
   return { id: rows[0]!.id };
 }
 
+/**
+ * Cancela (soft-delete, `cancelada_em`) uma formação ad-hoc — nunca uma
+ * sessão sincronizada da sala do Patrick, essas são geridas só pelo
+ * processo de sincronização. Só apaga aqui quem chamou já confirmou que
+ * `tipo = 'formacao'` (ver a rota da API).
+ */
+export async function cancelarFormacao(id: string): Promise<boolean> {
+  const { rowCount } = await db().query(
+    `update webinars set cancelada_em = now() where id = $1 and tipo = 'formacao' and cancelada_em is null`,
+    [id],
+  );
+  return (rowCount ?? 0) > 0;
+}
+
 export async function buscarWebinar(id: string): Promise<WebinarResumo | undefined> {
   const { rows } = await db().query<{
     id: string;
     titulo: string;
+    tipo: string;
     sessao_externa_em: Date;
     duracao_minutos: number;
   }>(
-    `select id, titulo, sessao_externa_em, duracao_minutos
+    `select id, titulo, tipo, sessao_externa_em, duracao_minutos
      from webinars
      where id = $1 and cancelada_em is null and sessao_externa_id is not null`,
     [id],
@@ -240,6 +268,7 @@ export async function buscarWebinar(id: string): Promise<WebinarResumo | undefin
   return {
     id: r.id,
     titulo: r.titulo,
+    tipo: r.tipo,
     sessaoExternaEm: r.sessao_externa_em,
     duracaoMinutos: r.duracao_minutos,
   };

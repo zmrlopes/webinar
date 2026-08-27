@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { listarInscricoesAdmin } from "@/lib/admin";
 import { buscarWebinar } from "@/lib/webinars";
+import { CancelarFormacao } from "./cancelar-formacao";
 import { CorrecaoPresenca } from "./correcao-presenca";
 
 export const dynamic = "force-dynamic";
@@ -146,7 +147,12 @@ export default async function AdminWebinar({
       `}</style>
 
       <div className="ad-caixa">
-        <h1>{webinar.titulo}</h1>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: "0.75rem" }}>
+          <h1>{webinar.titulo}</h1>
+          {webinar.tipo === "formacao" && (
+            <CancelarFormacao webinarId={webinar.id} titulo={webinar.titulo} />
+          )}
+        </div>
 
         <div className="ad-grid">
           <div className="ad-cartao">
