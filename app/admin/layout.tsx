@@ -33,11 +33,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           max-width: 1400px;
           margin: 0 auto;
           display: flex;
-          gap: 1.5rem;
+          gap: 1.25rem;
           align-items: center;
-          flex-wrap: wrap;
+          justify-content: center;
         }
-        .ad-nav-marca { color: #ffffff; font-weight: 800; font-size: 1rem; margin-right: auto; }
         .ad-nav a {
           color: #b3b0a6;
           text-decoration: none;
@@ -45,13 +44,16 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           font-weight: 600;
           padding: 0.3rem 0;
           border-bottom: 2px solid transparent;
+          white-space: nowrap;
         }
         .ad-nav a:hover { color: #ffffff; }
         .ad-nav a.ad-nav-ativo { color: #ffffff; border-bottom-color: #8a9a5b; }
+        @media (min-width: 640px) {
+          .ad-nav-caixa { justify-content: flex-start; gap: 1.5rem; }
+        }
       `}</style>
       <nav className="ad-nav">
         <div className="ad-nav-caixa">
-          <span className="ad-nav-marca">Admin</span>
           {LINKS.map((l) => (
             <Link key={l.href} href={l.href} className={ativo(l.href) ? "ad-nav-ativo" : ""}>
               {l.label}
