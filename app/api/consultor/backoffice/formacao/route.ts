@@ -5,8 +5,11 @@ import { pedirLinkPessoal } from "@/lib/sala-zoom";
 import { buscarWebinarFormacao } from "@/lib/webinars";
 
 /**
- * "Quero assistir" à Formação de segunda: só para quem está em
- * equipa_afiliados. Ao contrário do fluxo público (fila assíncrona,
+ * "Quero assistir" a uma formação: só para quem está em equipa_afiliados.
+ * Sem `webinarId` no corpo, usa a Formação de segunda recorrente do Patrick
+ * (`buscarWebinarFormacao`); com `webinarId`, entra numa formação ad-hoc
+ * específica escolhida na lista "Outras formações" do painel (pode haver
+ * várias em simultâneo). Ao contrário do fluxo público (fila assíncrona,
  * secção 7-C), pede o link ao Zoom aqui mesmo, na hora — é uma ação
  * pontual de uma pessoa de cada vez, não um lote de inscrições públicas.
  * O link devolvido passa por /api/entrar/<id>, como tudo o resto, para
@@ -15,9 +18,13 @@ import { buscarWebinarFormacao } from "@/lib/webinars";
 export async function POST(request: Request): Promise<Response> {
   const corpo = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   const email = corpo?.email;
+  const webinarId = corpo?.webinarId;
 
   if (typeof email !== "string" || !email.includes("@")) {
     return NextResponse.json({ erro: "email inválido" }, { status: 400 });
+  }
+  if (webinarId !== undefined && typeof webinarId !== "string") {
+    return NextResponse.json({ erro: "webinarId inválido" }, { status: 400 });
   }
   const emailNormalizado = email.trim().toLowerCase();
 
@@ -30,22 +37,41 @@ export async function POST(request: Request): Promise<Response> {
       );
     }
 
-    const formacao = await buscarWebinarFormacao();
-    if (!formacao) {
-      return NextResponse.json(
-        { erro: "não há nenhuma sessão de formação agendada de momento" },
-        { status: 404 },
+    let webinarRow: { id: string; sessao_externa_id: string; tipo: string; link_zoom: string | null };
+    if (webinarId) {
+      const { rows } = await db().query<{
+        id: string;
+        sessao_externa_id: string;
+        tipo: string;
+        link_zoom: string | null;
+      }>(
+        `select id, sessao_externa_id, tipo, link_zoom from webinars
+         where id = $1 and tipo = 'formacao' and not publico_para_leads and cancelada_em is null`,
+        [webinarId],
       );
+      if (!rows[0]) {
+        return NextResponse.json({ erro: "formação não encontrada" }, { status: 404 });
+      }
+      webinarRow = rows[0];
+    } else {
+      const formacao = await buscarWebinarFormacao();
+      if (!formacao) {
+        return NextResponse.json(
+          { erro: "não há nenhuma sessão de formação agendada de momento" },
+          { status: 404 },
+        );
+      }
+      const { rows } = await db().query<{
+        id: string;
+        sessao_externa_id: string;
+        tipo: string;
+        link_zoom: string | null;
+      }>(
+        `select id, sessao_externa_id, tipo, link_zoom from webinars where id = $1`,
+        [formacao.id],
+      );
+      webinarRow = rows[0]!;
     }
-    const { rows: webinarRows } = await db().query<{
-      sessao_externa_id: string;
-      tipo: string;
-      link_zoom: string | null;
-    }>(
-      `select sessao_externa_id, tipo, link_zoom from webinars where id = $1`,
-      [formacao.id],
-    );
-    const webinarRow = webinarRows[0]!;
 
     const nome = membro.nome || "Consultor";
     const apelido = membro.nome || "Consultor";
@@ -56,7 +82,7 @@ export async function POST(request: Request): Promise<Response> {
     }>(
       `select id, link_pessoal from registrations
        where webinar_id = $1 and email = $2 and cancelada_em is null`,
-      [formacao.id, emailNormalizado],
+      [webinarRow.id, emailNormalizado],
     );
     let registrationId = existentes[0]?.id;
     let linkPessoal = existentes[0]?.link_pessoal ?? null;
@@ -68,7 +94,7 @@ export async function POST(request: Request): Promise<Response> {
             referencia_email, consentimento_privacidade_em, link_estado, presenca)
          values ($1, $2, $3, $4, null, null, null, now(), 'pendente', 'unknown')
          returning id`,
-        [formacao.id, nome, apelido, emailNormalizado],
+        [webinarRow.id, nome, apelido, emailNormalizado],
       );
       registrationId = rows[0]!.id;
     }

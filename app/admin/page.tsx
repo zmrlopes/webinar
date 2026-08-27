@@ -132,11 +132,11 @@ export default async function AdminDashboard() {
               <Link key={w.id} href={`/admin/webinar/${w.id}`} className="ad-cartao ad-sessao">
                 <div className="ad-sessao-topo">
                   <strong>{w.titulo}</strong>
-                  {w.cancelada && <span className="ad-etiqueta">cancelada</span>}
-                  {!w.cancelada && w.presencasFechadas && (
+                  {w.presencasFechadas ? (
                     <span className="ad-etiqueta">presenças fechadas</span>
+                  ) : (
+                    <span className="ad-etiqueta">ativa</span>
                   )}
-                  {!w.cancelada && !w.presencasFechadas && <span className="ad-etiqueta">ativa</span>}
                 </div>
                 {w.tipo === "formacao" && <span className="ad-etiqueta">formação</span>}
                 <p className="ad-legenda" style={{ margin: "0.25rem 0 0" }}>

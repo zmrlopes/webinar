@@ -6,7 +6,6 @@ export interface WebinarAdmin {
   tipo: string;
   sessaoExternaEm: Date | null;
   duracaoMinutos: number | null;
-  cancelada: boolean;
   presencasFechadas: boolean;
   totalInscritos: number;
   linksObtidos: number;
@@ -27,7 +26,6 @@ export async function listarWebinarsAdmin(): Promise<WebinarAdmin[]> {
     tipo: string;
     sessao_externa_em: Date | null;
     duracao_minutos: number | null;
-    cancelada_em: Date | null;
     presencas_fechadas: boolean;
     total_inscritos: string;
     links_obtidos: string;
@@ -38,7 +36,7 @@ export async function listarWebinarsAdmin(): Promise<WebinarAdmin[]> {
   }>(
     `select
        w.id, w.titulo, w.tipo, w.sessao_externa_em, w.duracao_minutos,
-       w.cancelada_em, w.presencas_fechadas,
+       w.presencas_fechadas,
        count(r.id) filter (where r.cancelada_em is null) as total_inscritos,
        count(r.id) filter (where r.link_estado = 'obtido')   as links_obtidos,
        count(r.id) filter (where r.link_estado = 'pendente') as links_pendentes,
@@ -49,6 +47,7 @@ export async function listarWebinarsAdmin(): Promise<WebinarAdmin[]> {
        ) as media_assistencia
      from webinars w
      left join registrations r on r.webinar_id = w.id
+     where w.cancelada_em is null
      group by w.id
      order by w.sessao_externa_em desc nulls last`,
   );
@@ -59,7 +58,6 @@ export async function listarWebinarsAdmin(): Promise<WebinarAdmin[]> {
     tipo: r.tipo,
     sessaoExternaEm: r.sessao_externa_em,
     duracaoMinutos: r.duracao_minutos,
-    cancelada: r.cancelada_em !== null,
     presencasFechadas: r.presencas_fechadas,
     totalInscritos: Number(r.total_inscritos),
     linksObtidos: Number(r.links_obtidos),

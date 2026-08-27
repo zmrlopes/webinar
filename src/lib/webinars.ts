@@ -174,12 +174,13 @@ export async function listarSessoesPublicasParaPainel(): Promise<WebinarResumo[]
 }
 
 /**
- * A sessão de formação interna (só para quem já é consultor) mais próxima
- * no tempo — mesma lógica de `buscarWebinarRelevante`, mas filtrada. Junta
- * duas origens: a formação recorrente do Patrick, identificada por conter
- * "potencial" no título (case-insensitive) já que ele não dá nenhuma
- * categoria própria; e formações ad-hoc criadas em criarFormacao() com
- * `tipo = 'formacao'` e `publico_para_leads = false`.
+ * A sessão de formação recorrente do Patrick (só para quem já é consultor)
+ * mais próxima no tempo — mesma lógica de `buscarWebinarRelevante`, mas
+ * filtrada. Identificada por conter "potencial" no título (case-insensitive),
+ * já que ele não dá nenhuma categoria própria. Não inclui formações ad-hoc
+ * — essas têm a sua própria lista em `listarFormacoesEquipa`, porque podem
+ * existir várias ao mesmo tempo e "a mais próxima no tempo" esconderia as
+ * outras.
  */
 export async function buscarWebinarFormacao(): Promise<WebinarResumo | undefined> {
   const { rows } = await db().query<{
@@ -193,7 +194,7 @@ export async function buscarWebinarFormacao(): Promise<WebinarResumo | undefined
      from webinars
      where cancelada_em is null
        and sessao_externa_id is not null
-       and (titulo ilike '%potencial%' or (tipo = 'formacao' and not publico_para_leads))
+       and titulo ilike '%potencial%'
      order by abs(extract(epoch from (sessao_externa_em - now())))
      limit 1`,
   );
@@ -206,6 +207,38 @@ export async function buscarWebinarFormacao(): Promise<WebinarResumo | undefined
     sessaoExternaEm: r.sessao_externa_em,
     duracaoMinutos: r.duracao_minutos,
   };
+}
+
+/**
+ * Todas as formações ad-hoc só-para-equipa ainda por acontecer, ordenadas
+ * pela mais próxima primeiro — ao contrário de `buscarWebinarFormacao`
+ * (que só devolve uma), pode haver várias criadas em simultâneo e todas
+ * devem aparecer no painel do consultor.
+ */
+export async function listarFormacoesEquipa(): Promise<WebinarResumo[]> {
+  const { rows } = await db().query<{
+    id: string;
+    titulo: string;
+    tipo: string;
+    sessao_externa_em: Date;
+    duracao_minutos: number;
+  }>(
+    `select id, titulo, tipo, sessao_externa_em, duracao_minutos
+     from webinars
+     where cancelada_em is null
+       and sessao_externa_id is not null
+       and tipo = 'formacao'
+       and not publico_para_leads
+       and sessao_externa_em > now()
+     order by sessao_externa_em asc`,
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    titulo: r.titulo,
+    tipo: r.tipo,
+    sessaoExternaEm: r.sessao_externa_em,
+    duracaoMinutos: r.duracao_minutos,
+  }));
 }
 
 export interface DadosNovaFormacao {

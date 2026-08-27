@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { guardarLinkConsultor, referenciaSemColisao } from "@/lib/consultor";
 import { buscarMembroEquipa } from "@/lib/equipa";
 import { gerarSlug } from "@/lib/slug";
-import { buscarProximoWebinarPublico, buscarWebinarFormacao } from "@/lib/webinars";
+import { buscarProximoWebinarPublico, buscarWebinarFormacao, listarFormacoesEquipa } from "@/lib/webinars";
 
 /**
  * Identifica o consultor no backoffice: valida o email em `equipa_afiliados`
@@ -39,9 +39,10 @@ export async function POST(request: Request): Promise<Response> {
     const protocolo = host.startsWith("localhost") ? "http" : "https";
     const link = `${protocolo}://${host}/${referencia}`;
 
-    const [formacao, proximoWebinar] = await Promise.all([
+    const [formacao, proximoWebinar, formacoesEquipa] = await Promise.all([
       buscarWebinarFormacao(),
       buscarProximoWebinarPublico(),
+      listarFormacoesEquipa(),
     ]);
 
     return NextResponse.json({
@@ -54,6 +55,11 @@ export async function POST(request: Request): Promise<Response> {
       proximoWebinar: proximoWebinar
         ? { titulo: proximoWebinar.titulo, sessaoExternaEm: proximoWebinar.sessaoExternaEm }
         : null,
+      formacoesEquipa: formacoesEquipa.map((f) => ({
+        id: f.id,
+        titulo: f.titulo,
+        sessaoExternaEm: f.sessaoExternaEm,
+      })),
     });
   } catch (erro) {
     console.error("falha ao identificar consultor no backoffice:", erro);

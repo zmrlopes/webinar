@@ -11,6 +11,7 @@ interface DadosIdentificacao {
   ehConsultorEquipa: boolean;
   formacao: { titulo: string; sessaoExternaEm: string } | null;
   proximoWebinar: { titulo: string; sessaoExternaEm: string } | null;
+  formacoesEquipa: { id: string; titulo: string; sessaoExternaEm: string }[];
 }
 
 type Estado = "a-carregar" | "por-identificar" | "pronto" | "erro";
@@ -32,6 +33,8 @@ export function BackofficeHome() {
   const [linkCopiado, setLinkCopiado] = useState(false);
   const [aPedirFormacao, setAPedirFormacao] = useState(false);
   const [erroFormacao, setErroFormacao] = useState("");
+  const [aPedirFormacaoId, setAPedirFormacaoId] = useState<string | null>(null);
+  const [errosFormacaoAdHoc, setErrosFormacaoAdHoc] = useState<Record<string, string>>({});
   const [aPedirWebinar, setAPedirWebinar] = useState(false);
   const [erroWebinar, setErroWebinar] = useState("");
   const [seccaoAtiva, setSeccaoAtiva] = useState<Seccao>(null);
@@ -100,6 +103,34 @@ export function BackofficeHome() {
     } catch {
       setErroFormacao("falha de ligação — tenta outra vez");
       setAPedirFormacao(false);
+    }
+  }
+
+  async function pedirFormacaoAdHoc(webinarId: string): Promise<void> {
+    setAPedirFormacaoId(webinarId);
+    setErrosFormacaoAdHoc((atual) => {
+      const { [webinarId]: _removido, ...resto } = atual;
+      return resto;
+    });
+    try {
+      const resposta = await fetch("/api/consultor/backoffice/formacao", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, webinarId }),
+      });
+      const corpo = await resposta.json().catch(() => ({}));
+      if (!resposta.ok) {
+        setErrosFormacaoAdHoc((atual) => ({
+          ...atual,
+          [webinarId]: typeof corpo.erro === "string" ? corpo.erro : "não foi possível obter o link",
+        }));
+        setAPedirFormacaoId(null);
+        return;
+      }
+      window.location.href = corpo.url;
+    } catch {
+      setErrosFormacaoAdHoc((atual) => ({ ...atual, [webinarId]: "falha de ligação — tenta outra vez" }));
+      setAPedirFormacaoId(null);
     }
   }
 
@@ -367,6 +398,31 @@ export function BackofficeHome() {
                   </>
                 )}
 
+                {dados.ehConsultorEquipa && dados.formacoesEquipa.length > 0 && (
+                  <>
+                    <h2>Outras formações</h2>
+                    {dados.formacoesEquipa.map((f) => (
+                      <div className="vqb-cartao" key={f.id} style={{ marginBottom: "0.75rem" }}>
+                        <h3 className="vqb-destaque-titulo">{f.titulo}</h3>
+                        <p className="vqb-destaque-data">{formatarData(f.sessaoExternaEm)}</p>
+                        <button
+                          type="button"
+                          className="vqb-destaque-botao"
+                          onClick={() => pedirFormacaoAdHoc(f.id)}
+                          disabled={aPedirFormacaoId === f.id}
+                        >
+                          {aPedirFormacaoId === f.id ? "A preparar..." : "Entrar na formação"}
+                        </button>
+                        {errosFormacaoAdHoc[f.id] && (
+                          <p className="vqb-erro" style={{ marginTop: "0.75rem" }}>
+                            {errosFormacaoAdHoc[f.id]}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </>
+                )}
+
                 {dados.proximoWebinar && (
                   <>
                     <h2>Próximo webinar</h2>
@@ -392,9 +448,11 @@ export function BackofficeHome() {
                   </>
                 )}
 
-                {!(dados.ehConsultorEquipa && dados.formacao) && !dados.proximoWebinar && (
-                  <p className="vqb-mudo">Sem sessões agendadas de momento.</p>
-                )}
+                {!(dados.ehConsultorEquipa && dados.formacao) &&
+                  !dados.proximoWebinar &&
+                  !(dados.ehConsultorEquipa && dados.formacoesEquipa.length > 0) && (
+                    <p className="vqb-mudo">Sem sessões agendadas de momento.</p>
+                  )}
               </div>
             )}
 
