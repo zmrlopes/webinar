@@ -22,13 +22,17 @@ export default async function AdminWebinar({
   const inscricoes = await listarInscricoesAdmin(id);
   const ativas = inscricoes.filter((i) => !i.cancelada);
 
-  const total = ativas.length;
-  const consultoresInscritos = ativas.filter((i) => i.ehConsultor).length;
-  const presentes = ativas.filter((i) => i.presenca === "attended").length;
-  const ausentes = ativas.filter((i) => i.presenca === "absent").length;
+  const leadsInscricoes = inscricoes.filter((i) => !i.ehConsultor);
+  const consultoresInscricoes = inscricoes.filter((i) => i.ehConsultor);
+  const leadsAtivas = ativas.filter((i) => !i.ehConsultor);
+  const consultoresAtivas = ativas.filter((i) => i.ehConsultor);
+
+  const total = leadsAtivas.length;
+  const presentes = leadsAtivas.filter((i) => i.presenca === "attended").length;
+  const ausentes = leadsAtivas.filter((i) => i.presenca === "absent").length;
   const porConfirmar = total - presentes - ausentes;
 
-  const comMinutos = ativas.filter(
+  const comMinutos = leadsAtivas.filter(
     (i) => i.presenca === "attended" && i.presencaMinutos !== null,
   );
   const mediaAssistencia =
@@ -44,9 +48,13 @@ export default async function AdminWebinar({
         )
       : null;
 
+  const totalConsultores = consultoresAtivas.length;
+  const presentesConsultores = consultoresAtivas.filter((i) => i.presenca === "attended").length;
+  const pctConsultores = (n: number) =>
+    totalConsultores > 0 ? Math.round((n / totalConsultores) * 100) : 0;
+
   const porConsultor = new Map<string, { total: number; presentes: number }>();
-  for (const i of ativas) {
-    if (i.ehConsultor) continue; // consultor a inscrever-se não é um lead
+  for (const i of leadsAtivas) {
     const chave = i.referencia ?? "(sem referência)";
     const atual = porConsultor.get(chave) ?? { total: 0, presentes: 0 };
     atual.total += 1;
@@ -85,6 +93,7 @@ export default async function AdminWebinar({
           padding: 1.1rem 1.25rem;
         }
         .ad-numero { font-size: 2rem; font-weight: 800; line-height: 1.1; color: #000000; }
+        .ad-cartao-consultores { border-top: 3px solid #3a2f77; }
         .ad-legenda { color: #6b6a63; font-size: 0.85rem; margin-top: 0.25rem; }
         .ad-etiqueta {
           display: inline-block;
@@ -96,11 +105,6 @@ export default async function AdminWebinar({
           font-size: 0.75rem;
           white-space: nowrap;
           margin-left: 0.4rem;
-        }
-        .ad-etiqueta-consultor {
-          background: #e4e0f6;
-          color: #3a2f77;
-          border-color: #cac2ec;
         }
         .ad-tabela-wrap {
           margin-top: 0;
@@ -153,10 +157,7 @@ export default async function AdminWebinar({
         <div className="ad-grid">
           <div className="ad-cartao">
             <div className="ad-numero">{total}</div>
-            <div className="ad-legenda">
-              Inscritos
-              {consultoresInscritos > 0 && ` (${consultoresInscritos} são consultores)`}
-            </div>
+            <div className="ad-legenda">Leads inscritas</div>
           </div>
           <div className="ad-cartao">
             <div className="ad-numero" style={{ color: COR_PRESENTE }}>
@@ -168,6 +169,14 @@ export default async function AdminWebinar({
           <div className="ad-cartao">
             <div className="ad-numero">{mediaAssistencia !== null ? `${mediaAssistencia}%` : "—"}</div>
             <div className="ad-legenda">Média de assistência</div>
+          </div>
+          <div className="ad-cartao ad-cartao-consultores">
+            <div className="ad-numero">{totalConsultores}</div>
+            <div className="ad-legenda">
+              Consultores inscritos
+              {totalConsultores > 0 &&
+                ` · ${presentesConsultores} assistiram (${pctConsultores(presentesConsultores)}%)`}
+            </div>
           </div>
         </div>
 
@@ -304,13 +313,10 @@ export default async function AdminWebinar({
               </tr>
             </thead>
             <tbody>
-              {inscricoes.map((i) => (
+              {leadsInscricoes.map((i) => (
                 <tr key={i.id}>
                   <td>
                     {i.nome}
-                    {i.ehConsultor && (
-                      <span className="ad-etiqueta ad-etiqueta-consultor"> consultor</span>
-                    )}
                     {i.cancelada && <span className="ad-etiqueta"> cancelada</span>}
                   </td>
                   <td>{i.apelido}</td>
@@ -347,6 +353,63 @@ export default async function AdminWebinar({
             </tbody>
           </table>
         </div>
+
+        {consultoresInscricoes.length > 0 && (
+          <>
+            <h2 style={{ color: "#3a2f77", fontSize: "1.1rem", margin: "2rem 0 0.75rem" }}>
+              Consultores inscritos
+            </h2>
+            <p className="ad-legenda" style={{ marginBottom: "0.75rem" }}>
+              Consultores que se inscreveram a si próprios nesta sessão — não são leads, ficam à
+              parte das estatísticas de cima e não contam para nenhum consultor na tabela "Por
+              consultor".
+            </p>
+            <div className="ad-tabela-wrap">
+              <table className="ad-tabela">
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Apelido</th>
+                    <th>Telemóvel</th>
+                    <th>Email</th>
+                    <th>Link</th>
+                    <th>Clicou no Zoom</th>
+                    <th>Erro do link</th>
+                    <th>Presença</th>
+                    <th>Minutos</th>
+                    <th>Corrigir</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {consultoresInscricoes.map((i) => (
+                    <tr key={i.id}>
+                      <td>
+                        {i.nome}
+                        {i.cancelada && <span className="ad-etiqueta"> cancelada</span>}
+                      </td>
+                      <td>{i.apelido}</td>
+                      <td>{i.telemovel ?? "—"}</td>
+                      <td>{i.email}</td>
+                      <td>
+                        <span className="ad-etiqueta">{i.linkEstado}</span>
+                      </td>
+                      <td>{i.clicouZoom ? "Sim" : "—"}</td>
+                      <td style={{ maxWidth: 260, fontSize: "0.85rem" }}>
+                        {i.linkUltimoErro ? `(${i.linkTentativas}x) ${i.linkUltimoErro}` : "—"}
+                      </td>
+                      <td>{i.presenca}</td>
+                      <td>{i.presencaMinutos ?? "—"}</td>
+                      <td>
+                        <CorrecaoPresenca registrationId={i.id} presencaAtual={i.presenca} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
         <p className="ad-legenda" style={{ marginTop: "1.5rem" }}>
           O link pessoal de entrada nunca é mostrado aqui — é uma credencial, não um dado de
           gestão (secção 6 do guia).
