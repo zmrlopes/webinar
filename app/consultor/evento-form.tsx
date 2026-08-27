@@ -86,8 +86,8 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
         .vqe-cartao {
           box-sizing: border-box;
           background: #f7f6f3;
-          color: #15130f;
-          border: 1px solid #eae7de;
+          color: #000000;
+          border: 1px solid #000000;
           border-radius: 12px;
           padding: 1.25rem 1.5rem;
           max-width: 420px;
@@ -104,7 +104,7 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
           display: block;
           font-weight: 600;
           font-size: 0.85rem;
-          color: #15130f;
+          color: #000000;
           margin: 0 0 0.35rem;
         }
         .vqe-campo input {
@@ -112,15 +112,15 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
           width: 100%;
           padding: 0.6rem 0.75rem;
           border-radius: 8px;
-          border: 1px solid #d8d5cb;
+          border: 1px solid #000000;
           background: #fff;
-          color: #15130f;
+          color: #000000;
           font-size: 1rem;
         }
         .vqe-nota { font-size: 0.8rem; margin-top: 0.3rem; }
         .vqe-total {
           font-size: 1rem;
-          color: #15130f;
+          color: #000000;
           margin: 1.25rem 0 1rem;
           padding-top: 1rem;
           border-top: 1px solid #eae7de;
@@ -132,7 +132,7 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
           text-align: center;
           padding: 0.85rem;
           font-size: 1.05rem;
-          background: linear-gradient(135deg, #4a9b8e, #2f7568);
+          background: linear-gradient(135deg, #5d6b2a, #4b5320);
           color: #fff;
           border: none;
           border-radius: 8px;

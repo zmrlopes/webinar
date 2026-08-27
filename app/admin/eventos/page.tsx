@@ -34,23 +34,23 @@ export default async function AdminEventos() {
       <style>{`
         .ad-pagina {
           max-width: none;
-          background: linear-gradient(160deg, #1c1a16, #000);
-          color: #e8e6df;
+          background: #ffffff;
+          color: #000000;
           margin: -2rem -1.25rem;
           padding: 2.5rem clamp(1.25rem, 5vw, 4rem) 4rem;
           min-height: calc(100vh - 4rem);
         }
         .ad-caixa { max-width: 1400px; margin: 0 auto; }
-        .ad-voltar { color: #d4af37; font-size: 0.85rem; text-decoration: none; }
+        .ad-voltar { color: #4b5320; font-size: 0.85rem; text-decoration: none; }
         .ad-voltar:hover { text-decoration: underline; }
-        .ad-pagina h1 { color: #fff; font-size: 1.5rem; margin: 0.75rem 0 0.4rem; }
-        .ad-pagina h2 { color: #d4af37; font-size: 1.1rem; margin: 2rem 0 0.75rem; }
+        .ad-pagina h1 { color: #000000; font-size: 1.5rem; margin: 0.75rem 0 0.4rem; }
+        .ad-pagina h2 { color: #4b5320; font-size: 1.1rem; margin: 2rem 0 0.75rem; }
         .ad-legenda { color: #6b6a63; font-size: 0.85rem; margin-top: 0.25rem; }
-        .ad-pagina > .ad-caixa > p.ad-subtitulo { color: #b3b0a6; font-size: 0.9rem; margin: 0 0 1.5rem; }
+        .ad-pagina > .ad-caixa > p.ad-subtitulo { color: #6b6a63; font-size: 0.9rem; margin: 0 0 1.5rem; }
         .ad-tabela-wrap {
           border-radius: 10px;
           overflow-x: auto;
-          border: 1px solid #eae7de;
+          border: 1px solid #000000;
         }
         .ad-tabela {
           width: 100%;
@@ -61,7 +61,7 @@ export default async function AdminEventos() {
         .ad-tabela th, .ad-tabela td {
           text-align: left;
           padding: 0.6rem 0.9rem;
-          color: #15130f;
+          color: #000000;
           border-bottom: 1px solid #eae7de;
           font-size: 0.9rem;
         }
@@ -75,8 +75,8 @@ export default async function AdminEventos() {
         .ad-download {
           display: inline-block;
           background: transparent;
-          color: #a67c1e;
-          border: 1px solid #d8c088;
+          color: #4b5320;
+          border: 1px solid #4b5320;
           border-radius: 8px;
           padding: 0.35rem 0.75rem;
           font-size: 0.8rem;

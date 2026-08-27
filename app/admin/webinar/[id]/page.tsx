@@ -61,16 +61,16 @@ export default async function AdminWebinar({
       <style>{`
         .ad-pagina {
           max-width: none;
-          background: linear-gradient(160deg, #1c1a16, #000);
-          color: #e8e6df;
+          background: #ffffff;
+          color: #000000;
           margin: -2rem -1.25rem;
           padding: 2.5rem 1.25rem 4rem;
           min-height: calc(100vh - 4rem);
         }
         .ad-caixa { max-width: 1400px; margin: 0 auto; }
-        .ad-voltar { color: #d4af37; font-size: 0.85rem; text-decoration: none; }
+        .ad-voltar { color: #4b5320; font-size: 0.85rem; text-decoration: none; }
         .ad-voltar:hover { text-decoration: underline; }
-        .ad-pagina h1 { color: #fff; font-size: 1.5rem; margin: 0.75rem 0 1.25rem; }
+        .ad-pagina h1 { color: #000000; font-size: 1.5rem; margin: 0.75rem 0 1.25rem; }
         .ad-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -79,18 +79,18 @@ export default async function AdminWebinar({
         }
         .ad-cartao {
           background: #f7f6f3;
-          color: #15130f;
-          border: 1px solid #eae7de;
+          color: #000000;
+          border: 1px solid #000000;
           border-radius: 12px;
           padding: 1.1rem 1.25rem;
         }
-        .ad-numero { font-size: 2rem; font-weight: 800; line-height: 1.1; color: #15130f; }
+        .ad-numero { font-size: 2rem; font-weight: 800; line-height: 1.1; color: #000000; }
         .ad-legenda { color: #6b6a63; font-size: 0.85rem; margin-top: 0.25rem; }
         .ad-etiqueta {
           display: inline-block;
-          background: #f1e6c9;
-          color: #4a3c10;
-          border: 1px solid #e2cf94;
+          background: #eef1e4;
+          color: #4b5320;
+          border: 1px solid #8a9a5b;
           border-radius: 999px;
           padding: 0.15rem 0.65rem;
           font-size: 0.75rem;
@@ -106,7 +106,7 @@ export default async function AdminWebinar({
           margin-top: 0;
           border-radius: 10px;
           overflow-x: auto;
-          border: 1px solid #eae7de;
+          border: 1px solid #000000;
         }
         .ad-tabela {
           width: 100%;
@@ -122,7 +122,7 @@ export default async function AdminWebinar({
         .ad-pagina table:not(.ad-tabela) th, .ad-pagina table:not(.ad-tabela) td {
           text-align: left;
           padding: 0.6rem 0.9rem;
-          color: #15130f;
+          color: #000000;
           border-bottom: 1px solid #eae7de;
           font-size: 0.9rem;
         }
@@ -134,8 +134,8 @@ export default async function AdminWebinar({
         }
         .ad-tabela tr:last-child td { border-bottom: none; }
         .ad-pagina button {
-          background: linear-gradient(135deg, #e8c96a, #b8902f);
-          color: #1a1712;
+          background: linear-gradient(135deg, #5d6b2a, #4b5320);
+          color: #ffffff;
           border: none;
           border-radius: 6px;
           font-weight: 700;
@@ -181,7 +181,7 @@ export default async function AdminWebinar({
                 borderRadius: 7,
                 overflow: "hidden",
                 marginTop: "0.75rem",
-                background: "#eae7de",
+                background: "#e5e5e5",
               }}
             >
               {presentes > 0 && (

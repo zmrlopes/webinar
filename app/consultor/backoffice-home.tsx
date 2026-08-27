@@ -136,32 +136,32 @@ export function BackofficeHome() {
     <div className="vqb-pagina">
       <style>{`
         .vqb-pagina {
-          background: linear-gradient(160deg, #1c1a16, #000);
-          color: #e8e6df;
+          background: #ffffff;
+          color: #000000;
           margin: -2rem -1.25rem;
           padding: 2.5rem 1.25rem 4rem;
           min-height: calc(100vh - 4rem);
         }
         .vqb-caixa { max-width: 760px; margin: 0 auto; }
-        .vqb-pagina h1 { color: #fff; font-size: 1.6rem; margin: 0 0 0.4rem; }
-        .vqb-pagina h2 { color: #d4af37; font-size: 1.15rem; margin: 2rem 0 0.6rem; }
-        .vqb-mudo { color: #b3b0a6; font-size: 0.9rem; margin: 0 0 1.25rem; }
-        .vqb-erro { color: #ff9b8a; margin-top: 0.75rem; }
+        .vqb-pagina h1 { color: #000000; font-size: 1.6rem; margin: 0 0 0.4rem; }
+        .vqb-pagina h2 { color: #4b5320; font-size: 1.15rem; margin: 2rem 0 0.6rem; }
+        .vqb-mudo { color: #6b6a63; font-size: 0.9rem; margin: 0 0 1.25rem; }
+        .vqb-erro { color: #b3261e; margin-top: 0.75rem; }
         .vqb-linha { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end; }
         .vqb-pagina label { display: block; font-weight: 600; margin: 0 0 0.35rem; }
         .vqb-pagina input {
           box-sizing: border-box;
           padding: 0.6rem 0.75rem;
           border-radius: 8px;
-          border: 1px solid rgba(255,255,255,0.18);
-          background: rgba(255,255,255,0.06);
-          color: #fff;
+          border: 1px solid #000000;
+          background: #ffffff;
+          color: #000000;
           font-size: 1rem;
           min-width: 260px;
         }
         .vqb-pagina button {
-          background: linear-gradient(135deg, #e8c96a, #b8902f);
-          color: #1a1712;
+          background: linear-gradient(135deg, #5d6b2a, #4b5320);
+          color: #ffffff;
           border: none;
           border-radius: 8px;
           padding: 0.65rem 1.3rem;
@@ -172,12 +172,12 @@ export function BackofficeHome() {
         .vqb-pagina button:disabled { opacity: 0.5; cursor: default; }
         .vqb-pagina button.vqb-secundario {
           background: transparent;
-          color: #d4af37;
-          border: 1px solid #6b5c2e;
+          color: #4b5320;
+          border: 1px solid #4b5320;
         }
         .vqb-topo { display: flex; justify-content: space-between; align-items: start; gap: 1rem; flex-wrap: wrap; }
         .vqb-pagina button.vqb-trocar {
-          color: #85817a;
+          color: #6b6a63;
           font-size: 0.8rem;
           background: none;
           border: none;
@@ -187,18 +187,18 @@ export function BackofficeHome() {
           cursor: pointer;
         }
         .vqb-linkbox {
-          border: 1px solid rgba(255,255,255,0.18);
-          background: rgba(255,255,255,0.05);
+          border: 1px solid #000000;
+          background: #f7f6f3;
           border-radius: 10px;
           padding: 1rem 1.25rem;
           word-break: break-all;
           font-family: monospace;
-          color: #f2f0ea;
+          color: #000000;
         }
         .vqb-cartao {
           background: #f7f6f3;
-          color: #15130f;
-          border: 1px solid #eae7de;
+          color: #000000;
+          border: 1px solid #000000;
           border-radius: 12px;
           padding: 1.25rem 1.5rem;
         }
@@ -206,7 +206,7 @@ export function BackofficeHome() {
         .vqb-cartao p { margin: 0; color: #6b6a63; font-size: 0.9rem; }
         .vqb-destaque-etiqueta {
           display: block;
-          color: #b8902f;
+          color: #4b5320;
           font-size: 0.75rem;
           font-weight: 700;
           letter-spacing: 0.05em;
@@ -222,8 +222,8 @@ export function BackofficeHome() {
         .vqb-destaque-texto { margin: 0 0 1.1rem; color: #6b6a63; font-size: 0.9rem; }
         .vqb-destaque-botao { display: block; width: 100%; text-align: center; padding: 0.85rem; font-size: 1.05rem; }
         .vqb-pagina a.vqb-destaque-botao {
-          background: linear-gradient(135deg, #e8c96a, #b8902f);
-          color: #1a1712;
+          background: linear-gradient(135deg, #5d6b2a, #4b5320);
+          color: #ffffff;
           border-radius: 8px;
           font-weight: 700;
           text-decoration: none;
@@ -237,8 +237,8 @@ export function BackofficeHome() {
           justify-content: center;
           flex: 1 1 140px;
           box-sizing: border-box;
-          background: linear-gradient(135deg, #e8c96a, #b8902f);
-          color: #1a1712;
+          background: linear-gradient(135deg, #5d6b2a, #4b5320);
+          color: #ffffff;
           border: 1px solid transparent;
           border-radius: 999px;
           padding: 0.6rem 1rem;
@@ -251,7 +251,7 @@ export function BackofficeHome() {
           margin: 0;
         }
         .vqb-pagina button.vqb-menu-item.vqb-menu-ativo {
-          background: linear-gradient(135deg, #b8902f, #8a6a1f);
+          background: linear-gradient(135deg, #3a4118, #23280e);
         }
         .vqb-seccao { margin-top: 1.5rem; }
       `}</style>

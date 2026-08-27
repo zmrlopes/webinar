@@ -122,18 +122,18 @@ export function WebinaresPagina() {
     <div className="vqw-pagina">
       <style>{`
         .vqw-pagina {
-          background: linear-gradient(160deg, #1c1a16, #000);
-          color: #e8e6df;
+          background: #ffffff;
+          color: #000000;
           margin: -2rem -1.25rem;
           padding: 2.5rem 1.25rem 4rem;
           min-height: calc(100vh - 4rem);
         }
         .vqw-caixa { max-width: 1100px; margin: 0 auto; }
-        .vqw-voltar { color: #d4af37; font-size: 0.85rem; text-decoration: none; }
+        .vqw-voltar { color: #4b5320; font-size: 0.85rem; text-decoration: none; }
         .vqw-voltar:hover { text-decoration: underline; }
-        .vqw-pagina h1 { color: #fff; font-size: 1.5rem; margin: 0.75rem 0 1.25rem; }
-        .vqw-mudo { color: #b3b0a6; font-size: 0.9rem; }
-        .vqw-erro { color: #ff9b8a; }
+        .vqw-pagina h1 { color: #000000; font-size: 1.5rem; margin: 0.75rem 0 1.25rem; }
+        .vqw-mudo { color: #6b6a63; font-size: 0.9rem; }
+        .vqw-erro { color: #b3261e; }
         .vqw-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -142,8 +142,8 @@ export function WebinaresPagina() {
         }
         .vqw-cartao {
           background: #f7f6f3;
-          color: #15130f;
-          border: 1px solid #eae7de;
+          color: #000000;
+          border: 1px solid #000000;
           border-radius: 10px;
           padding: 1.1rem 1.25rem;
         }
@@ -152,13 +152,13 @@ export function WebinaresPagina() {
         .vqw-tabela-wrap {
           border-radius: 10px;
           overflow-x: auto;
-          border: 1px solid #eae7de;
+          border: 1px solid #000000;
         }
         .vqw-tabela { width: 100%; min-width: 950px; border-collapse: collapse; background: #f7f6f3; }
         .vqw-tabela th, .vqw-tabela td {
           text-align: left;
           padding: 0.6rem 0.9rem;
-          color: #15130f;
+          color: #000000;
           border-bottom: 1px solid #eae7de;
           font-size: 0.9rem;
         }
@@ -196,8 +196,8 @@ export function WebinaresPagina() {
         .vqw-abas { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; }
         .vqw-aba {
           background: transparent;
-          color: #b3b0a6;
-          border: 1px solid rgba(255,255,255,0.18);
+          color: #000000;
+          border: 1px solid #000000;
           border-radius: 999px;
           padding: 0.45rem 1.1rem;
           font-size: 0.85rem;
@@ -205,8 +205,8 @@ export function WebinaresPagina() {
           cursor: pointer;
         }
         .vqw-aba.vqw-aba-ativa {
-          background: linear-gradient(135deg, #e8c96a, #b8902f);
-          color: #1a1712;
+          background: linear-gradient(135deg, #5d6b2a, #4b5320);
+          color: #ffffff;
           border-color: transparent;
         }
       `}</style>

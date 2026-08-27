@@ -233,9 +233,9 @@ export function SessaoUnica({ email, webinarId }: { email: string; webinarId: st
   return (
     <div className="vqs-bloco">
       <style>{`
-        .vqs-bloco h2 { color: #d4af37; font-size: 1.2rem; margin: 2rem 0 0.4rem; }
-        .vqs-mudo { color: #b3b0a6; font-size: 0.9rem; margin: 0 0 1.25rem; }
-        .vqs-erro { color: #ff9b8a; margin-top: 0.75rem; }
+        .vqs-bloco h2 { color: #4b5320; font-size: 1.2rem; margin: 2rem 0 0.4rem; }
+        .vqs-mudo { color: #6b6a63; font-size: 0.9rem; margin: 0 0 1.25rem; }
+        .vqs-erro { color: #b3261e; margin-top: 0.75rem; }
         .vqs-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -243,19 +243,19 @@ export function SessaoUnica({ email, webinarId }: { email: string; webinarId: st
         }
         .vqs-cartao {
           background: #f7f6f3;
-          color: #15130f;
-          border: 1px solid #eae7de;
+          color: #000000;
+          border: 1px solid #000000;
           border-radius: 10px;
           padding: 1.1rem 1.25rem;
         }
-        .vqs-cartao .vqs-numero { font-size: 1.9rem; font-weight: 800; line-height: 1.1; color: #15130f; }
+        .vqs-cartao .vqs-numero { font-size: 1.9rem; font-weight: 800; line-height: 1.1; color: #000000; }
         .vqs-cartao .vqs-legenda { color: #6b6a63; font-size: 0.85rem; margin-top: 0.25rem; }
-        .vqs-cartao.vqs-cartao-equipa { border-top: 3px solid #3a2f77; }
+        .vqs-cartao.vqs-cartao-equipa { border-top: 3px solid #4b5320; }
         .vqs-tabela-wrap {
           margin-top: 1.25rem;
           border-radius: 10px;
           overflow-x: auto;
-          border: 1px solid #eae7de;
+          border: 1px solid #000000;
         }
         .vqs-tabela {
           width: 100%;
@@ -266,7 +266,7 @@ export function SessaoUnica({ email, webinarId }: { email: string; webinarId: st
         .vqs-tabela th, .vqs-tabela td {
           text-align: left;
           padding: 0.6rem 0.9rem;
-          color: #15130f;
+          color: #000000;
           border-bottom: 1px solid #eae7de;
           font-size: 0.9rem;
         }
@@ -279,8 +279,8 @@ export function SessaoUnica({ email, webinarId }: { email: string; webinarId: st
         .vqs-tabela tr:last-child td { border-bottom: none; }
         .vqs-botao-tabela {
           background: transparent;
-          color: #d4af37;
-          border: 1px solid #6b5c2e;
+          color: #4b5320;
+          border: 1px solid #4b5320;
           border-radius: 8px;
           padding: 0.4rem 0.8rem;
           font-size: 0.8rem;
@@ -302,27 +302,27 @@ export function SessaoUnica({ email, webinarId }: { email: string; webinarId: st
           box-sizing: border-box;
           padding: 0.6rem 0.75rem;
           border-radius: 8px;
-          border: 1px solid rgba(255,255,255,0.18);
-          background: rgba(255,255,255,0.06);
-          color: #fff;
+          border: 1px solid #000000;
+          background: #ffffff;
+          color: #000000;
           font-size: 1rem;
         }
-        .vqs-eq-ferramentas input::placeholder { color: #85817a; }
+        .vqs-eq-ferramentas input::placeholder { color: #6b6a63; }
         .vqs-eq-toggle {
           display: inline-flex;
           align-items: center;
           gap: 0.4rem;
-          color: #b3b0a6;
+          color: #000000;
           font-size: 0.85rem;
           cursor: pointer;
           user-select: none;
           white-space: nowrap;
         }
-        .vqs-eq-toggle input { accent-color: #b8902f; width: 15px; height: 15px; }
+        .vqs-eq-toggle input { accent-color: #4b5320; width: 15px; height: 15px; }
         .vqs-eq-btn-texto {
           background: transparent;
-          border: 1px solid #6b5c2e;
-          color: #d4af37;
+          border: 1px solid #4b5320;
+          color: #4b5320;
           font-size: 0.8rem;
           font-weight: 600;
           border-radius: 8px;
@@ -332,7 +332,7 @@ export function SessaoUnica({ email, webinarId }: { email: string; webinarId: st
         }
 
         .vqs-eq-caixa {
-          border: 1px solid #eae7de;
+          border: 1px solid #000000;
           border-radius: 10px;
           overflow: hidden;
           background: #f7f6f3;
@@ -373,7 +373,7 @@ export function SessaoUnica({ email, webinarId }: { email: string; webinarId: st
         .vqs-eq-ponto-SUSPENDED { background: #b8860b; }
         .vqs-eq-ponto-CANCELED { background: #d03b3b; }
 
-        .vqs-eq-nome { font-size: 0.88rem; font-weight: 600; color: #15130f; }
+        .vqs-eq-nome { font-size: 0.88rem; font-weight: 600; color: #000000; }
         .vqs-eq-etiqueta {
           display: inline-block;
           font-size: 0.65rem;
@@ -399,7 +399,7 @@ export function SessaoUnica({ email, webinarId }: { email: string; webinarId: st
           color: #6b6a63;
           white-space: nowrap;
         }
-        .vqs-eq-leads strong { color: #15130f; font-size: 0.92rem; }
+        .vqs-eq-leads strong { color: #000000; font-size: 0.92rem; }
 
         @media (max-width: 560px) {
           .vqs-eq-leads { margin-left: 2rem; }

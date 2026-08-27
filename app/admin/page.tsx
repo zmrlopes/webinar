@@ -27,20 +27,20 @@ export default async function AdminDashboard() {
       <style>{`
         .ad-pagina {
           max-width: none;
-          background: linear-gradient(160deg, #1c1a16, #000);
-          color: #e8e6df;
+          background: #ffffff;
+          color: #000000;
           margin: -2rem -1.25rem;
           padding: 2.5rem 1.25rem 4rem;
           min-height: calc(100vh - 4rem);
         }
         .ad-caixa { max-width: 1400px; margin: 0 auto; }
-        .ad-pagina h1 { color: #fff; font-size: 1.5rem; margin: 0 0 1.25rem; }
+        .ad-pagina h1 { color: #000000; font-size: 1.5rem; margin: 0 0 1.25rem; }
         .ad-kicker {
           text-transform: uppercase;
           letter-spacing: 0.08em;
           font-size: 0.75rem;
           font-weight: 700;
-          color: #d4af37;
+          color: #4b5320;
           margin: 0 0 0.75rem;
         }
         .ad-grid-geral {
@@ -55,13 +55,13 @@ export default async function AdminDashboard() {
           gap: 1rem;
         }
         .ad-cartao {
-          background: #f7f6f3;
-          color: #15130f;
-          border: 1px solid #eae7de;
+          background: #ffffff;
+          color: #000000;
+          border: 1px solid #000000;
           border-radius: 12px;
           padding: 1.1rem 1.25rem;
         }
-        .ad-numero { font-size: 2rem; font-weight: 800; line-height: 1.1; color: #15130f; }
+        .ad-numero { font-size: 2rem; font-weight: 800; line-height: 1.1; color: #000000; }
         .ad-legenda { color: #6b6a63; font-size: 0.85rem; margin-top: 0.25rem; }
         .ad-sessao {
           display: block;
@@ -70,7 +70,7 @@ export default async function AdminDashboard() {
         }
         .ad-sessao:hover {
           transform: translateY(-2px);
-          box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+          box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
         }
         .ad-sessao-topo { display: flex; justify-content: space-between; align-items: start; gap: 0.5rem; }
         .ad-cartao-link {
@@ -80,14 +80,14 @@ export default async function AdminDashboard() {
         }
         .ad-cartao-link:hover {
           transform: translateY(-2px);
-          box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+          box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
         }
-        .ad-cartao-seta { color: #a67c1e; font-size: 0.8rem; margin-top: 0.35rem; }
+        .ad-cartao-seta { color: #4b5320; font-size: 0.8rem; margin-top: 0.35rem; }
         .ad-etiqueta {
           display: inline-block;
-          background: #f1e6c9;
-          color: #4a3c10;
-          border: 1px solid #e2cf94;
+          background: #eef1e4;
+          color: #4b5320;
+          border: 1px solid #8a9a5b;
           border-radius: 999px;
           padding: 0.15rem 0.65rem;
           font-size: 0.75rem;
@@ -163,7 +163,7 @@ export default async function AdminDashboard() {
                       borderRadius: 4,
                       overflow: "hidden",
                       marginTop: "0.9rem",
-                      background: "#eae7de",
+                      background: "#e5e5e5",
                     }}
                   >
                     <div

@@ -24,16 +24,16 @@ function pagina(titulo: string, corpo: string): Response {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(160deg, #1c1a16, #000);
-    color: #e8e6df;
+    background: #ffffff;
+    color: #000000;
     font-family: system-ui, -apple-system, sans-serif;
     text-align: center;
     padding: 2rem;
     box-sizing: border-box;
   }
   .caixa { max-width: 380px; }
-  h1 { font-size: 1.4rem; margin: 0 0 0.5rem; color: #fff; }
-  p { color: #b3b0a6; font-size: 0.95rem; }
+  h1 { font-size: 1.4rem; margin: 0 0 0.5rem; color: #000000; }
+  p { color: #6b6a63; font-size: 0.95rem; }
   .marca { font-size: 3rem; margin-bottom: 0.5rem; }
 </style>
 </head>

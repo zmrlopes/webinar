@@ -46,17 +46,17 @@ export default async function PaginaWebinar({
           }
         }
         .wf-hero {
-          background: linear-gradient(160deg, #1c1a16, #000);
+          background: #000000;
           border-radius: 16px;
           padding: 2.5rem 2.25rem;
-          color: #f2f0ea;
+          color: #ffffff;
         }
         .wf-hero-kicker {
           text-transform: uppercase;
           letter-spacing: 0.1em;
           font-size: 0.8rem;
           font-weight: 700;
-          color: #d4af37;
+          color: #8a9a5b;
           margin: 0 0 0.75rem;
         }
         .wf-hero h1 {
@@ -67,13 +67,13 @@ export default async function PaginaWebinar({
           margin: 0 0 0.75rem;
         }
         .wf-hero-data {
-          color: #d4af37;
+          color: #8a9a5b;
           font-weight: 700;
           font-size: 0.95rem;
           margin: 0 0 1.5rem;
         }
         .wf-hero-descricao {
-          color: #cfccc3;
+          color: #d6d6d6;
           font-size: 1rem;
           line-height: 1.6;
           margin: 0 0 1rem;
@@ -81,8 +81,8 @@ export default async function PaginaWebinar({
         .wf-hero-descricao:last-child { margin-bottom: 0; }
 
         .wf-pagina {
-          background: #f7f6f3;
-          border: 1px solid #eae7de;
+          background: #ffffff;
+          border: 1px solid #000000;
           border-radius: 16px;
           padding: 2.25rem 2rem;
         }
@@ -91,14 +91,14 @@ export default async function PaginaWebinar({
           letter-spacing: 0.08em;
           font-size: 0.75rem;
           font-weight: 700;
-          color: #a67c1e;
+          color: #4b5320;
           margin: 0 0 0.5rem;
         }
         .wf-convite {
           display: inline-block;
-          background: #f1e6c9;
-          color: #4a3c10;
-          border: 1px solid #e2cf94;
+          background: #eef1e4;
+          color: #4b5320;
+          border: 1px solid #8a9a5b;
           border-radius: 999px;
           padding: 0.3rem 0.85rem;
           font-size: 0.85rem;
@@ -108,13 +108,13 @@ export default async function PaginaWebinar({
         .wf-pagina h2 {
           font-size: 1.4rem;
           font-weight: 800;
-          color: #15130f;
+          color: #000000;
           margin: 0 0 1.25rem;
         }
         .wf-pagina label {
           display: block;
           font-weight: 700;
-          color: #15130f;
+          color: #000000;
           margin-top: 1.1rem;
           margin-bottom: 0.35rem;
         }
@@ -123,17 +123,17 @@ export default async function PaginaWebinar({
           width: 100%;
           box-sizing: border-box;
           padding: 0.65rem 0.85rem;
-          border: 1px solid #ddd9cd;
+          border: 1px solid #000000;
           border-radius: 8px;
           font-size: 1rem;
           background: #fff;
-          color: #15130f;
+          color: #000000;
           transition: border-color 0.15s, box-shadow 0.15s;
         }
         .wf-pagina input:not([type="checkbox"]):focus {
           outline: none;
-          border-color: #b8902f;
-          box-shadow: 0 0 0 3px rgba(184, 144, 47, 0.18);
+          border-color: #4b5320;
+          box-shadow: 0 0 0 3px rgba(75, 83, 32, 0.18);
         }
         .wf-consentimento {
           display: flex;
@@ -141,17 +141,17 @@ export default async function PaginaWebinar({
           gap: 0.6rem;
           margin-top: 1.5rem;
           font-weight: 400 !important;
-          color: #3a382f;
+          color: #333333;
           font-size: 0.92rem;
           line-height: 1.45;
         }
         .wf-consentimento input {
           width: auto;
           margin-top: 0.2rem;
-          accent-color: #b8902f;
+          accent-color: #4b5320;
         }
         .wf-consentimento a {
-          color: #96731f;
+          color: #4b5320;
           font-weight: 700;
           text-decoration: underline;
         }
@@ -159,9 +159,9 @@ export default async function PaginaWebinar({
           margin-top: 1.5rem;
           width: 100%;
           padding: 0.85rem 1.4rem;
-          background: linear-gradient(135deg, #201d18, #000);
-          color: #d4af37;
-          border: 1px solid #2c2820;
+          background: linear-gradient(135deg, #5d6b2a, #4b5320);
+          color: #ffffff;
+          border: 1px solid #3a4118;
           border-radius: 8px;
           font-size: 1.05rem;
           font-weight: 700;
@@ -170,8 +170,8 @@ export default async function PaginaWebinar({
           transition: filter 0.15s, box-shadow 0.15s;
         }
         .wf-pagina button[type="submit"]:hover:not(:disabled) {
-          filter: brightness(1.2);
-          box-shadow: 0 4px 14px rgba(184, 144, 47, 0.25);
+          filter: brightness(1.15);
+          box-shadow: 0 4px 14px rgba(75, 83, 32, 0.3);
         }
         .wf-pagina button[type="submit"]:disabled {
           opacity: 0.6;
