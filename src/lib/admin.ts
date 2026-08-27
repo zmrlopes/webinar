@@ -3,6 +3,7 @@ import { db } from "./db";
 export interface WebinarAdmin {
   id: string;
   titulo: string;
+  tipo: string;
   sessaoExternaEm: Date | null;
   duracaoMinutos: number | null;
   cancelada: boolean;
@@ -23,6 +24,7 @@ export async function listarWebinarsAdmin(): Promise<WebinarAdmin[]> {
   const { rows } = await db().query<{
     id: string;
     titulo: string;
+    tipo: string;
     sessao_externa_em: Date | null;
     duracao_minutos: number | null;
     cancelada_em: Date | null;
@@ -35,7 +37,7 @@ export async function listarWebinarsAdmin(): Promise<WebinarAdmin[]> {
     media_assistencia: string | null;
   }>(
     `select
-       w.id, w.titulo, w.sessao_externa_em, w.duracao_minutos,
+       w.id, w.titulo, w.tipo, w.sessao_externa_em, w.duracao_minutos,
        w.cancelada_em, w.presencas_fechadas,
        count(r.id) filter (where r.cancelada_em is null) as total_inscritos,
        count(r.id) filter (where r.link_estado = 'obtido')   as links_obtidos,
@@ -54,6 +56,7 @@ export async function listarWebinarsAdmin(): Promise<WebinarAdmin[]> {
   return rows.map((r) => ({
     id: r.id,
     titulo: r.titulo,
+    tipo: r.tipo,
     sessaoExternaEm: r.sessao_externa_em,
     duracaoMinutos: r.duracao_minutos,
     cancelada: r.cancelada_em !== null,

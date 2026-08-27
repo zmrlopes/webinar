@@ -13,6 +13,8 @@ interface LinhaFila {
   referencia: string | null;
   link_tentativas: number;
   sessao_externa_id: string;
+  tipo: string;
+  link_zoom: string | null;
 }
 
 export interface ResultadoFila {
@@ -23,7 +25,8 @@ export interface ResultadoFila {
 
 async function buscarLote(tamanho: number): Promise<LinhaFila[]> {
   const { rows } = await db().query<LinhaFila>(
-    `select r.id, r.nome, r.apelido, r.email, r.telemovel, r.referencia, r.link_tentativas, w.sessao_externa_id
+    `select r.id, r.nome, r.apelido, r.email, r.telemovel, r.referencia, r.link_tentativas,
+            w.sessao_externa_id, w.tipo, w.link_zoom
      from registrations r
      join webinars w on w.id = r.webinar_id
      where r.link_estado = 'pendente'
@@ -84,6 +87,42 @@ async function cancelarSeSessaoCancelada(id: string, webinarSessaoExternaId: str
  * (secção 9). 401 propaga para quem chamar: é erro de configuração, não se
  * repete sozinho.
  */
+/**
+ * A partir daqui o link já está gravado — uma falha num destes três passos
+ * (email de confirmação, sincronização Brevo, aviso ao consultor) não pode
+ * ser confundida com falha a obter o link, nem reabrir uma inscrição já
+ * bem sucedida. Por isso cada um tem o seu próprio try/catch, só regista o
+ * erro.
+ */
+async function processarPosLink(linha: LinhaFila, sender?: EmailSender): Promise<void> {
+  if (sender) {
+    try {
+      await enviarConfirmacao(sender, linha.id);
+    } catch (erroEmail) {
+      console.error("falha ao enviar confirmação:", erroEmail);
+    }
+  }
+
+  try {
+    await sincronizarContactoInscrito({
+      email: linha.email,
+      nome: linha.nome,
+      telemovel: linha.telemovel,
+      referencia: linha.referencia,
+    });
+  } catch (erroBrevo) {
+    console.error("falha ao sincronizar contacto na Brevo:", erroBrevo);
+  }
+
+  if (sender) {
+    try {
+      await notificarConsultorSobreLead(sender, linha.id);
+    } catch (erroNotificacao) {
+      console.error("falha ao notificar consultor:", erroNotificacao);
+    }
+  }
+}
+
 export async function processarFilaLinks(opts?: {
   tamanhoLote?: number;
   sender?: EmailSender;
@@ -94,6 +133,22 @@ export async function processarFilaLinks(opts?: {
   const resultado: ResultadoFila = { obtidos: 0, falhados: 0, reagendados: 0 };
 
   for (const linha of lote) {
+    // Formações ad-hoc (conta Zoom própria) usam o link colado à mão em vez
+    // de pedir um link pessoal à sala partilhada do Patrick — não há API
+    // nenhuma a chamar aqui, por isso nem entra no try/catch de erros do
+    // Patrick mais abaixo.
+    if (linha.tipo === "formacao") {
+      if (!linha.link_zoom) {
+        await marcarFalhado(linha.id, linha.link_tentativas + 1, "formação sem link do Zoom definido");
+        resultado.falhados += 1;
+        continue;
+      }
+      await marcarObtido(linha.id, linha.link_zoom);
+      resultado.obtidos += 1;
+      await processarPosLink(linha, opts?.sender);
+      continue;
+    }
+
     try {
       const link = await pedirLinkPessoal({
         sessao: linha.sessao_externa_id,
@@ -103,39 +158,7 @@ export async function processarFilaLinks(opts?: {
       });
       await marcarObtido(linha.id, link);
       resultado.obtidos += 1;
-
-      // A partir daqui o link já está gravado — uma falha num destes três
-      // passos (email de confirmação, sincronização Brevo, aviso ao
-      // consultor) não pode ser confundida com falha a obter o link, nem
-      // reabrir uma inscrição já bem sucedida. Por isso cada um tem o seu
-      // próprio try/catch, só regista o erro.
-      if (opts?.sender) {
-        try {
-          await enviarConfirmacao(opts.sender, linha.id);
-        } catch (erroEmail) {
-          console.error("falha ao enviar confirmação:", erroEmail);
-        }
-      }
-
-      try {
-        await sincronizarContactoInscrito({
-          email: linha.email,
-          nome: linha.nome,
-          telemovel: linha.telemovel,
-          referencia: linha.referencia,
-        });
-      } catch (erroBrevo) {
-        console.error("falha ao sincronizar contacto na Brevo:", erroBrevo);
-      }
-
-      if (opts?.sender) {
-        try {
-          await notificarConsultorSobreLead(opts.sender, linha.id);
-        } catch (erroNotificacao) {
-          console.error("falha ao notificar consultor:", erroNotificacao);
-        }
-      }
-
+      await processarPosLink(linha, opts?.sender);
       continue;
     } catch (erro) {
       if (erro instanceof SalaError) {

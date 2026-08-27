@@ -116,7 +116,12 @@ export default async function AdminDashboard() {
           </Link>
         </div>
 
-        <h1>Sessões</h1>
+        <div className="ad-sessao-topo" style={{ marginBottom: "1.25rem" }}>
+          <h1 style={{ margin: 0 }}>Sessões</h1>
+          <Link href="/admin/formacoes/nova" className="ad-cartao-seta">
+            + Criar formação
+          </Link>
+        </div>
 
         <div className="ad-grid-sessoes">
           {webinars.map((w) => {
@@ -133,6 +138,7 @@ export default async function AdminDashboard() {
                   )}
                   {!w.cancelada && !w.presencasFechadas && <span className="ad-etiqueta">ativa</span>}
                 </div>
+                {w.tipo === "formacao" && <span className="ad-etiqueta">formação</span>}
                 <p className="ad-legenda" style={{ margin: "0.25rem 0 0" }}>
                   {formatarData(w.sessaoExternaEm)}
                 </p>

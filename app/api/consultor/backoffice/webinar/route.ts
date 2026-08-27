@@ -25,11 +25,15 @@ export async function POST(request: Request): Promise<Response> {
     if (!proximo) {
       return NextResponse.json({ erro: "não há sessões públicas agendadas de momento" }, { status: 404 });
     }
-    const { rows: sessaoRows } = await db().query<{ sessao_externa_id: string }>(
-      `select sessao_externa_id from webinars where id = $1`,
+    const { rows: webinarRows } = await db().query<{
+      sessao_externa_id: string;
+      tipo: string;
+      link_zoom: string | null;
+    }>(
+      `select sessao_externa_id, tipo, link_zoom from webinars where id = $1`,
       [proximo.id],
     );
-    const sessaoExternaId = sessaoRows[0]!.sessao_externa_id;
+    const webinarRow = webinarRows[0]!;
 
     const membro = await buscarMembroEquipa(emailNormalizado);
     if (!membro) {
@@ -65,12 +69,18 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     if (!linkPessoal) {
-      linkPessoal = await pedirLinkPessoal({
-        sessao: sessaoExternaId,
-        nome,
-        apelido,
-        email: emailNormalizado,
-      });
+      linkPessoal =
+        webinarRow.tipo === "formacao"
+          ? webinarRow.link_zoom
+          : await pedirLinkPessoal({
+              sessao: webinarRow.sessao_externa_id,
+              nome,
+              apelido,
+              email: emailNormalizado,
+            });
+      if (!linkPessoal) {
+        return NextResponse.json({ erro: "esta sessão ainda não tem link do Zoom definido" }, { status: 500 });
+      }
       await db().query(
         `update registrations
          set link_pessoal = $1, link_pedido_em = now(), link_estado = 'obtido'
