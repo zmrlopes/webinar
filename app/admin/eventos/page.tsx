@@ -35,7 +35,7 @@ export default async function AdminEventos() {
           max-width: none;
           background: #ffffff;
           color: #000000;
-          margin: -2rem -1.25rem;
+          margin: 0;
           padding: 2.5rem clamp(1.25rem, 5vw, 4rem) 4rem;
           min-height: calc(100vh - 4rem);
         }

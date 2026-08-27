@@ -20,7 +20,7 @@ export default async function AdminConsultores() {
           max-width: none;
           background: #ffffff;
           color: #000000;
-          margin: -2rem -1.25rem;
+          margin: 0;
           padding: 2.5rem 1.25rem 4rem;
           min-height: calc(100vh - 4rem);
         }
