@@ -14,6 +14,11 @@ export interface ResultadoSincronizacao {
  * ser conjunta, ou já começou. Só a primeira justifica marcar como cancelada
  * — por isso só cancelamos o que desaparecer e cujo `sessao_externa_em`
  * guardado ainda esteja no futuro.
+ *
+ * `tipo = 'sincronizado'` é essencial aqui: formações ad-hoc (tipo =
+ * 'formacao', criadas em criarFormacao) têm um sessao_externa_id sintético
+ * que nunca vai aparecer no feed do Patrick — sem este filtro, a primeira
+ * sincronização depois de as criar cancelava-as sozinha.
  */
 export async function sincronizarSessoes(): Promise<ResultadoSincronizacao> {
   const sessoes = await listarSessoes();
@@ -47,6 +52,7 @@ export async function sincronizarSessoes(): Promise<ResultadoSincronizacao> {
      where sessao_externa_id is not null
        and cancelada_em is null
        and sessao_externa_em > now()
+       and tipo = 'sincronizado'
        and not (sessao_externa_id = any($1::text[]))`,
     [idsRecebidos],
   );
