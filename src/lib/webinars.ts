@@ -106,11 +106,18 @@ export async function listarWebinarsParaPainel(): Promise<WebinarResumo[]> {
 export const TITULO_WEBINAR_PUBLICO = "A tua oportunidade de negócio no turismo";
 
 /**
- * A próxima sessão pública (a que ainda não aconteceu, mais próxima no
- * tempo) — usada pelo cartão do backoffice que deixa o consultor entrar
- * diretamente no Zoom do webinar público, inscrevendo-se a si próprio de
- * caminho. Ao contrário de `buscarWebinarRelevante`, nunca aponta para uma
- * sessão já passada — não faz sentido "entrar" numa que já aconteceu.
+ * A próxima sessão pública que ainda dá para entrar — a mais próxima no
+ * tempo entre as que ainda não começaram e as que já começaram mas ainda
+ * não devem ter acabado (usa `duracao_minutos` para saber quando acaba;
+ * sem essa duração, assume 90 minutos por omissão). Usada pelo cartão do
+ * backoffice que deixa o consultor entrar diretamente no Zoom, inscrevendo-
+ * se a si próprio de caminho.
+ *
+ * Antes cortava em `sessao_externa_em > now()`, o que fazia o cartão
+ * desaparecer (e a entrada deixar de funcionar) assim que a hora de início
+ * passava — mesmo com a sessão ainda a decorrer. Ao contrário de
+ * `buscarWebinarRelevante`, continua a nunca apontar para uma sessão já
+ * terminada.
  */
 export async function buscarProximoWebinarPublico(): Promise<WebinarResumo | undefined> {
   const { rows } = await db().query<{
@@ -125,7 +132,7 @@ export async function buscarProximoWebinarPublico(): Promise<WebinarResumo | und
      where cancelada_em is null
        and sessao_externa_id is not null
        and (titulo = $1 or (tipo = 'formacao' and publico_para_leads))
-       and sessao_externa_em > now()
+       and sessao_externa_em + (coalesce(duracao_minutos, 90) * interval '1 minute') > now()
      order by sessao_externa_em asc
      limit 1`,
     [TITULO_WEBINAR_PUBLICO],
