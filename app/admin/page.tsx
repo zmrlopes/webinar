@@ -1,10 +1,20 @@
 import Link from "next/link";
-import { buscarVisaoGeralAdmin, listarWebinarsAdmin } from "@/lib/admin";
+import {
+  buscarOrigemInscricoes,
+  buscarVisaoGeralAdmin,
+  listarAlertasAdmin,
+  listarAtividadeRecente,
+  listarConsultoresAdmin,
+  listarInscricoesPorDia,
+  listarTopLideres,
+  listarWebinarsAdmin,
+} from "@/lib/admin";
 import { listarInscricoesEvento } from "@/lib/eventos";
 
 export const dynamic = "force-dynamic";
 
 const COR_PRESENTE = "#0ca30c";
+const DIAS_JANELA = 14;
 
 function formatarData(data: Date | null): string {
   if (!data) return "—";
@@ -15,12 +25,49 @@ function formatarData(data: Date | null): string {
   });
 }
 
+function formatarDataCurta(data: Date): string {
+  return new Date(data).toLocaleString("pt-PT", {
+    dateStyle: "short",
+    timeZone: "Europe/Lisbon",
+  });
+}
+
+function formatarDiaCurto(iso: string): string {
+  const [, mes, dia] = iso.split("-");
+  return `${dia}/${mes}`;
+}
+
 export default async function AdminDashboard() {
-  const [webinars, visaoGeral, inscricoesEvento] = await Promise.all([
+  const [
+    webinars,
+    visaoGeral,
+    inscricoesEvento,
+    inscricoesPorDia,
+    origem,
+    consultores,
+    lideres,
+    atividade,
+    alertas,
+  ] = await Promise.all([
     listarWebinarsAdmin(),
     buscarVisaoGeralAdmin(),
     listarInscricoesEvento(),
+    listarInscricoesPorDia(DIAS_JANELA),
+    buscarOrigemInscricoes(DIAS_JANELA),
+    listarConsultoresAdmin(),
+    listarTopLideres(5),
+    listarAtividadeRecente(6),
+    listarAlertasAdmin(),
   ]);
+
+  const topConsultores = [...consultores]
+    .filter((c) => c.inscricoesTotais > 0)
+    .sort((a, b) => b.inscricoesTotais - a.inscricoesTotais)
+    .slice(0, 5);
+
+  const maxDia = Math.max(1, ...inscricoesPorDia.map((d) => d.total));
+  const totalJanela = inscricoesPorDia.reduce((soma, d) => soma + d.total, 0);
+  const totalOrigem = origem.viaConsultor + origem.direto + origem.invalido;
 
   return (
     <main className="ad-pagina">
@@ -35,6 +82,7 @@ export default async function AdminDashboard() {
         }
         .ad-caixa { max-width: 1400px; margin: 0 auto; }
         .ad-pagina h1 { color: #000000; font-size: 1.5rem; margin: 0 0 1.25rem; }
+        .ad-pagina h2 { color: #000000; font-size: 1.15rem; margin: 0 0 0.9rem; }
         .ad-kicker {
           text-transform: uppercase;
           letter-spacing: 0.08em;
@@ -43,11 +91,16 @@ export default async function AdminDashboard() {
           color: #4b5320;
           margin: 0 0 0.75rem;
         }
+        .ad-bloco { margin-bottom: 2.5rem; }
         .ad-grid-geral {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
           gap: 1rem;
-          margin-bottom: 2.5rem;
+        }
+        .ad-grid-2 {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+          gap: 1rem;
         }
         .ad-grid-sessoes {
           display: grid;
@@ -95,15 +148,100 @@ export default async function AdminDashboard() {
         }
         .ad-numeros-linha { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
         .ad-numero-pequeno { font-size: 1.3rem; font-weight: 800; }
+
+        .ad-grafico-barras {
+          display: flex;
+          align-items: flex-end;
+          gap: 0.4rem;
+          height: 140px;
+          margin-top: 1rem;
+        }
+        .ad-barra-coluna { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
+        .ad-barra {
+          width: 100%;
+          background: linear-gradient(180deg, #5d6b2a, #4b5320);
+          border-radius: 4px 4px 0 0;
+          min-height: 2px;
+        }
+        .ad-barra-valor { font-size: 0.7rem; color: #6b6a63; margin-bottom: 0.2rem; }
+        .ad-barra-dia { font-size: 0.65rem; color: #6b6a63; margin-top: 0.4rem; }
+
+        .ad-origem-linha { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem; }
+        .ad-origem-etiqueta { flex: 0 0 140px; font-size: 0.85rem; }
+        .ad-origem-barra-fundo { flex: 1; height: 10px; border-radius: 5px; background: #eee; overflow: hidden; }
+        .ad-origem-barra { height: 100%; background: linear-gradient(90deg, #5d6b2a, #4b5320); }
+        .ad-origem-numero { flex: 0 0 auto; font-weight: 700; font-size: 0.85rem; }
+
+        .ad-lista { list-style: none; margin: 0.5rem 0 0; padding: 0; }
+        .ad-lista li {
+          display: flex;
+          justify-content: space-between;
+          gap: 0.75rem;
+          padding: 0.5rem 0;
+          border-bottom: 1px solid #e5e3dc;
+          font-size: 0.9rem;
+        }
+        .ad-lista li:last-child { border-bottom: none; }
+        .ad-lista-numero {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 1.6rem;
+          height: 1.6rem;
+          padding: 0 0.4rem;
+          border-radius: 999px;
+          background: #eef1e4;
+          color: #4b5320;
+          font-weight: 700;
+          font-size: 0.8rem;
+        }
+        .ad-lista-nome { flex: 1; }
+        .ad-lista-sub { color: #6b6a63; font-size: 0.75rem; }
+        .ad-alerta {
+          background: #fdf3e0;
+          border: 1px solid #e2cf94;
+          color: #4a3c10;
+          border-radius: 8px;
+          padding: 0.6rem 0.85rem;
+          font-size: 0.85rem;
+          margin-bottom: 0.5rem;
+        }
+        .ad-alerta:last-child { margin-bottom: 0; }
+        .ad-mudo { color: #6b6a63; font-size: 0.85rem; margin: 0.5rem 0 0; }
       `}</style>
 
       <div className="ad-caixa">
         <p className="ad-kicker">Visão geral</p>
-        <div className="ad-grid-geral">
+        <div className="ad-grid-geral ad-bloco">
           <div className="ad-cartao">
-            <div className="ad-numero">{visaoGeral.inscricoesTotais}</div>
-            <div className="ad-legenda">Inscrições no total</div>
+            <div className="ad-numero">{visaoGeral.leadsInscritas}</div>
+            <div className="ad-legenda">Leads inscritas</div>
           </div>
+          <div className="ad-cartao">
+            <div className="ad-numero">{visaoGeral.consultoresInscritos}</div>
+            <div className="ad-legenda">Consultores inscritos</div>
+          </div>
+          <div className="ad-cartao">
+            <div className="ad-numero" style={{ color: COR_PRESENTE }}>
+              {visaoGeral.leadsPresentes}
+            </div>
+            <div className="ad-legenda">Leads presentes ({visaoGeral.pctLeadsPresentes}%)</div>
+          </div>
+          <div className="ad-cartao">
+            <div className="ad-numero" style={{ color: COR_PRESENTE }}>
+              {visaoGeral.consultoresPresentes}
+            </div>
+            <div className="ad-legenda">Consultores presentes ({visaoGeral.pctConsultoresPresentes}%)</div>
+          </div>
+          <div className="ad-cartao">
+            <div className="ad-numero">
+              {visaoGeral.duracaoMediaLeadsMinutos !== null ? `${visaoGeral.duracaoMediaLeadsMinutos} min` : "—"}
+            </div>
+            <div className="ad-legenda">Duração média (leads presentes)</div>
+          </div>
+        </div>
+
+        <div className="ad-grid-geral ad-bloco">
           <Link href="/admin/consultores" className="ad-cartao ad-cartao-link">
             <div className="ad-numero">{visaoGeral.consultoresAtivos}</div>
             <div className="ad-legenda">Consultores ativos</div>
@@ -114,6 +252,136 @@ export default async function AdminDashboard() {
             <div className="ad-legenda">Inscrições em eventos</div>
             <div className="ad-cartao-seta">Ver eventos →</div>
           </Link>
+        </div>
+
+        <div className="ad-grid-2 ad-bloco">
+          <div className="ad-cartao">
+            <h2>Inscrições por dia</h2>
+            <p className="ad-legenda" style={{ marginTop: "-0.5rem", marginBottom: "0.5rem" }}>
+              Últimos {DIAS_JANELA} dias · {totalJanela} no total
+            </p>
+            <div className="ad-grafico-barras">
+              {inscricoesPorDia.map((d) => (
+                <div className="ad-barra-coluna" key={d.dia}>
+                  {d.total > 0 && <span className="ad-barra-valor">{d.total}</span>}
+                  <div className="ad-barra" style={{ height: `${(d.total / maxDia) * 100}%` }} />
+                  <span className="ad-barra-dia">{formatarDiaCurto(d.dia)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="ad-cartao">
+            <h2>Origem das inscrições</h2>
+            <p className="ad-legenda" style={{ marginTop: "-0.5rem", marginBottom: "0.5rem" }}>
+              Últimos {DIAS_JANELA} dias
+            </p>
+            {totalOrigem === 0 ? (
+              <p className="ad-mudo">Sem inscrições neste período.</p>
+            ) : (
+              <>
+                <div className="ad-origem-linha">
+                  <span className="ad-origem-etiqueta">Consultores</span>
+                  <div className="ad-origem-barra-fundo">
+                    <div
+                      className="ad-origem-barra"
+                      style={{ width: `${(origem.viaConsultor / totalOrigem) * 100}%` }}
+                    />
+                  </div>
+                  <span className="ad-origem-numero">{origem.viaConsultor}</span>
+                </div>
+                <div className="ad-origem-linha">
+                  <span className="ad-origem-etiqueta">Direto</span>
+                  <div className="ad-origem-barra-fundo">
+                    <div className="ad-origem-barra" style={{ width: `${(origem.direto / totalOrigem) * 100}%` }} />
+                  </div>
+                  <span className="ad-origem-numero">{origem.direto}</span>
+                </div>
+                <div className="ad-origem-linha">
+                  <span className="ad-origem-etiqueta">Referências inválidas</span>
+                  <div className="ad-origem-barra-fundo">
+                    <div
+                      className="ad-origem-barra"
+                      style={{ width: `${(origem.invalido / totalOrigem) * 100}%` }}
+                    />
+                  </div>
+                  <span className="ad-origem-numero">{origem.invalido}</span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="ad-grid-2 ad-bloco">
+          <div className="ad-cartao">
+            <h2>Top consultores</h2>
+            {topConsultores.length === 0 ? (
+              <p className="ad-mudo">Ainda sem inscrições atribuídas a consultores.</p>
+            ) : (
+              <ul className="ad-lista">
+                {topConsultores.map((c, i) => (
+                  <li key={c.referencia}>
+                    <span className="ad-lista-nome">
+                      <span className="ad-lista-numero">{i + 1}</span> {c.nome ?? c.email}
+                    </span>
+                    <strong>{c.inscricoesTotais}</strong>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="ad-cartao">
+            <h2>Top líderes</h2>
+            {lideres.length === 0 ? (
+              <p className="ad-mudo">Ainda sem líderes com equipa e leads.</p>
+            ) : (
+              <ul className="ad-lista">
+                {lideres.map((l, i) => (
+                  <li key={l.email}>
+                    <span className="ad-lista-nome">
+                      <span className="ad-lista-numero">{i + 1}</span> {l.nome}{" "}
+                      <span className="ad-lista-sub">({l.equipaTotal} na equipa)</span>
+                    </span>
+                    <strong>{l.leadsEquipa}</strong>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        <div className="ad-grid-2 ad-bloco">
+          <div className="ad-cartao">
+            <h2>Inscrições recentes</h2>
+            {atividade.length === 0 ? (
+              <p className="ad-mudo">Sem inscrições ainda.</p>
+            ) : (
+              <ul className="ad-lista">
+                {atividade.map((a, i) => (
+                  <li key={i}>
+                    <span className="ad-lista-nome">
+                      {a.nome} <span className="ad-lista-sub">— {a.webinarTitulo}</span>
+                    </span>
+                    <span className="ad-lista-sub">{formatarDataCurta(a.criadoEm)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="ad-cartao">
+            <h2>Alertas</h2>
+            {alertas.length === 0 ? (
+              <p className="ad-mudo">Sem nada a assinalar de momento.</p>
+            ) : (
+              alertas.map((a, i) => (
+                <p className="ad-alerta" key={i}>
+                  {a}
+                </p>
+              ))
+            )}
+          </div>
         </div>
 
         <div className="ad-sessao-topo" style={{ marginBottom: "1.25rem" }}>

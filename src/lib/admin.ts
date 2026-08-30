@@ -74,28 +74,248 @@ export async function listarWebinarsAdmin(): Promise<WebinarAdmin[]> {
 export interface VisaoGeralAdmin {
   inscricoesTotais: number;
   consultoresAtivos: number;
+  leadsInscritas: number;
+  consultoresInscritos: number;
+  leadsPresentes: number;
+  pctLeadsPresentes: number;
+  consultoresPresentes: number;
+  pctConsultoresPresentes: number;
+  duracaoMediaLeadsMinutos: number | null;
 }
 
 /**
  * Números globais para o topo do painel. "Consultores ativos" conta quem
  * já gerou o link pelo menos uma vez em /consultor (uma linha por
  * consultor em `links_consultor`) — não implica que tenha trazido
- * inscrições, só que já se "ativou".
+ * inscrições, só que já se "ativou". O resto separa leads de consultores
+ * auto-inscritos, tal como já acontece na página de cada sessão.
  */
 export async function buscarVisaoGeralAdmin(): Promise<VisaoGeralAdmin> {
   const { rows } = await db().query<{
     inscricoes_totais: string;
     consultores_ativos: string;
+    leads_inscritas: string;
+    consultores_inscritos: string;
+    leads_presentes: string;
+    consultores_presentes: string;
+    duracao_media_leads: string | null;
   }>(
     `select
        (select count(*) from registrations where cancelada_em is null) as inscricoes_totais,
-       (select count(*) from links_consultor) as consultores_ativos`,
+       (select count(*) from links_consultor) as consultores_ativos,
+       count(*) filter (
+         where r.cancelada_em is null and not exists (select 1 from equipa_afiliados ea where ea.email = r.email)
+       ) as leads_inscritas,
+       count(*) filter (
+         where r.cancelada_em is null and exists (select 1 from equipa_afiliados ea where ea.email = r.email)
+       ) as consultores_inscritos,
+       count(*) filter (
+         where r.cancelada_em is null and r.presenca = 'attended'
+           and not exists (select 1 from equipa_afiliados ea where ea.email = r.email)
+       ) as leads_presentes,
+       count(*) filter (
+         where r.cancelada_em is null and r.presenca = 'attended'
+           and exists (select 1 from equipa_afiliados ea where ea.email = r.email)
+       ) as consultores_presentes,
+       avg(r.presenca_minutos) filter (
+         where r.cancelada_em is null and r.presenca = 'attended' and r.presenca_minutos is not null
+           and not exists (select 1 from equipa_afiliados ea where ea.email = r.email)
+       ) as duracao_media_leads
+     from registrations r`,
   );
   const linha = rows[0];
+  const leadsInscritas = Number(linha?.leads_inscritas ?? 0);
+  const consultoresInscritos = Number(linha?.consultores_inscritos ?? 0);
+  const leadsPresentes = Number(linha?.leads_presentes ?? 0);
+  const consultoresPresentes = Number(linha?.consultores_presentes ?? 0);
   return {
     inscricoesTotais: Number(linha?.inscricoes_totais ?? 0),
     consultoresAtivos: Number(linha?.consultores_ativos ?? 0),
+    leadsInscritas,
+    consultoresInscritos,
+    leadsPresentes,
+    pctLeadsPresentes: leadsInscritas > 0 ? Math.round((leadsPresentes / leadsInscritas) * 100) : 0,
+    consultoresPresentes,
+    pctConsultoresPresentes:
+      consultoresInscritos > 0 ? Math.round((consultoresPresentes / consultoresInscritos) * 100) : 0,
+    duracaoMediaLeadsMinutos:
+      linha?.duracao_media_leads !== null && linha?.duracao_media_leads !== undefined
+        ? Math.round(Number(linha.duracao_media_leads))
+        : null,
   };
+}
+
+export interface DiaInscricoes {
+  dia: string;
+  total: number;
+}
+
+/**
+ * Inscrições por dia, últimos `dias` dias — para o gráfico de barras do
+ * painel. Preenche os dias sem nenhuma inscrição com 0, para o gráfico não
+ * ficar com buracos.
+ */
+export async function listarInscricoesPorDia(dias: number): Promise<DiaInscricoes[]> {
+  const { rows } = await db().query<{ dia: Date; total: string }>(
+    `select date_trunc('day', criado_em) as dia, count(*) as total
+     from registrations
+     where cancelada_em is null and criado_em > now() - ($1 || ' days')::interval
+     group by dia`,
+    [dias],
+  );
+  const porDia = new Map(rows.map((r) => [r.dia.toISOString().slice(0, 10), Number(r.total)]));
+
+  const resultado: DiaInscricoes[] = [];
+  for (let i = dias - 1; i >= 0; i--) {
+    const data = new Date();
+    data.setDate(data.getDate() - i);
+    const chave = data.toISOString().slice(0, 10);
+    resultado.push({ dia: chave, total: porDia.get(chave) ?? 0 });
+  }
+  return resultado;
+}
+
+export interface OrigemInscricoes {
+  viaConsultor: number;
+  direto: number;
+  invalido: number;
+}
+
+/**
+ * De onde vieram as inscrições dos últimos `dias` dias: por um link de
+ * consultor válido, sem nenhuma referência (direto), ou com uma referência
+ * que não corresponde a nenhum link de consultor conhecido (inválida —
+ * normalmente um `?ref=` adulterado ou de um link já apagado).
+ */
+export async function buscarOrigemInscricoes(dias: number): Promise<OrigemInscricoes> {
+  const { rows } = await db().query<{ via_consultor: string; direto: string; invalido: string }>(
+    `select
+       count(*) filter (where r.referencia is not null and lc.referencia is not null) as via_consultor,
+       count(*) filter (where r.referencia is null) as direto,
+       count(*) filter (where r.referencia is not null and lc.referencia is null) as invalido
+     from registrations r
+     left join links_consultor lc on lc.referencia = r.referencia
+     where r.cancelada_em is null and r.criado_em > now() - ($1 || ' days')::interval`,
+    [dias],
+  );
+  const linha = rows[0];
+  return {
+    viaConsultor: Number(linha?.via_consultor ?? 0),
+    direto: Number(linha?.direto ?? 0),
+    invalido: Number(linha?.invalido ?? 0),
+  };
+}
+
+export interface LiderAdmin {
+  email: string;
+  nome: string;
+  leadsEquipa: number;
+  equipaTotal: number;
+}
+
+/**
+ * Quem tem mais leads trazidas pela equipa toda (a soma de si próprio +
+ * toda a descendência), entre quem tem pelo menos uma pessoa abaixo —
+ * mesma lógica de buscarArvoreEquipa (src/lib/equipa.ts), mas para todo o
+ * sistema de uma vez, sem partir de um email específico.
+ */
+export async function listarTopLideres(limite: number): Promise<LiderAdmin[]> {
+  const { rows } = await db().query<{
+    email: string;
+    nome: string;
+    upline_email: string | null;
+    leads_proprios: string;
+  }>(
+    `select ea.email, ea.nome, ea.upline_email,
+            count(r.id) filter (
+              where r.cancelada_em is null and r.referencia_email = ea.email
+                and not exists (select 1 from equipa_afiliados ea2 where ea2.email = r.email)
+            ) as leads_proprios
+     from equipa_afiliados ea
+     left join registrations r on r.referencia_email = ea.email
+     group by ea.email, ea.nome, ea.upline_email`,
+  );
+
+  interface No {
+    email: string;
+    nome: string;
+    uplineEmail: string | null;
+    leadsProprios: number;
+    leadsEquipa: number;
+    equipaTotal: number;
+    filhos: No[];
+  }
+
+  const porEmail = new Map<string, No>(
+    rows.map((r) => [
+      r.email,
+      {
+        email: r.email,
+        nome: r.nome,
+        uplineEmail: r.upline_email,
+        leadsProprios: Number(r.leads_proprios),
+        leadsEquipa: 0,
+        equipaTotal: 0,
+        filhos: [],
+      },
+    ]),
+  );
+
+  const raizes: No[] = [];
+  for (const no of porEmail.values()) {
+    const pai = no.uplineEmail ? porEmail.get(no.uplineEmail) : undefined;
+    if (pai) pai.filhos.push(no);
+    else raizes.push(no); // sem upline, ou upline fora da equipa (não devia acontecer)
+  }
+
+  function somar(no: No): void {
+    no.leadsEquipa = no.leadsProprios;
+    no.equipaTotal = 0;
+    for (const filho of no.filhos) {
+      somar(filho);
+      no.leadsEquipa += filho.leadsEquipa;
+      no.equipaTotal += 1 + filho.equipaTotal;
+    }
+  }
+  for (const raiz of raizes) somar(raiz);
+
+  return [...porEmail.values()]
+    .filter((no) => no.equipaTotal > 0)
+    .sort((a, b) => b.leadsEquipa - a.leadsEquipa)
+    .slice(0, limite)
+    .map((no) => ({ email: no.email, nome: no.nome, leadsEquipa: no.leadsEquipa, equipaTotal: no.equipaTotal }));
+}
+
+export interface AtividadeRecente {
+  nome: string;
+  webinarTitulo: string;
+  criadoEm: Date;
+}
+
+export async function listarAtividadeRecente(limite: number): Promise<AtividadeRecente[]> {
+  const { rows } = await db().query<{ nome: string; titulo: string; criado_em: Date }>(
+    `select r.nome, w.titulo, r.criado_em
+     from registrations r
+     join webinars w on w.id = r.webinar_id
+     where r.cancelada_em is null
+     order by r.criado_em desc
+     limit $1`,
+    [limite],
+  );
+  return rows.map((r) => ({ nome: r.nome, webinarTitulo: r.titulo, criadoEm: r.criado_em }));
+}
+
+/**
+ * Avisos simples do estado do sistema — por agora só um caso concreto:
+ * formações futuras sem link do Zoom definido (não deviam existir, o
+ * formulário exige o link, mas fica como rede de segurança).
+ */
+export async function listarAlertasAdmin(): Promise<string[]> {
+  const { rows } = await db().query<{ titulo: string }>(
+    `select titulo from webinars
+     where tipo = 'formacao' and cancelada_em is null and sessao_externa_em > now() and link_zoom is null`,
+  );
+  return rows.map((r) => `A formação "${r.titulo}" ainda não tem link do Zoom definido.`);
 }
 
 export interface InscricaoAdmin {
