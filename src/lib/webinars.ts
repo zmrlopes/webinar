@@ -106,20 +106,21 @@ export async function listarWebinarsParaPainel(): Promise<WebinarResumo[]> {
 export const TITULO_WEBINAR_PUBLICO = "A tua oportunidade de negócio no turismo";
 
 /**
- * A próxima sessão pública que ainda dá para entrar — usada pelo cartão do
- * backoffice que deixa o consultor entrar diretamente no Zoom,
- * inscrevendo-se a si próprio de caminho. A janela é diferente consoante a
- * origem:
+ * A próxima sessão pública que ainda dá para entrar — a mais próxima no
+ * tempo entre as que ainda não começaram e as que já começaram mas ainda
+ * não devem ter acabado (usa `duracao_minutos` para saber quando acaba;
+ * sem essa duração, assume 90 minutos por omissão). Usada pelo cartão do
+ * backoffice que deixa o consultor entrar diretamente no Zoom.
  *
- * - Sessões sincronizadas da sala do Patrick (`titulo = TITULO_WEBINAR_PUBLICO`)
- *   só contam enquanto ainda não começaram (`sessao_externa_em > now()`) —
- *   a API dele (`pedirLinkPessoal`) é de pré-inscrição, não aceita gente
- *   nova a meio da sessão; tentar depois de começar devolve 404 (confirmado
- *   a 2 consultores a tentar entrar já depois da hora). Alargar esta janela
- *   só mostrava um botão que parecia funcionar mas falhava sempre.
- * - Formações ad-hoc públicas (`tipo = 'formacao' and publico_para_leads`)
- *   usam o link_zoom próprio, sem API nenhuma pelo meio, por isso continuam
- *   "entráveis" até ao fim previsto (início + duração, 90 min por omissão).
+ * A janela fica alargada mesmo para as sessões sincronizadas do Patrick,
+ * cuja API de pré-inscrição (`pedirLinkPessoal`) rejeita quem tenta
+ * inscrever-se pela primeira vez depois de a sessão já ter começado
+ * (404) — mas quem já tinha o link obtido de antes (já se tinha inscrito
+ * ou já tinha clicado em "Entrar" antes da hora) continua a conseguir
+ * entrar sem problema, porque nesse caso só reutiliza o link já guardado,
+ * sem voltar a chamar a API. É só o pedido de um link novo, já depois de
+ * começar, que falha — tratado com uma mensagem clara em
+ * webinar/route.ts e formacao/route.ts, em vez de escondido aqui.
  */
 export async function buscarProximoWebinarPublico(): Promise<WebinarResumo | undefined> {
   const { rows } = await db().query<{
@@ -133,13 +134,8 @@ export async function buscarProximoWebinarPublico(): Promise<WebinarResumo | und
      from webinars
      where cancelada_em is null
        and sessao_externa_id is not null
-       and (
-         (titulo = $1 and sessao_externa_em > now())
-         or (
-           tipo = 'formacao' and publico_para_leads
-           and sessao_externa_em + (coalesce(duracao_minutos, 90) * interval '1 minute') > now()
-         )
-       )
+       and (titulo = $1 or (tipo = 'formacao' and publico_para_leads))
+       and sessao_externa_em + (coalesce(duracao_minutos, 90) * interval '1 minute') > now()
      order by sessao_externa_em asc
      limit 1`,
     [TITULO_WEBINAR_PUBLICO],
