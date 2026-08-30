@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { listarInscricoesAdmin } from "@/lib/admin";
 import { buscarWebinar } from "@/lib/webinars";
 import { CancelarFormacao } from "./cancelar-formacao";
-import { CorrecaoPresenca } from "./correcao-presenca";
+import { TabelaInscricoes } from "./tabela-inscricoes";
 
 export const dynamic = "force-dynamic";
 
@@ -135,6 +135,21 @@ export default async function AdminWebinar({
           letter-spacing: 0.03em;
         }
         .ad-tabela tr:last-child td { border-bottom: none; }
+        .ad-pagina button.ad-th-ordenar {
+          background: none;
+          border: none;
+          padding: 0;
+          margin: 0;
+          font: inherit;
+          text-transform: inherit;
+          letter-spacing: inherit;
+          color: inherit;
+          font-weight: inherit;
+          border-radius: 0;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+        .ad-pagina button.ad-th-ordenar:hover { color: #4b5320; }
         .ad-pagina button {
           background: linear-gradient(135deg, #5d6b2a, #4b5320);
           color: #ffffff;
@@ -295,64 +310,7 @@ export default async function AdminWebinar({
           </div>
         )}
 
-        <div className="ad-tabela-wrap">
-          <table className="ad-tabela">
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Apelido</th>
-                <th>Telemóvel</th>
-                <th>Email</th>
-                <th>Convidado por</th>
-                <th>Link</th>
-                <th>Clicou no Zoom</th>
-                <th>Erro do link</th>
-                <th>Presença</th>
-                <th>Minutos</th>
-                <th>Corrigir</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leadsInscricoes.map((i) => (
-                <tr key={i.id}>
-                  <td>
-                    {i.nome}
-                    {i.cancelada && <span className="ad-etiqueta"> cancelada</span>}
-                  </td>
-                  <td>{i.apelido}</td>
-                  <td>{i.telemovel ?? "—"}</td>
-                  <td>{i.email}</td>
-                  <td>
-                    {i.referencia ? (
-                      <>
-                        <div>{i.referenciaNome ?? i.referencia}</div>
-                        {i.referenciaNome && (
-                          <div className="ad-legenda" style={{ margin: 0 }}>
-                            {i.referencia}
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                  <td>
-                    <span className="ad-etiqueta">{i.linkEstado}</span>
-                  </td>
-                  <td>{i.clicouZoom ? "Sim" : "—"}</td>
-                  <td style={{ maxWidth: 260, fontSize: "0.85rem" }}>
-                    {i.linkUltimoErro ? `(${i.linkTentativas}x) ${i.linkUltimoErro}` : "—"}
-                  </td>
-                  <td>{i.presenca}</td>
-                  <td>{i.presencaMinutos ?? "—"}</td>
-                  <td>
-                    <CorrecaoPresenca registrationId={i.id} presencaAtual={i.presenca} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <TabelaInscricoes inscricoes={leadsInscricoes} mostrarConvidadoPor />
 
         {consultoresInscricoes.length > 0 && (
           <>
@@ -364,49 +322,7 @@ export default async function AdminWebinar({
               parte das estatísticas de cima e não contam para nenhum consultor na tabela "Por
               consultor".
             </p>
-            <div className="ad-tabela-wrap">
-              <table className="ad-tabela">
-                <thead>
-                  <tr>
-                    <th>Nome</th>
-                    <th>Apelido</th>
-                    <th>Telemóvel</th>
-                    <th>Email</th>
-                    <th>Link</th>
-                    <th>Clicou no Zoom</th>
-                    <th>Erro do link</th>
-                    <th>Presença</th>
-                    <th>Minutos</th>
-                    <th>Corrigir</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {consultoresInscricoes.map((i) => (
-                    <tr key={i.id}>
-                      <td>
-                        {i.nome}
-                        {i.cancelada && <span className="ad-etiqueta"> cancelada</span>}
-                      </td>
-                      <td>{i.apelido}</td>
-                      <td>{i.telemovel ?? "—"}</td>
-                      <td>{i.email}</td>
-                      <td>
-                        <span className="ad-etiqueta">{i.linkEstado}</span>
-                      </td>
-                      <td>{i.clicouZoom ? "Sim" : "—"}</td>
-                      <td style={{ maxWidth: 260, fontSize: "0.85rem" }}>
-                        {i.linkUltimoErro ? `(${i.linkTentativas}x) ${i.linkUltimoErro}` : "—"}
-                      </td>
-                      <td>{i.presenca}</td>
-                      <td>{i.presencaMinutos ?? "—"}</td>
-                      <td>
-                        <CorrecaoPresenca registrationId={i.id} presencaAtual={i.presenca} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <TabelaInscricoes inscricoes={consultoresInscricoes} mostrarConvidadoPor={false} />
           </>
         )}
 
