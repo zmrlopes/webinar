@@ -11,6 +11,7 @@ interface DadosIdentificacao {
   ehConsultorEquipa: boolean;
   formacao: { titulo: string; sessaoExternaEm: string } | null;
   proximoWebinar: { titulo: string; sessaoExternaEm: string } | null;
+  inscritoProximoWebinar: boolean;
   formacoesEquipa: { id: string; titulo: string; sessaoExternaEm: string }[];
 }
 
@@ -37,6 +38,8 @@ export function BackofficeHome() {
   const [errosFormacaoAdHoc, setErrosFormacaoAdHoc] = useState<Record<string, string>>({});
   const [aPedirWebinar, setAPedirWebinar] = useState(false);
   const [erroWebinar, setErroWebinar] = useState("");
+  const [webinarInscrito, setWebinarInscrito] = useState(false);
+  const [webinarAcabadoDeInscrever, setWebinarAcabadoDeInscrever] = useState(false);
   const [seccaoAtiva, setSeccaoAtiva] = useState<Seccao>(null);
 
   function alternarSeccao(seccao: Seccao): void {
@@ -62,6 +65,7 @@ export function BackofficeHome() {
       guardarEmail(emailParaIdentificar);
       setEmail(emailParaIdentificar);
       setDados(corpo);
+      setWebinarInscrito(corpo.inscritoProximoWebinar === true);
       setEstado("pronto");
     } catch {
       setErro("falha de ligação — tenta outra vez");
@@ -134,6 +138,14 @@ export function BackofficeHome() {
     }
   }
 
+  /**
+   * Dois passos, de propósito: a primeira vez só inscreve (o backend já
+   * envia sempre o email de confirmação com o link) e fica com o botão a
+   * mudar para "Entrar no webinar" — não entra logo. Assim o consultor
+   * fica com o link garantido no email, mesmo que só volte a clicar
+   * "Entrar" depois de a sessão já ter começado (o pedido de um link novo
+   * nessa altura falharia, mas reentrar com o link já obtido não).
+   */
   async function pedirWebinar(): Promise<void> {
     setAPedirWebinar(true);
     setErroWebinar("");
@@ -146,6 +158,12 @@ export function BackofficeHome() {
       const corpo = await resposta.json().catch(() => ({}));
       if (!resposta.ok) {
         setErroWebinar(typeof corpo.erro === "string" ? corpo.erro : "não foi possível obter o link");
+        setAPedirWebinar(false);
+        return;
+      }
+      if (!webinarInscrito) {
+        setWebinarInscrito(true);
+        setWebinarAcabadoDeInscrever(true);
         setAPedirWebinar(false);
         return;
       }
@@ -408,7 +426,9 @@ export function BackofficeHome() {
                           <h3 className="vqb-destaque-titulo">{s.titulo}</h3>
                           <p className="vqb-destaque-data">{formatarData(s.sessaoExternaEm)}</p>
                           <p className="vqb-destaque-texto">
-                            Entra diretamente no Zoom — ficas automaticamente inscrito.
+                            {webinarInscrito
+                              ? "Já estás inscrito — o link também ficou no teu email."
+                              : "Inscreve-te para receberes já o link por email — entra quando quiseres."}
                           </p>
                           <button
                             type="button"
@@ -416,8 +436,13 @@ export function BackofficeHome() {
                             onClick={pedirWebinar}
                             disabled={aPedirWebinar}
                           >
-                            {aPedirWebinar ? "A preparar..." : "Entrar no webinar"}
+                            {aPedirWebinar ? "A preparar..." : webinarInscrito ? "Entrar no webinar" : "Inscrever"}
                           </button>
+                          {webinarAcabadoDeInscrever && (
+                            <p className="vqb-sucesso" style={{ marginTop: "0.75rem", fontSize: "0.9rem" }}>
+                              ✅ Inscrição confirmada — o link chegou ao teu email.
+                            </p>
+                          )}
                           {erroWebinar && (
                             <p className="vqb-erro" style={{ marginTop: "0.75rem" }}>{erroWebinar}</p>
                           )}

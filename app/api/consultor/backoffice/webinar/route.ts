@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { criarEmailSender, enviarConfirmacao } from "@/lib/email";
 import { buscarMembroEquipa } from "@/lib/equipa";
 import { pedirLinkPessoal, SalaError } from "@/lib/sala-zoom";
 import { buscarProximoWebinarPublico } from "@/lib/webinars";
@@ -10,6 +11,12 @@ import { buscarProximoWebinarPublico } from "@/lib/webinars";
  * é ele a assistir) e pede o link ao Zoom na hora, tal como o fluxo da
  * Formação de segunda. O link devolvido passa por /api/entrar/<id>, como
  * tudo o resto, para ficar rastreado.
+ *
+ * Também envia sempre o email de confirmação (enviarConfirmacao já
+ * deduplica, só sai da primeira vez) — para o consultor ficar com o link
+ * garantido na caixa de correio mesmo que a sessão já tenha começado
+ * quando ele tentar voltar a entrar pelo painel (ver conversa sobre o 404
+ * do Patrick a pedidos feitos depois da hora).
  */
 export async function POST(request: Request): Promise<Response> {
   const corpo = (await request.json().catch(() => null)) as Record<string, unknown> | null;
@@ -87,6 +94,12 @@ export async function POST(request: Request): Promise<Response> {
          where id = $2`,
         [linkPessoal, registrationId],
       );
+    }
+
+    try {
+      await enviarConfirmacao(criarEmailSender(), registrationId);
+    } catch (erroEmail) {
+      console.error("falha ao enviar confirmação do webinar ao consultor:", erroEmail);
     }
 
     const host = request.headers.get("host") ?? "";

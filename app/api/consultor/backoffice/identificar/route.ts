@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { guardarLinkConsultor, referenciaSemColisao } from "@/lib/consultor";
+import { db } from "@/lib/db";
 import { buscarMembroEquipa } from "@/lib/equipa";
 import { gerarSlug } from "@/lib/slug";
 import { buscarProximoWebinarPublico, buscarWebinarFormacao, listarFormacoesEquipa } from "@/lib/webinars";
@@ -45,6 +46,18 @@ export async function POST(request: Request): Promise<Response> {
       listarFormacoesEquipa(),
     ]);
 
+    let inscritoProximoWebinar = false;
+    if (proximoWebinar) {
+      const { rows } = await db().query<{ existe: boolean }>(
+        `select exists(
+           select 1 from registrations
+           where webinar_id = $1 and email = $2 and cancelada_em is null and link_pessoal is not null
+         ) as existe`,
+        [proximoWebinar.id, emailNormalizado],
+      );
+      inscritoProximoWebinar = rows[0]?.existe ?? false;
+    }
+
     return NextResponse.json({
       nome: membro.nome,
       link,
@@ -55,6 +68,7 @@ export async function POST(request: Request): Promise<Response> {
       proximoWebinar: proximoWebinar
         ? { titulo: proximoWebinar.titulo, sessaoExternaEm: proximoWebinar.sessaoExternaEm }
         : null,
+      inscritoProximoWebinar,
       formacoesEquipa: formacoesEquipa.map((f) => ({
         id: f.id,
         titulo: f.titulo,
