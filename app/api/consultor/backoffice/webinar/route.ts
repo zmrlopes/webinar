@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { buscarMembroEquipa } from "@/lib/equipa";
-import { pedirLinkPessoal } from "@/lib/sala-zoom";
+import { pedirLinkPessoal, SalaError } from "@/lib/sala-zoom";
 import { buscarProximoWebinarPublico } from "@/lib/webinars";
 
 /**
@@ -94,6 +94,12 @@ export async function POST(request: Request): Promise<Response> {
     return NextResponse.json({ url: `${protocolo}://${host}/api/entrar/${registrationId}` });
   } catch (erro) {
     console.error("falha ao gerar link do webinar:", erro);
+    if (erro instanceof SalaError && erro.estado === 404) {
+      return NextResponse.json(
+        { erro: "esta sessão já começou — já não é possível pedir um link novo por aqui" },
+        { status: 409 },
+      );
+    }
     const mensagem = erro instanceof Error ? erro.message : String(erro);
     return NextResponse.json({ erro: `não foi possível obter o link (${mensagem})` }, { status: 500 });
   }
