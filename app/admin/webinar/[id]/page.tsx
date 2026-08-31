@@ -87,9 +87,10 @@ export default async function AdminWebinar({
         .ad-cartao {
           background: #f7f6f3;
           color: #000000;
-          border: 1px solid #000000;
-          border-radius: 12px;
+          border: 1px solid #ececE6;
+          border-radius: 16px;
           padding: 1.1rem 1.25rem;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 6px rgba(0, 0, 0, 0.04);
         }
         .ad-numero { font-size: 2rem; font-weight: 800; line-height: 1.1; color: #000000; }
         .ad-cartao-consultores { border-top: 3px solid #3a2f77; }

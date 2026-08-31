@@ -4,16 +4,49 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
+function IconSessoes(): React.JSX.Element {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="3" y="5" width="18" height="16" rx="2.5" />
+      <path d="M3 10h18M8 3v4M16 3v4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconConsultores(): React.JSX.Element {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" strokeLinecap="round" />
+      <circle cx="17.5" cy="9" r="2.4" />
+      <path d="M15.8 14.3c2.7.3 4.7 2.4 4.7 5.7" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconEventos(): React.JSX.Element {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M4 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 2.4 3.2H4Z" />
+      <path d="M20 9.5a2.5 2.5 0 0 0 0-5 2.5 2.5 0 0 0-2.4 3.2H20Z" />
+      <path d="M6 5h12v9.5c0 4-2.7 6.5-6 6.5s-6-2.5-6-6.5V5Z" />
+      <path d="M12 15.5v4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 const LINKS = [
-  { href: "/admin", label: "Sessões" },
-  { href: "/admin/consultores", label: "Consultores" },
-  { href: "/admin/eventos", label: "Eventos" },
+  { href: "/admin", label: "Sessões", icon: IconSessoes },
+  { href: "/admin/consultores", label: "Consultores", icon: IconConsultores },
+  { href: "/admin/eventos", label: "Eventos", icon: IconEventos },
 ];
 
 /**
- * Menu fixo em todas as páginas do admin — antes só era possível ir a
- * Consultores/Eventos a partir do dashboard principal, nunca de uma página
- * de detalhe (ex: /admin/webinar/[id]) diretamente para as outras secções.
+ * Menu lateral fixo em todas as páginas do admin — antes era uma barra
+ * horizontal no topo; passou a menu lateral (ícone + texto) a pedido, para
+ * ficar mais parecido com um painel de administração "a sério". Em ecrãs
+ * estreitos deita-se na horizontal no topo (uma barra lateral fixa não
+ * cabe em telemóvel).
  */
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -26,42 +59,80 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <>
+    <div className="ad-shell">
       <style>{`
-        .ad-nav { background: #000000; padding: 0.9rem 1.25rem; }
-        .ad-nav-caixa {
-          max-width: 1400px;
-          margin: 0 auto;
+        .ad-shell { display: flex; min-height: 100vh; background: #ffffff; }
+        .ad-sidebar {
+          flex-shrink: 0;
+          width: 220px;
+          background: #ffffff;
+          border-right: 1px solid #000000;
+          padding: 1.5rem 1rem;
+          position: sticky;
+          top: 0;
+          align-self: flex-start;
+          height: 100vh;
+          overflow-y: auto;
+          box-sizing: border-box;
+        }
+        .ad-sidebar-marca {
+          font-weight: 800;
+          font-size: 1.05rem;
+          color: #000000;
+          margin: 0 0 2rem;
+          padding: 0 0.5rem;
+        }
+        .ad-sidebar-nav { display: flex; flex-direction: column; gap: 0.3rem; }
+        .ad-sidebar-item {
           display: flex;
-          gap: 1.25rem;
           align-items: center;
-          justify-content: center;
-        }
-        .ad-nav a {
-          color: #b3b0a6;
+          gap: 0.75rem;
+          padding: 0.65rem 0.75rem;
+          border-radius: 10px;
+          color: #6b6a63;
           text-decoration: none;
-          font-size: 0.9rem;
           font-weight: 600;
-          padding: 0.3rem 0;
-          border-bottom: 2px solid transparent;
-          white-space: nowrap;
+          font-size: 0.9rem;
         }
-        .ad-nav a:hover { color: #ffffff; }
-        .ad-nav a.ad-nav-ativo { color: #ffffff; border-bottom-color: #8a9a5b; }
-        @media (min-width: 640px) {
-          .ad-nav-caixa { justify-content: flex-start; gap: 1.5rem; }
+        .ad-sidebar-item:hover { background: #f7f6f3; color: #000000; }
+        .ad-sidebar-item.ad-sidebar-ativo { background: #eef1e4; color: #4b5320; }
+        .ad-sidebar-item svg { flex-shrink: 0; }
+        .ad-conteudo { flex: 1; min-width: 0; }
+
+        @media (max-width: 720px) {
+          .ad-shell { flex-direction: column; min-height: 0; }
+          .ad-sidebar {
+            width: 100%;
+            height: auto;
+            position: static;
+            border-right: none;
+            border-bottom: 1px solid #000000;
+            padding: 0.75rem 1rem;
+          }
+          .ad-sidebar-marca { display: none; }
+          .ad-sidebar-nav { flex-direction: row; overflow-x: auto; gap: 0.4rem; }
+          .ad-sidebar-item { flex-shrink: 0; }
         }
       `}</style>
-      <nav className="ad-nav">
-        <div className="ad-nav-caixa">
-          {LINKS.map((l) => (
-            <Link key={l.href} href={l.href} className={ativo(l.href) ? "ad-nav-ativo" : ""}>
-              {l.label}
-            </Link>
-          ))}
-        </div>
-      </nav>
-      {children}
-    </>
+      <aside className="ad-sidebar">
+        <p className="ad-sidebar-marca">Admin</p>
+        <nav className="ad-sidebar-nav">
+          {LINKS.map((l) => {
+            const Icone = l.icon;
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
+                className={`ad-sidebar-item${ativo(l.href) ? " ad-sidebar-ativo" : ""}`}
+              >
+                <Icone />
+                {l.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </aside>
+      <div className="ad-conteudo">{children}</div>
+    </div>
   );
 }

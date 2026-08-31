@@ -16,6 +16,47 @@ export const dynamic = "force-dynamic";
 const COR_PRESENTE = "#0ca30c";
 const DIAS_JANELA = 14;
 
+function IconLeads(): React.JSX.Element {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" strokeLinecap="round" />
+      <circle cx="17.5" cy="9" r="2.4" />
+      <path d="M15.8 14.3c2.7.3 4.7 2.4 4.7 5.7" strokeLinecap="round" />
+    </svg>
+  );
+}
+function IconCheck(): React.JSX.Element {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M4 12.5l5 5L20 6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function IconRelogio(): React.JSX.Element {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3.5 2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function IconMais(): React.JSX.Element {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+      <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+    </svg>
+  );
+}
+function IconTicket(): React.JSX.Element {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M3 8a2 2 0 1 1 0 4v4a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-4a2 2 0 1 1 0-4V5a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v3Z" />
+      <path d="M9 4v16" strokeDasharray="2.5 2.5" />
+    </svg>
+  );
+}
+
 function formatarData(data: Date | null): string {
   if (!data) return "—";
   return new Date(data).toLocaleString("pt-PT", {
@@ -110,10 +151,36 @@ export default async function AdminDashboard() {
         .ad-cartao {
           background: #ffffff;
           color: #000000;
-          border: 1px solid #000000;
-          border-radius: 12px;
-          padding: 1.1rem 1.25rem;
+          border: 1px solid #ececE6;
+          border-radius: 16px;
+          padding: 1.25rem 1.4rem;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 6px rgba(0, 0, 0, 0.04);
         }
+        .ad-icone-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 38px;
+          height: 38px;
+          border-radius: 11px;
+          background: #eef1e4;
+          color: #4b5320;
+          margin-bottom: 0.75rem;
+        }
+        .ad-grid-acoes {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+          gap: 1rem;
+        }
+        .ad-acao {
+          display: flex;
+          align-items: center;
+          gap: 0.85rem;
+          text-decoration: none;
+        }
+        .ad-acao .ad-icone-badge { margin-bottom: 0; background: #4b5320; color: #ffffff; }
+        .ad-acao-titulo { color: #000000; font-weight: 700; font-size: 0.95rem; }
+        .ad-acao-sub { color: #6b6a63; font-size: 0.8rem; margin-top: 0.1rem; }
         .ad-numero { font-size: 2rem; font-weight: 800; line-height: 1.1; color: #000000; }
         .ad-legenda { color: #6b6a63; font-size: 0.85rem; margin-top: 0.25rem; }
         .ad-sessao {
@@ -214,26 +281,35 @@ export default async function AdminDashboard() {
         <p className="ad-kicker">Visão geral</p>
         <div className="ad-grid-geral ad-bloco">
           <div className="ad-cartao">
+            <div className="ad-icone-badge"><IconLeads /></div>
             <div className="ad-numero">{visaoGeral.leadsInscritas}</div>
             <div className="ad-legenda">Leads inscritas</div>
           </div>
           <div className="ad-cartao">
+            <div className="ad-icone-badge"><IconLeads /></div>
             <div className="ad-numero">{visaoGeral.consultoresInscritos}</div>
             <div className="ad-legenda">Consultores inscritos</div>
           </div>
           <div className="ad-cartao">
+            <div className="ad-icone-badge" style={{ background: "#e4f3e4", color: COR_PRESENTE }}>
+              <IconCheck />
+            </div>
             <div className="ad-numero" style={{ color: COR_PRESENTE }}>
               {visaoGeral.leadsPresentes}
             </div>
             <div className="ad-legenda">Leads presentes ({visaoGeral.pctLeadsPresentes}%)</div>
           </div>
           <div className="ad-cartao">
+            <div className="ad-icone-badge" style={{ background: "#e4f3e4", color: COR_PRESENTE }}>
+              <IconCheck />
+            </div>
             <div className="ad-numero" style={{ color: COR_PRESENTE }}>
               {visaoGeral.consultoresPresentes}
             </div>
             <div className="ad-legenda">Consultores presentes ({visaoGeral.pctConsultoresPresentes}%)</div>
           </div>
           <div className="ad-cartao">
+            <div className="ad-icone-badge"><IconRelogio /></div>
             <div className="ad-numero">
               {visaoGeral.duracaoMediaLeadsMinutos !== null ? `${visaoGeral.duracaoMediaLeadsMinutos} min` : "—"}
             </div>
@@ -241,16 +317,28 @@ export default async function AdminDashboard() {
           </div>
         </div>
 
-        <div className="ad-grid-geral ad-bloco">
-          <Link href="/admin/consultores" className="ad-cartao ad-cartao-link">
-            <div className="ad-numero">{visaoGeral.consultoresAtivos}</div>
-            <div className="ad-legenda">Consultores ativos</div>
-            <div className="ad-cartao-seta">Ver todos →</div>
+        <p className="ad-kicker">Ações rápidas</p>
+        <div className="ad-grid-acoes ad-bloco">
+          <Link href="/admin/formacoes/nova" className="ad-cartao ad-acao">
+            <div className="ad-icone-badge"><IconMais /></div>
+            <div>
+              <div className="ad-acao-titulo">Criar formação</div>
+              <div className="ad-acao-sub">Na tua conta Zoom</div>
+            </div>
           </Link>
-          <Link href="/admin/eventos" className="ad-cartao ad-cartao-link">
-            <div className="ad-numero">{inscricoesEvento.length}</div>
-            <div className="ad-legenda">Inscrições em eventos</div>
-            <div className="ad-cartao-seta">Ver eventos →</div>
+          <Link href="/admin/consultores" className="ad-cartao ad-acao">
+            <div className="ad-icone-badge"><IconLeads /></div>
+            <div>
+              <div className="ad-acao-titulo">{visaoGeral.consultoresAtivos} consultores</div>
+              <div className="ad-acao-sub">Ver todos →</div>
+            </div>
+          </Link>
+          <Link href="/admin/eventos" className="ad-cartao ad-acao">
+            <div className="ad-icone-badge"><IconTicket /></div>
+            <div>
+              <div className="ad-acao-titulo">{inscricoesEvento.length} em eventos</div>
+              <div className="ad-acao-sub">Ver eventos →</div>
+            </div>
           </Link>
         </div>
 
