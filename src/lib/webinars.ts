@@ -279,6 +279,54 @@ export async function criarFormacao(dados: DadosNovaFormacao): Promise<{ id: str
   return { id: rows[0]!.id };
 }
 
+export interface FormacaoParaEditar {
+  titulo: string;
+  comecaEm: Date;
+  duracaoMinutos: number;
+  linkZoom: string | null;
+  publicoParaLeads: boolean;
+}
+
+/** Só devolve `tipo = 'formacao'` — nunca uma sessão sincronizada do Patrick. */
+export async function buscarFormacaoParaEditar(id: string): Promise<FormacaoParaEditar | undefined> {
+  const { rows } = await db().query<{
+    titulo: string;
+    sessao_externa_em: Date;
+    duracao_minutos: number;
+    link_zoom: string | null;
+    publico_para_leads: boolean;
+  }>(
+    `select titulo, sessao_externa_em, duracao_minutos, link_zoom, publico_para_leads
+     from webinars
+     where id = $1 and tipo = 'formacao' and cancelada_em is null`,
+    [id],
+  );
+  const r = rows[0];
+  if (!r) return undefined;
+  return {
+    titulo: r.titulo,
+    comecaEm: r.sessao_externa_em,
+    duracaoMinutos: r.duracao_minutos,
+    linkZoom: r.link_zoom,
+    publicoParaLeads: r.publico_para_leads,
+  };
+}
+
+/**
+ * Atualiza uma formação ad-hoc já criada — pensado para corrigir enganos
+ * (ex: hora escrita errada) sem ter de cancelar e criar outra vez. Só
+ * mexe em `tipo = 'formacao'`, nunca numa sessão sincronizada.
+ */
+export async function atualizarFormacao(id: string, dados: DadosNovaFormacao): Promise<boolean> {
+  const { rowCount } = await db().query(
+    `update webinars
+     set titulo = $1, sessao_externa_em = $2, duracao_minutos = $3, link_zoom = $4, publico_para_leads = $5
+     where id = $6 and tipo = 'formacao' and cancelada_em is null`,
+    [dados.titulo, dados.comecaEm, dados.duracaoMinutos, dados.linkZoom, dados.publicoParaLeads, id],
+  );
+  return (rowCount ?? 0) > 0;
+}
+
 /**
  * Cancela (soft-delete, `cancelada_em`) uma formação ad-hoc — nunca uma
  * sessão sincronizada da sala do Patrick, essas são geridas só pelo

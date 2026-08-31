@@ -4,12 +4,34 @@ import { useState } from "react";
 
 type Estado = "pronto" | "a-enviar" | "enviado" | "erro";
 
-export function FormacaoForm() {
-  const [titulo, setTitulo] = useState("");
-  const [comecaEm, setComecaEm] = useState("");
-  const [duracaoMinutos, setDuracaoMinutos] = useState("60");
-  const [linkZoom, setLinkZoom] = useState("");
-  const [publicoParaLeads, setPublicoParaLeads] = useState(false);
+export interface DadosIniciaisFormacao {
+  titulo: string;
+  comecaEm: string; // ISO
+  duracaoMinutos: number;
+  linkZoom: string;
+  publicoParaLeads: boolean;
+}
+
+function paraDatetimeLocal(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export function FormacaoForm({
+  formacaoId,
+  inicial,
+}: {
+  /** Presente = modo edição (PATCH); ausente = criar (POST). */
+  formacaoId?: string;
+  inicial?: DadosIniciaisFormacao;
+}) {
+  const emEdicao = formacaoId !== undefined;
+  const [titulo, setTitulo] = useState(inicial?.titulo ?? "");
+  const [comecaEm, setComecaEm] = useState(inicial ? paraDatetimeLocal(inicial.comecaEm) : "");
+  const [duracaoMinutos, setDuracaoMinutos] = useState(String(inicial?.duracaoMinutos ?? 60));
+  const [linkZoom, setLinkZoom] = useState(inicial?.linkZoom ?? "");
+  const [publicoParaLeads, setPublicoParaLeads] = useState(inicial?.publicoParaLeads ?? false);
   const [estado, setEstado] = useState<Estado>("pronto");
   const [erro, setErro] = useState("");
 
@@ -22,20 +44,27 @@ export function FormacaoForm() {
     setEstado("a-enviar");
     setErro("");
     try {
-      const resposta = await fetch("/api/admin/formacoes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          titulo: titulo.trim(),
-          comecaEm: new Date(comecaEm).toISOString(),
-          duracaoMinutos: duracaoNum,
-          linkZoom: linkZoom.trim(),
-          publicoParaLeads,
-        }),
-      });
+      const resposta = await fetch(
+        emEdicao ? `/api/admin/formacoes/${formacaoId}` : "/api/admin/formacoes",
+        {
+          method: emEdicao ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            titulo: titulo.trim(),
+            comecaEm: new Date(comecaEm).toISOString(),
+            duracaoMinutos: duracaoNum,
+            linkZoom: linkZoom.trim(),
+            publicoParaLeads,
+          }),
+        },
+      );
       const resultado = await resposta.json().catch(() => ({}));
       if (!resposta.ok) {
-        setErro(typeof resultado.erro === "string" ? resultado.erro : "não foi possível criar a formação");
+        setErro(
+          typeof resultado.erro === "string"
+            ? resultado.erro
+            : `não foi possível ${emEdicao ? "guardar" : "criar"} a formação`,
+        );
         setEstado("erro");
         return;
       }
@@ -50,7 +79,7 @@ export function FormacaoForm() {
     return (
       <div className="fc-cartao">
         <style>{estilos}</style>
-        <p className="fc-sucesso">✅ Formação criada.</p>
+        <p className="fc-sucesso">✅ {emEdicao ? "Formação atualizada." : "Formação criada."}</p>
         <p className="fc-legenda">
           Já aparece na área "Próximas sessões" do painel do consultor
           {publicoParaLeads ? " e fica disponível para inscrição pelos links dos consultores." : ", só para a equipa."}
@@ -136,7 +165,13 @@ export function FormacaoForm() {
       {erro && <p className="fc-erro">{erro}</p>}
 
       <button type="button" disabled={!valido || estado === "a-enviar"} onClick={submeter}>
-        {estado === "a-enviar" ? "A criar…" : "Criar formação"}
+        {estado === "a-enviar"
+          ? emEdicao
+            ? "A guardar…"
+            : "A criar…"
+          : emEdicao
+            ? "Guardar alterações"
+            : "Criar formação"}
       </button>
     </div>
   );

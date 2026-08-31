@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { listarInscricoesAdmin } from "@/lib/admin";
 import { buscarWebinar } from "@/lib/webinars";
@@ -165,7 +166,15 @@ export default async function AdminWebinar({
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: "0.75rem" }}>
           <h1>{webinar.titulo}</h1>
           {webinar.tipo === "formacao" && (
-            <CancelarFormacao webinarId={webinar.id} titulo={webinar.titulo} />
+            <div style={{ display: "flex", gap: "0.6rem", alignItems: "center" }}>
+              <Link
+                href={`/admin/formacoes/${webinar.id}/editar`}
+                style={{ color: "#4b5320", fontSize: "0.85rem", fontWeight: 700 }}
+              >
+                Editar
+              </Link>
+              <CancelarFormacao webinarId={webinar.id} titulo={webinar.titulo} />
+            </div>
           )}
         </div>
 
