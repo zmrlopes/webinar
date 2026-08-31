@@ -65,8 +65,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         .ad-sidebar {
           flex-shrink: 0;
           width: 220px;
-          background: #ffffff;
-          border-right: 1px solid #000000;
+          background: #4b5320;
+          border-right: 1px solid #3a4019;
           padding: 1.5rem 1rem;
           position: sticky;
           top: 0;
@@ -78,7 +78,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         .ad-sidebar-marca {
           font-weight: 800;
           font-size: 1.05rem;
-          color: #000000;
+          color: #ffffff;
           margin: 0 0 2rem;
           padding: 0 0.5rem;
         }
@@ -89,13 +89,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           gap: 0.75rem;
           padding: 0.65rem 0.75rem;
           border-radius: 10px;
-          color: #6b6a63;
+          color: rgba(255, 255, 255, 0.75);
           text-decoration: none;
           font-weight: 600;
           font-size: 0.9rem;
         }
-        .ad-sidebar-item:hover { background: #f7f6f3; color: #000000; }
-        .ad-sidebar-item.ad-sidebar-ativo { background: #eef1e4; color: #4b5320; }
+        .ad-sidebar-item:hover { background: rgba(255, 255, 255, 0.1); color: #ffffff; }
+        .ad-sidebar-item.ad-sidebar-ativo { background: #ffffff; color: #4b5320; }
         .ad-sidebar-item svg { flex-shrink: 0; }
         .ad-conteudo { flex: 1; min-width: 0; }
 
@@ -106,7 +106,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             height: auto;
             position: static;
             border-right: none;
-            border-bottom: 1px solid #000000;
+            border-bottom: 1px solid #3a4019;
             padding: 0.75rem 1rem;
           }
           .ad-sidebar-marca { display: none; }
