@@ -46,17 +46,22 @@ export async function POST(request: Request): Promise<Response> {
       listarFormacoesEquipa(),
     ]);
 
-    let inscritoProximoWebinar = false;
-    if (proximoWebinar) {
+    async function jaInscrito(webinarId: string): Promise<boolean> {
       const { rows } = await db().query<{ existe: boolean }>(
         `select exists(
            select 1 from registrations
            where webinar_id = $1 and email = $2 and cancelada_em is null and link_pessoal is not null
          ) as existe`,
-        [proximoWebinar.id, emailNormalizado],
+        [webinarId, emailNormalizado],
       );
-      inscritoProximoWebinar = rows[0]?.existe ?? false;
+      return rows[0]?.existe ?? false;
     }
+
+    const [inscritoProximoWebinar, inscritoFormacao, formacoesEquipaInscritas] = await Promise.all([
+      proximoWebinar ? jaInscrito(proximoWebinar.id) : Promise.resolve(false),
+      formacao ? jaInscrito(formacao.id) : Promise.resolve(false),
+      Promise.all(formacoesEquipa.map((f) => jaInscrito(f.id))),
+    ]);
 
     return NextResponse.json({
       nome: membro.nome,
@@ -65,14 +70,16 @@ export async function POST(request: Request): Promise<Response> {
       formacao: formacao
         ? { titulo: formacao.titulo, sessaoExternaEm: formacao.sessaoExternaEm }
         : null,
+      inscritoFormacao,
       proximoWebinar: proximoWebinar
         ? { titulo: proximoWebinar.titulo, sessaoExternaEm: proximoWebinar.sessaoExternaEm }
         : null,
       inscritoProximoWebinar,
-      formacoesEquipa: formacoesEquipa.map((f) => ({
+      formacoesEquipa: formacoesEquipa.map((f, i) => ({
         id: f.id,
         titulo: f.titulo,
         sessaoExternaEm: f.sessaoExternaEm,
+        inscrito: formacoesEquipaInscritas[i],
       })),
     });
   } catch (erro) {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { criarEmailSender, enviarConfirmacao } from "@/lib/email";
 import { buscarMembroEquipa } from "@/lib/equipa";
 import { pedirLinkPessoal, SalaError } from "@/lib/sala-zoom";
 import { buscarWebinarFormacao } from "@/lib/webinars";
@@ -13,7 +14,10 @@ import { buscarWebinarFormacao } from "@/lib/webinars";
  * secção 7-C), pede o link ao Zoom aqui mesmo, na hora — é uma ação
  * pontual de uma pessoa de cada vez, não um lote de inscrições públicas.
  * O link devolvido passa por /api/entrar/<id>, como tudo o resto, para
- * ficar rastreado.
+ * ficar rastreado. Envia sempre o email de confirmação com esse link
+ * (enviarConfirmacao já deduplica) — garante que a pessoa fica com o link
+ * na caixa de correio mesmo que só volte a "entrar" já depois da sessão
+ * ter começado.
  */
 export async function POST(request: Request): Promise<Response> {
   const corpo = (await request.json().catch(() => null)) as Record<string, unknown> | null;
@@ -118,6 +122,12 @@ export async function POST(request: Request): Promise<Response> {
          where id = $2`,
         [linkPessoal, registrationId],
       );
+    }
+
+    try {
+      await enviarConfirmacao(criarEmailSender(), registrationId);
+    } catch (erroEmail) {
+      console.error("falha ao enviar confirmação da formação ao consultor:", erroEmail);
     }
 
     const host = request.headers.get("host") ?? "";

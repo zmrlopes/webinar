@@ -10,9 +10,10 @@ interface DadosIdentificacao {
   link: string;
   ehConsultorEquipa: boolean;
   formacao: { titulo: string; sessaoExternaEm: string } | null;
+  inscritoFormacao: boolean;
   proximoWebinar: { titulo: string; sessaoExternaEm: string } | null;
   inscritoProximoWebinar: boolean;
-  formacoesEquipa: { id: string; titulo: string; sessaoExternaEm: string }[];
+  formacoesEquipa: { id: string; titulo: string; sessaoExternaEm: string; inscrito: boolean }[];
 }
 
 type Estado = "a-carregar" | "por-identificar" | "pronto" | "erro";
@@ -34,8 +35,14 @@ export function BackofficeHome() {
   const [linkCopiado, setLinkCopiado] = useState(false);
   const [aPedirFormacao, setAPedirFormacao] = useState(false);
   const [erroFormacao, setErroFormacao] = useState("");
+  const [formacaoInscrita, setFormacaoInscrita] = useState(false);
+  const [formacaoAcabadaDeInscrever, setFormacaoAcabadaDeInscrever] = useState(false);
   const [aPedirFormacaoId, setAPedirFormacaoId] = useState<string | null>(null);
   const [errosFormacaoAdHoc, setErrosFormacaoAdHoc] = useState<Record<string, string>>({});
+  const [formacoesAdHocInscritas, setFormacoesAdHocInscritas] = useState<Record<string, boolean>>({});
+  const [formacoesAdHocAcabadasDeInscrever, setFormacoesAdHocAcabadasDeInscrever] = useState<
+    Record<string, boolean>
+  >({});
   const [aPedirWebinar, setAPedirWebinar] = useState(false);
   const [erroWebinar, setErroWebinar] = useState("");
   const [webinarInscrito, setWebinarInscrito] = useState(false);
@@ -66,6 +73,13 @@ export function BackofficeHome() {
       setEmail(emailParaIdentificar);
       setDados(corpo);
       setWebinarInscrito(corpo.inscritoProximoWebinar === true);
+      setFormacaoInscrita(corpo.inscritoFormacao === true);
+      const formacoesEquipa = Array.isArray(corpo.formacoesEquipa) ? corpo.formacoesEquipa : [];
+      setFormacoesAdHocInscritas(
+        Object.fromEntries(
+          formacoesEquipa.map((f: { id: string; inscrito: boolean }) => [f.id, f.inscrito === true]),
+        ),
+      );
       setEstado("pronto");
     } catch {
       setErro("falha de ligação — tenta outra vez");
@@ -88,6 +102,7 @@ export function BackofficeHome() {
     setLinkCopiado(true);
   }
 
+  /** Mesmos dois passos do webinar público: ver pedirWebinar() acima. */
   async function pedirFormacao(): Promise<void> {
     setAPedirFormacao(true);
     setErroFormacao("");
@@ -103,6 +118,12 @@ export function BackofficeHome() {
         setAPedirFormacao(false);
         return;
       }
+      if (!formacaoInscrita) {
+        setFormacaoInscrita(true);
+        setFormacaoAcabadaDeInscrever(true);
+        setAPedirFormacao(false);
+        return;
+      }
       window.location.href = corpo.url;
     } catch {
       setErroFormacao("falha de ligação — tenta outra vez");
@@ -111,6 +132,7 @@ export function BackofficeHome() {
   }
 
   async function pedirFormacaoAdHoc(webinarId: string): Promise<void> {
+    const jaInscrita = formacoesAdHocInscritas[webinarId] === true;
     setAPedirFormacaoId(webinarId);
     setErrosFormacaoAdHoc((atual) => {
       const { [webinarId]: _removido, ...resto } = atual;
@@ -128,6 +150,12 @@ export function BackofficeHome() {
           ...atual,
           [webinarId]: typeof corpo.erro === "string" ? corpo.erro : "não foi possível obter o link",
         }));
+        setAPedirFormacaoId(null);
+        return;
+      }
+      if (!jaInscrita) {
+        setFormacoesAdHocInscritas((atual) => ({ ...atual, [webinarId]: true }));
+        setFormacoesAdHocAcabadasDeInscrever((atual) => ({ ...atual, [webinarId]: true }));
         setAPedirFormacaoId(null);
         return;
       }
@@ -456,15 +484,24 @@ export function BackofficeHome() {
                           <span className="vqb-destaque-etiqueta">Formação interna</span>
                           <h3 className="vqb-destaque-titulo">{s.titulo}</h3>
                           <p className="vqb-destaque-data">{formatarData(s.sessaoExternaEm)}</p>
-                          <p className="vqb-destaque-texto">É só para travel partners — não é para convidados.</p>
+                          <p className="vqb-destaque-texto">
+                            {formacaoInscrita
+                              ? "Já estás inscrito — o link também ficou no teu email."
+                              : "É só para travel partners — não é para convidados. Inscreve-te para receberes já o link por email."}
+                          </p>
                           <button
                             type="button"
                             className="vqb-destaque-botao"
                             onClick={pedirFormacao}
                             disabled={aPedirFormacao}
                           >
-                            {aPedirFormacao ? "A preparar..." : "Entrar na formação"}
+                            {aPedirFormacao ? "A preparar..." : formacaoInscrita ? "Entrar na formação" : "Inscrever"}
                           </button>
+                          {formacaoAcabadaDeInscrever && (
+                            <p className="vqb-sucesso" style={{ marginTop: "0.75rem", fontSize: "0.9rem" }}>
+                              ✅ Inscrição confirmada — o link chegou ao teu email.
+                            </p>
+                          )}
                           {erroFormacao && (
                             <p className="vqb-erro" style={{ marginTop: "0.75rem" }}>{erroFormacao}</p>
                           )}
@@ -472,19 +509,28 @@ export function BackofficeHome() {
                       );
                     }
 
+                    const inscritaAdHoc = formacoesAdHocInscritas[s.id] === true;
                     return (
                       <div className="vqb-cartao" key={s.id}>
                         <span className="vqb-destaque-etiqueta">Formação interna</span>
                         <h3 className="vqb-destaque-titulo">{s.titulo}</h3>
                         <p className="vqb-destaque-data">{formatarData(s.sessaoExternaEm)}</p>
+                        {inscritaAdHoc && (
+                          <p className="vqb-destaque-texto">Já estás inscrito — o link também ficou no teu email.</p>
+                        )}
                         <button
                           type="button"
                           className="vqb-destaque-botao"
                           onClick={() => pedirFormacaoAdHoc(s.id)}
                           disabled={aPedirFormacaoId === s.id}
                         >
-                          {aPedirFormacaoId === s.id ? "A preparar..." : "Entrar na formação"}
+                          {aPedirFormacaoId === s.id ? "A preparar..." : inscritaAdHoc ? "Entrar na formação" : "Inscrever"}
                         </button>
+                        {formacoesAdHocAcabadasDeInscrever[s.id] && (
+                          <p className="vqb-sucesso" style={{ marginTop: "0.75rem", fontSize: "0.9rem" }}>
+                            ✅ Inscrição confirmada — o link chegou ao teu email.
+                          </p>
+                        )}
                         {errosFormacaoAdHoc[s.id] && (
                           <p className="vqb-erro" style={{ marginTop: "0.75rem" }}>
                             {errosFormacaoAdHoc[s.id]}
