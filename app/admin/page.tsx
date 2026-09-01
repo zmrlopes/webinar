@@ -136,7 +136,7 @@ export default async function AdminDashboard() {
     listarInscricoesPorDia(DIAS_JANELA),
     buscarOrigemInscricoes(DIAS_JANELA),
     listarConsultoresAdmin(),
-    listarTopLideres(5),
+    listarTopLideres(),
     listarAtividadeRecenteLeads(6),
     listarAtividadeRecenteConsultores(6),
     listarAlertasAdmin(),
@@ -442,10 +442,10 @@ export default async function AdminDashboard() {
             ) : (
               <ul className="ad-lista">
                 {lideres.map((l, i) => (
-                  <li key={l.email}>
+                  <li key={l.nome}>
                     <span className="ad-lista-nome">
                       <span className="ad-lista-numero">{i + 1}</span> {l.nome}{" "}
-                      <span className="ad-lista-sub">({l.equipaTotal} na equipa)</span>
+                      <span className="ad-lista-sub">({l.pessoas} na equipa)</span>
                     </span>
                     <strong>{l.leadsEquipa}</strong>
                   </li>

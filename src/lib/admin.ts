@@ -385,20 +385,9 @@ async function construirArvoreEquipa(): Promise<{ raizes: NoEquipa[]; todos: NoE
 }
 
 export interface LiderAdmin {
-  email: string;
   nome: string;
   leadsEquipa: number;
-  equipaTotal: number;
-}
-
-/** Quem tem mais leads trazidas pela equipa toda (a soma de si próprio + toda a descendência). */
-export async function listarTopLideres(limite: number): Promise<LiderAdmin[]> {
-  const { todos } = await construirArvoreEquipa();
-  return todos
-    .filter((no) => no.equipaTotal > 0)
-    .sort((a, b) => b.leadsEquipa - a.leadsEquipa)
-    .slice(0, limite)
-    .map((no) => ({ email: no.email, nome: no.nome, leadsEquipa: no.leadsEquipa, equipaTotal: no.equipaTotal }));
+  pessoas: number;
 }
 
 /**
@@ -445,6 +434,36 @@ async function mapaLiderPorEmail(): Promise<Map<string, string>> {
     resultado.set(no.email, bucket);
   }
   return resultado;
+}
+
+/** Quanto cada um dos 4 líderes de topo fixos trouxe de leads (si próprio + toda a descendência). */
+export async function listarTopLideres(): Promise<LiderAdmin[]> {
+  const { todos } = await construirArvoreEquipa();
+  const porEmail = new Map(todos.map((no) => [no.email, no]));
+  const nomePorAncora = new Map(LIDERES_TOPO.map((l) => [l.email, l.nome]));
+  const leads = new Map(LIDERES_TOPO.map((l) => [l.nome, 0]));
+  const pessoas = new Map(LIDERES_TOPO.map((l) => [l.nome, 0]));
+
+  for (const no of todos) {
+    let atual: string | null = no.email;
+    let bucket = "Nós";
+    while (atual) {
+      const nome = nomePorAncora.get(atual);
+      if (nome) {
+        bucket = nome;
+        break;
+      }
+      atual = porEmail.get(atual)?.uplineEmail ?? null;
+    }
+    leads.set(bucket, (leads.get(bucket) ?? 0) + no.leadsProprios);
+    pessoas.set(bucket, (pessoas.get(bucket) ?? 0) + 1);
+  }
+
+  return LIDERES_TOPO.map((l) => ({
+    nome: l.nome,
+    leadsEquipa: leads.get(l.nome) ?? 0,
+    pessoas: pessoas.get(l.nome) ?? 0,
+  })).sort((a, b) => b.leadsEquipa - a.leadsEquipa);
 }
 
 export interface EquipaLider {
