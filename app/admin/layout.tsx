@@ -44,6 +44,15 @@ function IconEventos(): React.JSX.Element {
   );
 }
 
+function IconDashboardNegocio(): React.JSX.Element {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="3" y="3" width="18" height="18" rx="2.5" />
+      <path d="M8 16v-4M12 16V8M16 16v-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function IconSair(): React.JSX.Element {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -80,6 +89,7 @@ const LINKS = [
   { href: "/admin/sessoes", label: "Sessões", icon: IconSessoes },
   { href: "/admin/consultores", label: "Consultores", icon: IconConsultores },
   { href: "/admin/eventos", label: "Eventos", icon: IconEventos },
+  { href: "/admin/dashboard-negocio", label: "Dashboard Negócio", icon: IconDashboardNegocio },
 ];
 
 /**
