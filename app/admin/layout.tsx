@@ -35,6 +35,37 @@ function IconEventos(): React.JSX.Element {
   );
 }
 
+function IconSair(): React.JSX.Element {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M16 17l5-5-5-5M21 12H9" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/**
+ * A autenticação do admin é HTTP Basic Auth (proxy.ts), sem sessão/cookie
+ * próprio — o browser é que guarda as credenciais e envia-as sempre que
+ * pede algo em /admin. Não há um "logout" real do lado do servidor; o
+ * truque é sobrepor as credenciais guardadas com umas inválidas (o browser
+ * substitui-as mesmo o pedido falhando), para que da próxima vez que se
+ * tente entrar em /admin o browser envie as credenciais erradas e volte a
+ * pedir a password.
+ */
+async function terminarSessao(): Promise<void> {
+  try {
+    await fetch("/admin", {
+      headers: { Authorization: `Basic ${btoa("sair:sair")}` },
+      cache: "no-store",
+    });
+  } catch {
+    // esperado — as credenciais são inválidas de propósito
+  } finally {
+    window.location.href = "/";
+  }
+}
+
 const LINKS = [
   { href: "/admin", label: "Sessões", icon: IconSessoes },
   { href: "/admin/consultores", label: "Consultores", icon: IconConsultores },
@@ -74,6 +105,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           height: 100vh;
           overflow-y: auto;
           box-sizing: border-box;
+          display: flex;
+          flex-direction: column;
         }
         .ad-sidebar-marca {
           font-weight: 800;
@@ -97,6 +130,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         .ad-sidebar-item:hover { background: rgba(255, 255, 255, 0.1); color: #ffffff; }
         .ad-sidebar-item.ad-sidebar-ativo { background: #ffffff; color: #4b5320; }
         .ad-sidebar-item svg { flex-shrink: 0; }
+        .ad-sidebar-sair {
+          margin-top: auto;
+          background: none;
+          border: none;
+          width: 100%;
+          font: inherit;
+          text-align: left;
+        }
         .ad-conteudo { flex: 1; min-width: 0; }
 
         @media (max-width: 720px) {
@@ -131,6 +172,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
+        <button type="button" className="ad-sidebar-item ad-sidebar-sair" onClick={terminarSessao}>
+          <IconSair />
+          Sair
+        </button>
       </aside>
       <div className="ad-conteudo">{children}</div>
     </div>
