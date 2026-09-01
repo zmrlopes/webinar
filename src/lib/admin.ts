@@ -149,6 +149,95 @@ export async function buscarVisaoGeralAdmin(): Promise<VisaoGeralAdmin> {
   };
 }
 
+export interface VisaoGeralCategoria {
+  leadsInscritas: number;
+  consultoresInscritos: number;
+  leadsPresentes: number;
+  pctLeadsPresentes: number;
+  consultoresPresentes: number;
+  pctConsultoresPresentes: number;
+  duracaoMediaLeadsMinutos: number | null;
+}
+
+export interface VisaoGeralPorCategoria {
+  webinares: VisaoGeralCategoria;
+  formacoes: VisaoGeralCategoria;
+}
+
+function categoriaVazia(): VisaoGeralCategoria {
+  return {
+    leadsInscritas: 0,
+    consultoresInscritos: 0,
+    leadsPresentes: 0,
+    pctLeadsPresentes: 0,
+    consultoresPresentes: 0,
+    pctConsultoresPresentes: 0,
+    duracaoMediaLeadsMinutos: null,
+  };
+}
+
+/**
+ * As mesmas métricas de `buscarVisaoGeralAdmin`, mas separadas por
+ * categoria — "webinares" (o webinar público) e "formações" (tudo o resto:
+ * internas + gerais juntas), para se conseguir medir a relação de quem se
+ * inscreve e assiste em cada uma, sem ficarem misturadas numa soma só.
+ */
+export async function buscarVisaoGeralPorCategoria(): Promise<VisaoGeralPorCategoria> {
+  const { rows } = await db().query<{
+    categoria: "webinares" | "formacoes";
+    leads_inscritas: string;
+    consultores_inscritos: string;
+    leads_presentes: string;
+    consultores_presentes: string;
+    duracao_media_leads: string | null;
+  }>(
+    `select
+       case when w.titulo = $1 then 'webinares' else 'formacoes' end as categoria,
+       count(*) filter (
+         where r.cancelada_em is null and not exists (select 1 from equipa_afiliados ea where ea.email = r.email)
+       ) as leads_inscritas,
+       count(*) filter (
+         where r.cancelada_em is null and exists (select 1 from equipa_afiliados ea where ea.email = r.email)
+       ) as consultores_inscritos,
+       count(*) filter (
+         where r.cancelada_em is null and r.presenca = 'attended'
+           and not exists (select 1 from equipa_afiliados ea where ea.email = r.email)
+       ) as leads_presentes,
+       count(*) filter (
+         where r.cancelada_em is null and r.presenca = 'attended'
+           and exists (select 1 from equipa_afiliados ea where ea.email = r.email)
+       ) as consultores_presentes,
+       avg(r.presenca_minutos) filter (
+         where r.cancelada_em is null and r.presenca = 'attended' and r.presenca_minutos is not null
+           and not exists (select 1 from equipa_afiliados ea where ea.email = r.email)
+       ) as duracao_media_leads
+     from registrations r
+     join webinars w on w.id = r.webinar_id
+     group by categoria`,
+    [TITULO_WEBINAR_PUBLICO],
+  );
+
+  const resultado: VisaoGeralPorCategoria = { webinares: categoriaVazia(), formacoes: categoriaVazia() };
+  for (const linha of rows) {
+    const leadsInscritas = Number(linha.leads_inscritas);
+    const consultoresInscritos = Number(linha.consultores_inscritos);
+    const leadsPresentes = Number(linha.leads_presentes);
+    const consultoresPresentes = Number(linha.consultores_presentes);
+    resultado[linha.categoria] = {
+      leadsInscritas,
+      consultoresInscritos,
+      leadsPresentes,
+      pctLeadsPresentes: leadsInscritas > 0 ? Math.round((leadsPresentes / leadsInscritas) * 100) : 0,
+      consultoresPresentes,
+      pctConsultoresPresentes:
+        consultoresInscritos > 0 ? Math.round((consultoresPresentes / consultoresInscritos) * 100) : 0,
+      duracaoMediaLeadsMinutos:
+        linha.duracao_media_leads !== null ? Math.round(Number(linha.duracao_media_leads)) : null,
+    };
+  }
+  return resultado;
+}
+
 export interface DiaInscricoes {
   dia: string;
   totalLeads: number;

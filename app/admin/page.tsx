@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   buscarOrigemInscricoes,
   buscarVisaoGeralAdmin,
+  buscarVisaoGeralPorCategoria,
   listarAlertasAdmin,
   listarAssiduidadeFormacoesConsultores,
   listarAtividadeRecenteConsultores,
@@ -10,6 +11,7 @@ import {
   listarEquipaPorLider,
   listarInscricoesPorDia,
   listarTopLideres,
+  type VisaoGeralCategoria,
 } from "@/lib/admin";
 import { listarInscricoesEvento } from "@/lib/eventos";
 
@@ -59,6 +61,48 @@ function IconTicket(): React.JSX.Element {
   );
 }
 
+function CartaoVisaoGeral({ v }: { v: VisaoGeralCategoria }): React.JSX.Element {
+  return (
+    <div className="ad-grid-geral ad-bloco">
+      <div className="ad-cartao">
+        <div className="ad-icone-badge"><IconLeads /></div>
+        <div className="ad-numero">{v.leadsInscritas}</div>
+        <div className="ad-legenda">Leads inscritas</div>
+      </div>
+      <div className="ad-cartao">
+        <div className="ad-icone-badge"><IconLeads /></div>
+        <div className="ad-numero">{v.consultoresInscritos}</div>
+        <div className="ad-legenda">Consultores inscritos</div>
+      </div>
+      <div className="ad-cartao">
+        <div className="ad-icone-badge" style={{ background: "#e4f3e4", color: COR_PRESENTE }}>
+          <IconCheck />
+        </div>
+        <div className="ad-numero" style={{ color: COR_PRESENTE }}>
+          {v.leadsPresentes}
+        </div>
+        <div className="ad-legenda">Leads presentes ({v.pctLeadsPresentes}%)</div>
+      </div>
+      <div className="ad-cartao">
+        <div className="ad-icone-badge" style={{ background: "#e4f3e4", color: COR_PRESENTE }}>
+          <IconCheck />
+        </div>
+        <div className="ad-numero" style={{ color: COR_PRESENTE }}>
+          {v.consultoresPresentes}
+        </div>
+        <div className="ad-legenda">Consultores presentes ({v.pctConsultoresPresentes}%)</div>
+      </div>
+      <div className="ad-cartao">
+        <div className="ad-icone-badge"><IconRelogio /></div>
+        <div className="ad-numero">
+          {v.duracaoMediaLeadsMinutos !== null ? `${v.duracaoMediaLeadsMinutos} min` : "—"}
+        </div>
+        <div className="ad-legenda">Duração média (leads presentes)</div>
+      </div>
+    </div>
+  );
+}
+
 function formatarDataCurta(data: Date): string {
   return new Date(data).toLocaleString("pt-PT", {
     dateStyle: "short",
@@ -74,6 +118,7 @@ function formatarDiaCurto(iso: string): string {
 export default async function AdminDashboard() {
   const [
     visaoGeral,
+    visaoGeralCategoria,
     inscricoesEvento,
     inscricoesPorDia,
     origem,
@@ -86,6 +131,7 @@ export default async function AdminDashboard() {
     equipaPorLider,
   ] = await Promise.all([
     buscarVisaoGeralAdmin(),
+    buscarVisaoGeralPorCategoria(),
     listarInscricoesEvento(),
     listarInscricoesPorDia(DIAS_JANELA),
     buscarOrigemInscricoes(DIAS_JANELA),
@@ -260,44 +306,11 @@ export default async function AdminDashboard() {
 
       <div className="ad-caixa">
         <h1>Início</h1>
-        <p className="ad-kicker">Visão geral</p>
-        <div className="ad-grid-geral ad-bloco">
-          <div className="ad-cartao">
-            <div className="ad-icone-badge"><IconLeads /></div>
-            <div className="ad-numero">{visaoGeral.leadsInscritas}</div>
-            <div className="ad-legenda">Leads inscritas</div>
-          </div>
-          <div className="ad-cartao">
-            <div className="ad-icone-badge"><IconLeads /></div>
-            <div className="ad-numero">{visaoGeral.consultoresInscritos}</div>
-            <div className="ad-legenda">Consultores inscritos</div>
-          </div>
-          <div className="ad-cartao">
-            <div className="ad-icone-badge" style={{ background: "#e4f3e4", color: COR_PRESENTE }}>
-              <IconCheck />
-            </div>
-            <div className="ad-numero" style={{ color: COR_PRESENTE }}>
-              {visaoGeral.leadsPresentes}
-            </div>
-            <div className="ad-legenda">Leads presentes ({visaoGeral.pctLeadsPresentes}%)</div>
-          </div>
-          <div className="ad-cartao">
-            <div className="ad-icone-badge" style={{ background: "#e4f3e4", color: COR_PRESENTE }}>
-              <IconCheck />
-            </div>
-            <div className="ad-numero" style={{ color: COR_PRESENTE }}>
-              {visaoGeral.consultoresPresentes}
-            </div>
-            <div className="ad-legenda">Consultores presentes ({visaoGeral.pctConsultoresPresentes}%)</div>
-          </div>
-          <div className="ad-cartao">
-            <div className="ad-icone-badge"><IconRelogio /></div>
-            <div className="ad-numero">
-              {visaoGeral.duracaoMediaLeadsMinutos !== null ? `${visaoGeral.duracaoMediaLeadsMinutos} min` : "—"}
-            </div>
-            <div className="ad-legenda">Duração média (leads presentes)</div>
-          </div>
-        </div>
+        <p className="ad-kicker">Visão geral — Webinares</p>
+        <CartaoVisaoGeral v={visaoGeralCategoria.webinares} />
+
+        <p className="ad-kicker">Visão geral — Formações</p>
+        <CartaoVisaoGeral v={visaoGeralCategoria.formacoes} />
 
         <p className="ad-kicker">Ações rápidas</p>
         <div className="ad-grid-acoes ad-bloco">
