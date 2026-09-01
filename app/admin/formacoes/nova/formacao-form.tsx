@@ -84,7 +84,7 @@ export function FormacaoForm({
           Já aparece na área "Próximas sessões" do painel do consultor
           {publicoParaLeads ? " e fica disponível para inscrição pelos links dos consultores." : ", só para a equipa."}
         </p>
-        <a href="/admin" className="fc-botao-secundario">
+        <a href="/admin/sessoes" className="fc-botao-secundario">
           ← Voltar às sessões
         </a>
       </div>

@@ -20,7 +20,7 @@ export default function NovaFormacaoPagina() {
         .ad-subtitulo { color: #6b6a63; font-size: 0.9rem; margin: 0 0 1.75rem; }
       `}</style>
       <div className="ad-caixa">
-        <Link href="/admin" className="ad-voltar">
+        <Link href="/admin/sessoes" className="ad-voltar">
           ← Sessões
         </Link>
         <h1>Criar formação</h1>

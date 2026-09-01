@@ -4,6 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
+function IconInicio(): React.JSX.Element {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M3.5 10.5 12 4l8.5 6.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5.5 9v10a1 1 0 0 0 1 1H10v-6h4v6h3.5a1 1 0 0 0 1-1V9" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function IconSessoes(): React.JSX.Element {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -67,7 +76,8 @@ async function terminarSessao(): Promise<void> {
 }
 
 const LINKS = [
-  { href: "/admin", label: "Sessões", icon: IconSessoes },
+  { href: "/admin", label: "Início", icon: IconInicio },
+  { href: "/admin/sessoes", label: "Sessões", icon: IconSessoes },
   { href: "/admin/consultores", label: "Consultores", icon: IconConsultores },
   { href: "/admin/eventos", label: "Eventos", icon: IconEventos },
 ];
@@ -83,8 +93,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   function ativo(href: string): boolean {
-    if (href === "/admin") {
-      return pathname === "/admin" || pathname.startsWith("/admin/webinar");
+    if (href === "/admin") return pathname === "/admin";
+    if (href === "/admin/sessoes") {
+      return (
+        pathname.startsWith("/admin/sessoes") ||
+        pathname.startsWith("/admin/webinar") ||
+        pathname.startsWith("/admin/formacoes")
+      );
     }
     return pathname.startsWith(href);
   }
