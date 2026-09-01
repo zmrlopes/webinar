@@ -437,6 +437,9 @@ export default async function AdminDashboard() {
 
           <div className="ad-cartao">
             <h2>Top líderes</h2>
+            <p className="ad-legenda" style={{ marginTop: "-0.5rem", marginBottom: "0.5rem" }}>
+              Total de leads trazidas pela equipa toda (a pessoa + descendência), desde sempre
+            </p>
             {lideres.length === 0 ? (
               <p className="ad-mudo">Ainda sem líderes com equipa e leads.</p>
             ) : (
