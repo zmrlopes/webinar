@@ -750,6 +750,40 @@ export async function listarConsultoresAdmin(): Promise<ConsultorAdmin[]> {
   }));
 }
 
+export interface EmpreendedorAdmin {
+  email: string;
+  nome: string | null;
+  conversoes: number;
+}
+
+/**
+ * Quem mais converteu leads em novos consultores — de quem cada pessoa
+ * trouxe como lead a um webinar/formação (pelo seu link em /consultor),
+ * conta quantos desses leads acabaram por entrar para a equipa (o email
+ * aparece em equipa_afiliados, não importa quando). Ao contrário de
+ * "Top líderes"/"Equipa por líder", não está limitado aos 4 líderes de
+ * topo — é para todos os consultores.
+ */
+export async function listarTopEmpreendedores(limite: number): Promise<EmpreendedorAdmin[]> {
+  const { rows } = await db().query<{ email: string; nome: string | null; conversoes: string }>(
+    `select lc.referencia_email as email, lc.nome,
+            count(distinct r.email) filter (
+              where exists (select 1 from equipa_afiliados ea where ea.email = r.email)
+            ) as conversoes
+     from links_consultor lc
+     left join registrations r
+       on r.referencia_email = lc.referencia_email and r.cancelada_em is null
+     group by lc.referencia_email, lc.nome
+     having count(distinct r.email) filter (
+       where exists (select 1 from equipa_afiliados ea where ea.email = r.email)
+     ) > 0
+     order by conversoes desc
+     limit $1`,
+    [limite],
+  );
+  return rows.map((r) => ({ email: r.email, nome: r.nome, conversoes: Number(r.conversoes) }));
+}
+
 /**
  * Correção manual, feita por um humano. A automação (secção 7-D) só toca em
  * quem está `unknown`; esta função é a exceção deliberada a essa regra.

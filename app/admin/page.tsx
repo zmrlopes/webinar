@@ -10,6 +10,7 @@ import {
   listarConsultoresAdmin,
   listarEquipaPorLider,
   listarInscricoesPorDia,
+  listarTopEmpreendedores,
   listarTopLideres,
   type VisaoGeralCategoria,
 } from "@/lib/admin";
@@ -124,6 +125,7 @@ export default async function AdminDashboard() {
     origem,
     consultores,
     lideres,
+    empreendedores,
     atividadeLeads,
     atividadeConsultores,
     alertas,
@@ -137,6 +139,7 @@ export default async function AdminDashboard() {
     buscarOrigemInscricoes(DIAS_JANELA),
     listarConsultoresAdmin(),
     listarTopLideres(),
+    listarTopEmpreendedores(5),
     listarAtividadeRecenteLeads(6),
     listarAtividadeRecenteConsultores(6),
     listarAlertasAdmin(),
@@ -454,6 +457,27 @@ export default async function AdminDashboard() {
                       <span className="ad-lista-sub">({l.pessoas} na equipa)</span>
                     </span>
                     <strong>{l.leadsEquipa}</strong>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="ad-cartao">
+            <h2>Top empreendedor</h2>
+            <p className="ad-legenda" style={{ marginTop: "-0.5rem", marginBottom: "0.5rem" }}>
+              Leads trazidas pelo próprio que se tornaram consultores, desde sempre
+            </p>
+            {empreendedores.length === 0 ? (
+              <p className="ad-mudo">Ainda sem conversões de leads a consultores.</p>
+            ) : (
+              <ul className="ad-lista">
+                {empreendedores.map((e, i) => (
+                  <li key={e.email}>
+                    <span className="ad-lista-nome">
+                      <span className="ad-lista-numero">{i + 1}</span> {e.nome ?? e.email}
+                    </span>
+                    <strong>{e.conversoes}</strong>
                   </li>
                 ))}
               </ul>
