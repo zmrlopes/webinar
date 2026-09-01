@@ -84,6 +84,15 @@ async function terminarSessao(): Promise<void> {
   }
 }
 
+/**
+ * Precisa do prefixo NEXT_PUBLIC_ porque este ficheiro corre no browser
+ * ("use client") — sem o prefixo, o valor não fica incluído no bundle. Os
+ * links do claude.ai (Cowork incluído) recusam-se a ser mostrados dentro de
+ * um iframe (frame-ancestors 'self', confirmado a testar), por isso este
+ * separador abre numa aba nova em vez de ficar embutido no painel.
+ */
+const DASHBOARD_NEGOCIO_URL = process.env.NEXT_PUBLIC_DASHBOARD_NEGOCIO_URL;
+
 const LINKS = [
   { href: "/admin", label: "Início", icon: IconInicio },
   { href: "/admin/sessoes", label: "Sessões", icon: IconSessoes },
@@ -185,6 +194,20 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <nav className="menu-lateral-nav">
           {LINKS.map((l) => {
             const Icone = l.icon;
+            if (l.href === "/admin/dashboard-negocio" && DASHBOARD_NEGOCIO_URL) {
+              return (
+                <a
+                  key={l.href}
+                  href={DASHBOARD_NEGOCIO_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="menu-lateral-item"
+                >
+                  <Icone />
+                  {l.label}
+                </a>
+              );
+            }
             return (
               <Link
                 key={l.href}
