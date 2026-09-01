@@ -207,20 +207,25 @@ export async function buscarOrigemInscricoes(dias: number): Promise<OrigemInscri
   };
 }
 
-export interface LiderAdmin {
+interface NoEquipa {
   email: string;
   nome: string;
+  uplineEmail: string | null;
+  leadsProprios: number;
   leadsEquipa: number;
   equipaTotal: number;
+  filhos: NoEquipa[];
 }
 
 /**
- * Quem tem mais leads trazidas pela equipa toda (a soma de si próprio +
- * toda a descendência), entre quem tem pelo menos uma pessoa abaixo —
- * mesma lógica de buscarArvoreEquipa (src/lib/equipa.ts), mas para todo o
- * sistema de uma vez, sem partir de um email específico.
+ * Monta a árvore inteira da equipa a partir de `equipa_afiliados` (ligada
+ * por `upline_email`), com leads próprios de cada pessoa já somados para
+ * baixo (leadsEquipa = próprios + de toda a descendência) — mesma lógica de
+ * buscarArvoreEquipa (src/lib/equipa.ts), mas para todo o sistema de uma
+ * vez, sem partir de um email específico. Devolve tanto as raízes (quem não
+ * tem upline dentro da equipa — os "líderes de topo") como todos os nós.
  */
-export async function listarTopLideres(limite: number): Promise<LiderAdmin[]> {
+async function construirArvoreEquipa(): Promise<{ raizes: NoEquipa[]; todos: NoEquipa[] }> {
   const { rows } = await db().query<{
     email: string;
     nome: string;
@@ -237,17 +242,7 @@ export async function listarTopLideres(limite: number): Promise<LiderAdmin[]> {
      group by ea.email, ea.nome, ea.upline_email`,
   );
 
-  interface No {
-    email: string;
-    nome: string;
-    uplineEmail: string | null;
-    leadsProprios: number;
-    leadsEquipa: number;
-    equipaTotal: number;
-    filhos: No[];
-  }
-
-  const porEmail = new Map<string, No>(
+  const porEmail = new Map<string, NoEquipa>(
     rows.map((r) => [
       r.email,
       {
@@ -262,14 +257,14 @@ export async function listarTopLideres(limite: number): Promise<LiderAdmin[]> {
     ]),
   );
 
-  const raizes: No[] = [];
+  const raizes: NoEquipa[] = [];
   for (const no of porEmail.values()) {
     const pai = no.uplineEmail ? porEmail.get(no.uplineEmail) : undefined;
     if (pai) pai.filhos.push(no);
     else raizes.push(no); // sem upline, ou upline fora da equipa (não devia acontecer)
   }
 
-  function somar(no: No): void {
+  function somar(no: NoEquipa): void {
     no.leadsEquipa = no.leadsProprios;
     no.equipaTotal = 0;
     for (const filho of no.filhos) {
@@ -280,11 +275,42 @@ export async function listarTopLideres(limite: number): Promise<LiderAdmin[]> {
   }
   for (const raiz of raizes) somar(raiz);
 
-  return [...porEmail.values()]
+  return { raizes, todos: [...porEmail.values()] };
+}
+
+export interface LiderAdmin {
+  email: string;
+  nome: string;
+  leadsEquipa: number;
+  equipaTotal: number;
+}
+
+/** Quem tem mais leads trazidas pela equipa toda (a soma de si próprio + toda a descendência). */
+export async function listarTopLideres(limite: number): Promise<LiderAdmin[]> {
+  const { todos } = await construirArvoreEquipa();
+  return todos
     .filter((no) => no.equipaTotal > 0)
     .sort((a, b) => b.leadsEquipa - a.leadsEquipa)
     .slice(0, limite)
     .map((no) => ({ email: no.email, nome: no.nome, leadsEquipa: no.leadsEquipa, equipaTotal: no.equipaTotal }));
+}
+
+export interface EquipaLider {
+  email: string;
+  nome: string;
+  pessoas: number;
+}
+
+/**
+ * Quantas pessoas pertencem à equipa de cada líder de topo (raízes da
+ * árvore — quem não tem upline dentro da equipa). `pessoas` inclui o
+ * próprio líder + toda a descendência.
+ */
+export async function listarEquipaPorLider(): Promise<EquipaLider[]> {
+  const { raizes } = await construirArvoreEquipa();
+  return raizes
+    .map((no) => ({ email: no.email, nome: no.nome, pessoas: no.equipaTotal + 1 }))
+    .sort((a, b) => b.pessoas - a.pessoas);
 }
 
 export interface AssiduidadeConsultor {

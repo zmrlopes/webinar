@@ -6,6 +6,7 @@ import {
   listarAssiduidadeFormacoesConsultores,
   listarAtividadeRecente,
   listarConsultoresAdmin,
+  listarEquipaPorLider,
   listarInscricoesPorDia,
   listarTopLideres,
   listarWebinarsAdmin,
@@ -91,6 +92,7 @@ export default async function AdminDashboard() {
     atividade,
     alertas,
     assiduidade,
+    equipaPorLider,
   ] = await Promise.all([
     listarWebinarsAdmin(),
     buscarVisaoGeralAdmin(),
@@ -102,7 +104,11 @@ export default async function AdminDashboard() {
     listarAtividadeRecente(6),
     listarAlertasAdmin(),
     listarAssiduidadeFormacoesConsultores(),
+    listarEquipaPorLider(),
   ]);
+
+  const totalEquipaLideres = equipaPorLider.reduce((soma, l) => soma + l.pessoas, 0);
+  const maxEquipaLider = Math.max(1, ...equipaPorLider.map((l) => l.pessoas));
 
   const topConsultores = [...consultores]
     .filter((c) => c.inscricoesTotais > 0)
@@ -448,6 +454,33 @@ export default async function AdminDashboard() {
                   </li>
                 ))}
               </ul>
+            )}
+          </div>
+        </div>
+
+        <div className="ad-bloco">
+          <div className="ad-cartao">
+            <h2>Equipa por líder</h2>
+            <p className="ad-legenda" style={{ marginTop: "-0.5rem", marginBottom: "0.5rem" }}>
+              Pessoas em cada equipa de topo (líder + toda a descendência) · {totalEquipaLideres} no total
+            </p>
+            {equipaPorLider.length === 0 ? (
+              <p className="ad-mudo">Ainda sem líderes de topo com equipa.</p>
+            ) : (
+              equipaPorLider.map((l) => (
+                <div className="ad-origem-linha" key={l.email}>
+                  <span className="ad-origem-etiqueta" style={{ flexBasis: 160 }}>
+                    {l.nome}
+                  </span>
+                  <div className="ad-origem-barra-fundo">
+                    <div
+                      className="ad-origem-barra"
+                      style={{ width: `${(l.pessoas / maxEquipaLider) * 100}%` }}
+                    />
+                  </div>
+                  <span className="ad-origem-numero">{l.pessoas}</span>
+                </div>
+              ))
             )}
           </div>
         </div>
