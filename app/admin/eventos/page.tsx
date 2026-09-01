@@ -1,3 +1,4 @@
+import { listarConsultoresInscritosEventoPorLider } from "@/lib/admin";
 import {
   EVENTO_DATA_TEXTO,
   EVENTO_LOCAL,
@@ -17,7 +18,10 @@ function formatarData(data: Date): string {
 }
 
 export default async function AdminEventos() {
-  const inscricoes = await listarInscricoesEvento();
+  const [inscricoes, consultoresPorLider] = await Promise.all([
+    listarInscricoesEvento(),
+    listarConsultoresInscritosEventoPorLider(),
+  ]);
   const totalPessoas = inscricoes.reduce(
     (soma, i) => soma + i.adultos + i.criancasMais10 + i.criancasMenos10,
     0,
@@ -27,6 +31,8 @@ export default async function AdminEventos() {
     (soma, i) => soma + i.bilhetes.filter((b) => b.presente).length,
     0,
   );
+  const totalConsultoresPorLider = consultoresPorLider.reduce((soma, l) => soma + l.inscritos, 0);
+  const maxConsultoresPorLider = Math.max(1, ...consultoresPorLider.map((l) => l.inscritos));
 
   return (
     <main className="ad-pagina">
@@ -92,6 +98,19 @@ export default async function AdminEventos() {
         .ad-presenca-sim { background: #e4f3e4; color: #0ca30c; }
         .ad-presenca-nao { background: #eee; color: #999; }
         .ad-bilhetes { display: flex; flex-direction: column; gap: 0.25rem; }
+        .ad-cartao {
+          background: #f7f6f3;
+          border: 1px solid #ececE6;
+          border-radius: 16px;
+          padding: 1.1rem 1.25rem;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 6px rgba(0, 0, 0, 0.04);
+          max-width: 480px;
+        }
+        .ad-lider-linha { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem; }
+        .ad-lider-etiqueta { flex: 0 0 140px; font-size: 0.85rem; }
+        .ad-lider-barra-fundo { flex: 1; height: 10px; border-radius: 5px; background: #eee; overflow: hidden; }
+        .ad-lider-barra { height: 100%; background: linear-gradient(90deg, #5d6b2a, #4b5320); }
+        .ad-lider-numero { flex: 0 0 auto; font-weight: 700; font-size: 0.85rem; }
       `}</style>
 
       <div className="ad-caixa">
@@ -101,6 +120,26 @@ export default async function AdminEventos() {
           {totalPessoas === 1 ? "pessoa inscrita" : "pessoas inscritas"} · {totalPresentes} de {totalBilhetes}{" "}
           {totalBilhetes === 1 ? "bilhete confirmado" : "bilhetes confirmados"}
         </p>
+
+        {totalConsultoresPorLider > 0 && (
+          <>
+            <h2>Consultores inscritos por líder</h2>
+            <div className="ad-cartao">
+              {consultoresPorLider.map((l) => (
+                <div className="ad-lider-linha" key={l.nome}>
+                  <span className="ad-lider-etiqueta">{l.nome}</span>
+                  <div className="ad-lider-barra-fundo">
+                    <div
+                      className="ad-lider-barra"
+                      style={{ width: `${(l.inscritos / maxConsultoresPorLider) * 100}%` }}
+                    />
+                  </div>
+                  <span className="ad-lider-numero">{l.inscritos}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
 
         <h2>Todas as inscrições</h2>
         {inscricoes.length === 0 ? (

@@ -388,6 +388,27 @@ export async function listarConsultoresInscritosPorLider(
   );
 }
 
+/**
+ * O mesmo que `listarConsultoresInscritosPorLider`, mas para inscrições no
+ * evento (`evento_inscricoes`) em vez de webinars/formações.
+ */
+export async function listarConsultoresInscritosEventoPorLider(): Promise<ConsultoresInscritosLider[]> {
+  const mapa = await mapaLiderPorEmail();
+  const { rows } = await db().query<{ email: string }>(
+    `select i.email
+     from evento_inscricoes i
+     where exists (select 1 from equipa_afiliados ea where ea.email = i.email)`,
+  );
+  const contagem = new Map(LIDERES_TOPO.map((l) => [l.nome, 0]));
+  for (const r of rows) {
+    const bucket = mapa.get(r.email) ?? "Nós";
+    contagem.set(bucket, (contagem.get(bucket) ?? 0) + 1);
+  }
+  return LIDERES_TOPO.map((l) => ({ nome: l.nome, inscritos: contagem.get(l.nome) ?? 0 })).sort(
+    (a, b) => b.inscritos - a.inscritos,
+  );
+}
+
 export interface AssiduidadeConsultor {
   email: string;
   nome: string;
