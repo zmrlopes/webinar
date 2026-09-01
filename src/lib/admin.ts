@@ -312,23 +312,18 @@ const LIDERES_TOPO: { email: string; nome: string }[] = [
   { email: "ludmilatravels2023@gmail.com", nome: "Ludmila" },
 ];
 
-export interface EquipaLider {
-  nome: string;
-  pessoas: number;
-}
-
 /**
- * Quantas pessoas pertencem à equipa de cada um dos 4 líderes de topo
- * fixos (LIDERES_TOPO). Para cada pessoa, sobe a cadeia de upline até
- * encontrar um destes 4 emails — fica com o primeiro que encontrar (o
- * mais próximo). Quem nunca bater em nenhum (cadeia partida, ou upline
- * fora da equipa antes de chegar a um dos 4) cai por defeito em "Nós".
+ * Para cada pessoa da equipa, a que líder de topo fica associada — sobe a
+ * cadeia de upline até encontrar um dos 4 emails de LIDERES_TOPO (fica com
+ * o primeiro que encontrar, o mais próximo). Quem nunca bater em nenhum
+ * (cadeia partida, ou upline fora da equipa antes de chegar a um dos 4)
+ * cai por defeito em "Nós".
  */
-export async function listarEquipaPorLider(): Promise<EquipaLider[]> {
+async function mapaLiderPorEmail(): Promise<Map<string, string>> {
   const { todos } = await construirArvoreEquipa();
   const porEmail = new Map(todos.map((no) => [no.email, no]));
   const nomePorAncora = new Map(LIDERES_TOPO.map((l) => [l.email, l.nome]));
-  const contagem = new Map(LIDERES_TOPO.map((l) => [l.nome, 0]));
+  const resultado = new Map<string, string>();
 
   for (const no of todos) {
     let atual: string | null = no.email;
@@ -341,11 +336,55 @@ export async function listarEquipaPorLider(): Promise<EquipaLider[]> {
       }
       atual = porEmail.get(atual)?.uplineEmail ?? null;
     }
-    contagem.set(bucket, (contagem.get(bucket) ?? 0) + 1);
+    resultado.set(no.email, bucket);
   }
+  return resultado;
+}
 
+export interface EquipaLider {
+  nome: string;
+  pessoas: number;
+}
+
+/** Quantas pessoas pertencem à equipa de cada um dos 4 líderes de topo fixos. */
+export async function listarEquipaPorLider(): Promise<EquipaLider[]> {
+  const mapa = await mapaLiderPorEmail();
+  const contagem = new Map(LIDERES_TOPO.map((l) => [l.nome, 0]));
+  for (const bucket of mapa.values()) contagem.set(bucket, (contagem.get(bucket) ?? 0) + 1);
   return LIDERES_TOPO.map((l) => ({ nome: l.nome, pessoas: contagem.get(l.nome) ?? 0 })).sort(
     (a, b) => b.pessoas - a.pessoas,
+  );
+}
+
+export interface ConsultoresInscritosLider {
+  nome: string;
+  inscritos: number;
+}
+
+/**
+ * Quantos consultores de cada líder de topo se inscreveram nesta sessão
+ * (auto-inscrição — email do consultor em equipa_afiliados), para o
+ * gráfico dentro de cada formação.
+ */
+export async function listarConsultoresInscritosPorLider(
+  webinarId: string,
+): Promise<ConsultoresInscritosLider[]> {
+  const mapa = await mapaLiderPorEmail();
+  const { rows } = await db().query<{ email: string }>(
+    `select r.email
+     from registrations r
+     where r.webinar_id = $1
+       and r.cancelada_em is null
+       and exists (select 1 from equipa_afiliados ea where ea.email = r.email)`,
+    [webinarId],
+  );
+  const contagem = new Map(LIDERES_TOPO.map((l) => [l.nome, 0]));
+  for (const r of rows) {
+    const bucket = mapa.get(r.email) ?? "Nós";
+    contagem.set(bucket, (contagem.get(bucket) ?? 0) + 1);
+  }
+  return LIDERES_TOPO.map((l) => ({ nome: l.nome, inscritos: contagem.get(l.nome) ?? 0 })).sort(
+    (a, b) => b.inscritos - a.inscritos,
   );
 }
 

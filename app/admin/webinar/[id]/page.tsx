@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { listarInscricoesAdmin } from "@/lib/admin";
+import { listarConsultoresInscritosPorLider, listarInscricoesAdmin } from "@/lib/admin";
 import { buscarWebinar } from "@/lib/webinars";
 import { CancelarFormacao } from "./cancelar-formacao";
 import { TabelaInscricoes } from "./tabela-inscricoes";
@@ -21,6 +21,9 @@ export default async function AdminWebinar({
   if (!webinar) notFound();
 
   const inscricoes = await listarInscricoesAdmin(id);
+  const consultoresPorLider = await listarConsultoresInscritosPorLider(id);
+  const totalConsultoresPorLider = consultoresPorLider.reduce((soma, l) => soma + l.inscritos, 0);
+  const maxConsultoresPorLider = Math.max(1, ...consultoresPorLider.map((l) => l.inscritos));
   const ativas = inscricoes.filter((i) => !i.cancelada);
 
   const leadsInscricoes = inscricoes.filter((i) => !i.ehConsultor);
@@ -161,6 +164,11 @@ export default async function AdminWebinar({
           cursor: pointer;
         }
         .ad-pagina button:disabled { opacity: 0.55; cursor: default; }
+        .ad-lider-linha { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem; }
+        .ad-lider-etiqueta { flex: 0 0 140px; font-size: 0.85rem; }
+        .ad-lider-barra-fundo { flex: 1; height: 10px; border-radius: 5px; background: #eee; overflow: hidden; }
+        .ad-lider-barra { height: 100%; background: linear-gradient(90deg, #5d6b2a, #4b5320); }
+        .ad-lider-numero { flex: 0 0 auto; font-weight: 700; font-size: 0.85rem; }
       `}</style>
 
       <div className="ad-caixa">
@@ -321,6 +329,24 @@ export default async function AdminWebinar({
         )}
 
         <TabelaInscricoes inscricoes={leadsInscricoes} mostrarConvidadoPor />
+
+        {totalConsultoresPorLider > 0 && (
+          <div className="ad-cartao" style={{ marginTop: "1.5rem" }}>
+            <strong>Consultores inscritos por líder</strong>
+            {consultoresPorLider.map((l) => (
+              <div className="ad-lider-linha" key={l.nome}>
+                <span className="ad-lider-etiqueta">{l.nome}</span>
+                <div className="ad-lider-barra-fundo">
+                  <div
+                    className="ad-lider-barra"
+                    style={{ width: `${(l.inscritos / maxConsultoresPorLider) * 100}%` }}
+                  />
+                </div>
+                <span className="ad-lider-numero">{l.inscritos}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {consultoresInscricoes.length > 0 && (
           <>
