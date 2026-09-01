@@ -96,12 +96,10 @@ export default async function AdminSessoes() {
   const todosWebinars = await listarWebinarsAdmin();
 
   const webinares = todosWebinars.filter((w) => w.titulo === TITULO_WEBINAR_PUBLICO);
-  const formacoesInternas = todosWebinars.filter(
-    (w) =>
-      w.titulo !== TITULO_WEBINAR_PUBLICO &&
-      (w.tipo === "sincronizado" || (w.tipo === "formacao" && !w.publicoParaLeads)),
+  const formacoesGerais = todosWebinars.filter(
+    (w) => w.tipo === "sincronizado" && w.titulo !== TITULO_WEBINAR_PUBLICO,
   );
-  const formacoesGerais = todosWebinars.filter((w) => w.tipo === "formacao" && w.publicoParaLeads);
+  const formacoesInternas = todosWebinars.filter((w) => w.tipo === "formacao");
 
   return (
     <main className="ad-pagina">
