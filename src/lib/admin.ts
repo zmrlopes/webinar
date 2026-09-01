@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { TITULO_WEBINAR_PUBLICO } from "./webinars";
 
 export interface WebinarAdmin {
   id: string;
@@ -284,6 +285,58 @@ export async function listarTopLideres(limite: number): Promise<LiderAdmin[]> {
     .sort((a, b) => b.leadsEquipa - a.leadsEquipa)
     .slice(0, limite)
     .map((no) => ({ email: no.email, nome: no.nome, leadsEquipa: no.leadsEquipa, equipaTotal: no.equipaTotal }));
+}
+
+export interface AssiduidadeConsultor {
+  email: string;
+  nome: string;
+  inscricoesFormacoes: number;
+  assistiu: number;
+  faltou: number;
+  pctFaltas: number;
+}
+
+/**
+ * Assiduidade de cada consultor nas formações (tudo o que não é o webinar
+ * público) em que se inscreveu a si próprio — identificado, tal como no
+ * resto do painel, por `registrations.email` existir em `equipa_afiliados`.
+ * "Faltou" só conta sessões com presenças já fechadas (`presencas_fechadas`)
+ * — antes disso `presenca` ainda está `unknown` e não é uma falta real.
+ */
+export async function listarAssiduidadeFormacoesConsultores(): Promise<AssiduidadeConsultor[]> {
+  const { rows } = await db().query<{
+    email: string;
+    nome: string;
+    inscricoes_formacoes: string;
+    assistiu: string;
+    faltou: string;
+  }>(
+    `select ea.email, ea.nome,
+            count(r.id) as inscricoes_formacoes,
+            count(r.id) filter (where r.presenca = 'attended') as assistiu,
+            count(r.id) filter (
+              where w.presencas_fechadas and r.presenca <> 'attended'
+            ) as faltou
+     from equipa_afiliados ea
+     join registrations r on r.email = ea.email
+     join webinars w on w.id = r.webinar_id
+     where r.cancelada_em is null and w.titulo <> $1
+     group by ea.email, ea.nome
+     having count(r.id) > 0`,
+    [TITULO_WEBINAR_PUBLICO],
+  );
+  return rows.map((r) => {
+    const inscricoesFormacoes = Number(r.inscricoes_formacoes);
+    const faltou = Number(r.faltou);
+    return {
+      email: r.email,
+      nome: r.nome,
+      inscricoesFormacoes,
+      assistiu: Number(r.assistiu),
+      faltou,
+      pctFaltas: inscricoesFormacoes > 0 ? Math.round((faltou / inscricoesFormacoes) * 100) : 0,
+    };
+  });
 }
 
 export interface AtividadeRecente {

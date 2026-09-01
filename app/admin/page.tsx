@@ -3,6 +3,7 @@ import {
   buscarOrigemInscricoes,
   buscarVisaoGeralAdmin,
   listarAlertasAdmin,
+  listarAssiduidadeFormacoesConsultores,
   listarAtividadeRecente,
   listarConsultoresAdmin,
   listarInscricoesPorDia,
@@ -89,6 +90,7 @@ export default async function AdminDashboard() {
     lideres,
     atividade,
     alertas,
+    assiduidade,
   ] = await Promise.all([
     listarWebinarsAdmin(),
     buscarVisaoGeralAdmin(),
@@ -99,11 +101,22 @@ export default async function AdminDashboard() {
     listarTopLideres(5),
     listarAtividadeRecente(6),
     listarAlertasAdmin(),
+    listarAssiduidadeFormacoesConsultores(),
   ]);
 
   const topConsultores = [...consultores]
     .filter((c) => c.inscricoesTotais > 0)
     .sort((a, b) => b.inscricoesTotais - a.inscricoesTotais)
+    .slice(0, 5);
+
+  const maisAssiduos = [...assiduidade]
+    .filter((a) => a.assistiu > 0)
+    .sort((a, b) => b.assistiu - a.assistiu)
+    .slice(0, 5);
+
+  const maisFaltosos = [...assiduidade]
+    .filter((a) => a.faltou > 0)
+    .sort((a, b) => b.faltou - a.faltou || b.pctFaltas - a.pctFaltas)
     .slice(0, 5);
 
   const maxDia = Math.max(1, ...inscricoesPorDia.map((d) => d.total));
@@ -432,6 +445,56 @@ export default async function AdminDashboard() {
                       <span className="ad-lista-sub">({l.equipaTotal} na equipa)</span>
                     </span>
                     <strong>{l.leadsEquipa}</strong>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        <div className="ad-grid-2 ad-bloco">
+          <div className="ad-cartao">
+            <h2>Mais assíduos em formações</h2>
+            <p className="ad-legenda" style={{ marginTop: "-0.5rem", marginBottom: "0.5rem" }}>
+              Consultores que mais formações assistiram
+            </p>
+            {maisAssiduos.length === 0 ? (
+              <p className="ad-mudo">Ainda sem presenças registadas em formações.</p>
+            ) : (
+              <ul className="ad-lista">
+                {maisAssiduos.map((a, i) => (
+                  <li key={a.email}>
+                    <span className="ad-lista-nome">
+                      <span className="ad-lista-numero">{i + 1}</span> {a.nome}{" "}
+                      <span className="ad-lista-sub">
+                        ({a.assistiu}/{a.inscricoesFormacoes} inscrições)
+                      </span>
+                    </span>
+                    <strong>{a.assistiu}</strong>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="ad-cartao">
+            <h2>Faltam a formações</h2>
+            <p className="ad-legenda" style={{ marginTop: "-0.5rem", marginBottom: "0.5rem" }}>
+              Inscrevem-se mas não assistem
+            </p>
+            {maisFaltosos.length === 0 ? (
+              <p className="ad-mudo">Sem faltas registadas em formações.</p>
+            ) : (
+              <ul className="ad-lista">
+                {maisFaltosos.map((a, i) => (
+                  <li key={a.email}>
+                    <span className="ad-lista-nome">
+                      <span className="ad-lista-numero">{i + 1}</span> {a.nome}{" "}
+                      <span className="ad-lista-sub">
+                        ({a.faltou}/{a.inscricoesFormacoes} inscrições, {a.pctFaltas}%)
+                      </span>
+                    </span>
+                    <strong style={{ color: "#d03b3b" }}>{a.faltou}</strong>
                   </li>
                 ))}
               </ul>
