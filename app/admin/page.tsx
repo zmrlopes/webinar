@@ -419,6 +419,9 @@ export default async function AdminDashboard() {
         <div className="ad-grid-2 ad-bloco">
           <div className="ad-cartao">
             <h2>Top consultores</h2>
+            <p className="ad-legenda" style={{ marginTop: "-0.5rem", marginBottom: "0.5rem" }}>
+              Leads trazidas pelo próprio (não conta a equipa), desde sempre
+            </p>
             {topConsultores.length === 0 ? (
               <p className="ad-mudo">Ainda sem inscrições atribuídas a consultores.</p>
             ) : (
