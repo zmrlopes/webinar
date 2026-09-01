@@ -4,7 +4,8 @@ import {
   buscarVisaoGeralAdmin,
   listarAlertasAdmin,
   listarAssiduidadeFormacoesConsultores,
-  listarAtividadeRecente,
+  listarAtividadeRecenteConsultores,
+  listarAtividadeRecenteLeads,
   listarConsultoresAdmin,
   listarEquipaPorLider,
   listarInscricoesPorDia,
@@ -78,7 +79,8 @@ export default async function AdminDashboard() {
     origem,
     consultores,
     lideres,
-    atividade,
+    atividadeLeads,
+    atividadeConsultores,
     alertas,
     assiduidade,
     equipaPorLider,
@@ -89,7 +91,8 @@ export default async function AdminDashboard() {
     buscarOrigemInscricoes(DIAS_JANELA),
     listarConsultoresAdmin(),
     listarTopLideres(5),
-    listarAtividadeRecente(6),
+    listarAtividadeRecenteLeads(6),
+    listarAtividadeRecenteConsultores(6),
     listarAlertasAdmin(),
     listarAssiduidadeFormacoesConsultores(),
     listarEquipaPorLider(),
@@ -113,8 +116,8 @@ export default async function AdminDashboard() {
     .sort((a, b) => b.faltou - a.faltou || b.pctFaltas - a.pctFaltas)
     .slice(0, 5);
 
-  const maxDia = Math.max(1, ...inscricoesPorDia.map((d) => d.total));
-  const totalJanela = inscricoesPorDia.reduce((soma, d) => soma + d.total, 0);
+  const maxDia = Math.max(1, ...inscricoesPorDia.map((d) => d.totalLeads + d.totalConsultores));
+  const totalJanela = inscricoesPorDia.reduce((soma, d) => soma + d.totalLeads + d.totalConsultores, 0);
   const totalOrigem = origem.viaConsultor + origem.direto + origem.invalido;
 
   return (
@@ -194,14 +197,22 @@ export default async function AdminDashboard() {
           margin-top: 1rem;
         }
         .ad-barra-coluna { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
-        .ad-barra {
+        .ad-barra-pilha {
           width: 100%;
-          background: linear-gradient(180deg, #5d6b2a, #4b5320);
+          display: flex;
+          flex-direction: column-reverse;
           border-radius: 4px 4px 0 0;
+          overflow: hidden;
           min-height: 2px;
         }
+        .ad-barra-seg { width: 100%; }
+        .ad-barra-seg-leads { background: linear-gradient(180deg, #5d6b2a, #4b5320); }
+        .ad-barra-seg-consultores { background: #3a2f77; }
         .ad-barra-valor { font-size: 0.7rem; color: #6b6a63; margin-bottom: 0.2rem; }
         .ad-barra-dia { font-size: 0.65rem; color: #6b6a63; margin-top: 0.4rem; }
+        .ad-legenda-cores { display: flex; gap: 1rem; margin-top: 0.75rem; }
+        .ad-legenda-cor { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: #6b6a63; }
+        .ad-legenda-ponto { display: inline-block; width: 9px; height: 9px; border-radius: 3px; }
 
         .ad-origem-linha { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem; }
         .ad-origem-etiqueta { flex: 0 0 140px; font-size: 0.85rem; }
@@ -320,13 +331,34 @@ export default async function AdminDashboard() {
               Últimos {DIAS_JANELA} dias · {totalJanela} no total
             </p>
             <div className="ad-grafico-barras">
-              {inscricoesPorDia.map((d) => (
-                <div className="ad-barra-coluna" key={d.dia}>
-                  {d.total > 0 && <span className="ad-barra-valor">{d.total}</span>}
-                  <div className="ad-barra" style={{ height: `${(d.total / maxDia) * 100}%` }} />
-                  <span className="ad-barra-dia">{formatarDiaCurto(d.dia)}</span>
-                </div>
-              ))}
+              {inscricoesPorDia.map((d) => {
+                const total = d.totalLeads + d.totalConsultores;
+                return (
+                  <div className="ad-barra-coluna" key={d.dia}>
+                    {total > 0 && <span className="ad-barra-valor">{total}</span>}
+                    <div className="ad-barra-pilha" style={{ height: `${(total / maxDia) * 100}%` }}>
+                      {d.totalLeads > 0 && (
+                        <div className="ad-barra-seg ad-barra-seg-leads" style={{ flexGrow: d.totalLeads }} />
+                      )}
+                      {d.totalConsultores > 0 && (
+                        <div
+                          className="ad-barra-seg ad-barra-seg-consultores"
+                          style={{ flexGrow: d.totalConsultores }}
+                        />
+                      )}
+                    </div>
+                    <span className="ad-barra-dia">{formatarDiaCurto(d.dia)}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="ad-legenda-cores">
+              <span className="ad-legenda-cor">
+                <span className="ad-legenda-ponto" style={{ background: "#4b5320" }} /> Leads
+              </span>
+              <span className="ad-legenda-cor">
+                <span className="ad-legenda-ponto" style={{ background: "#3a2f77" }} /> Consultores
+              </span>
             </div>
           </div>
 
@@ -489,12 +521,12 @@ export default async function AdminDashboard() {
 
         <div className="ad-grid-2 ad-bloco">
           <div className="ad-cartao">
-            <h2>Inscrições recentes</h2>
-            {atividade.length === 0 ? (
+            <h2>Inscrições recentes — Leads</h2>
+            {atividadeLeads.length === 0 ? (
               <p className="ad-mudo">Sem inscrições ainda.</p>
             ) : (
               <ul className="ad-lista">
-                {atividade.map((a, i) => (
+                {atividadeLeads.map((a, i) => (
                   <li key={i}>
                     <span className="ad-lista-nome">
                       {a.nome} <span className="ad-lista-sub">— {a.webinarTitulo}</span>
@@ -506,6 +538,26 @@ export default async function AdminDashboard() {
             )}
           </div>
 
+          <div className="ad-cartao">
+            <h2>Inscrições recentes — Consultores</h2>
+            {atividadeConsultores.length === 0 ? (
+              <p className="ad-mudo">Sem inscrições ainda.</p>
+            ) : (
+              <ul className="ad-lista">
+                {atividadeConsultores.map((a, i) => (
+                  <li key={i}>
+                    <span className="ad-lista-nome">
+                      {a.nome} <span className="ad-lista-sub">— {a.webinarTitulo}</span>
+                    </span>
+                    <span className="ad-lista-sub">{formatarDataCurta(a.criadoEm)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        <div className="ad-bloco">
           <div className="ad-cartao">
             <h2>Alertas</h2>
             {alertas.length === 0 ? (

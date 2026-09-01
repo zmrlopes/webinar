@@ -151,30 +151,44 @@ export async function buscarVisaoGeralAdmin(): Promise<VisaoGeralAdmin> {
 
 export interface DiaInscricoes {
   dia: string;
-  total: number;
+  totalLeads: number;
+  totalConsultores: number;
 }
 
 /**
  * Inscrições por dia, últimos `dias` dias — para o gráfico de barras do
- * painel. Preenche os dias sem nenhuma inscrição com 0, para o gráfico não
- * ficar com buracos.
+ * painel, separadas em leads e consultores auto-inscritos (mesmo critério
+ * usado em todo o resto do admin: email em equipa_afiliados). Preenche os
+ * dias sem nenhuma inscrição com 0, para o gráfico não ficar com buracos.
  */
 export async function listarInscricoesPorDia(dias: number): Promise<DiaInscricoes[]> {
-  const { rows } = await db().query<{ dia: Date; total: string }>(
-    `select date_trunc('day', criado_em) as dia, count(*) as total
-     from registrations
-     where cancelada_em is null and criado_em > now() - ($1 || ' days')::interval
+  const { rows } = await db().query<{ dia: Date; total_leads: string; total_consultores: string }>(
+    `select date_trunc('day', r.criado_em) as dia,
+            count(*) filter (
+              where not exists (select 1 from equipa_afiliados ea where ea.email = r.email)
+            ) as total_leads,
+            count(*) filter (
+              where exists (select 1 from equipa_afiliados ea where ea.email = r.email)
+            ) as total_consultores
+     from registrations r
+     where r.cancelada_em is null and r.criado_em > now() - ($1 || ' days')::interval
      group by dia`,
     [dias],
   );
-  const porDia = new Map(rows.map((r) => [r.dia.toISOString().slice(0, 10), Number(r.total)]));
+  const porDia = new Map(
+    rows.map((r) => [
+      r.dia.toISOString().slice(0, 10),
+      { totalLeads: Number(r.total_leads), totalConsultores: Number(r.total_consultores) },
+    ]),
+  );
 
   const resultado: DiaInscricoes[] = [];
   for (let i = dias - 1; i >= 0; i--) {
     const data = new Date();
     data.setDate(data.getDate() - i);
     const chave = data.toISOString().slice(0, 10);
-    resultado.push({ dia: chave, total: porDia.get(chave) ?? 0 });
+    const v = porDia.get(chave);
+    resultado.push({ dia: chave, totalLeads: v?.totalLeads ?? 0, totalConsultores: v?.totalConsultores ?? 0 });
   }
   return resultado;
 }
@@ -470,17 +484,33 @@ export interface AtividadeRecente {
   criadoEm: Date;
 }
 
-export async function listarAtividadeRecente(limite: number): Promise<AtividadeRecente[]> {
+async function listarAtividadeRecenteBase(
+  limite: number,
+  apenasConsultores: boolean,
+): Promise<AtividadeRecente[]> {
+  const condicaoConsultor = apenasConsultores
+    ? "exists (select 1 from equipa_afiliados ea where ea.email = r.email)"
+    : "not exists (select 1 from equipa_afiliados ea where ea.email = r.email)";
   const { rows } = await db().query<{ nome: string; titulo: string; criado_em: Date }>(
     `select r.nome, w.titulo, r.criado_em
      from registrations r
      join webinars w on w.id = r.webinar_id
-     where r.cancelada_em is null
+     where r.cancelada_em is null and ${condicaoConsultor}
      order by r.criado_em desc
      limit $1`,
     [limite],
   );
   return rows.map((r) => ({ nome: r.nome, webinarTitulo: r.titulo, criadoEm: r.criado_em }));
+}
+
+/** Últimas inscrições de leads (não confundir com auto-inscrições de consultores). */
+export async function listarAtividadeRecenteLeads(limite: number): Promise<AtividadeRecente[]> {
+  return listarAtividadeRecenteBase(limite, false);
+}
+
+/** Últimas auto-inscrições de consultores (email deles próprios em equipa_afiliados). */
+export async function listarAtividadeRecenteConsultores(limite: number): Promise<AtividadeRecente[]> {
+  return listarAtividadeRecenteBase(limite, true);
 }
 
 /**
