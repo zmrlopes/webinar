@@ -295,22 +295,58 @@ export async function listarTopLideres(limite: number): Promise<LiderAdmin[]> {
     .map((no) => ({ email: no.email, nome: no.nome, leadsEquipa: no.leadsEquipa, equipaTotal: no.equipaTotal }));
 }
 
+/**
+ * Só estes 4 contam como "líderes de topo" para o gráfico de equipa —
+ * fixo por pedido explícito, em vez de deduzido das raízes da árvore
+ * (isso dava uma raiz por cada pessoa cujo upline não está em
+ * equipa_afiliados, o que são mais de 100 pessoas neste negócio, não 4).
+ * Quem estiver na descendência de um destes fica com ele, mesmo que
+ * estruturalmente esteja "abaixo" de outra pessoa pelo meio (ex: a Ana
+ * Custódia está tecnicamente abaixo do Vitor no CSV, mas continua a ser
+ * tratada como líder de topo própria).
+ */
+const LIDERES_TOPO: { email: string; nome: string }[] = [
+  { email: "v2quadrado@gmail.com", nome: "Nós" },
+  { email: "apensarnaproxima@gmail.com", nome: "Ana Custódia" },
+  { email: "viajarviversonhar@gmail.com", nome: "Lara Rodrigues" },
+  { email: "ludmilatravels2023@gmail.com", nome: "Ludmila" },
+];
+
 export interface EquipaLider {
-  email: string;
   nome: string;
   pessoas: number;
 }
 
 /**
- * Quantas pessoas pertencem à equipa de cada líder de topo (raízes da
- * árvore — quem não tem upline dentro da equipa). `pessoas` inclui o
- * próprio líder + toda a descendência.
+ * Quantas pessoas pertencem à equipa de cada um dos 4 líderes de topo
+ * fixos (LIDERES_TOPO). Para cada pessoa, sobe a cadeia de upline até
+ * encontrar um destes 4 emails — fica com o primeiro que encontrar (o
+ * mais próximo). Quem nunca bater em nenhum (cadeia partida, ou upline
+ * fora da equipa antes de chegar a um dos 4) cai por defeito em "Nós".
  */
 export async function listarEquipaPorLider(): Promise<EquipaLider[]> {
-  const { raizes } = await construirArvoreEquipa();
-  return raizes
-    .map((no) => ({ email: no.email, nome: no.nome, pessoas: no.equipaTotal + 1 }))
-    .sort((a, b) => b.pessoas - a.pessoas);
+  const { todos } = await construirArvoreEquipa();
+  const porEmail = new Map(todos.map((no) => [no.email, no]));
+  const nomePorAncora = new Map(LIDERES_TOPO.map((l) => [l.email, l.nome]));
+  const contagem = new Map(LIDERES_TOPO.map((l) => [l.nome, 0]));
+
+  for (const no of todos) {
+    let atual: string | null = no.email;
+    let bucket = "Nós";
+    while (atual) {
+      const nome = nomePorAncora.get(atual);
+      if (nome) {
+        bucket = nome;
+        break;
+      }
+      atual = porEmail.get(atual)?.uplineEmail ?? null;
+    }
+    contagem.set(bucket, (contagem.get(bucket) ?? 0) + 1);
+  }
+
+  return LIDERES_TOPO.map((l) => ({ nome: l.nome, pessoas: contagem.get(l.nome) ?? 0 })).sort(
+    (a, b) => b.pessoas - a.pessoas,
+  );
 }
 
 export interface AssiduidadeConsultor {

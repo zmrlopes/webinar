@@ -468,7 +468,7 @@ export default async function AdminDashboard() {
               <p className="ad-mudo">Ainda sem líderes de topo com equipa.</p>
             ) : (
               equipaPorLider.map((l) => (
-                <div className="ad-origem-linha" key={l.email}>
+                <div className="ad-origem-linha" key={l.nome}>
                   <span className="ad-origem-etiqueta" style={{ flexBasis: 160 }}>
                     {l.nome}
                   </span>
