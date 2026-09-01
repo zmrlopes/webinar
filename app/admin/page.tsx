@@ -570,6 +570,9 @@ export default async function AdminDashboard() {
                   <div>
                     <div className="ad-numero-pequeno" style={{ color: COR_PRESENTE }}>
                       {w.presentes}
+                      {w.totalInscritos > 0 && (
+                        <span style={{ fontSize: "0.9rem", fontWeight: 600 }}> ({pctPresentes}%)</span>
+                      )}
                     </div>
                     <div className="ad-legenda">Assistiram</div>
                   </div>
