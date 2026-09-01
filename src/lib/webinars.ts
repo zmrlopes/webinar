@@ -205,7 +205,8 @@ export async function buscarWebinarFormacao(): Promise<WebinarResumo | undefined
      where cancelada_em is null
        and sessao_externa_id is not null
        and titulo ilike '%potencial%'
-     order by abs(extract(epoch from (sessao_externa_em - now())))
+       and sessao_externa_em + (coalesce(duracao_minutos, 90) * interval '1 minute') > now()
+     order by sessao_externa_em asc
      limit 1`,
   );
   const r = rows[0];
@@ -239,7 +240,7 @@ export async function listarFormacoesEquipa(): Promise<WebinarResumo[]> {
        and sessao_externa_id is not null
        and tipo = 'formacao'
        and not publico_para_leads
-       and sessao_externa_em > now()
+       and sessao_externa_em + (coalesce(duracao_minutos, 90) * interval '1 minute') > now()
      order by sessao_externa_em asc`,
   );
   return rows.map((r) => ({
