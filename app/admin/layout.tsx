@@ -93,7 +93,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     <div className="ad-shell">
       <style>{`
         .ad-shell { display: flex; min-height: 100vh; background: #ffffff; }
-        .ad-sidebar {
+        .menu-lateral {
           flex-shrink: 0;
           width: 220px;
           background: #4b5320;
@@ -108,15 +108,15 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           display: flex;
           flex-direction: column;
         }
-        .ad-sidebar-marca {
+        .menu-lateral-marca {
           font-weight: 800;
           font-size: 1.05rem;
           color: #ffffff;
           margin: 0 0 2rem;
           padding: 0 0.5rem;
         }
-        .ad-sidebar-nav { display: flex; flex-direction: column; gap: 0.3rem; }
-        .ad-sidebar-item {
+        .menu-lateral-nav { display: flex; flex-direction: column; gap: 0.3rem; }
+        .menu-lateral-item {
           display: flex;
           align-items: center;
           gap: 0.75rem;
@@ -127,10 +127,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           font-weight: 600;
           font-size: 0.9rem;
         }
-        .ad-sidebar-item:hover { background: rgba(255, 255, 255, 0.1); color: #ffffff; }
-        .ad-sidebar-item.ad-sidebar-ativo { background: #ffffff; color: #4b5320; }
-        .ad-sidebar-item svg { flex-shrink: 0; }
-        .ad-sidebar-sair {
+        .menu-lateral-item:hover { background: rgba(255, 255, 255, 0.1); color: #ffffff; }
+        .menu-lateral-item.menu-lateral-ativo { background: #ffffff; color: #4b5320; }
+        .menu-lateral-item svg { flex-shrink: 0; }
+        .menu-lateral-sair {
           margin-top: auto;
           background: none;
           border: none;
@@ -142,7 +142,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
         @media (max-width: 720px) {
           .ad-shell { flex-direction: column; min-height: 0; }
-          .ad-sidebar {
+          .menu-lateral {
             width: 100%;
             height: auto;
             position: static;
@@ -150,21 +150,21 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             border-bottom: 1px solid #3a4019;
             padding: 0.75rem 1rem;
           }
-          .ad-sidebar-marca { display: none; }
-          .ad-sidebar-nav { flex-direction: row; overflow-x: auto; gap: 0.4rem; }
-          .ad-sidebar-item { flex-shrink: 0; }
+          .menu-lateral-marca { display: none; }
+          .menu-lateral-nav { flex-direction: row; overflow-x: auto; gap: 0.4rem; }
+          .menu-lateral-item { flex-shrink: 0; }
         }
       `}</style>
-      <aside className="ad-sidebar">
-        <p className="ad-sidebar-marca">Admin</p>
-        <nav className="ad-sidebar-nav">
+      <aside className="menu-lateral">
+        <p className="menu-lateral-marca">Admin</p>
+        <nav className="menu-lateral-nav">
           {LINKS.map((l) => {
             const Icone = l.icon;
             return (
               <Link
                 key={l.href}
                 href={l.href}
-                className={`ad-sidebar-item${ativo(l.href) ? " ad-sidebar-ativo" : ""}`}
+                className={`menu-lateral-item${ativo(l.href) ? " menu-lateral-ativo" : ""}`}
               >
                 <Icone />
                 {l.label}
@@ -172,7 +172,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        <button type="button" className="ad-sidebar-item ad-sidebar-sair" onClick={terminarSessao}>
+        <button type="button" className="menu-lateral-item menu-lateral-sair" onClick={terminarSessao}>
           <IconSair />
           Sair
         </button>
