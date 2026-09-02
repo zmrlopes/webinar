@@ -19,6 +19,7 @@
     "limpar-inscricoes-duplicadas": "tsx scripts/limpar-inscricoes-duplicadas.ts",
     "importar-equipa": "tsx scripts/importar-equipa.ts",
     "diagnosticar-equipa": "tsx scripts/diagnosticar-equipa.ts",
+    "diagnosticar-inscricao": "tsx scripts/diagnosticar-inscricao.ts",
     "enviar-relatorio-consultores": "tsx scripts/enviar-relatorio-consultores.ts",
     "verificar-presencas-agora": "tsx scripts/verificar-presencas-agora.ts",
     "typecheck": "tsc --noEmit"
