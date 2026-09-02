@@ -819,3 +819,16 @@ export async function corrigirPresencaManualmente(
     [presenca, minutos, registrationId],
   );
 }
+
+/**
+ * Correção manual para inscrições feitas por engano (ex: uma lead numa
+ * formação só-para-equipa). Soft-delete via cancelada_em, tal como
+ * cancelarFormacao — nunca apaga a linha, só deixa de contar em todo o
+ * lado que já filtra por `cancelada_em is null`.
+ */
+export async function cancelarInscricaoAdmin(registrationId: string): Promise<void> {
+  await db().query(
+    `update registrations set cancelada_em = now() where id = $1 and cancelada_em is null`,
+    [registrationId],
+  );
+}

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { InscricaoAdmin } from "@/lib/admin";
+import { CancelarInscricao } from "./cancelar-inscricao";
 import { CorrecaoEstado } from "./correcao-estado";
 import { CorrecaoPresenca } from "./correcao-presenca";
 
@@ -136,6 +137,9 @@ export function TabelaInscricoes({
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
                   <CorrecaoPresenca registrationId={i.id} presencaAtual={i.presenca} />
                   {mostrarConvidadoPor && <CorrecaoEstado leadEmail={i.email} estadoAtual={i.estado} />}
+                  {!i.cancelada && (
+                    <CancelarInscricao registrationId={i.id} nome={`${i.nome} ${i.apelido}`.trim()} />
+                  )}
                 </div>
               </td>
             </tr>
