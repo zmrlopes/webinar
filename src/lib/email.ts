@@ -44,6 +44,10 @@ export class BrevoEmailSender implements EmailSender {
     }
 
     const base = process.env.BREVO_API_BASE_URL ?? "https://api.brevo.com";
+    // Log temporário para diagnosticar emails "aceites mas nunca aparecem no
+    // Brevo" — JSON.stringify expõe espaços/caracteres escondidos no
+    // destinatário que um console.log normal não mostraria.
+    console.log("A enviar email via Brevo, destinatário:", JSON.stringify(mensagem.destinatario));
     const resposta = await fetch(`${base}/v3/smtp/email`, {
       method: "POST",
       headers: {
@@ -68,10 +72,11 @@ export class BrevoEmailSender implements EmailSender {
       signal: AbortSignal.timeout(15_000),
     });
 
+    const corpo = await resposta.text();
     if (!resposta.ok) {
-      const corpo = await resposta.text();
       throw new Error(`Brevo devolveu ${resposta.status} ao enviar email: ${corpo}`);
     }
+    console.log("Brevo aceitou o email:", corpo);
   }
 }
 
