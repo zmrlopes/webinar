@@ -80,28 +80,22 @@ export async function POST(request: Request): Promise<Response> {
     const nome = membro.nome || "Consultor";
     const apelido = membro.nome || "Consultor";
 
-    const { rows: existentes } = await db().query<{
-      id: string;
-      link_pessoal: string | null;
-    }>(
-      `select id, link_pessoal from registrations
-       where webinar_id = $1 and email = $2 and cancelada_em is null`,
-      [webinarRow.id, emailNormalizado],
+    // Upsert atómico (não select-depois-insert) — dois cliques rápidos em
+    // "Entrar na formação" não podem criar duas inscrições em simultâneo;
+    // a unique index parcial (migração 020) garante isso mesmo com dois
+    // pedidos ao mesmo tempo.
+    const { rows: gravado } = await db().query<{ id: string; link_pessoal: string | null }>(
+      `insert into registrations
+         (webinar_id, nome, apelido, email, referencia, telemovel,
+          referencia_email, consentimento_privacidade_em, link_estado, presenca)
+       values ($1, $2, $3, $4, null, null, null, now(), 'pendente', 'unknown')
+       on conflict (webinar_id, email) where cancelada_em is null
+         do update set webinar_id = excluded.webinar_id
+       returning id, link_pessoal`,
+      [webinarRow.id, nome, apelido, emailNormalizado],
     );
-    let registrationId = existentes[0]?.id;
-    let linkPessoal = existentes[0]?.link_pessoal ?? null;
-
-    if (!registrationId) {
-      const { rows } = await db().query<{ id: string }>(
-        `insert into registrations
-           (webinar_id, nome, apelido, email, referencia, telemovel,
-            referencia_email, consentimento_privacidade_em, link_estado, presenca)
-         values ($1, $2, $3, $4, null, null, null, now(), 'pendente', 'unknown')
-         returning id`,
-        [webinarRow.id, nome, apelido, emailNormalizado],
-      );
-      registrationId = rows[0]!.id;
-    }
+    const registrationId = gravado[0]!.id;
+    let linkPessoal = gravado[0]!.link_pessoal;
 
     if (!linkPessoal) {
       linkPessoal =

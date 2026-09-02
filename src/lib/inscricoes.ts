@@ -72,10 +72,17 @@ export async function inscrever(dados: DadosInscricao): Promise<{ registrationId
     }
   }
 
+  // Upsert atómico: um reenvio do formulário (duplo clique, refresh) para a
+  // mesma sessão devolve a inscrição já existente em vez de criar uma
+  // segunda ou falhar contra a unique index (migração 020) — mantém a
+  // referência original, não deixa um reenvio roubar a atribuição a outro
+  // consultor.
   const { rows } = await db().query<{ id: string }>(
     `insert into registrations
        (webinar_id, nome, apelido, email, referencia, telemovel, referencia_email, consentimento_privacidade_em)
      values ($1, $2, $3, $4, $5, $6, $7, now())
+     on conflict (webinar_id, email) where cancelada_em is null
+       do update set webinar_id = excluded.webinar_id
      returning id`,
     [dados.webinarId, nome, apelido.slice(0, 64), email, referencia, telemovel, referenciaEmail],
   );
