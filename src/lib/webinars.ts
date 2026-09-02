@@ -8,6 +8,14 @@ export interface WebinarResumo {
   duracaoMinutos: number;
 }
 
+/**
+ * Só sessões abertas a leads: o webinar público (recrutamento) e as
+ * formações ad-hoc marcadas como publico_para_leads. Fica de fora a
+ * formação recorrente do Patrick e as ad-hoc só-para-equipa — mesma regra
+ * já usada para travar inscrições de leads nelas (src/lib/inscricoes.ts).
+ * Usada em todo o lado que é de cara para leads: página inicial, widget
+ * público, link curto do consultor e o email com esse link.
+ */
 export async function listarWebinarsFuturos(): Promise<WebinarResumo[]> {
   const { rows } = await db().query<{
     id: string;
@@ -21,7 +29,9 @@ export async function listarWebinarsFuturos(): Promise<WebinarResumo[]> {
      where cancelada_em is null
        and sessao_externa_id is not null
        and sessao_externa_em > now()
+       and (titulo = $1 or (tipo = 'formacao' and publico_para_leads))
      order by sessao_externa_em asc`,
+    [TITULO_WEBINAR_PUBLICO],
   );
   return rows.map((r) => ({
     id: r.id,

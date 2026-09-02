@@ -23,7 +23,15 @@ export default async function LinkCurtoConsultor({
 
   const webinars = await listarWebinarsFuturos();
   const proximo = webinars[0];
-  if (!proximo) notFound();
+
+  if (!proximo) {
+    return (
+      <main>
+        <h1>De momento as inscrições estão fechadas</h1>
+        <p className="mudo">Não há nenhuma sessão aberta a inscrições neste momento. Volta a tentar mais tarde.</p>
+      </main>
+    );
+  }
 
   const parametros = new URLSearchParams({ ref: codigo, refEmail: link.referenciaEmail });
   redirect(`/webinar/${proximo.id}?${parametros.toString()}`);
