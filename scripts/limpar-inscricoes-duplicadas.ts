@@ -61,9 +61,12 @@ async function main(): Promise<void> {
     criadoEm: r.criado_em,
   }));
 
+  // Normalizado (minúsculas + sem espaços à volta) para apanhar duplicadas
+  // que só diferem em maiúsculas/espaços no email — a comparação exata não
+  // as apanhava, mesmo sendo claramente a mesma pessoa.
   const grupos = new Map<string, Linha[]>();
   for (const l of linhas) {
-    const chave = `${l.webinarId}::${l.email}`;
+    const chave = `${l.webinarId}::${l.email.trim().toLowerCase()}`;
     const lista = grupos.get(chave) ?? [];
     lista.push(l);
     grupos.set(chave, lista);
