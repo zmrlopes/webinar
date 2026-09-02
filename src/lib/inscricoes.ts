@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { TITULO_WEBINAR_PUBLICO } from "./webinars";
 
 export class DadosInvalidos extends Error {}
 
@@ -44,6 +45,32 @@ export async function inscrever(dados: DadosInscricao): Promise<{ registrationId
   const referencia = dados.referencia?.trim().slice(0, 64) || null;
   const telemovel = dados.telemovel?.trim().slice(0, 32) || null;
   const referenciaEmail = dados.referenciaEmail?.trim().toLowerCase().slice(0, 254) || null;
+
+  const { rows: webinarRows } = await db().query<{
+    titulo: string;
+    tipo: string;
+    publico_para_leads: boolean;
+  }>(`select titulo, tipo, publico_para_leads from webinars where id = $1`, [dados.webinarId]);
+  const webinar = webinarRows[0];
+  if (!webinar) throw new DadosInvalidos("sessão não encontrada");
+
+  // Só o webinar público (recrutamento) e as formações ad-hoc marcadas
+  // como publico_para_leads aceitam leads — tudo o resto (a formação
+  // recorrente do Patrick, e as ad-hoc só-para-equipa) é só para quem já
+  // é consultor. Isto trava o /api/inscricoes público (usado por
+  // formulários/widgets externos); o auto-registo do consultor no seu
+  // painel tem o seu próprio insert, não passa por aqui.
+  const abertaALeads =
+    webinar.titulo === TITULO_WEBINAR_PUBLICO || (webinar.tipo === "formacao" && webinar.publico_para_leads);
+  if (!abertaALeads) {
+    const { rows: equipaRows } = await db().query<{ existe: boolean }>(
+      `select exists(select 1 from equipa_afiliados where email = $1) as existe`,
+      [email],
+    );
+    if (!equipaRows[0]?.existe) {
+      throw new DadosInvalidos("esta sessão é só para a equipa");
+    }
+  }
 
   const { rows } = await db().query<{ id: string }>(
     `insert into registrations
