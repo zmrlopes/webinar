@@ -140,3 +140,18 @@ export async function definirEstadoLead(
     [leadEmail, estado, consultorEmail],
   );
 }
+
+/**
+ * Correção manual do admin, sem verificar posse (ao contrário de
+ * `definirEstadoLead`) — usada quando o consultor não marca o estado da
+ * lead ele próprio e o admin precisa de o fazer por ele.
+ */
+export async function definirEstadoLeadAdmin(leadEmail: string, estado: EstadoLead): Promise<void> {
+  await db().query(
+    `insert into estados_lead (lead_email, estado, atualizado_por, atualizado_em)
+     values ($1, $2, 'admin', now())
+     on conflict (lead_email) do update
+       set estado = excluded.estado, atualizado_por = excluded.atualizado_por, atualizado_em = now()`,
+    [leadEmail, estado],
+  );
+}

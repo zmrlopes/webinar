@@ -466,16 +466,17 @@ export default async function AdminDashboard() {
           <div className="ad-cartao">
             <h2>Top empreendedor</h2>
             <p className="ad-legenda" style={{ marginTop: "-0.5rem", marginBottom: "0.5rem" }}>
-              Leads trazidas pelo próprio que se tornaram consultores, desde sempre
+              Leads convertidas pela pessoa + toda a equipa abaixo dela, desde sempre
             </p>
             {empreendedores.length === 0 ? (
-              <p className="ad-mudo">Ainda sem conversões de leads a consultores.</p>
+              <p className="ad-mudo">Ainda sem conversões marcadas.</p>
             ) : (
               <ul className="ad-lista">
                 {empreendedores.map((e, i) => (
                   <li key={e.email}>
                     <span className="ad-lista-nome">
-                      <span className="ad-lista-numero">{i + 1}</span> {e.nome ?? e.email}
+                      <span className="ad-lista-numero">{i + 1}</span> {e.nome}{" "}
+                      <span className="ad-lista-sub">({e.pessoas} na equipa)</span>
                     </span>
                     <strong>{e.conversoes}</strong>
                   </li>

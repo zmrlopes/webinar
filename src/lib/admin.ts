@@ -1,4 +1,5 @@
 import { db } from "./db";
+import type { EstadoLead } from "./leads";
 import { TITULO_WEBINAR_PUBLICO } from "./webinars";
 
 export interface WebinarAdmin {
@@ -319,17 +320,23 @@ interface NoEquipa {
   uplineEmail: string | null;
   leadsProprios: number;
   leadsEquipa: number;
+  conversoesProprias: number;
+  conversoesEquipa: number;
   equipaTotal: number;
   filhos: NoEquipa[];
 }
 
 /**
  * Monta a árvore inteira da equipa a partir de `equipa_afiliados` (ligada
- * por `upline_email`), com leads próprios de cada pessoa já somados para
- * baixo (leadsEquipa = próprios + de toda a descendência) — mesma lógica de
- * buscarArvoreEquipa (src/lib/equipa.ts), mas para todo o sistema de uma
- * vez, sem partir de um email específico. Devolve tanto as raízes (quem não
- * tem upline dentro da equipa — os "líderes de topo") como todos os nós.
+ * por `upline_email`), com leads e conversões de cada pessoa já somadas
+ * para baixo (leadsEquipa/conversoesEquipa = próprios + de toda a
+ * descendência) — mesma lógica de buscarArvoreEquipa (src/lib/equipa.ts),
+ * mas para todo o sistema de uma vez, sem partir de um email específico.
+ * "Conversão" = lead trazida por essa pessoa com estado 'convertido' em
+ * estados_lead (src/lib/leads.ts) — independente de a que sessão a lead
+ * foi, o estado é por pessoa, não por sessão. Devolve tanto as raízes
+ * (quem não tem upline dentro da equipa — os "líderes de topo") como
+ * todos os nós.
  */
 async function construirArvoreEquipa(): Promise<{ raizes: NoEquipa[]; todos: NoEquipa[] }> {
   const { rows } = await db().query<{
@@ -337,12 +344,20 @@ async function construirArvoreEquipa(): Promise<{ raizes: NoEquipa[]; todos: NoE
     nome: string;
     upline_email: string | null;
     leads_proprios: string;
+    conversoes_proprias: string;
   }>(
     `select ea.email, ea.nome, ea.upline_email,
             count(r.id) filter (
               where r.cancelada_em is null and r.referencia_email = ea.email
                 and not exists (select 1 from equipa_afiliados ea2 where ea2.email = r.email)
-            ) as leads_proprios
+            ) as leads_proprios,
+            count(distinct r.email) filter (
+              where r.cancelada_em is null and r.referencia_email = ea.email
+                and not exists (select 1 from equipa_afiliados ea2 where ea2.email = r.email)
+                and exists (
+                  select 1 from estados_lead el where el.lead_email = r.email and el.estado = 'convertido'
+                )
+            ) as conversoes_proprias
      from equipa_afiliados ea
      left join registrations r on r.referencia_email = ea.email
      group by ea.email, ea.nome, ea.upline_email`,
@@ -357,6 +372,8 @@ async function construirArvoreEquipa(): Promise<{ raizes: NoEquipa[]; todos: NoE
         uplineEmail: r.upline_email,
         leadsProprios: Number(r.leads_proprios),
         leadsEquipa: 0,
+        conversoesProprias: Number(r.conversoes_proprias),
+        conversoesEquipa: 0,
         equipaTotal: 0,
         filhos: [],
       },
@@ -372,10 +389,12 @@ async function construirArvoreEquipa(): Promise<{ raizes: NoEquipa[]; todos: NoE
 
   function somar(no: NoEquipa): void {
     no.leadsEquipa = no.leadsProprios;
+    no.conversoesEquipa = no.conversoesProprias;
     no.equipaTotal = 0;
     for (const filho of no.filhos) {
       somar(filho);
       no.leadsEquipa += filho.leadsEquipa;
+      no.conversoesEquipa += filho.conversoesEquipa;
       no.equipaTotal += 1 + filho.equipaTotal;
     }
   }
@@ -650,6 +669,7 @@ export interface InscricaoAdmin {
   referenciaNome: string | null;
   ehConsultor: boolean;
   clicouZoom: boolean;
+  estado: EstadoLead | null;
 }
 
 /**
@@ -679,15 +699,18 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
     referencia_nome: string | null;
     eh_consultor: boolean;
     link_zoom_clicado_em: Date | null;
+    estado: EstadoLead | null;
   }>(
     `select r.id, r.nome, r.apelido, r.telemovel, r.email, r.link_estado, r.link_tentativas,
             r.link_ultimo_erro, r.presenca, r.presenca_minutos, r.cancelada_em, r.referencia,
             lc.nome as referencia_nome,
             lc_proprio.referencia is not null as eh_consultor,
-            r.link_zoom_clicado_em
+            r.link_zoom_clicado_em,
+            el.estado
      from registrations r
      left join links_consultor lc on lc.referencia = r.referencia
      left join links_consultor lc_proprio on lc_proprio.referencia_email = r.email
+     left join estados_lead el on el.lead_email = r.email
      where r.webinar_id = $1
      order by r.criado_em asc`,
     [webinarId],
@@ -709,6 +732,7 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
     referenciaNome: r.referencia_nome,
     ehConsultor: r.eh_consultor,
     clicouZoom: r.link_zoom_clicado_em !== null,
+    estado: r.estado,
   }));
 }
 
@@ -752,36 +776,33 @@ export async function listarConsultoresAdmin(): Promise<ConsultorAdmin[]> {
 
 export interface EmpreendedorAdmin {
   email: string;
-  nome: string | null;
+  nome: string;
   conversoes: number;
+  pessoas: number;
 }
 
 /**
- * Quem mais converteu leads em novos consultores — de quem cada pessoa
- * trouxe como lead a um webinar/formação (pelo seu link em /consultor),
- * conta quantos desses leads acabaram por entrar para a equipa (o email
- * aparece em equipa_afiliados, não importa quando). Ao contrário de
- * "Top líderes"/"Equipa por líder", não está limitado aos 4 líderes de
- * topo — é para todos os consultores.
+ * Quem mais consegue que a equipa toda (a pessoa + toda a descendência)
+ * traga leads e as converta — soma pela árvore abaixo, tal como
+ * "Top líderes", mas por conversões em vez de leads trazidas. "Conversão"
+ * é o estado 'convertido' em estados_lead (definido pelo próprio consultor
+ * no seu painel, ou manualmente pelo admin — ver correcao-estado.tsx).
+ * Ao contrário de "Top líderes"/"Equipa por líder", não está limitado aos
+ * 4 líderes de topo — é para todos os consultores com pelo menos uma
+ * conversão na equipa.
  */
 export async function listarTopEmpreendedores(limite: number): Promise<EmpreendedorAdmin[]> {
-  const { rows } = await db().query<{ email: string; nome: string | null; conversoes: string }>(
-    `select lc.referencia_email as email, lc.nome,
-            count(distinct r.email) filter (
-              where exists (select 1 from equipa_afiliados ea where ea.email = r.email)
-            ) as conversoes
-     from links_consultor lc
-     left join registrations r
-       on r.referencia_email = lc.referencia_email and r.cancelada_em is null
-     group by lc.referencia_email, lc.nome
-     having count(distinct r.email) filter (
-       where exists (select 1 from equipa_afiliados ea where ea.email = r.email)
-     ) > 0
-     order by conversoes desc
-     limit $1`,
-    [limite],
-  );
-  return rows.map((r) => ({ email: r.email, nome: r.nome, conversoes: Number(r.conversoes) }));
+  const { todos } = await construirArvoreEquipa();
+  return todos
+    .filter((no) => no.conversoesEquipa > 0)
+    .sort((a, b) => b.conversoesEquipa - a.conversoesEquipa)
+    .slice(0, limite)
+    .map((no) => ({
+      email: no.email,
+      nome: no.nome,
+      conversoes: no.conversoesEquipa,
+      pessoas: no.equipaTotal + 1,
+    }));
 }
 
 /**

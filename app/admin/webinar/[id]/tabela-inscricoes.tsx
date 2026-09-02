@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { InscricaoAdmin } from "@/lib/admin";
+import { CorrecaoEstado } from "./correcao-estado";
 import { CorrecaoPresenca } from "./correcao-presenca";
 
 type Valor = string | number | boolean | null;
@@ -24,6 +25,8 @@ const COLUNA_CONVIDADO_POR: Coluna = {
   rotulo: "Convidado por",
   valor: (i) => i.referenciaNome ?? i.referencia,
 };
+
+const COLUNA_ESTADO: Coluna = { chave: "estado", rotulo: "Estado", valor: (i) => i.estado };
 
 const COLUNAS_FINAIS: Coluna[] = [
   { chave: "link", rotulo: "Link", valor: (i) => i.linkEstado },
@@ -56,7 +59,7 @@ export function TabelaInscricoes({
   const [direcao, setDirecao] = useState<"asc" | "desc">("asc");
 
   const colunas = mostrarConvidadoPor
-    ? [...COLUNAS_BASE, COLUNA_CONVIDADO_POR, ...COLUNAS_FINAIS]
+    ? [...COLUNAS_BASE, COLUNA_CONVIDADO_POR, ...COLUNAS_FINAIS, COLUNA_ESTADO]
     : [...COLUNAS_BASE, ...COLUNAS_FINAIS];
 
   function alternarOrdenacao(chave: string): void {
@@ -128,8 +131,12 @@ export function TabelaInscricoes({
               </td>
               <td>{i.presenca}</td>
               <td>{i.presencaMinutos ?? "—"}</td>
+              {mostrarConvidadoPor && <td>{i.estado ?? "—"}</td>}
               <td>
-                <CorrecaoPresenca registrationId={i.id} presencaAtual={i.presenca} />
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                  <CorrecaoPresenca registrationId={i.id} presencaAtual={i.presenca} />
+                  {mostrarConvidadoPor && <CorrecaoEstado leadEmail={i.email} estadoAtual={i.estado} />}
+                </div>
               </td>
             </tr>
           ))}
