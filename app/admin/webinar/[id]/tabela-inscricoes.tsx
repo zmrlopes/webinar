@@ -58,6 +58,7 @@ export function TabelaInscricoes({
 }) {
   const [colunaOrdenada, setColunaOrdenada] = useState<string | null>(null);
   const [direcao, setDirecao] = useState<"asc" | "desc">("asc");
+  const [pesquisa, setPesquisa] = useState("");
 
   const colunas = mostrarConvidadoPor
     ? [...COLUNAS_BASE, COLUNA_CONVIDADO_POR, ...COLUNAS_FINAIS, COLUNA_ESTADO]
@@ -72,17 +73,45 @@ export function TabelaInscricoes({
     }
   }
 
+  const inscricoesFiltradas = useMemo(() => {
+    const termo = pesquisa.trim().toLowerCase();
+    if (!termo) return inscricoes;
+    return inscricoes.filter((i) => `${i.nome} ${i.apelido} ${i.email}`.toLowerCase().includes(termo));
+  }, [inscricoes, pesquisa]);
+
   const inscricoesOrdenadas = useMemo(() => {
-    if (!colunaOrdenada) return inscricoes;
+    if (!colunaOrdenada) return inscricoesFiltradas;
     const coluna = colunas.find((c) => c.chave === colunaOrdenada);
-    if (!coluna) return inscricoes;
+    if (!coluna) return inscricoesFiltradas;
     const sinal = direcao === "asc" ? 1 : -1;
-    return [...inscricoes].sort((a, b) => sinal * comparar(coluna.valor(a), coluna.valor(b)));
+    return [...inscricoesFiltradas].sort((a, b) => sinal * comparar(coluna.valor(a), coluna.valor(b)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inscricoes, colunaOrdenada, direcao]);
+  }, [inscricoesFiltradas, colunaOrdenada, direcao]);
 
   return (
-    <div className="ad-tabela-wrap">
+    <div>
+      <input
+        type="text"
+        value={pesquisa}
+        onChange={(e) => setPesquisa(e.target.value)}
+        placeholder="Pesquisar por nome ou email…"
+        style={{
+          marginBottom: "0.75rem",
+          padding: "0.5rem 0.75rem",
+          border: "1px solid #ccc",
+          borderRadius: "8px",
+          fontSize: "0.9rem",
+          width: "100%",
+          maxWidth: 320,
+          boxSizing: "border-box",
+        }}
+      />
+      {pesquisa.trim() !== "" && (
+        <p className="ad-legenda" style={{ marginTop: 0, marginBottom: "0.5rem" }}>
+          {inscricoesFiltradas.length} de {inscricoes.length}
+        </p>
+      )}
+      <div className="ad-tabela-wrap">
       <table className="ad-tabela">
         <thead>
           <tr>
@@ -146,6 +175,7 @@ export function TabelaInscricoes({
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
