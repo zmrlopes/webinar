@@ -16,6 +16,7 @@
     "limpar-links": "tsx scripts/limpar-links.ts",
     "limpar-dados-teste": "tsx scripts/limpar-dados-teste.ts",
     "limpar-inscricoes-evento-teste": "tsx scripts/limpar-inscricoes-evento-teste.ts",
+    "limpar-inscricoes-duplicadas": "tsx scripts/limpar-inscricoes-duplicadas.ts",
     "importar-equipa": "tsx scripts/importar-equipa.ts",
     "diagnosticar-equipa": "tsx scripts/diagnosticar-equipa.ts",
     "enviar-relatorio-consultores": "tsx scripts/enviar-relatorio-consultores.ts",
