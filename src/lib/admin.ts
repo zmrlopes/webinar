@@ -363,9 +363,14 @@ async function construirArvoreEquipa(): Promise<{ raizes: NoEquipa[]; todos: NoE
      group by ea.email, ea.nome, ea.upline_email`,
   );
 
+  // Normalizado (minúsculas + sem espaços à volta) para a ligação
+  // upline_email -> email não falhar silenciosamente por causa de
+  // maiúsculas/espaços na origem dos dados (CSV importado à mão).
+  const normalizar = (email: string | null): string | null => email?.trim().toLowerCase() || null;
+
   const porEmail = new Map<string, NoEquipa>(
     rows.map((r) => [
-      r.email,
+      normalizar(r.email)!,
       {
         email: r.email,
         nome: r.nome,
@@ -382,7 +387,7 @@ async function construirArvoreEquipa(): Promise<{ raizes: NoEquipa[]; todos: NoE
 
   const raizes: NoEquipa[] = [];
   for (const no of porEmail.values()) {
-    const pai = no.uplineEmail ? porEmail.get(no.uplineEmail) : undefined;
+    const pai = no.uplineEmail ? porEmail.get(normalizar(no.uplineEmail)!) : undefined;
     if (pai) pai.filhos.push(no);
     else raizes.push(no); // sem upline, ou upline fora da equipa (não devia acontecer)
   }
@@ -433,24 +438,39 @@ const LIDERES_TOPO: { email: string; nome: string }[] = [
  * (cadeia partida, ou upline fora da equipa antes de chegar a um dos 4)
  * cai por defeito em "Nós".
  */
+function normalizarEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+/**
+ * Sobe a cadeia de upline de `email` até encontrar um dos 4 líderes fixos
+ * (comparação normalizada — minúsculas/sem espaços — para não falhar
+ * silenciosamente por causa de dados do CSV importado à mão). Quem nunca
+ * bater em nenhum cai por defeito em "Nós".
+ */
+function subirAteLider(
+  email: string,
+  porEmail: Map<string, NoEquipa>,
+  nomePorAncora: Map<string, string>,
+): string {
+  let atual: string | null = normalizarEmail(email);
+  while (atual) {
+    const nome = nomePorAncora.get(atual);
+    if (nome) return nome;
+    const upline: string | null = porEmail.get(atual)?.uplineEmail ?? null;
+    atual = upline ? normalizarEmail(upline) : null;
+  }
+  return "Nós";
+}
+
 async function mapaLiderPorEmail(): Promise<Map<string, string>> {
   const { todos } = await construirArvoreEquipa();
-  const porEmail = new Map(todos.map((no) => [no.email, no]));
-  const nomePorAncora = new Map(LIDERES_TOPO.map((l) => [l.email, l.nome]));
+  const porEmail = new Map(todos.map((no) => [normalizarEmail(no.email), no]));
+  const nomePorAncora = new Map(LIDERES_TOPO.map((l) => [normalizarEmail(l.email), l.nome]));
   const resultado = new Map<string, string>();
 
   for (const no of todos) {
-    let atual: string | null = no.email;
-    let bucket = "Nós";
-    while (atual) {
-      const nome = nomePorAncora.get(atual);
-      if (nome) {
-        bucket = nome;
-        break;
-      }
-      atual = porEmail.get(atual)?.uplineEmail ?? null;
-    }
-    resultado.set(no.email, bucket);
+    resultado.set(no.email, subirAteLider(no.email, porEmail, nomePorAncora));
   }
   return resultado;
 }
@@ -458,22 +478,13 @@ async function mapaLiderPorEmail(): Promise<Map<string, string>> {
 /** Quanto cada um dos 4 líderes de topo fixos trouxe de leads (si próprio + toda a descendência). */
 export async function listarTopLideres(): Promise<LiderAdmin[]> {
   const { todos } = await construirArvoreEquipa();
-  const porEmail = new Map(todos.map((no) => [no.email, no]));
-  const nomePorAncora = new Map(LIDERES_TOPO.map((l) => [l.email, l.nome]));
+  const porEmail = new Map(todos.map((no) => [normalizarEmail(no.email), no]));
+  const nomePorAncora = new Map(LIDERES_TOPO.map((l) => [normalizarEmail(l.email), l.nome]));
   const leads = new Map(LIDERES_TOPO.map((l) => [l.nome, 0]));
   const pessoas = new Map(LIDERES_TOPO.map((l) => [l.nome, 0]));
 
   for (const no of todos) {
-    let atual: string | null = no.email;
-    let bucket = "Nós";
-    while (atual) {
-      const nome = nomePorAncora.get(atual);
-      if (nome) {
-        bucket = nome;
-        break;
-      }
-      atual = porEmail.get(atual)?.uplineEmail ?? null;
-    }
+    const bucket = subirAteLider(no.email, porEmail, nomePorAncora);
     leads.set(bucket, (leads.get(bucket) ?? 0) + no.leadsProprios);
     pessoas.set(bucket, (pessoas.get(bucket) ?? 0) + 1);
   }
