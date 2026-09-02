@@ -713,12 +713,11 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
     `select r.id, r.nome, r.apelido, r.telemovel, r.email, r.link_estado, r.link_tentativas,
             r.link_ultimo_erro, r.presenca, r.presenca_minutos, r.referencia,
             lc.nome as referencia_nome,
-            lc_proprio.referencia is not null as eh_consultor,
+            exists(select 1 from links_consultor lcp where lcp.referencia_email = r.email) as eh_consultor,
             r.link_zoom_clicado_em,
             el.estado
      from registrations r
      left join links_consultor lc on lc.referencia = r.referencia
-     left join links_consultor lc_proprio on lc_proprio.referencia_email = r.email
      left join estados_lead el on el.lead_email = r.email
      where r.webinar_id = $1 and r.cancelada_em is null
      order by r.criado_em asc`,
