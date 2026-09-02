@@ -18,6 +18,7 @@
     "limpar-inscricoes-evento-teste": "tsx scripts/limpar-inscricoes-evento-teste.ts",
     "limpar-inscricoes-duplicadas": "tsx scripts/limpar-inscricoes-duplicadas.ts",
     "importar-equipa": "tsx scripts/importar-equipa.ts",
+    "adicionar-membro-equipa": "tsx scripts/adicionar-membro-equipa.ts",
     "diagnosticar-equipa": "tsx scripts/diagnosticar-equipa.ts",
     "diagnosticar-inscricao": "tsx scripts/diagnosticar-inscricao.ts",
     "enviar-relatorio-consultores": "tsx scripts/enviar-relatorio-consultores.ts",
