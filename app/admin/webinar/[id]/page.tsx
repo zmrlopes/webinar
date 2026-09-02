@@ -24,19 +24,15 @@ export default async function AdminWebinar({
   const consultoresPorLider = await listarConsultoresInscritosPorLider(id);
   const totalConsultoresPorLider = consultoresPorLider.reduce((soma, l) => soma + l.inscritos, 0);
   const maxConsultoresPorLider = Math.max(1, ...consultoresPorLider.map((l) => l.inscritos));
-  const ativas = inscricoes.filter((i) => !i.cancelada);
-
   const leadsInscricoes = inscricoes.filter((i) => !i.ehConsultor);
   const consultoresInscricoes = inscricoes.filter((i) => i.ehConsultor);
-  const leadsAtivas = ativas.filter((i) => !i.ehConsultor);
-  const consultoresAtivas = ativas.filter((i) => i.ehConsultor);
 
-  const total = leadsAtivas.length;
-  const presentes = leadsAtivas.filter((i) => i.presenca === "attended").length;
-  const ausentes = leadsAtivas.filter((i) => i.presenca === "absent").length;
+  const total = leadsInscricoes.length;
+  const presentes = leadsInscricoes.filter((i) => i.presenca === "attended").length;
+  const ausentes = leadsInscricoes.filter((i) => i.presenca === "absent").length;
   const porConfirmar = total - presentes - ausentes;
 
-  const comMinutos = leadsAtivas.filter(
+  const comMinutos = leadsInscricoes.filter(
     (i) => i.presenca === "attended" && i.presencaMinutos !== null,
   );
   const mediaAssistencia =
@@ -52,13 +48,13 @@ export default async function AdminWebinar({
         )
       : null;
 
-  const totalConsultores = consultoresAtivas.length;
-  const presentesConsultores = consultoresAtivas.filter((i) => i.presenca === "attended").length;
+  const totalConsultores = consultoresInscricoes.length;
+  const presentesConsultores = consultoresInscricoes.filter((i) => i.presenca === "attended").length;
   const pctConsultores = (n: number) =>
     totalConsultores > 0 ? Math.round((n / totalConsultores) * 100) : 0;
 
   const porConsultor = new Map<string, { total: number; presentes: number }>();
-  for (const i of leadsAtivas) {
+  for (const i of leadsInscricoes) {
     const chave = i.referencia ?? "(sem referência)";
     const atual = porConsultor.get(chave) ?? { total: 0, presentes: 0 };
     atual.total += 1;

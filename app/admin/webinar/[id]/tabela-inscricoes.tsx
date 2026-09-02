@@ -129,10 +129,7 @@ export function TabelaInscricoes({
         <tbody>
           {inscricoesOrdenadas.map((i) => (
             <tr key={i.id}>
-              <td>
-                {i.nome}
-                {i.cancelada && <span className="ad-etiqueta"> cancelada</span>}
-              </td>
+              <td>{i.nome}</td>
               <td>{i.apelido}</td>
               <td>{i.telemovel ?? "—"}</td>
               <td>{i.email}</td>
@@ -166,9 +163,7 @@ export function TabelaInscricoes({
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
                   <CorrecaoPresenca registrationId={i.id} presencaAtual={i.presenca} />
                   {mostrarConvidadoPor && <CorrecaoEstado leadEmail={i.email} estadoAtual={i.estado} />}
-                  {!i.cancelada && (
-                    <CancelarInscricao registrationId={i.id} nome={`${i.nome} ${i.apelido}`.trim()} />
-                  )}
+                  <CancelarInscricao registrationId={i.id} nome={`${i.nome} ${i.apelido}`.trim()} />
                 </div>
               </td>
             </tr>

@@ -675,7 +675,6 @@ export interface InscricaoAdmin {
   linkUltimoErro: string | null;
   presenca: "unknown" | "attended" | "absent";
   presencaMinutos: number | null;
-  cancelada: boolean;
   referencia: string | null;
   referenciaNome: string | null;
   ehConsultor: boolean;
@@ -705,7 +704,6 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
     link_ultimo_erro: string | null;
     presenca: "unknown" | "attended" | "absent";
     presenca_minutos: number | null;
-    cancelada_em: Date | null;
     referencia: string | null;
     referencia_nome: string | null;
     eh_consultor: boolean;
@@ -713,7 +711,7 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
     estado: EstadoLead | null;
   }>(
     `select r.id, r.nome, r.apelido, r.telemovel, r.email, r.link_estado, r.link_tentativas,
-            r.link_ultimo_erro, r.presenca, r.presenca_minutos, r.cancelada_em, r.referencia,
+            r.link_ultimo_erro, r.presenca, r.presenca_minutos, r.referencia,
             lc.nome as referencia_nome,
             lc_proprio.referencia is not null as eh_consultor,
             r.link_zoom_clicado_em,
@@ -722,7 +720,7 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
      left join links_consultor lc on lc.referencia = r.referencia
      left join links_consultor lc_proprio on lc_proprio.referencia_email = r.email
      left join estados_lead el on el.lead_email = r.email
-     where r.webinar_id = $1
+     where r.webinar_id = $1 and r.cancelada_em is null
      order by r.criado_em asc`,
     [webinarId],
   );
@@ -738,7 +736,6 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
     linkUltimoErro: r.link_ultimo_erro,
     presenca: r.presenca,
     presencaMinutos: r.presenca_minutos,
-    cancelada: r.cancelada_em !== null,
     referencia: r.referencia,
     referenciaNome: r.referencia_nome,
     ehConsultor: r.eh_consultor,
