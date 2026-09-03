@@ -214,3 +214,50 @@ export async function notificarConsultorSobreLead(
       `Email: ${registro.email}`,
   });
 }
+
+export interface NotificacaoNovaSessao {
+  titulo: string;
+  tipo: string;
+  sessaoExternaEm: Date | null;
+}
+
+/**
+ * Avisa toda a equipa (equipa_afiliados) que uma nova sessão ficou
+ * disponível — webinar público, formação recorrente do Patrick, ou
+ * formação ad-hoc criada no admin. Não leva o link do Zoom (ninguém está
+ * inscrito ainda) — só o aviso e o link para o painel do consultor, onde
+ * cada um se inscreve à sua vez. Sem tabela de deduplicação própria — só é
+ * chamada uma vez, no momento em que a sessão é criada/descoberta pela
+ * sincronização. Uma falha a notificar uma pessoa não trava as restantes.
+ */
+export async function notificarEquipaNovaSessao(
+  sender: EmailSender,
+  sessao: NotificacaoNovaSessao,
+): Promise<void> {
+  const { rows } = await db().query<{ email: string; nome: string }>(
+    `select email, nome from equipa_afiliados`,
+  );
+  const base = process.env.SITE_BASE_URL ?? "https://webinar.viajareviver.net";
+  const dataTexto = sessao.sessaoExternaEm
+    ? new Date(sessao.sessaoExternaEm).toLocaleString("pt-PT", {
+        dateStyle: "long",
+        timeStyle: "short",
+        timeZone: "Europe/Lisbon",
+      })
+    : "brevemente";
+  const rotulo = sessao.tipo === "formacao" ? "formação" : "webinar";
+
+  for (const r of rows) {
+    try {
+      await sender.enviar({
+        destinatario: r.email,
+        assunto: `Nova ${rotulo} disponível: "${sessao.titulo}"`,
+        corpoTexto:
+          `Olá ${r.nome},\n\nHá uma nova sessão disponível: "${sessao.titulo}", ${dataTexto}.\n\n` +
+          `Vai ao teu painel para te inscreveres:\n${base}/consultor`,
+      });
+    } catch (erro) {
+      console.error(`falha ao notificar ${r.email} sobre nova sessão:`, erro);
+    }
+  }
+}

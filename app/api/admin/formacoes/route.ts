@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { criarEmailSender, notificarEquipaNovaSessao } from "@/lib/email";
 import { criarFormacao } from "@/lib/webinars";
 
 export async function POST(request: Request): Promise<Response> {
@@ -37,6 +38,17 @@ export async function POST(request: Request): Promise<Response> {
       linkZoom: linkZoom.trim(),
       publicoParaLeads,
     });
+
+    try {
+      await notificarEquipaNovaSessao(criarEmailSender(), {
+        titulo: titulo.trim(),
+        tipo: "formacao",
+        sessaoExternaEm: data,
+      });
+    } catch (erro) {
+      console.error("falha ao notificar equipa sobre nova formação:", erro);
+    }
+
     return NextResponse.json({ id });
   } catch (erro) {
     console.error("falha ao criar formação:", erro);

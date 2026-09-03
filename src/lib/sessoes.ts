@@ -1,3 +1,4 @@
+import { criarEmailSender, notificarEquipaNovaSessao } from "./email";
 import { db } from "./db";
 import { listarSessoes } from "./sala-zoom";
 
@@ -19,6 +20,10 @@ export interface ResultadoSincronizacao {
  * 'formacao', criadas em criarFormacao) têm um sessao_externa_id sintético
  * que nunca vai aparecer no feed do Patrick — sem este filtro, a primeira
  * sincronização depois de as criar cancelava-as sozinha.
+ *
+ * Toda a equipa é avisada por email de cada sessão nova descoberta aqui
+ * (webinar público ou formação recorrente do Patrick) — ver
+ * notificarEquipaNovaSessao em src/lib/email.ts.
  */
 export async function sincronizarSessoes(): Promise<ResultadoSincronizacao> {
   const sessoes = await listarSessoes();
@@ -26,9 +31,10 @@ export async function sincronizarSessoes(): Promise<ResultadoSincronizacao> {
 
   let novas = 0;
   let atualizadas = 0;
+  const sessoesNovas: { titulo: string; tipo: string; sessaoExternaEm: Date }[] = [];
 
   for (const sessao of sessoes) {
-    const { rows } = await db().query<{ inserida: boolean }>(
+    const { rows } = await db().query<{ inserida: boolean; tipo: string }>(
       `insert into webinars (titulo, duracao_minutos, sessao_externa_id, sessao_externa_em)
        values ($1, $2, $3, $4)
        on conflict (sessao_externa_id) do update
@@ -36,11 +42,12 @@ export async function sincronizarSessoes(): Promise<ResultadoSincronizacao> {
              duracao_minutos   = excluded.duracao_minutos,
              sessao_externa_em = excluded.sessao_externa_em,
              cancelada_em      = null
-       returning (xmax = 0) as inserida`,
+       returning (xmax = 0) as inserida, tipo`,
       [sessao.titulo, sessao.duracao_minutos, sessao.id, sessao.comeca_em],
     );
     if (rows[0]?.inserida) {
       novas += 1;
+      sessoesNovas.push({ titulo: sessao.titulo, tipo: rows[0].tipo, sessaoExternaEm: new Date(sessao.comeca_em) });
     } else {
       atualizadas += 1;
     }
@@ -56,6 +63,13 @@ export async function sincronizarSessoes(): Promise<ResultadoSincronizacao> {
        and not (sessao_externa_id = any($1::text[]))`,
     [idsRecebidos],
   );
+
+  if (sessoesNovas.length > 0) {
+    const sender = criarEmailSender();
+    for (const sessaoNova of sessoesNovas) {
+      await notificarEquipaNovaSessao(sender, sessaoNova);
+    }
+  }
 
   return { novas, atualizadas, canceladas: rowCount ?? 0 };
 }
