@@ -16,10 +16,18 @@ interface LinhaDiagnostico {
   ehConsultor: boolean;
 }
 
+interface MembroEquipaDiagnostico {
+  email: string;
+  nome: string;
+  uplineEmail: string | null;
+  nivel: string | null;
+  estado: string;
+}
+
 async function buscarDiagnostico(): Promise<{
   registos: LinhaDiagnostico[];
   estados: { leadEmail: string; estado: string }[];
-  membrosEquipa: string[];
+  membrosEquipa: MembroEquipaDiagnostico[];
 }> {
   const { rows: registos } = await db().query<{
     email: string;
@@ -44,8 +52,14 @@ async function buscarDiagnostico(): Promise<{
     [EMAILS],
   );
 
-  const { rows: membros } = await db().query<{ email: string }>(
-    `select email from equipa_afiliados where email = any($1::text[])`,
+  const { rows: membros } = await db().query<{
+    email: string;
+    nome: string;
+    upline_email: string | null;
+    nivel: string | null;
+    estado: string;
+  }>(
+    `select email, nome, upline_email, nivel, estado from equipa_afiliados where email = any($1::text[])`,
     [EMAILS],
   );
 
@@ -60,7 +74,13 @@ async function buscarDiagnostico(): Promise<{
       ehConsultor: r.eh_consultor,
     })),
     estados: estados.map((e) => ({ leadEmail: e.lead_email, estado: e.estado })),
-    membrosEquipa: membros.map((m) => m.email),
+    membrosEquipa: membros.map((m) => ({
+      email: m.email,
+      nome: m.nome,
+      uplineEmail: m.upline_email,
+      nivel: m.nivel,
+      estado: m.estado,
+    })),
   };
 }
 
@@ -137,13 +157,39 @@ export default async function CorrigirLeadsSofiaPagina() {
             return `${email} = ${e?.estado ?? "(sem estado)"}`;
           }).join(" · ")}
         </p>
+        <h2 style={{ fontSize: "1rem" }}>Em equipa_afiliados (membro real da equipa)</h2>
         <p className="ad-subtitulo">
-          Em equipa_afiliados (membro real da equipa):{" "}
-          {EMAILS.map((email) => `${email} = ${membrosEquipa.includes(email) ? "sim" : "não"}`).join(" · ")}
-          <br />
-          Isto é o que decide se a conversão conta para a Sofia no Top empreendedor/líderes — «É consultor?»
-          (gerou um link em /consultor) só afeta em que tabela ela aparece na página do webinar, não a contagem.
+          É isto que decide se a conversão conta para a Sofia no Top empreendedor/líderes — quem está aqui é
+          tratado como membro da equipa, não como lead, e a conversão dele deixa de contar para quem o
+          convidou. «É consultor?» (gerou um link em /consultor) só afeta em que tabela aparece na página do
+          webinar — só é possível gerar esse link estando aqui também.
         </p>
+        {membrosEquipa.length === 0 ? (
+          <p className="ad-subtitulo">Nenhum dos dois emails está em equipa_afiliados.</p>
+        ) : (
+          <table className="ad-diag">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Nome</th>
+                <th>Upline</th>
+                <th>Nível</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {membrosEquipa.map((m) => (
+                <tr key={m.email}>
+                  <td>{m.email}</td>
+                  <td>{m.nome}</td>
+                  <td>{m.uplineEmail ?? "(nenhum)"}</td>
+                  <td>{m.nivel ?? "—"}</td>
+                  <td>{m.estado}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
 
         <BotaoCorrigir />
       </div>
