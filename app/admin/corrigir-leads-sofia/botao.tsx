@@ -1,8 +1,10 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function BotaoCorrigir() {
+  const router = useRouter();
   const [estado, setEstado] = useState<"pronto" | "a-correr" | "feito" | "erro">("pronto");
   const [linhas, setLinhas] = useState<string[]>([]);
   const [erro, setErro] = useState<string | null>(null);
@@ -20,6 +22,7 @@ export function BotaoCorrigir() {
       }
       setLinhas(dados.linhas ?? []);
       setEstado("feito");
+      router.refresh();
     } catch {
       setErro("Falha de rede — tenta outra vez.");
       setEstado("erro");
