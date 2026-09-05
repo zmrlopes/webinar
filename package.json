@@ -21,6 +21,7 @@
     "adicionar-membro-equipa": "tsx scripts/adicionar-membro-equipa.ts",
     "diagnosticar-equipa": "tsx scripts/diagnosticar-equipa.ts",
     "diagnosticar-inscricao": "tsx scripts/diagnosticar-inscricao.ts",
+    "corrigir-leads-sofia": "tsx scripts/corrigir-leads-sofia.ts",
     "enviar-relatorio-consultores": "tsx scripts/enviar-relatorio-consultores.ts",
     "verificar-presencas-agora": "tsx scripts/verificar-presencas-agora.ts",
     "typecheck": "tsc --noEmit"
