@@ -95,6 +95,27 @@ export async function POST(): Promise<Response> {
         [lead.email],
       );
       linhas.push(`${lead.email}: estado marcado como "convertido".`);
+
+      // É lead da Sofia, não membro da equipa — se estiver em equipa_afiliados
+      // (por ter gerado um link em /consultor a dado momento), a conversão
+      // dela fica excluída da contagem da Sofia no Top empreendedor/líderes
+      // (essa contagem ignora quem também "é da equipa"). Removida daqui e de
+      // links_consultor para deixar de aparecer como consultora em todo o
+      // lado e passar a contar como lead convertida.
+      const { rowCount: removidaEquipa } = await db().query(
+        `delete from equipa_afiliados where email = $1`,
+        [lead.email],
+      );
+      if (removidaEquipa) {
+        linhas.push(`${lead.email}: removida de equipa_afiliados (não é membro da equipa, é lead).`);
+      }
+      const { rowCount: removidoLink } = await db().query(
+        `delete from links_consultor where referencia_email = $1`,
+        [lead.email],
+      );
+      if (removidoLink) {
+        linhas.push(`${lead.email}: removido(s) ${removidoLink} link(s) de consultor.`);
+      }
     } catch (erro) {
       const mensagem = erro instanceof Error ? erro.message : String(erro);
       linhas.push(`${lead.email}: ERRO — ${mensagem}`);
