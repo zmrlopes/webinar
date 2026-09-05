@@ -82,9 +82,15 @@ export async function buscarArvoreEquipa(webinarId: string, email: string): Prom
        join descendentes d on ea.upline_email = d.email
      )
      select d.email, d.nome, d.upline_email, d.nivel, d.estado,
+            -- Uma lead convertida passa a fazer parte da equipa — "estar em
+            -- equipa_afiliados" sozinho não pode excluir alguém daqui, senão
+            -- o lead deixa de contar assim que é promovido a consultor.
             count(r.id) filter (
               where r.webinar_id = $2 and r.cancelada_em is null
-                and not exists (select 1 from equipa_afiliados ea2 where ea2.email = r.email)
+                and (
+                  not exists (select 1 from equipa_afiliados ea2 where ea2.email = r.email)
+                  or exists (select 1 from estados_lead el2 where el2.lead_email = r.email)
+                )
             ) as leads_proprios
      from descendentes d
      left join registrations r on r.referencia_email = d.email
