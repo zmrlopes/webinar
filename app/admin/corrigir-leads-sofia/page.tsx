@@ -8,10 +8,12 @@ const EMAILS = ["lourencorafaela@gmail.com", "info.oriah@gmail.com"];
 
 interface LinhaDiagnostico {
   email: string;
+  webinarId: string;
   webinarTitulo: string;
   criadoEm: Date;
   canceladaEm: Date | null;
   presenca: string;
+  ehConsultor: boolean;
 }
 
 async function buscarDiagnostico(): Promise<{
@@ -20,12 +22,15 @@ async function buscarDiagnostico(): Promise<{
 }> {
   const { rows: registos } = await db().query<{
     email: string;
+    webinar_id: string;
     titulo: string;
     criado_em: Date;
     cancelada_em: Date | null;
     presenca: string;
+    eh_consultor: boolean;
   }>(
-    `select r.email, w.titulo, r.criado_em, r.cancelada_em, r.presenca
+    `select r.email, r.webinar_id, w.titulo, r.criado_em, r.cancelada_em, r.presenca,
+            exists(select 1 from links_consultor lcp where lcp.referencia_email = r.email) as eh_consultor
      from registrations r
      join webinars w on w.id = r.webinar_id
      where r.email = any($1::text[])
@@ -41,10 +46,12 @@ async function buscarDiagnostico(): Promise<{
   return {
     registos: registos.map((r) => ({
       email: r.email,
+      webinarId: r.webinar_id,
       webinarTitulo: r.titulo,
       criadoEm: r.criado_em,
       canceladaEm: r.cancelada_em,
       presenca: r.presenca,
+      ehConsultor: r.eh_consultor,
     })),
     estados: estados.map((e) => ({ leadEmail: e.lead_email, estado: e.estado })),
   };
@@ -95,16 +102,22 @@ export default async function CorrigirLeadsSofiaPagina() {
                 <th>Inscrita em</th>
                 <th>Cancelada</th>
                 <th>Presença</th>
+                <th>É consultor?</th>
               </tr>
             </thead>
             <tbody>
               {registos.map((r, i) => (
                 <tr key={i}>
                   <td>{r.email}</td>
-                  <td>{r.webinarTitulo}</td>
+                  <td>
+                    {r.webinarTitulo}
+                    <br />
+                    <span style={{ color: "#6b6a63", fontSize: "0.75rem" }}>{r.webinarId}</span>
+                  </td>
                   <td>{r.criadoEm.toLocaleString("pt-PT")}</td>
                   <td>{r.canceladaEm ? r.canceladaEm.toLocaleString("pt-PT") : "não"}</td>
                   <td>{r.presenca}</td>
+                  <td>{r.ehConsultor ? "sim — aparece em «Consultores inscritos»" : "não"}</td>
                 </tr>
               ))}
             </tbody>
