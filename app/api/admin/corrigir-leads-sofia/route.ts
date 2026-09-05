@@ -60,39 +60,45 @@ export async function POST(): Promise<Response> {
   linhas.push(`Webinar em ${webinares[0]!.sessao_externa_em.toISOString()} (id=${webinarId})`);
 
   for (const lead of LEADS) {
-    const { rows: existentes } = await db().query<{ id: string; cancelada_em: Date | null }>(
-      `select id, cancelada_em from registrations where webinar_id = $1 and email = $2 order by criado_em desc`,
-      [webinarId, lead.email],
-    );
+    try {
+      const { rows: existentes } = await db().query<{ id: string; cancelada_em: Date | null }>(
+        `select id, cancelada_em from registrations where webinar_id = $1 and email = $2 order by criado_em desc`,
+        [webinarId, lead.email],
+      );
 
-    const existente = existentes[0];
-    if (existente) {
+      const existente = existentes[0];
+      if (existente) {
+        await db().query(
+          `update registrations
+           set cancelada_em = null, presenca = 'attended',
+               referencia_email = coalesce(referencia_email, $2)
+           where id = $1`,
+          [existente.id, sofia.email],
+        );
+        linhas.push(`${lead.email}: inscrição existente (id=${existente.id}) reativada e marcada como presente.`);
+      } else {
+        const { rows: criado } = await db().query<{ id: string }>(
+          `insert into registrations
+             (webinar_id, nome, apelido, email, referencia_email, consentimento_privacidade_em, link_estado, presenca)
+           values ($1, $2, $3, $4, $5, now(), 'obtido', 'attended')
+           returning id`,
+          [webinarId, lead.nome, lead.apelido, lead.email, sofia.email],
+        );
+        linhas.push(`${lead.email}: inscrição nova criada (id=${criado[0]!.id}), já com presença registada.`);
+      }
+
       await db().query(
-        `update registrations
-         set cancelada_em = null, presenca = 'attended',
-             referencia_email = coalesce(referencia_email, $2)
-         where id = $1`,
-        [existente.id, sofia.email],
+        `insert into estados_lead (lead_email, estado, atualizado_por, atualizado_em)
+         values ($1, 'convertido', 'admin', now())
+         on conflict (lead_email) do update
+           set estado = excluded.estado, atualizado_por = excluded.atualizado_por, atualizado_em = now()`,
+        [lead.email],
       );
-      linhas.push(`${lead.email}: inscrição existente reativada e marcada como presente.`);
-    } else {
-      await db().query(
-        `insert into registrations
-           (webinar_id, nome, apelido, email, referencia_email, consentimento_privacidade_em, link_estado, presenca)
-         values ($1, $2, $3, $4, $5, now(), 'obtido', 'attended')`,
-        [webinarId, lead.nome, lead.apelido, lead.email, sofia.email],
-      );
-      linhas.push(`${lead.email}: inscrição nova criada, já com presença registada.`);
+      linhas.push(`${lead.email}: estado marcado como "convertido".`);
+    } catch (erro) {
+      const mensagem = erro instanceof Error ? erro.message : String(erro);
+      linhas.push(`${lead.email}: ERRO — ${mensagem}`);
     }
-
-    await db().query(
-      `insert into estados_lead (lead_email, estado, atualizado_por, atualizado_em)
-       values ($1, 'convertido', 'admin', now())
-       on conflict (lead_email) do update
-         set estado = excluded.estado, atualizado_por = excluded.atualizado_por, atualizado_em = now()`,
-      [lead.email],
-    );
-    linhas.push(`${lead.email}: estado marcado como "convertido".`);
   }
 
   return NextResponse.json({ linhas });
