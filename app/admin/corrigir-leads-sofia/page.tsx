@@ -19,6 +19,7 @@ interface LinhaDiagnostico {
 async function buscarDiagnostico(): Promise<{
   registos: LinhaDiagnostico[];
   estados: { leadEmail: string; estado: string }[];
+  membrosEquipa: string[];
 }> {
   const { rows: registos } = await db().query<{
     email: string;
@@ -43,6 +44,11 @@ async function buscarDiagnostico(): Promise<{
     [EMAILS],
   );
 
+  const { rows: membros } = await db().query<{ email: string }>(
+    `select email from equipa_afiliados where email = any($1::text[])`,
+    [EMAILS],
+  );
+
   return {
     registos: registos.map((r) => ({
       email: r.email,
@@ -54,11 +60,12 @@ async function buscarDiagnostico(): Promise<{
       ehConsultor: r.eh_consultor,
     })),
     estados: estados.map((e) => ({ leadEmail: e.lead_email, estado: e.estado })),
+    membrosEquipa: membros.map((m) => m.email),
   };
 }
 
 export default async function CorrigirLeadsSofiaPagina() {
-  const { registos, estados } = await buscarDiagnostico();
+  const { registos, estados, membrosEquipa } = await buscarDiagnostico();
 
   return (
     <main className="ad-pagina">
@@ -129,6 +136,13 @@ export default async function CorrigirLeadsSofiaPagina() {
             const e = estados.find((x) => x.leadEmail === email);
             return `${email} = ${e?.estado ?? "(sem estado)"}`;
           }).join(" · ")}
+        </p>
+        <p className="ad-subtitulo">
+          Em equipa_afiliados (membro real da equipa):{" "}
+          {EMAILS.map((email) => `${email} = ${membrosEquipa.includes(email) ? "sim" : "não"}`).join(" · ")}
+          <br />
+          Isto é o que decide se a conversão conta para a Sofia no Top empreendedor/líderes — «É consultor?»
+          (gerou um link em /consultor) só afeta em que tabela ela aparece na página do webinar, não a contagem.
         </p>
 
         <BotaoCorrigir />
