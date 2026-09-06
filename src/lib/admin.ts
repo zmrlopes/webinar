@@ -318,6 +318,7 @@ interface NoEquipa {
   email: string;
   nome: string;
   uplineEmail: string | null;
+  estado: string;
   leadsProprios: number;
   leadsEquipa: number;
   conversoesProprias: number;
@@ -343,6 +344,7 @@ async function construirArvoreEquipa(): Promise<{ raizes: NoEquipa[]; todos: NoE
     email: string;
     nome: string;
     upline_email: string | null;
+    estado: string;
     leads_proprios: string;
     conversoes_proprias: string;
   }>(
@@ -354,7 +356,7 @@ async function construirArvoreEquipa(): Promise<{ raizes: NoEquipa[]; todos: NoE
     // passado por estados_lead — só isso é ruído, não um lead a sério.
     // `r.email <> ea.email` impede alguém de contar como "lead" ou
     // "conversão" de si próprio (auto-referência).
-    `select ea.email, ea.nome, ea.upline_email,
+    `select ea.email, ea.nome, ea.upline_email, ea.estado,
             count(r.id) filter (
               where r.cancelada_em is null and r.referencia_email = ea.email and r.email <> ea.email
                 and (
@@ -370,7 +372,7 @@ async function construirArvoreEquipa(): Promise<{ raizes: NoEquipa[]; todos: NoE
             ) as conversoes_proprias
      from equipa_afiliados ea
      left join registrations r on r.referencia_email = ea.email
-     group by ea.email, ea.nome, ea.upline_email`,
+     group by ea.email, ea.nome, ea.upline_email, ea.estado`,
   );
 
   // Normalizado (minúsculas + sem espaços à volta) para a ligação
@@ -385,6 +387,7 @@ async function construirArvoreEquipa(): Promise<{ raizes: NoEquipa[]; todos: NoE
         email: r.email,
         nome: r.nome,
         uplineEmail: r.upline_email,
+        estado: r.estado,
         leadsProprios: Number(r.leads_proprios),
         leadsEquipa: 0,
         conversoesProprias: Number(r.conversoes_proprias),
@@ -803,31 +806,41 @@ export interface EmpreendedorAdmin {
   email: string;
   nome: string;
   conversoes: number;
+  leads: number;
+  racio: number;
   pessoas: number;
 }
 
 /**
  * Quem mais consegue que a equipa toda (a pessoa + toda a descendência)
  * traga leads e as converta — soma pela árvore abaixo, tal como
- * "Top líderes", mas por conversões em vez de leads trazidas. "Conversão"
- * é o estado 'convertido' em estados_lead (definido pelo próprio consultor
- * no seu painel, ou manualmente pelo admin — ver correcao-estado.tsx).
- * Ao contrário de "Top líderes"/"Equipa por líder", não está limitado aos
- * 4 líderes de topo — é para todos os consultores com pelo menos uma
- * conversão na equipa.
+ * "Top líderes". "Conversão" é o estado 'convertido' em estados_lead
+ * (definido pelo próprio consultor no seu painel, ou manualmente pelo admin
+ * — ver correcao-estado.tsx). Ao contrário de "Top líderes"/"Equipa por
+ * líder", não está limitado aos 4 líderes de topo — é para todos os
+ * consultores ativos com pelo menos uma conversão na equipa.
+ *
+ * A ordenação é por `racio` (conversões / leads trazidas, em percentagem),
+ * não pelo número absoluto de conversões — por pedido explícito, para não
+ * favorecer sempre quem tem mais gente na equipa; o número de conversões
+ * só desempata entre rácios iguais. Só entram consultores com
+ * `estado = 'ACTIVE'` em equipa_afiliados — quem saiu da equipa não conta
+ * para a lista, mesmo que tenha conversões históricas.
  */
 export async function listarTopEmpreendedores(limite: number): Promise<EmpreendedorAdmin[]> {
   const { todos } = await construirArvoreEquipa();
   return todos
-    .filter((no) => no.conversoesEquipa > 0)
-    .sort((a, b) => b.conversoesEquipa - a.conversoesEquipa)
-    .slice(0, limite)
+    .filter((no) => no.estado === "ACTIVE" && no.conversoesEquipa > 0)
     .map((no) => ({
       email: no.email,
       nome: no.nome,
       conversoes: no.conversoesEquipa,
+      leads: no.leadsEquipa,
+      racio: no.leadsEquipa > 0 ? Math.round((no.conversoesEquipa / no.leadsEquipa) * 100) : 0,
       pessoas: no.equipaTotal + 1,
-    }));
+    }))
+    .sort((a, b) => b.racio - a.racio || b.conversoes - a.conversoes)
+    .slice(0, limite);
 }
 
 /**

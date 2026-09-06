@@ -466,7 +466,8 @@ export default async function AdminDashboard() {
           <div className="ad-cartao">
             <h2>Top empreendedor</h2>
             <p className="ad-legenda" style={{ marginTop: "-0.5rem", marginBottom: "0.5rem" }}>
-              Leads convertidas pela pessoa + toda a equipa abaixo dela, desde sempre
+              Rácio de conversão (conversões / leads trazidas) da pessoa + toda a equipa abaixo dela, só
+              consultores ativos
             </p>
             {empreendedores.length === 0 ? (
               <p className="ad-mudo">Ainda sem conversões marcadas.</p>
@@ -476,9 +477,11 @@ export default async function AdminDashboard() {
                   <li key={e.email}>
                     <span className="ad-lista-nome">
                       <span className="ad-lista-numero">{i + 1}</span> {e.nome}{" "}
-                      <span className="ad-lista-sub">({e.pessoas} na equipa)</span>
+                      <span className="ad-lista-sub">
+                        ({e.pessoas} na equipa · {e.conversoes}/{e.leads} leads)
+                      </span>
                     </span>
-                    <strong>{e.conversoes}</strong>
+                    <strong>{e.racio}%</strong>
                   </li>
                 ))}
               </ul>
