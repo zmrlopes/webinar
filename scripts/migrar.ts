@@ -8,69 +8,25 @@
  */
 
 import "./_env";
-import { readdir, readFile } from "node:fs/promises";
-import path from "node:path";
-import { Client } from "pg";
-
-const DIR_MIGRATIONS = path.join(import.meta.dirname, "..", "migrations");
+import { aplicarMigracoesPendentes } from "../src/lib/migrar";
+import { fecharDb } from "../src/lib/db";
 
 async function main(): Promise<void> {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
+  if (!process.env.DATABASE_URL) {
     console.error("Falta DATABASE_URL no ambiente.");
     process.exit(1);
   }
 
-  const ficheiros = (await readdir(DIR_MIGRATIONS))
-    .filter((f) => f.endsWith(".sql"))
-    .sort();
-
-  const client = new Client({ connectionString: databaseUrl });
-  await client.connect();
-
-  try {
-    await client.query(`
-      create table if not exists schema_migrations (
-        nome        text primary key,
-        aplicada_em timestamptz not null default now()
-      )
-    `);
-
-    const { rows } = await client.query<{ nome: string }>(
-      "select nome from schema_migrations",
-    );
-    const aplicadas = new Set(rows.map((r) => r.nome));
-
-    for (const ficheiro of ficheiros) {
-      if (aplicadas.has(ficheiro)) {
-        console.log(`--  já aplicada: ${ficheiro}`);
-        continue;
-      }
-
-      const sql = await readFile(path.join(DIR_MIGRATIONS, ficheiro), "utf8");
-      console.log(`->  a aplicar: ${ficheiro}`);
-
-      await client.query("begin");
-      try {
-        await client.query(sql);
-        await client.query("insert into schema_migrations (nome) values ($1)", [
-          ficheiro,
-        ]);
-        await client.query("commit");
-        console.log(`OK  ${ficheiro}`);
-      } catch (erro) {
-        await client.query("rollback");
-        throw erro;
-      }
-    }
-
-    console.log("Migrations em dia.");
-  } finally {
-    await client.end();
+  const resultados = await aplicarMigracoesPendentes();
+  for (const r of resultados) {
+    console.log(r.aplicada ? `OK  ${r.ficheiro}` : `--  já aplicada: ${r.ficheiro}`);
   }
+  console.log("Migrations em dia.");
 }
 
-main().catch((erro) => {
-  console.error(erro);
-  process.exit(1);
-});
+main()
+  .catch((erro) => {
+    console.error(erro);
+    process.exitCode = 1;
+  })
+  .finally(fecharDb);
