@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listarSessoes } from "@/lib/sala-zoom";
+import { BotaoSincronizar } from "./botao-sincronizar";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,8 @@ export default async function PatrickSessoesPagina() {
             Falha ao chamar a API do Patrick: {erro}
           </p>
         )}
+
+        <BotaoSincronizar />
 
         <h2 style={{ fontSize: "1rem" }}>Amanhã ({amanha})</h2>
         {deAmanha.length === 0 ? (
