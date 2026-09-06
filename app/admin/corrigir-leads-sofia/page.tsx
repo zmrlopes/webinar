@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { BotaoApagarDuplicada } from "./botao-apagar-duplicada";
 import { BotaoCorrigir } from "./botao";
 
 export const dynamic = "force-dynamic";
 
-const EMAILS = ["lourencorafaela@gmail.com", "info.oriah@gmail.com"];
+const EMAILS = ["lourencorafaela@gmail.com", "info.oriah@gmail.com", "fatima.paulos.martins@gmail.com"];
 
 interface LinhaDiagnostico {
   email: string;
@@ -280,8 +281,15 @@ export default async function CorrigirLeadsSofiaPagina() {
             </tbody>
           </table>
         )}
+        <p className="ad-subtitulo">
+          fatima.paulos.martins@gmail.com é a mesma Fátima Martins que info.oriah@gmail.com, registada com um
+          email diferente — está a contar como uma segunda conversão a mais.
+        </p>
+        <BotaoApagarDuplicada />
 
-        <BotaoCorrigir />
+        <div style={{ marginTop: "2rem" }}>
+          <BotaoCorrigir />
+        </div>
       </div>
     </main>
   );
