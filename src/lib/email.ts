@@ -211,6 +211,7 @@ export async function notificarConsultorSobreLead(
 }
 
 export interface NotificacaoNovaSessao {
+  webinarId: string;
   titulo: string;
   tipo: string;
   sessaoExternaEm: Date | null;
@@ -221,16 +222,26 @@ export interface NotificacaoNovaSessao {
  * disponível — webinar público, formação recorrente do Patrick, ou
  * formação ad-hoc criada no admin. Não leva o link do Zoom (ninguém está
  * inscrito ainda) — só o aviso e o link para o painel do consultor, onde
- * cada um se inscreve à sua vez. Sem tabela de deduplicação própria — só é
- * chamada uma vez, no momento em que a sessão é criada/descoberta pela
- * sincronização. Uma falha a notificar uma pessoa não trava as restantes.
+ * cada um se inscreve à sua vez. Cada tentativa (sucesso ou falha) fica
+ * registada em `notificacoes_equipa` — sem isso não havia como confirmar,
+ * mesmo horas depois, se o aviso chegou a alguém (ver
+ * resumoNotificacaoEquipa em src/lib/admin.ts). O `unique (webinar_id,
+ * destinatario)` faz de deduplicação: chamar isto duas vezes para a mesma
+ * sessão não reenvia a quem já tinha sido notificado com sucesso ou
+ * falha — só falta gente nova na equipa desde a primeira vez. Uma falha a
+ * notificar uma pessoa não trava as restantes.
  */
 export async function notificarEquipaNovaSessao(
   sender: EmailSender,
   sessao: NotificacaoNovaSessao,
 ): Promise<void> {
   const { rows } = await db().query<{ email: string; nome: string }>(
-    `select email, nome from equipa_afiliados`,
+    `select email, nome from equipa_afiliados
+     where not exists (
+       select 1 from notificacoes_equipa ne
+       where ne.webinar_id = $1 and ne.destinatario = equipa_afiliados.email
+     )`,
+    [sessao.webinarId],
   );
   const base = process.env.SITE_BASE_URL ?? "https://webinar.viajareviver.net";
   const dataTexto = sessao.sessaoExternaEm
@@ -243,6 +254,8 @@ export async function notificarEquipaNovaSessao(
   const rotulo = sessao.tipo === "formacao" ? "formação" : "webinar";
 
   for (const r of rows) {
+    let sucesso = true;
+    let mensagemErro: string | null = null;
     try {
       await sender.enviar({
         destinatario: r.email,
@@ -252,7 +265,15 @@ export async function notificarEquipaNovaSessao(
           `Vai ao teu painel para te inscreveres:\n${base}/consultor`,
       });
     } catch (erro) {
+      sucesso = false;
+      mensagemErro = erro instanceof Error ? erro.message : String(erro);
       console.error(`falha ao notificar ${r.email} sobre nova sessão:`, erro);
     }
+    await db().query(
+      `insert into notificacoes_equipa (webinar_id, destinatario, sucesso, erro)
+       values ($1, $2, $3, $4)
+       on conflict (webinar_id, destinatario) do nothing`,
+      [sessao.webinarId, r.email, sucesso, mensagemErro],
+    );
   }
 }

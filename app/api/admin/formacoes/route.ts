@@ -41,6 +41,7 @@ export async function POST(request: Request): Promise<Response> {
 
     try {
       await notificarEquipaNovaSessao(criarEmailSender(), {
+        webinarId: id,
         titulo: titulo.trim(),
         tipo: "formacao",
         sessaoExternaEm: data,

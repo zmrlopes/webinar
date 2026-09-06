@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { listarConsultoresInscritosPorLider, listarInscricoesAdmin } from "@/lib/admin";
+import { listarConsultoresInscritosPorLider, listarInscricoesAdmin, resumoNotificacaoEquipa } from "@/lib/admin";
 import { buscarWebinar } from "@/lib/webinars";
 import { CancelarFormacao } from "./cancelar-formacao";
 import { TabelaInscricoes } from "./tabela-inscricoes";
@@ -21,6 +21,7 @@ export default async function AdminWebinar({
   if (!webinar) notFound();
 
   const inscricoes = await listarInscricoesAdmin(id);
+  const notificacaoEquipa = await resumoNotificacaoEquipa(id);
   const consultoresPorLider = await listarConsultoresInscritosPorLider(id);
   const totalConsultoresPorLider = consultoresPorLider.reduce((soma, l) => soma + l.inscritos, 0);
   const maxConsultoresPorLider = Math.max(1, ...consultoresPorLider.map((l) => l.inscritos));
@@ -182,6 +183,18 @@ export default async function AdminWebinar({
             </div>
           )}
         </div>
+
+        {notificacaoEquipa && (
+          <p className="ad-legenda" style={{ marginBottom: "1rem" }}>
+            Aviso à equipa sobre esta sessão: {notificacaoEquipa.enviados} enviado(s)
+            {notificacaoEquipa.falhas > 0 && (
+              <>
+                , {notificacaoEquipa.falhas} falhou(aram) ({notificacaoEquipa.falhasDestinatarios.join(", ")})
+              </>
+            )}
+            .
+          </p>
+        )}
 
         <div className="ad-grid">
           <div className="ad-cartao">

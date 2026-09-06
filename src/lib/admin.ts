@@ -764,6 +764,32 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
   }));
 }
 
+export interface ResumoNotificacaoEquipa {
+  enviados: number;
+  falhas: number;
+  falhasDestinatarios: string[];
+}
+
+/**
+ * O que aconteceu quando `notificarEquipaNovaSessao` avisou a equipa desta
+ * sessão — `null` se a sessão nunca chegou a disparar esse aviso (não foi
+ * detetada como nova pela sincronização, ex: já existia antes desta
+ * funcionalidade). Ver migrations/021_notificacoes_equipa.sql.
+ */
+export async function resumoNotificacaoEquipa(webinarId: string): Promise<ResumoNotificacaoEquipa | null> {
+  const { rows } = await db().query<{ destinatario: string; sucesso: boolean }>(
+    `select destinatario, sucesso from notificacoes_equipa where webinar_id = $1`,
+    [webinarId],
+  );
+  if (rows.length === 0) return null;
+  const falhas = rows.filter((r) => !r.sucesso);
+  return {
+    enviados: rows.length - falhas.length,
+    falhas: falhas.length,
+    falhasDestinatarios: falhas.map((r) => r.destinatario),
+  };
+}
+
 export interface ConsultorAdmin {
   referencia: string;
   nome: string | null;

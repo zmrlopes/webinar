@@ -31,10 +31,10 @@ export async function sincronizarSessoes(): Promise<ResultadoSincronizacao> {
 
   let novas = 0;
   let atualizadas = 0;
-  const sessoesNovas: { titulo: string; tipo: string; sessaoExternaEm: Date }[] = [];
+  const sessoesNovas: { webinarId: string; titulo: string; tipo: string; sessaoExternaEm: Date }[] = [];
 
   for (const sessao of sessoes) {
-    const { rows } = await db().query<{ inserida: boolean; tipo: string }>(
+    const { rows } = await db().query<{ id: string; inserida: boolean; tipo: string }>(
       `insert into webinars (titulo, duracao_minutos, sessao_externa_id, sessao_externa_em)
        values ($1, $2, $3, $4)
        on conflict (sessao_externa_id) do update
@@ -42,12 +42,17 @@ export async function sincronizarSessoes(): Promise<ResultadoSincronizacao> {
              duracao_minutos   = excluded.duracao_minutos,
              sessao_externa_em = excluded.sessao_externa_em,
              cancelada_em      = null
-       returning (xmax = 0) as inserida, tipo`,
+       returning id, (xmax = 0) as inserida, tipo`,
       [sessao.titulo, sessao.duracao_minutos, sessao.id, sessao.comeca_em],
     );
     if (rows[0]?.inserida) {
       novas += 1;
-      sessoesNovas.push({ titulo: sessao.titulo, tipo: rows[0].tipo, sessaoExternaEm: new Date(sessao.comeca_em) });
+      sessoesNovas.push({
+        webinarId: rows[0].id,
+        titulo: sessao.titulo,
+        tipo: rows[0].tipo,
+        sessaoExternaEm: new Date(sessao.comeca_em),
+      });
     } else {
       atualizadas += 1;
     }
