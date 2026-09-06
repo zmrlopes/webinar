@@ -6,16 +6,9 @@ import {
   EVENTO_TITULO,
   listarInscricoesEvento,
 } from "@/lib/eventos";
+import { TabelaInscricoesEvento } from "./tabela-inscricoes-evento";
 
 export const dynamic = "force-dynamic";
-
-function formatarData(data: Date): string {
-  return new Date(data).toLocaleString("pt-PT", {
-    dateStyle: "short",
-    timeStyle: "short",
-    timeZone: "Europe/Lisbon",
-  });
-}
 
 export default async function AdminEventos() {
   const [inscricoes, consultoresPorLider] = await Promise.all([
@@ -145,55 +138,7 @@ export default async function AdminEventos() {
         {inscricoes.length === 0 ? (
           <p className="ad-legenda">Ainda sem inscrições.</p>
         ) : (
-          <div className="ad-tabela-wrap">
-            <table className="ad-tabela">
-              <thead>
-                <tr>
-                  <th>Nome</th>
-                  <th>Telemóvel</th>
-                  <th>Email</th>
-                  <th>Adultos</th>
-                  <th>Crianças +10</th>
-                  <th>Crianças -10</th>
-                  <th>Total</th>
-                  <th>Compareceu</th>
-                  <th>Inscrito em</th>
-                  <th>Comprovativo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {inscricoes.map((i) => (
-                  <tr key={i.id}>
-                    <td>{i.nome}</td>
-                    <td>{i.telemovel}</td>
-                    <td>{i.email}</td>
-                    <td>{i.adultos}</td>
-                    <td>{i.criancasMais10}</td>
-                    <td>{i.criancasMenos10}</td>
-                    <td>{i.totalPagar}€</td>
-                    <td>
-                      <div className="ad-bilhetes">
-                        {i.bilhetes.map((b) => (
-                          <span
-                            key={b.id}
-                            className={b.presente ? "ad-presenca ad-presenca-sim" : "ad-presenca ad-presenca-nao"}
-                          >
-                            {b.rotulo} {b.presente ? "✓" : "—"}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td>{formatarData(i.criadoEm)}</td>
-                    <td>
-                      <a href={`/api/admin/eventos/comprovativo/${i.id}`} className="ad-download">
-                        Descarregar
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <TabelaInscricoesEvento inscricoes={inscricoes} />
         )}
       </div>
     </main>
