@@ -24,6 +24,55 @@ interface MembroEquipaDiagnostico {
   estado: string;
 }
 
+interface LinhaEquipaSofia {
+  email: string;
+  nome: string;
+  conversoesProprias: number;
+  emails: string[];
+}
+
+async function buscarDetalheTopEmpreendedorSofia(): Promise<LinhaEquipaSofia[] | null> {
+  const { rows: sofias } = await db().query<{ email: string }>(
+    `select email from equipa_afiliados where nome ilike '%sofia%pinheiro%'`,
+  );
+  if (sofias.length !== 1) return null;
+  const sofiaEmail = sofias[0]!.email;
+
+  const { rows } = await db().query<{
+    email: string;
+    nome: string;
+    conversoes_proprias: string;
+    emails_convertidos: string[] | null;
+  }>(
+    `with recursive equipa as (
+       select email, nome from equipa_afiliados where email = $1
+       union all
+       select ea.email, ea.nome
+       from equipa_afiliados ea
+       join equipa d on ea.upline_email = d.email
+     )
+     select eq.email, eq.nome,
+            count(distinct r.email) filter (
+              where exists (select 1 from estados_lead el where el.lead_email = r.email and el.estado = 'convertido')
+            ) as conversoes_proprias,
+            array_agg(distinct r.email) filter (
+              where exists (select 1 from estados_lead el where el.lead_email = r.email and el.estado = 'convertido')
+            ) as emails_convertidos
+     from equipa eq
+     left join registrations r on r.referencia_email = eq.email and r.cancelada_em is null
+     group by eq.email, eq.nome
+     order by conversoes_proprias desc`,
+    [sofiaEmail],
+  );
+
+  return rows.map((r) => ({
+    email: r.email,
+    nome: r.nome,
+    conversoesProprias: Number(r.conversoes_proprias),
+    emails: r.emails_convertidos ?? [],
+  }));
+}
+
 async function buscarDiagnostico(): Promise<{
   registos: LinhaDiagnostico[];
   estados: { leadEmail: string; estado: string }[];
@@ -86,6 +135,8 @@ async function buscarDiagnostico(): Promise<{
 
 export default async function CorrigirLeadsSofiaPagina() {
   const { registos, estados, membrosEquipa } = await buscarDiagnostico();
+  const detalheSofia = await buscarDetalheTopEmpreendedorSofia();
+  const totalSofia = detalheSofia?.reduce((soma, l) => soma + l.conversoesProprias, 0) ?? 0;
 
   return (
     <main className="ad-pagina">
@@ -187,6 +238,43 @@ export default async function CorrigirLeadsSofiaPagina() {
                   <td>{m.estado}</td>
                 </tr>
               ))}
+            </tbody>
+          </table>
+        )}
+
+        <h2 style={{ fontSize: "1rem" }}>De onde vem o número da Sofia no Top empreendedor</h2>
+        <p className="ad-subtitulo">
+          O Top empreendedor soma as conversões da própria pessoa + toda a equipa abaixo dela. Esta tabela
+          mostra essa soma discriminada, pessoa a pessoa, com os emails que contam para cada uma — total:{" "}
+          <strong>{totalSofia}</strong>.
+        </p>
+        {detalheSofia === null ? (
+          <p className="ad-subtitulo">
+            Não encontrei exatamente 1 &quot;Sofia Pinheiro&quot; em equipa_afiliados.
+          </p>
+        ) : (
+          <table className="ad-diag">
+            <thead>
+              <tr>
+                <th>Pessoa</th>
+                <th>Conversões próprias</th>
+                <th>Emails</th>
+              </tr>
+            </thead>
+            <tbody>
+              {detalheSofia
+                .filter((l) => l.conversoesProprias > 0)
+                .map((l) => (
+                  <tr key={l.email}>
+                    <td>
+                      {l.nome}
+                      <br />
+                      <span style={{ color: "#6b6a63", fontSize: "0.75rem" }}>{l.email}</span>
+                    </td>
+                    <td>{l.conversoesProprias}</td>
+                    <td>{l.emails.join(", ")}</td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         )}
