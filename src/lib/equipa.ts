@@ -86,7 +86,7 @@ export async function buscarArvoreEquipa(webinarId: string, email: string): Prom
             -- equipa_afiliados" sozinho não pode excluir alguém daqui, senão
             -- o lead deixa de contar assim que é promovido a consultor.
             count(r.id) filter (
-              where r.webinar_id = $2 and r.cancelada_em is null
+              where r.webinar_id = $2 and r.cancelada_em is null and r.email <> d.email
                 and (
                   not exists (select 1 from equipa_afiliados ea2 where ea2.email = r.email)
                   or exists (select 1 from estados_lead el2 where el2.lead_email = r.email)

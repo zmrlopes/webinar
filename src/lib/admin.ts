@@ -352,16 +352,18 @@ async function construirArvoreEquipa(): Promise<{ raizes: NoEquipa[]; todos: NoE
     // a trouxe assim que ela é promovida. O que continua a não contar é o
     // auto-registo de um membro da equipa no link de outro, sem nunca ter
     // passado por estados_lead — só isso é ruído, não um lead a sério.
+    // `r.email <> ea.email` impede alguém de contar como "lead" ou
+    // "conversão" de si próprio (auto-referência).
     `select ea.email, ea.nome, ea.upline_email,
             count(r.id) filter (
-              where r.cancelada_em is null and r.referencia_email = ea.email
+              where r.cancelada_em is null and r.referencia_email = ea.email and r.email <> ea.email
                 and (
                   not exists (select 1 from equipa_afiliados ea2 where ea2.email = r.email)
                   or exists (select 1 from estados_lead el2 where el2.lead_email = r.email)
                 )
             ) as leads_proprios,
             count(distinct r.email) filter (
-              where r.cancelada_em is null and r.referencia_email = ea.email
+              where r.cancelada_em is null and r.referencia_email = ea.email and r.email <> ea.email
                 and exists (
                   select 1 from estados_lead el where el.lead_email = r.email and el.estado = 'convertido'
                 )

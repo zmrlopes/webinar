@@ -53,10 +53,12 @@ async function buscarDetalheTopEmpreendedorSofia(): Promise<LinhaEquipaSofia[] |
      )
      select eq.email, eq.nome,
             count(distinct r.email) filter (
-              where exists (select 1 from estados_lead el where el.lead_email = r.email and el.estado = 'convertido')
+              where r.email <> eq.email
+                and exists (select 1 from estados_lead el where el.lead_email = r.email and el.estado = 'convertido')
             ) as conversoes_proprias,
             array_agg(distinct r.email) filter (
-              where exists (select 1 from estados_lead el where el.lead_email = r.email and el.estado = 'convertido')
+              where r.email <> eq.email
+                and exists (select 1 from estados_lead el where el.lead_email = r.email and el.estado = 'convertido')
             ) as emails_convertidos
      from equipa eq
      left join registrations r on r.referencia_email = eq.email and r.cancelada_em is null
