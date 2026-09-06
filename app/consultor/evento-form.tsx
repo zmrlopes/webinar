@@ -233,7 +233,7 @@ export function EventoForm({ email, nome }: { email: string; nome: string | null
 
       <div className="vqe-campo">
         <p className="vqe-pagamento-info">
-          Efetuar pagamento por MBWAY para o número 913550475 (Sara).
+          Efetuar pagamento por MBWAY para o número 964702215 (Miguel).
         </p>
         <label htmlFor="evento-comprovativo">Comprovativo de pagamento</label>
         <input
