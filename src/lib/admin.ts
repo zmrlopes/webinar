@@ -696,9 +696,14 @@ export interface InscricaoAdmin {
  * Fica a null quando não há correspondência (inscrição sem link de
  * consultor, ou de antes de o nome passar a ser guardado).
  *
- * `ehConsultor` distingue quem se inscreveu mas já é consultor (o email da
- * inscrição coincide com o email de alguém que já gerou o link em
- * /consultor) — é um lead a mais na lista, mas não é um lead "verdadeiro".
+ * `ehConsultor` distingue quem se inscreveu mas já é consultor sem nunca ter
+ * sido tratado como lead (o email da inscrição coincide com o de alguém que
+ * já gerou o link em /consultor, mas não tem estado de lead registado) — é
+ * um lead a mais na lista, mas não é um lead "verdadeiro". Uma lead
+ * convertida que passou a consultora (tem estado em estados_lead) continua
+ * ehConsultor = false de propósito — tem de continuar na tabela de leads do
+ * webinar onde converteu, para a contagem bater certo com o Top empreendedor
+ * (ver construirArvoreEquipa, mais acima neste ficheiro).
  */
 export async function listarInscricoesAdmin(webinarId: string): Promise<InscricaoAdmin[]> {
   const { rows } = await db().query<{
@@ -721,7 +726,10 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
     `select r.id, r.nome, r.apelido, r.telemovel, r.email, r.link_estado, r.link_tentativas,
             r.link_ultimo_erro, r.presenca, r.presenca_minutos, r.referencia,
             lc.nome as referencia_nome,
-            exists(select 1 from links_consultor lcp where lcp.referencia_email = r.email) as eh_consultor,
+            (
+              exists(select 1 from links_consultor lcp where lcp.referencia_email = r.email)
+              and not exists(select 1 from estados_lead el2 where el2.lead_email = r.email)
+            ) as eh_consultor,
             r.link_zoom_clicado_em,
             el.estado
      from registrations r
