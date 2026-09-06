@@ -196,11 +196,15 @@ export async function listarSessoesPublicasParaPainel(): Promise<WebinarResumo[]
 /**
  * A sessão de formação recorrente do Patrick (só para quem já é consultor)
  * mais próxima no tempo — mesma lógica de `buscarWebinarRelevante`, mas
- * filtrada. Identificada por conter "potencial" no título (case-insensitive),
- * já que ele não dá nenhuma categoria própria. Não inclui formações ad-hoc
- * — essas têm a sua própria lista em `listarFormacoesEquipa`, porque podem
- * existir várias ao mesmo tempo e "a mais próxima no tempo" esconderia as
- * outras.
+ * filtrada. É qualquer sessão sincronizada da sala partilhada que não seja
+ * o webinar público — o Patrick não dá nenhuma categoria própria, só o
+ * título. Antes só reconhecia títulos com "potencial" (o nome que a
+ * formação dele sempre teve), mas isso escondia qualquer sessão nova com
+ * um título diferente — corrigido para usar o mesmo critério já validado
+ * em app/admin/sessoes ("Formações gerais" = sincronizada e não é o
+ * webinar público). Não inclui formações ad-hoc — essas têm a sua própria
+ * lista em `listarFormacoesEquipa`, porque podem existir várias ao mesmo
+ * tempo e "a mais próxima no tempo" esconderia as outras.
  */
 export async function buscarWebinarFormacao(): Promise<WebinarResumo | undefined> {
   const { rows } = await db().query<{
@@ -214,10 +218,12 @@ export async function buscarWebinarFormacao(): Promise<WebinarResumo | undefined
      from webinars
      where cancelada_em is null
        and sessao_externa_id is not null
-       and titulo ilike '%potencial%'
+       and tipo = 'sincronizado'
+       and titulo <> $1
        and sessao_externa_em + (coalesce(duracao_minutos, 90) * interval '1 minute') > now()
      order by sessao_externa_em asc
      limit 1`,
+    [TITULO_WEBINAR_PUBLICO],
   );
   const r = rows[0];
   if (!r) return undefined;
