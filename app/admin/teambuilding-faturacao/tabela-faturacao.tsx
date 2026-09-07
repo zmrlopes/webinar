@@ -50,7 +50,16 @@ export function TabelaFaturacao({ inscritos }: { inscritos: InscritoFaturacao[] 
             {COLUNAS.map((c) => (
               <th key={c.chave}>
                 <button type="button" className="ad-th-ordenar" onClick={() => alternarOrdenacao(c.chave)}>
-                  {c.rotulo} {colunaOrdenada === c.chave ? (direcao === "asc" ? "▲" : "▼") : ""}
+                  {c.rotulo}{" "}
+                  <span
+                    style={{
+                      display: "inline-block",
+                      fontSize: "0.95rem",
+                      color: colunaOrdenada === c.chave ? "#4b5320" : "#c9c7bd",
+                    }}
+                  >
+                    {colunaOrdenada === c.chave ? (direcao === "asc" ? "↑" : "↓") : "↕"}
+                  </span>
                 </button>
               </th>
             ))}
