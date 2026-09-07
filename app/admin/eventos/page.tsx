@@ -1,20 +1,23 @@
 import Link from "next/link";
 import { listarConsultoresInscritosEventoPorLider } from "@/lib/admin";
 import {
+  estaoInscricoesAbertas,
   EVENTO_DATA_TEXTO,
   EVENTO_LOCAL,
   EVENTO_PRECO_ADULTO,
   EVENTO_TITULO,
   listarInscricoesEvento,
 } from "@/lib/eventos";
+import { BotaoEstadoInscricoes } from "./botao-estado";
 import { TabelaInscricoesEvento } from "./tabela-inscricoes-evento";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminEventos() {
-  const [inscricoes, consultoresPorLider] = await Promise.all([
+  const [inscricoes, consultoresPorLider, inscricoesAbertas] = await Promise.all([
     listarInscricoesEvento(),
     listarConsultoresInscritosEventoPorLider(),
+    estaoInscricoesAbertas(),
   ]);
   const totalAdultos = inscricoes.reduce((soma, i) => soma + i.adultos, 0);
   const totalCriancasMais10 = inscricoes.reduce((soma, i) => soma + i.criancasMais10, 0);
@@ -115,6 +118,7 @@ export default async function AdminEventos() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: "0.75rem", flexWrap: "wrap" }}>
           <h1>{EVENTO_TITULO}</h1>
           <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+            <BotaoEstadoInscricoes abertas={inscricoesAbertas} />
             <Link
               href="/consultor/teambuilding?preview=1"
               target="_blank"
@@ -170,7 +174,10 @@ export default async function AdminEventos() {
         <p className="ad-subtitulo">
           {EVENTO_DATA_TEXTO} · {EVENTO_LOCAL} · {EVENTO_PRECO_ADULTO}€ por pessoa — {totalPessoas}{" "}
           {totalPessoas === 1 ? "pessoa inscrita" : "pessoas inscritas"} · {totalConsultoresPorLider}{" "}
-          {totalConsultoresPorLider === 1 ? "consultor" : "consultores"}
+          {totalConsultoresPorLider === 1 ? "consultor" : "consultores"} ·{" "}
+          <strong style={{ color: inscricoesAbertas ? "#0ca30c" : "#c0392b" }}>
+            {inscricoesAbertas ? "inscrições abertas" : "inscrições encerradas"}
+          </strong>
         </p>
 
         <div className="ad-grid">

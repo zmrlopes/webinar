@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { criarEmailSender, type AnexoMensagem } from "@/lib/email";
 import {
   calcularTotalEvento,
+  estaoInscricoesAbertas,
   EVENTO_DATA_TEXTO,
   EVENTO_LOCAL,
   EVENTO_TITULO,
@@ -27,6 +28,10 @@ function inteiroValido(valor: FormDataEntryValue | null, minimo: number): number
  */
 export async function POST(request: Request): Promise<Response> {
   try {
+    if (!(await estaoInscricoesAbertas())) {
+      return NextResponse.json({ erro: "as inscrições para este evento já estão encerradas" }, { status: 403 });
+    }
+
     const dados = await request.formData();
 
     const nome = dados.get("nome");

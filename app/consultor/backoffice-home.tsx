@@ -15,6 +15,7 @@ interface DadosIdentificacao {
   inscritoProximoWebinar: boolean;
   formacoesEquipa: { id: string; titulo: string; sessaoExternaEm: string; inscrito: boolean }[];
   precisaResponderTeambuilding: boolean;
+  inscricoesEventoAbertas: boolean;
 }
 
 type Estado = "a-carregar" | "por-identificar" | "pronto" | "erro";
@@ -582,7 +583,11 @@ export function BackofficeHome() {
             {seccaoAtiva === "eventos" && (
               <div className="vqb-seccao">
                 <h2>Teambuilding Tropa de Elite</h2>
-                <EventoForm email={email} nome={dados.nome} />
+                {dados.inscricoesEventoAbertas ? (
+                  <EventoForm email={email} nome={dados.nome} />
+                ) : (
+                  <p className="vqb-mudo">As inscrições para este evento já estão encerradas.</p>
+                )}
               </div>
             )}
           </>

@@ -11,6 +11,22 @@ export function calcularTotalEvento(adultos: number, criancasMais10: number): nu
   return adultos * EVENTO_PRECO_ADULTO + criancasMais10 * EVENTO_PRECO_CRIANCA_MAIS10;
 }
 
+/** Linha única (id=1) — ver migrations/025_evento_estado.sql. */
+export async function estaoInscricoesAbertas(): Promise<boolean> {
+  const { rows } = await db().query<{ inscricoes_abertas: boolean }>(
+    `select inscricoes_abertas from evento_estado where id = 1`,
+  );
+  return rows[0]?.inscricoes_abertas ?? true;
+}
+
+export async function definirInscricoesAbertas(abertas: boolean): Promise<void> {
+  await db().query(
+    `insert into evento_estado (id, inscricoes_abertas) values (1, $1)
+     on conflict (id) do update set inscricoes_abertas = excluded.inscricoes_abertas`,
+    [abertas],
+  );
+}
+
 interface DadosInscricaoEvento {
   nome: string;
   telemovel: string;

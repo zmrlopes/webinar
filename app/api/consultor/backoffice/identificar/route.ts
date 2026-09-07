@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { buscarMembroEquipa } from "@/lib/equipa";
 import { gerarSlug } from "@/lib/slug";
 import { buscarProximoWebinarPublico, buscarWebinarFormacao, listarFormacoesEquipa } from "@/lib/webinars";
+import { estaoInscricoesAbertas } from "@/lib/eventos";
 import { precisaResponderTeambuilding } from "@/lib/teambuilding";
 
 /**
@@ -43,12 +44,14 @@ export async function POST(request: Request): Promise<Response> {
     const protocolo = host.startsWith("localhost") ? "http" : "https";
     const link = `${protocolo}://${host}/${referencia}`;
 
-    const [formacao, proximoWebinar, formacoesEquipa, precisaResponderTeambuildingBool] = await Promise.all([
-      buscarWebinarFormacao(),
-      buscarProximoWebinarPublico(),
-      listarFormacoesEquipa(),
-      precisaResponderTeambuilding(emailNormalizado),
-    ]);
+    const [formacao, proximoWebinar, formacoesEquipa, precisaResponderTeambuildingBool, inscricoesEventoAbertas] =
+      await Promise.all([
+        buscarWebinarFormacao(),
+        buscarProximoWebinarPublico(),
+        listarFormacoesEquipa(),
+        precisaResponderTeambuilding(emailNormalizado),
+        estaoInscricoesAbertas(),
+      ]);
 
     async function jaInscrito(webinarId: string): Promise<boolean> {
       const { rows } = await db().query<{ existe: boolean }>(
@@ -86,6 +89,7 @@ export async function POST(request: Request): Promise<Response> {
         inscrito: formacoesEquipaInscritas[i],
       })),
       precisaResponderTeambuilding: precisaResponderTeambuildingBool,
+      inscricoesEventoAbertas,
     });
   } catch (erro) {
     console.error("falha ao identificar consultor no backoffice:", erro);
