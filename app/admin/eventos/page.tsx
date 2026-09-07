@@ -20,11 +20,6 @@ export default async function AdminEventos() {
   const totalCriancasMais10 = inscricoes.reduce((soma, i) => soma + i.criancasMais10, 0);
   const totalCriancasMenos10 = inscricoes.reduce((soma, i) => soma + i.criancasMenos10, 0);
   const totalPessoas = totalAdultos + totalCriancasMais10 + totalCriancasMenos10;
-  const totalBilhetes = inscricoes.reduce((soma, i) => soma + i.bilhetes.length, 0);
-  const totalPresentes = inscricoes.reduce(
-    (soma, i) => soma + i.bilhetes.filter((b) => b.presente).length,
-    0,
-  );
   const totalConsultoresPorLider = consultoresPorLider.reduce((soma, l) => soma + l.inscritos, 0);
   const maxConsultoresPorLider = Math.max(1, ...consultoresPorLider.map((l) => l.inscritos));
 
@@ -174,8 +169,8 @@ export default async function AdminEventos() {
         </div>
         <p className="ad-subtitulo">
           {EVENTO_DATA_TEXTO} · {EVENTO_LOCAL} · {EVENTO_PRECO_ADULTO}€ por pessoa — {totalPessoas}{" "}
-          {totalPessoas === 1 ? "pessoa inscrita" : "pessoas inscritas"} · {totalPresentes} de {totalBilhetes}{" "}
-          {totalBilhetes === 1 ? "bilhete confirmado" : "bilhetes confirmados"}
+          {totalPessoas === 1 ? "pessoa inscrita" : "pessoas inscritas"} · {totalConsultoresPorLider}{" "}
+          {totalConsultoresPorLider === 1 ? "consultor" : "consultores"}
         </p>
 
         <div className="ad-grid">
