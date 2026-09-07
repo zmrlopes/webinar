@@ -176,3 +176,32 @@ export async function listarInscritosComFaturacao(): Promise<InscritoFaturacao[]
     criancasMenos10: Number(r.criancas_menos10),
   }));
 }
+
+export interface InscritoEventoLider {
+  nome: string;
+  email: string;
+}
+
+/**
+ * Quem está inscrito no Teambuilding, dentro da equipa (o próprio líder +
+ * toda a descendência em equipa_afiliados) de um email de liderança — para
+ * a página pública /equipa/[lider]/teambuilding, feita para partilhar um
+ * link direto sem precisar da password do admin.
+ */
+export async function listarInscritosEventoPorLider(liderEmail: string): Promise<InscritoEventoLider[]> {
+  const { rows } = await db().query<{ nome: string; email: string }>(
+    `with recursive equipa as (
+       select email from equipa_afiliados where email = $1
+       union all
+       select ea.email
+       from equipa_afiliados ea
+       join equipa eq on ea.upline_email = eq.email
+     )
+     select distinct on (ei.email) ei.nome, ei.email
+     from evento_inscricoes ei
+     where ei.email in (select email from equipa)
+     order by ei.email, ei.criado_em desc`,
+    [liderEmail],
+  );
+  return rows;
+}
