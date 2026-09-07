@@ -128,3 +128,37 @@ export async function notificarInscritosSemResposta(
 
   return { enviados, falhas };
 }
+
+export interface InscritoFaturacao {
+  nome: string;
+  email: string;
+  nivel: string | null;
+  vendas: number | null;
+}
+
+/**
+ * Um por email inscrito no Teambuilding, com o patamar e o volume de
+ * faturação própria vindos de equipa_afiliados (coluna "sales" do CSV da
+ * plataforma de afiliados — ver src/lib/equipa-import.ts). `nivel`/`vendas`
+ * ficam a null se o email não estiver em equipa_afiliados, ou se o CSV
+ * ainda não tiver sido reimportado depois desta coluna passar a ser lida.
+ */
+export async function listarInscritosComFaturacao(): Promise<InscritoFaturacao[]> {
+  const { rows } = await db().query<{
+    nome: string;
+    email: string;
+    nivel: string | null;
+    vendas: string | null;
+  }>(
+    `select distinct on (ei.email) ei.nome, ei.email, ea.nivel, ea.vendas
+     from evento_inscricoes ei
+     left join equipa_afiliados ea on ea.email = ei.email
+     order by ei.email, ei.criado_em desc`,
+  );
+  return rows.map((r) => ({
+    nome: r.nome,
+    email: r.email,
+    nivel: r.nivel,
+    vendas: r.vendas === null ? null : Number(r.vendas),
+  }));
+}

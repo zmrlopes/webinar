@@ -6,6 +6,7 @@ export interface LinhaEquipa {
   uplineEmail: string | null;
   nivel: string | null;
   estado: string;
+  vendas: number | null;
 }
 
 export interface ResultadoParseCsvEquipa {
@@ -70,10 +71,12 @@ function normalizarEmail(email: string): string {
 
 /**
  * Lê o CSV exportado da plataforma de afiliados (colunas user_email,
- * user_name, upline_email, user_level, subscription_status) e devolve as
- * linhas válidas (com email) prontas para upsert em equipa_afiliados —
- * mesma lógica de scripts/importar-equipa.ts, partilhada com a página de
- * importação no admin (app/admin/equipa/importar).
+ * user_name, upline_email, user_level, subscription_status, sales) e
+ * devolve as linhas válidas (com email) prontas para upsert em
+ * equipa_afiliados — mesma lógica de scripts/importar-equipa.ts,
+ * partilhada com a página de importação no admin (app/admin/equipa/importar).
+ * `sales` é o volume de faturação própria do consultor — usado na tabela
+ * de patamar/faturação dos inscritos no Teambuilding.
  */
 export function parseCsvEquipa(texto: string): ResultadoParseCsvEquipa {
   const linhasCru = parseCsv(texto);
@@ -86,12 +89,14 @@ export function parseCsvEquipa(texto: string): ResultadoParseCsvEquipa {
       semEmail.push(l.user_name ?? "(sem nome)");
       continue;
     }
+    const vendas = Number(l.sales);
     linhas.push({
       email,
       nome: (l.user_name ?? "").trim(),
       uplineEmail: l.upline_email ? normalizarEmail(l.upline_email) : null,
       nivel: l.user_level ? l.user_level.trim() : null,
       estado: (l.subscription_status ?? "ACTIVE").trim() || "ACTIVE",
+      vendas: Number.isFinite(vendas) ? vendas : null,
     });
   }
 
@@ -108,15 +113,16 @@ export function parseCsvEquipa(texto: string): ResultadoParseCsvEquipa {
 export async function importarLinhasEquipa(linhas: LinhaEquipa[]): Promise<void> {
   for (const l of linhas) {
     await db().query(
-      `insert into equipa_afiliados (email, nome, upline_email, nivel, estado, atualizado_em)
-       values ($1, $2, $3, $4, $5, now())
+      `insert into equipa_afiliados (email, nome, upline_email, nivel, estado, vendas, atualizado_em)
+       values ($1, $2, $3, $4, $5, $6, now())
        on conflict (email) do update
          set nome = excluded.nome,
              upline_email = excluded.upline_email,
              nivel = excluded.nivel,
              estado = excluded.estado,
+             vendas = excluded.vendas,
              atualizado_em = now()`,
-      [l.email, l.nome, l.uplineEmail, l.nivel, l.estado],
+      [l.email, l.nome, l.uplineEmail, l.nivel, l.estado, l.vendas],
     );
   }
 }
