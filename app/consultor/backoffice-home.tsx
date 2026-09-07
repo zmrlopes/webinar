@@ -14,6 +14,7 @@ interface DadosIdentificacao {
   proximoWebinar: { titulo: string; sessaoExternaEm: string } | null;
   inscritoProximoWebinar: boolean;
   formacoesEquipa: { id: string; titulo: string; sessaoExternaEm: string; inscrito: boolean }[];
+  precisaResponderTeambuilding: boolean;
 }
 
 type Estado = "a-carregar" | "por-identificar" | "pronto" | "erro";
@@ -380,6 +381,22 @@ export function BackofficeHome() {
                 {linkCopiado ? "Copiado!" : "Copiar link"}
               </button>
             </div>
+
+            {dados.precisaResponderTeambuilding && (
+              <>
+                <h2>Avisos</h2>
+                <div className="vqb-cartao">
+                  <span className="vqb-destaque-etiqueta">Teambuilding — 14 de novembro</span>
+                  <p className="vqb-destaque-texto" style={{ marginBottom: "1.1rem" }}>
+                    Inscreveste-te no Teambuilding — ajuda-nos a preparar o dia: responde a 4 perguntas
+                    rápidas sobre o que esperas e que formações gostavas de ver.
+                  </p>
+                  <Link href="/consultor/teambuilding" className="vqb-destaque-botao">
+                    Responder ao formulário
+                  </Link>
+                </div>
+              </>
+            )}
 
             <h2>Página da Equipa</h2>
             <div className="vqb-cartao">

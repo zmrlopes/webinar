@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { buscarMembroEquipa } from "@/lib/equipa";
 import { gerarSlug } from "@/lib/slug";
 import { buscarProximoWebinarPublico, buscarWebinarFormacao, listarFormacoesEquipa } from "@/lib/webinars";
+import { precisaResponderTeambuilding } from "@/lib/teambuilding";
 
 /**
  * Identifica o consultor no backoffice: valida o email em `equipa_afiliados`
@@ -42,10 +43,11 @@ export async function POST(request: Request): Promise<Response> {
     const protocolo = host.startsWith("localhost") ? "http" : "https";
     const link = `${protocolo}://${host}/${referencia}`;
 
-    const [formacao, proximoWebinar, formacoesEquipa] = await Promise.all([
+    const [formacao, proximoWebinar, formacoesEquipa, precisaResponderTeambuildingBool] = await Promise.all([
       buscarWebinarFormacao(),
       buscarProximoWebinarPublico(),
       listarFormacoesEquipa(),
+      precisaResponderTeambuilding(emailNormalizado),
     ]);
 
     async function jaInscrito(webinarId: string): Promise<boolean> {
@@ -83,6 +85,7 @@ export async function POST(request: Request): Promise<Response> {
         sessaoExternaEm: f.sessaoExternaEm,
         inscrito: formacoesEquipaInscritas[i],
       })),
+      precisaResponderTeambuilding: precisaResponderTeambuildingBool,
     });
   } catch (erro) {
     console.error("falha ao identificar consultor no backoffice:", erro);
