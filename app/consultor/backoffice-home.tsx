@@ -451,6 +451,9 @@ export function BackofficeHome() {
               >
                 Eventos
               </button>
+              <Link href="/consultor/objecoes" className="vqb-menu-item">
+                Ultrapassar objeções
+              </Link>
             </div>
 
             {seccaoAtiva === "sessoes" && (() => {
