@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listarInscritosSemResposta, listarRespostasTeambuilding } from "@/lib/teambuilding";
+import { BotaoNotificar } from "./botao-notificar";
 
 export const dynamic = "force-dynamic";
 
@@ -61,13 +62,16 @@ export default async function TeambuildingRespostasPagina() {
         {semResposta.length === 0 ? (
           <p className="ad-subtitulo">Toda a gente já respondeu.</p>
         ) : (
-          <div className="ad-pendentes">
-            {semResposta.map((p) => (
-              <span key={p.email} className="ad-etiqueta">
-                {p.nome} — {p.email}
-              </span>
-            ))}
-          </div>
+          <>
+            <BotaoNotificar total={semResposta.length} />
+            <div className="ad-pendentes">
+              {semResposta.map((p) => (
+                <span key={p.email} className="ad-etiqueta">
+                  {p.nome} — {p.email}
+                </span>
+              ))}
+            </div>
+          </>
         )}
 
         <h2>Respostas ({respostas.length})</h2>

@@ -1,4 +1,5 @@
 import { db } from "./db";
+import type { EmailSender } from "./email";
 
 /**
  * Só faz sentido perguntar a quem se inscreveu no evento — evento_inscricoes
@@ -88,4 +89,42 @@ export async function listarInscritosSemResposta(): Promise<InscritoSemResposta[
      order by ei.email, ei.criado_em desc`,
   );
   return rows;
+}
+
+export interface ResultadoNotificacaoTeambuilding {
+  enviados: number;
+  falhas: { email: string; erro: string }[];
+}
+
+/**
+ * Lembrete manual, disparado por um clique no admin (não automático) —
+ * avisa quem se inscreveu no Teambuilding e ainda não respondeu ao
+ * formulário. Uma falha a notificar alguém não trava as restantes.
+ */
+export async function notificarInscritosSemResposta(
+  sender: EmailSender,
+): Promise<ResultadoNotificacaoTeambuilding> {
+  const pendentes = await listarInscritosSemResposta();
+  const base = process.env.SITE_BASE_URL ?? "https://webinar.viajareviver.net";
+  const falhas: { email: string; erro: string }[] = [];
+  let enviados = 0;
+
+  for (const p of pendentes) {
+    try {
+      await sender.enviar({
+        destinatario: p.email,
+        assunto: `Ajuda-nos a preparar o Teambuilding de 14 de novembro`,
+        corpoTexto:
+          `Olá ${p.nome},\n\n` +
+          `Inscreveste-te no Teambuilding de 14 de novembro — ainda não respondeste ao formulário rápido ` +
+          `(4 perguntas) sobre o que esperas do dia e que formações gostavas de ver.\n\n` +
+          `Entra no teu painel e responde por lá (secção "Avisos"):\n${base}/consultor`,
+      });
+      enviados += 1;
+    } catch (erro) {
+      falhas.push({ email: p.email, erro: erro instanceof Error ? erro.message : String(erro) });
+    }
+  }
+
+  return { enviados, falhas };
 }
