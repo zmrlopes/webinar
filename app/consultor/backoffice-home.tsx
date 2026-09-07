@@ -333,6 +333,22 @@ export function BackofficeHome() {
           background: linear-gradient(135deg, #3a4118, #23280e);
         }
         .vqb-seccao { margin-top: 1.5rem; }
+        .vqb-avisos {
+          margin: 2rem 0;
+          padding: 1.75rem 0;
+          border-top: 2px solid #eae7de;
+          border-bottom: 2px solid #eae7de;
+        }
+        .vqb-avisos h2 { margin: 0 0 1rem; text-align: center; }
+        .vqb-aviso-destaque {
+          max-width: 420px;
+          margin: 0 auto;
+          background: #fbfaf6;
+          border: 2px solid #4b5320;
+          border-radius: 14px;
+          padding: 1.5rem 1.5rem 1.75rem;
+          box-shadow: 0 4px 18px rgba(75, 83, 32, 0.18);
+        }
       `}</style>
 
       <div className="vqb-caixa">
@@ -383,9 +399,9 @@ export function BackofficeHome() {
             </div>
 
             {dados.precisaResponderTeambuilding && (
-              <>
+              <div className="vqb-avisos">
                 <h2>Avisos</h2>
-                <div className="vqb-cartao">
+                <div className="vqb-aviso-destaque">
                   <span className="vqb-destaque-etiqueta">Teambuilding — 14 de novembro</span>
                   <p className="vqb-destaque-texto" style={{ marginBottom: "1.1rem" }}>
                     Inscreveste-te no Teambuilding — ajuda-nos a preparar o dia: responde a 4 perguntas
@@ -395,7 +411,7 @@ export function BackofficeHome() {
                     Responder ao formulário
                   </Link>
                 </div>
-              </>
+              </div>
             )}
 
             <h2>Página da Equipa</h2>
