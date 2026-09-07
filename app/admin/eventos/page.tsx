@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { listarConsultoresInscritosEventoPorLider } from "@/lib/admin";
 import {
   EVENTO_DATA_TEXTO,
@@ -107,7 +108,25 @@ export default async function AdminEventos() {
       `}</style>
 
       <div className="ad-caixa">
-        <h1>{EVENTO_TITULO}</h1>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: "0.75rem", flexWrap: "wrap" }}>
+          <h1>{EVENTO_TITULO}</h1>
+          <Link
+            href="/admin/teambuilding-respostas"
+            style={{
+              display: "inline-block",
+              background: "linear-gradient(135deg, #5d6b2a, #4b5320)",
+              color: "#ffffff",
+              borderRadius: "8px",
+              padding: "0.5rem 1rem",
+              fontSize: "0.85rem",
+              fontWeight: 700,
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Respostas ao formulário de preparação
+          </Link>
+        </div>
         <p className="ad-subtitulo">
           {EVENTO_DATA_TEXTO} · {EVENTO_LOCAL} · {EVENTO_PRECO_ADULTO}€ por pessoa — {totalPessoas}{" "}
           {totalPessoas === 1 ? "pessoa inscrita" : "pessoas inscritas"} · {totalPresentes} de {totalBilhetes}{" "}
