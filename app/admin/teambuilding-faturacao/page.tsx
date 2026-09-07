@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { listarInscritosComFaturacao } from "@/lib/teambuilding";
+import { TabelaFaturacao } from "./tabela-faturacao";
 
 export const dynamic = "force-dynamic";
 
 export default async function TeambuildingFaturacaoPagina() {
   const inscritos = await listarInscritosComFaturacao();
-  const ordenados = [...inscritos].sort((a, b) => (b.vendas ?? -1) - (a.vendas ?? -1));
 
   return (
     <main className="ad-pagina">
@@ -35,6 +35,21 @@ export default async function TeambuildingFaturacaoPagina() {
         .ad-tabela th { color: #6b6a63; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; }
         .ad-tabela tr:last-child td { border-bottom: none; }
         .ad-sem-dados { color: #6b6a63; font-style: italic; }
+        .ad-pagina button.ad-th-ordenar {
+          background: none;
+          border: none;
+          padding: 0;
+          margin: 0;
+          font: inherit;
+          text-transform: inherit;
+          letter-spacing: inherit;
+          color: inherit;
+          font-weight: inherit;
+          border-radius: 0;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+        .ad-pagina button.ad-th-ordenar:hover { color: #4b5320; }
       `}</style>
       <div className="ad-caixa">
         <Link href="/admin/eventos" className="ad-voltar">
@@ -42,41 +57,15 @@ export default async function TeambuildingFaturacaoPagina() {
         </Link>
         <h1>Inscritos — patamar e faturação</h1>
         <p className="ad-subtitulo">
-          {ordenados.length} inscrito(s). Patamar e faturação vêm do último CSV importado
-          (/admin/equipa/importar) — se aparecer &quot;sem dados&quot;, reimporta o CSV mais recente.
+          {inscritos.length} inscrito(s). Patamar e faturação vêm do último CSV importado
+          (/admin/equipa/importar) — se aparecer &quot;sem dados&quot;, reimporta o CSV mais recente. Clica
+          num título de coluna para ordenar por ela.
         </p>
 
-        {ordenados.length === 0 ? (
+        {inscritos.length === 0 ? (
           <p className="ad-subtitulo">Ainda sem inscrições.</p>
         ) : (
-          <div className="ad-tabela-wrap">
-            <table className="ad-tabela">
-              <thead>
-                <tr>
-                  <th>Nome</th>
-                  <th>Email</th>
-                  <th>Patamar</th>
-                  <th>Faturação própria</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ordenados.map((i) => (
-                  <tr key={i.email}>
-                    <td>{i.nome}</td>
-                    <td>{i.email}</td>
-                    <td>{i.nivel ?? <span className="ad-sem-dados">sem dados</span>}</td>
-                    <td>
-                      {i.vendas !== null ? (
-                        `${i.vendas.toLocaleString("pt-PT", { minimumFractionDigits: 2 })}€`
-                      ) : (
-                        <span className="ad-sem-dados">sem dados</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <TabelaFaturacao inscritos={inscritos} />
         )}
       </div>
     </main>
