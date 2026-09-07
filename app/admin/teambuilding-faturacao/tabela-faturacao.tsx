@@ -4,13 +4,16 @@ import { useMemo, useState } from "react";
 import type { InscritoFaturacao } from "@/lib/teambuilding";
 
 type Valor = string | number | null;
-type Chave = "nome" | "email" | "nivel" | "vendas";
+type Chave = "nome" | "email" | "nivel" | "vendas" | "adultos" | "criancasMais10" | "criancasMenos10";
 
 const COLUNAS: { chave: Chave; rotulo: string; valor: (i: InscritoFaturacao) => Valor }[] = [
   { chave: "nome", rotulo: "Nome", valor: (i) => i.nome },
   { chave: "email", rotulo: "Email", valor: (i) => i.email },
   { chave: "nivel", rotulo: "Patamar", valor: (i) => i.nivel },
   { chave: "vendas", rotulo: "Faturação própria", valor: (i) => i.vendas },
+  { chave: "adultos", rotulo: "Adultos", valor: (i) => i.adultos },
+  { chave: "criancasMais10", rotulo: "Crianças pagantes (+10)", valor: (i) => i.criancasMais10 },
+  { chave: "criancasMenos10", rotulo: "Crianças não pagantes (-10)", valor: (i) => i.criancasMenos10 },
 ];
 
 /** null/undefined ficam sempre no fim, independentemente da direção. */
@@ -78,6 +81,9 @@ export function TabelaFaturacao({ inscritos }: { inscritos: InscritoFaturacao[] 
                   <span className="ad-sem-dados">sem dados</span>
                 )}
               </td>
+              <td>{i.adultos}</td>
+              <td>{i.criancasMais10}</td>
+              <td>{i.criancasMenos10}</td>
             </tr>
           ))}
         </tbody>

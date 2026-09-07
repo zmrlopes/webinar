@@ -6,6 +6,9 @@ export const dynamic = "force-dynamic";
 
 export default async function TeambuildingFaturacaoPagina() {
   const inscritos = await listarInscritosComFaturacao();
+  const totalAdultos = inscritos.reduce((soma, i) => soma + i.adultos, 0);
+  const totalCriancasMais10 = inscritos.reduce((soma, i) => soma + i.criancasMais10, 0);
+  const totalCriancasMenos10 = inscritos.reduce((soma, i) => soma + i.criancasMenos10, 0);
 
   return (
     <main className="ad-pagina">
@@ -57,9 +60,10 @@ export default async function TeambuildingFaturacaoPagina() {
         </Link>
         <h1>Inscritos — patamar e faturação</h1>
         <p className="ad-subtitulo">
-          {inscritos.length} inscrito(s). Patamar e faturação vêm do último CSV importado
-          (/admin/equipa/importar) — se aparecer &quot;sem dados&quot;, reimporta o CSV mais recente. Clica
-          num título de coluna para ordenar por ela.
+          {inscritos.length} inscrito(s) — {totalAdultos} adulto(s), {totalCriancasMais10} criança(s)
+          pagante(s) (+10) e {totalCriancasMenos10} criança(s) não pagante(s) (-10). Patamar e faturação vêm
+          do último CSV importado (/admin/equipa/importar) — se aparecer &quot;sem dados&quot;, reimporta o
+          CSV mais recente. Clica num título de coluna para ordenar por ela.
         </p>
 
         {inscritos.length === 0 ? (

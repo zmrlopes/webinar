@@ -134,6 +134,9 @@ export interface InscritoFaturacao {
   email: string;
   nivel: string | null;
   vendas: number | null;
+  adultos: number;
+  criancasMais10: number;
+  criancasMenos10: number;
 }
 
 /**
@@ -142,6 +145,8 @@ export interface InscritoFaturacao {
  * plataforma de afiliados — ver src/lib/equipa-import.ts). `nivel`/`vendas`
  * ficam a null se o email não estiver em equipa_afiliados, ou se o CSV
  * ainda não tiver sido reimportado depois desta coluna passar a ser lida.
+ * Adultos/crianças são a soma de todas as inscrições desse email — uma
+ * pessoa pode ter-se inscrito mais do que uma vez.
  */
 export async function listarInscritosComFaturacao(): Promise<InscritoFaturacao[]> {
   const { rows } = await db().query<{
@@ -149,16 +154,25 @@ export async function listarInscritosComFaturacao(): Promise<InscritoFaturacao[]
     email: string;
     nivel: string | null;
     vendas: string | null;
+    adultos: string;
+    criancas_mais10: string;
+    criancas_menos10: string;
   }>(
-    `select distinct on (ei.email) ei.nome, ei.email, ea.nivel, ea.vendas
+    `select ei.email, max(ei.nome) as nome, max(ea.nivel) as nivel, max(ea.vendas) as vendas,
+            sum(ei.adultos) as adultos,
+            sum(ei.criancas_mais10) as criancas_mais10,
+            sum(ei.criancas_menos10) as criancas_menos10
      from evento_inscricoes ei
      left join equipa_afiliados ea on ea.email = ei.email
-     order by ei.email, ei.criado_em desc`,
+     group by ei.email`,
   );
   return rows.map((r) => ({
     nome: r.nome,
     email: r.email,
     nivel: r.nivel,
     vendas: r.vendas === null ? null : Number(r.vendas),
+    adultos: Number(r.adultos),
+    criancasMais10: Number(r.criancas_mais10),
+    criancasMenos10: Number(r.criancas_menos10),
   }));
 }
