@@ -10,12 +10,14 @@ export function GestorConhecimento({ itens }: { itens: ConhecimentoObjecao[] }) 
   const [conteudo, setConteudo] = useState("");
   const [aGuardar, setAGuardar] = useState(false);
   const [erro, setErro] = useState("");
+  const [ultimoResultado, setUltimoResultado] = useState<{ titulo: string; juntou: boolean } | null>(null);
   const [aApagar, setAApagar] = useState<string | null>(null);
 
   async function adicionar(): Promise<void> {
     if (!titulo.trim() || !conteudo.trim()) return;
     setAGuardar(true);
     setErro("");
+    setUltimoResultado(null);
     try {
       const resposta = await fetch("/api/admin/objecoes/conhecimento", {
         method: "POST",
@@ -30,6 +32,7 @@ export function GestorConhecimento({ itens }: { itens: ConhecimentoObjecao[] }) 
       }
       setTitulo("");
       setConteudo("");
+      setUltimoResultado({ titulo: corpo.titulo, juntou: corpo.juntou === true });
       router.refresh();
     } catch {
       setErro("falha de ligação — tenta outra vez");
@@ -72,8 +75,15 @@ export function GestorConhecimento({ itens }: { itens: ConhecimentoObjecao[] }) 
           />
         </div>
         {erro && <p className="ob-erro">{erro}</p>}
+        {ultimoResultado && (
+          <p className="ob-resultado">
+            {ultimoResultado.juntou
+              ? `Juntado ao tema já existente "${ultimoResultado.titulo}".`
+              : `Novo tema criado: "${ultimoResultado.titulo}".`}
+          </p>
+        )}
         <button type="button" disabled={!titulo.trim() || !conteudo.trim() || aGuardar} onClick={adicionar}>
-          {aGuardar ? "A adicionar…" : "Adicionar"}
+          {aGuardar ? "A verificar temas e a adicionar…" : "Adicionar"}
         </button>
       </div>
 

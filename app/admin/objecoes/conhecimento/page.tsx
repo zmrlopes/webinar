@@ -51,6 +51,7 @@ export default async function ConhecimentoObjecoesPagina() {
         }
         .ob-campo textarea { min-height: 7rem; resize: vertical; }
         .ob-erro { color: #c0392b; font-size: 0.9rem; margin: 0 0 1rem; }
+        .ob-resultado { color: #4b5320; font-size: 0.9rem; margin: 0 0 1rem; }
         .ob-cartao button {
           padding: 0.75rem 1.5rem;
           border: none;

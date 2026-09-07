@@ -16,8 +16,8 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
-    await adicionarConhecimentoObjecao(titulo.trim(), conteudo.trim());
-    return NextResponse.json({ ok: true });
+    const resultado = await adicionarConhecimentoObjecao(titulo.trim(), conteudo.trim());
+    return NextResponse.json(resultado);
   } catch (erro) {
     console.error("falha ao adicionar conhecimento de objeções:", erro);
     return NextResponse.json({ erro: "não foi possível gravar" }, { status: 500 });
