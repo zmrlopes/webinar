@@ -16,10 +16,10 @@ export default async function AdminEventos() {
     listarInscricoesEvento(),
     listarConsultoresInscritosEventoPorLider(),
   ]);
-  const totalPessoas = inscricoes.reduce(
-    (soma, i) => soma + i.adultos + i.criancasMais10 + i.criancasMenos10,
-    0,
-  );
+  const totalAdultos = inscricoes.reduce((soma, i) => soma + i.adultos, 0);
+  const totalCriancasMais10 = inscricoes.reduce((soma, i) => soma + i.criancasMais10, 0);
+  const totalCriancasMenos10 = inscricoes.reduce((soma, i) => soma + i.criancasMenos10, 0);
+  const totalPessoas = totalAdultos + totalCriancasMais10 + totalCriancasMenos10;
   const totalBilhetes = inscricoes.reduce((soma, i) => soma + i.bilhetes.length, 0);
   const totalPresentes = inscricoes.reduce(
     (soma, i) => soma + i.bilhetes.filter((b) => b.presente).length,
@@ -100,6 +100,15 @@ export default async function AdminEventos() {
           box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 6px rgba(0, 0, 0, 0.04);
           max-width: 480px;
         }
+        .ad-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+          gap: 1rem;
+          margin: 1.5rem 0;
+          max-width: 720px;
+        }
+        .ad-grid .ad-cartao { max-width: none; }
+        .ad-numero { font-size: 2rem; font-weight: 800; line-height: 1.1; color: #000000; }
         .ad-lider-linha { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem; }
         .ad-lider-etiqueta { flex: 0 0 140px; font-size: 0.85rem; }
         .ad-lider-barra-fundo { flex: 1; height: 10px; border-radius: 5px; background: #eee; overflow: hidden; }
@@ -168,6 +177,21 @@ export default async function AdminEventos() {
           {totalPessoas === 1 ? "pessoa inscrita" : "pessoas inscritas"} · {totalPresentes} de {totalBilhetes}{" "}
           {totalBilhetes === 1 ? "bilhete confirmado" : "bilhetes confirmados"}
         </p>
+
+        <div className="ad-grid">
+          <div className="ad-cartao">
+            <div className="ad-numero">{totalAdultos}</div>
+            <div className="ad-legenda">Adultos</div>
+          </div>
+          <div className="ad-cartao">
+            <div className="ad-numero">{totalCriancasMais10}</div>
+            <div className="ad-legenda">Crianças pagantes (+10)</div>
+          </div>
+          <div className="ad-cartao">
+            <div className="ad-numero">{totalCriancasMenos10}</div>
+            <div className="ad-legenda">Crianças não pagantes (-10)</div>
+          </div>
+        </div>
 
         {totalConsultoresPorLider > 0 && (
           <>
