@@ -1,12 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { lerEmailGuardado } from "../armazenamento";
 
 type Estado = "a-carregar" | "pronto" | "a-enviar" | "enviado" | "erro" | "sem-conta";
 
 export default function TeambuildingFormularioPagina() {
+  return (
+    <Suspense fallback={null}>
+      <TeambuildingFormulario />
+    </Suspense>
+  );
+}
+
+function TeambuildingFormulario() {
+  const searchParams = useSearchParams();
+  const emPreview = searchParams.get("preview") === "1";
   const [email, setEmail] = useState<string | null>(null);
   const [estado, setEstado] = useState<Estado>("a-carregar");
   const [erro, setErro] = useState("");
@@ -16,6 +27,10 @@ export default function TeambuildingFormularioPagina() {
   const [outros, setOutros] = useState("");
 
   useEffect(() => {
+    if (emPreview) {
+      setEstado("pronto");
+      return;
+    }
     const guardado = lerEmailGuardado();
     if (!guardado) {
       setEstado("sem-conta");
@@ -23,10 +38,14 @@ export default function TeambuildingFormularioPagina() {
     }
     setEmail(guardado);
     setEstado("pronto");
-  }, []);
+  }, [emPreview]);
 
   async function enviar(evento: React.FormEvent): Promise<void> {
     evento.preventDefault();
+    if (emPreview) {
+      setEstado("enviado");
+      return;
+    }
     if (!email) return;
     setEstado("a-enviar");
     setErro("");
@@ -112,11 +131,23 @@ export default function TeambuildingFormularioPagina() {
         )}
 
         {estado === "enviado" && (
-          <p className="vqt-mudo">✅ Obrigado! A tua resposta ficou registada.</p>
+          <p className="vqt-mudo">
+            {emPreview
+              ? "✅ (Pré-visualização) É isto que o consultor vê depois de enviar."
+              : "✅ Obrigado! A tua resposta ficou registada."}
+          </p>
         )}
 
         {(estado === "pronto" || estado === "a-enviar") && (
           <>
+            {emPreview && (
+              <p
+                className="vqt-mudo"
+                style={{ background: "#eef1e4", padding: "0.6rem 0.9rem", borderRadius: "8px" }}
+              >
+                Pré-visualização — é isto que o consultor vê. Enviar aqui não grava nada.
+              </p>
+            )}
             <p className="vqt-mudo">
               Queremos preparar o dia à volta do que a equipa realmente precisa — responde com calma, não há
               respostas certas ou erradas.

@@ -110,22 +110,42 @@ export default async function AdminEventos() {
       <div className="ad-caixa">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: "0.75rem", flexWrap: "wrap" }}>
           <h1>{EVENTO_TITULO}</h1>
-          <Link
-            href="/admin/teambuilding-respostas"
-            style={{
-              display: "inline-block",
-              background: "linear-gradient(135deg, #5d6b2a, #4b5320)",
-              color: "#ffffff",
-              borderRadius: "8px",
-              padding: "0.5rem 1rem",
-              fontSize: "0.85rem",
-              fontWeight: 700,
-              textDecoration: "none",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Respostas ao formulário de preparação
-          </Link>
+          <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+            <Link
+              href="/consultor/teambuilding?preview=1"
+              target="_blank"
+              style={{
+                display: "inline-block",
+                background: "transparent",
+                color: "#4b5320",
+                border: "1px solid #4b5320",
+                borderRadius: "8px",
+                padding: "0.5rem 1rem",
+                fontSize: "0.85rem",
+                fontWeight: 700,
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Pré-visualizar formulário
+            </Link>
+            <Link
+              href="/admin/teambuilding-respostas"
+              style={{
+                display: "inline-block",
+                background: "linear-gradient(135deg, #5d6b2a, #4b5320)",
+                color: "#ffffff",
+                borderRadius: "8px",
+                padding: "0.5rem 1rem",
+                fontSize: "0.85rem",
+                fontWeight: 700,
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Respostas ao formulário de preparação
+            </Link>
+          </div>
         </div>
         <p className="ad-subtitulo">
           {EVENTO_DATA_TEXTO} · {EVENTO_LOCAL} · {EVENTO_PRECO_ADULTO}€ por pessoa — {totalPessoas}{" "}
