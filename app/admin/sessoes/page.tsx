@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listarWebinarsAdmin, type WebinarAdmin } from "@/lib/admin";
 import { TITULO_WEBINAR_PUBLICO } from "@/lib/webinars";
+import { BotaoVerificarPresencas } from "./botao-verificar-presencas";
 
 export const dynamic = "force-dynamic";
 
@@ -160,9 +161,12 @@ export default async function AdminSessoes() {
       <div className="ad-caixa">
         <div className="ad-topo">
           <h1>Sessões</h1>
-          <Link href="/admin/formacoes/nova" className="ad-cartao-seta">
-            + Criar formação
-          </Link>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+            <BotaoVerificarPresencas />
+            <Link href="/admin/formacoes/nova" className="ad-cartao-seta">
+              + Criar formação
+            </Link>
+          </div>
         </div>
 
         <GrupoSessoes titulo="Webinares" webinars={webinares} />
