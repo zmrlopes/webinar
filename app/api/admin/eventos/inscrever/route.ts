@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { criarEmailSender } from "@/lib/email";
-import { estaoInscricoesAbertas, inscreverNoEventoEEnviarEmail } from "@/lib/eventos";
+import { inscreverNoEventoEEnviarEmail } from "@/lib/eventos";
 
 const TAMANHO_MAXIMO_COMPROVATIVO = 4 * 1024 * 1024; // 4MB — margem sob o limite de payload do Vercel
 const TIPOS_ACEITES = new Set(["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"]);
@@ -12,17 +12,13 @@ function inteiroValido(valor: FormDataEntryValue | null, minimo: number): number
 }
 
 /**
- * Inscrição no evento "Teambuilding Tropa de Elite", a partir do backoffice.
- * multipart/form-data porque inclui o ficheiro do comprovativo de
- * pagamento, guardado diretamente na base de dados (sem serviço de storage
- * externo) — ver src/lib/eventos.ts.
+ * Inscrição manual no evento, feita pelo admin — mesma lógica do
+ * formulário público (app/api/consultor/backoffice/evento/route.ts), mas
+ * sem verificar `estaoInscricoesAbertas()`: é precisamente a válvula para
+ * adicionar alguém depois de as inscrições públicas já terem fechado.
  */
 export async function POST(request: Request): Promise<Response> {
   try {
-    if (!(await estaoInscricoesAbertas())) {
-      return NextResponse.json({ erro: "as inscrições para este evento já estão encerradas" }, { status: 403 });
-    }
-
     const dados = await request.formData();
 
     const nome = dados.get("nome");
@@ -86,7 +82,7 @@ export async function POST(request: Request): Promise<Response> {
 
     return NextResponse.json({ total, emailEnviado });
   } catch (erro) {
-    console.error("falha ao registar inscrição no evento:", erro);
+    console.error("falha ao registar inscrição manual no evento:", erro);
     const mensagem = erro instanceof Error ? erro.message : String(erro);
     return NextResponse.json({ erro: `não foi possível concluir a inscrição (${mensagem})` }, { status: 500 });
   }

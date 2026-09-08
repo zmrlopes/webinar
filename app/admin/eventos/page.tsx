@@ -120,6 +120,22 @@ export default async function AdminEventos() {
           <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
             <BotaoEstadoInscricoes abertas={inscricoesAbertas} />
             <Link
+              href="/admin/eventos/nova-inscricao"
+              style={{
+                display: "inline-block",
+                background: "linear-gradient(135deg, #5d6b2a, #4b5320)",
+                color: "#ffffff",
+                borderRadius: "8px",
+                padding: "0.5rem 1rem",
+                fontSize: "0.85rem",
+                fontWeight: 700,
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Inscrição manual
+            </Link>
+            <Link
               href="/consultor/teambuilding?preview=1"
               target="_blank"
               style={{

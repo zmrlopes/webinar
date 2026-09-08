@@ -1,4 +1,7 @@
+import QRCode from "qrcode";
 import { db } from "./db";
+import type { AnexoMensagem, EmailSender } from "./email";
+import { gerarSlug } from "./slug";
 
 /** Detalhes do evento "Teambuilding Tropa de Elite" — só existe este por agora, sem tabela própria. */
 export const EVENTO_TITULO = "Teambuilding Tropa de Elite";
@@ -27,7 +30,7 @@ export async function definirInscricoesAbertas(abertas: boolean): Promise<void> 
   );
 }
 
-interface DadosInscricaoEvento {
+export interface DadosInscricaoEvento {
   nome: string;
   telemovel: string;
   email: string;
@@ -89,6 +92,57 @@ export async function registarInscricaoEvento(
   }
 
   return { id: inscricaoId, bilhetes };
+}
+
+export interface ResultadoInscricaoEvento {
+  id: string;
+  total: number;
+  emailEnviado: boolean;
+}
+
+/**
+ * Regista a inscrição e envia o email com um QR code por bilhete (um por
+ * adulto e por criança que paga) — usado tanto pelo formulário público do
+ * painel do consultor como pela inscrição manual no admin (ver
+ * app/api/admin/eventos/inscrever), para as duas nunca desalinharem. Uma
+ * falha a enviar o email não desfaz a inscrição — fica registada na mesma,
+ * só o `emailEnviado` vem a false para quem chamou avisar a pessoa.
+ */
+export async function inscreverNoEventoEEnviarEmail(
+  sender: EmailSender,
+  baseUrl: string,
+  dados: DadosInscricaoEvento,
+): Promise<ResultadoInscricaoEvento> {
+  const { id, bilhetes } = await registarInscricaoEvento(dados);
+  const total = calcularTotalEvento(dados.adultos, dados.criancasMais10);
+
+  let emailEnviado = true;
+  try {
+    const anexos: AnexoMensagem[] = await Promise.all(
+      bilhetes.map(async (bilhete) => {
+        const linkCheckin = `${baseUrl}/api/eventos/checkin/${bilhete.id}`;
+        const qrBuffer = await QRCode.toBuffer(linkCheckin, { width: 500, margin: 2 });
+        return { nome: `${gerarSlug(bilhete.rotulo)}.png`, conteudoBase64: qrBuffer.toString("base64") };
+      }),
+    );
+
+    await sender.enviar({
+      destinatario: dados.email,
+      assunto: `A tua inscrição no ${EVENTO_TITULO}`,
+      corpoTexto:
+        `Olá ${dados.nome},\n\n` +
+        `A tua inscrição no ${EVENTO_TITULO} (${EVENTO_DATA_TEXTO}, ${EVENTO_LOCAL}) está confirmada.\n\n` +
+        `Em anexo vai um QR code por cada pessoa (${bilhetes.map((b) => b.rotulo).join(", ")}) — ` +
+        `leva-os contigo no dia do evento, cada um vai ser lido à entrada para confirmar essa pessoa.\n\n` +
+        `Até lá!`,
+      anexos,
+    });
+  } catch (erroEmail) {
+    console.error("falha ao enviar o email com os QR codes do evento:", erroEmail);
+    emailEnviado = false;
+  }
+
+  return { id, total, emailEnviado };
 }
 
 export interface BilheteEvento {
