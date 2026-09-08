@@ -36,41 +36,49 @@ export async function processarPresencas(opts?: { esperaMinutos?: number }): Pro
   let presencasAtualizadas = 0;
 
   for (const sessao of sessoes) {
-    const { rows: pendentes } = await db().query<{ email: string }>(
-      `select email from registrations
-       where webinar_id = $1 and presenca = 'unknown' and cancelada_em is null`,
-      [sessao.id],
-    );
-
-    let atualizadasNestaSessao = 0;
-
-    if (pendentes.length > 0) {
-      const resultado = await pedirPresencas(
-        sessao.sessao_externa_id,
-        pendentes.map((r) => r.email),
+    // Uma sessão com um sessao_externa_id inválido/expirado do lado do
+    // Patrick (ex: já fora do alcance da API dele) não pode travar as
+    // restantes — sem isto, uma única sessão problemática impedia o cron
+    // de sequer chegar às outras, todas as vezes que corria.
+    try {
+      const { rows: pendentes } = await db().query<{ email: string }>(
+        `select email from registrations
+         where webinar_id = $1 and presenca = 'unknown' and cancelada_em is null`,
+        [sessao.id],
       );
 
-      for (const linha of resultado) {
-        const { rowCount } = await db().query(
-          `update registrations
-           set presenca = $1, presenca_minutos = $2
-           where webinar_id = $3 and email = $4 and presenca = 'unknown'`,
-          [linha.presenca, linha.minutos, sessao.id, linha.email],
+      let atualizadasNestaSessao = 0;
+
+      if (pendentes.length > 0) {
+        const resultado = await pedirPresencas(
+          sessao.sessao_externa_id,
+          pendentes.map((r) => r.email),
         );
-        atualizadasNestaSessao += rowCount ?? 0;
+
+        for (const linha of resultado) {
+          const { rowCount } = await db().query(
+            `update registrations
+             set presenca = $1, presenca_minutos = $2
+             where webinar_id = $3 and email = $4 and presenca = 'unknown'`,
+            [linha.presenca, linha.minutos, sessao.id, linha.email],
+          );
+          atualizadasNestaSessao += rowCount ?? 0;
+        }
+        presencasAtualizadas += atualizadasNestaSessao;
       }
-      presencasAtualizadas += atualizadasNestaSessao;
-    }
 
-    const fimPrevistoMs =
-      new Date(sessao.sessao_externa_em).getTime() + sessao.duracao_minutos * 60_000;
-    const horasDesdeOFim = (Date.now() - fimPrevistoMs) / (60 * 60_000);
+      const fimPrevistoMs =
+        new Date(sessao.sessao_externa_em).getTime() + sessao.duracao_minutos * 60_000;
+      const horasDesdeOFim = (Date.now() - fimPrevistoMs) / (60 * 60_000);
 
-    const restamPendentes = pendentes.length > atualizadasNestaSessao;
-    if (!restamPendentes || horasDesdeOFim >= 30) {
-      await db().query(`update webinars set presencas_fechadas = true where id = $1`, [
-        sessao.id,
-      ]);
+      const restamPendentes = pendentes.length > atualizadasNestaSessao;
+      if (!restamPendentes || horasDesdeOFim >= 30) {
+        await db().query(`update webinars set presencas_fechadas = true where id = $1`, [
+          sessao.id,
+        ]);
+      }
+    } catch (erro) {
+      console.error(`falha ao verificar presenças da sessão ${sessao.id}:`, erro);
     }
   }
 

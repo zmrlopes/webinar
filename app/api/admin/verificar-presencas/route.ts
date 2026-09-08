@@ -7,6 +7,12 @@ import { processarPresencas } from "@/lib/presencas";
  * agora a partir do browser, sem precisar do PC.
  */
 export async function POST(): Promise<Response> {
-  const resultado = await processarPresencas({ esperaMinutos: 0 });
-  return NextResponse.json(resultado);
+  try {
+    const resultado = await processarPresencas({ esperaMinutos: 0 });
+    return NextResponse.json(resultado);
+  } catch (erro) {
+    console.error("falha ao verificar presenças:", erro);
+    const mensagem = erro instanceof Error ? erro.message : String(erro);
+    return NextResponse.json({ erro: mensagem }, { status: 500 });
+  }
 }

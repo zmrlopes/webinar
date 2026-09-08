@@ -12,13 +12,16 @@ export function BotaoVerificarPresencas() {
   const router = useRouter();
   const [estado, setEstado] = useState<"pronto" | "a-correr" | "feito" | "erro">("pronto");
   const [resultado, setResultado] = useState<Resultado | null>(null);
+  const [erro, setErro] = useState("");
 
   async function verificar(): Promise<void> {
     setEstado("a-correr");
+    setErro("");
     try {
       const resposta = await fetch("/api/admin/verificar-presencas", { method: "POST" });
-      const dados = (await resposta.json()) as Resultado;
+      const dados = (await resposta.json().catch(() => ({}))) as Resultado & { erro?: string };
       if (!resposta.ok) {
+        setErro(dados.erro ?? "falha desconhecida");
         setEstado("erro");
         return;
       }
@@ -26,6 +29,7 @@ export function BotaoVerificarPresencas() {
       setEstado("feito");
       router.refresh();
     } catch {
+      setErro("falha de ligação");
       setEstado("erro");
     }
   }
@@ -54,7 +58,7 @@ export function BotaoVerificarPresencas() {
           presença(s) atualizada(s).
         </span>
       )}
-      {estado === "erro" && <span className="ad-mudo">Falha ao verificar — tenta outra vez.</span>}
+      {estado === "erro" && <span className="ad-mudo">Falha ao verificar: {erro}</span>}
     </div>
   );
 }
