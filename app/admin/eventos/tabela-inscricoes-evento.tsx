@@ -57,6 +57,7 @@ export function TabelaInscricoesEvento({ inscricoes }: { inscricoes: InscricaoEv
               <th>Compareceu</th>
               <th>Inscrito em</th>
               <th>Comprovativo</th>
+              <th>Email QR code</th>
             </tr>
           </thead>
           <tbody>
@@ -86,6 +87,15 @@ export function TabelaInscricoesEvento({ inscricoes }: { inscricoes: InscricaoEv
                   <a href={`/api/admin/eventos/comprovativo/${i.id}`} className="ad-download">
                     Descarregar
                   </a>
+                </td>
+                <td>
+                  {i.emailEnviado === null ? (
+                    <span style={{ color: "#6b6a63" }}>desconhecido</span>
+                  ) : i.emailEnviado ? (
+                    <span style={{ color: "#0ca30c" }}>enviado</span>
+                  ) : (
+                    <span style={{ color: "#c0392b" }}>falhou</span>
+                  )}
                 </td>
               </tr>
             ))}

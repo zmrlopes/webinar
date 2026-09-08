@@ -142,6 +142,8 @@ export async function inscreverNoEventoEEnviarEmail(
     emailEnviado = false;
   }
 
+  await db().query(`update evento_inscricoes set email_enviado = $1 where id = $2`, [emailEnviado, id]);
+
   return { id, total, emailEnviado };
 }
 
@@ -164,6 +166,7 @@ export interface InscricaoEvento {
   comprovativoNome: string | null;
   criadoEm: Date;
   bilhetes: BilheteEvento[];
+  emailEnviado: boolean | null;
 }
 
 /** Sem os bytes do comprovativo — só o essencial para a tabela do admin. */
@@ -180,9 +183,10 @@ export async function listarInscricoesEvento(): Promise<InscricaoEvento[]> {
       total_pagar: string;
       comprovativo_nome: string | null;
       criado_em: Date;
+      email_enviado: boolean | null;
     }>(
       `select id, nome, telemovel, email, adultos, criancas_mais10, criancas_menos10,
-              total_pagar, comprovativo_nome, criado_em
+              total_pagar, comprovativo_nome, criado_em, email_enviado
        from evento_inscricoes
        order by criado_em desc`,
     ),
@@ -214,6 +218,7 @@ export async function listarInscricoesEvento(): Promise<InscricaoEvento[]> {
     comprovativoNome: r.comprovativo_nome,
     criadoEm: r.criado_em,
     bilhetes: bilhetesPorInscricao.get(r.id) ?? [],
+    emailEnviado: r.email_enviado,
   }));
 }
 
