@@ -19,6 +19,8 @@ interface LeadConsolidado {
   trazidoPor: string | null;
   estado: EstadoLead | null;
   podeEditar: boolean;
+  objecao: string | null;
+  respostasObjecao: string[] | null;
 }
 
 interface SessaoResumo {
@@ -391,7 +393,12 @@ export function WebinaresPagina() {
                             </td>
                             {aba === "pessoais" && email && (
                               <td>
-                                <ObjecaoLead email={email} />
+                                <ObjecaoLead
+                                  email={email}
+                                  leadEmail={lead.email}
+                                  objecaoInicial={lead.objecao}
+                                  respostasIniciais={lead.respostasObjecao}
+                                />
                               </td>
                             )}
                           </tr>

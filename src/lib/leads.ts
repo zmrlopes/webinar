@@ -19,6 +19,8 @@ export interface LeadConsolidado {
   trazidoPor: string | null;
   estado: EstadoLead | null;
   podeEditar: boolean;
+  objecao: string | null;
+  respostasObjecao: string[] | null;
 }
 
 export interface ResumoLeads {
@@ -55,6 +57,8 @@ export async function listarLeadsConsolidado(
     referencia_email_mais_recente: string | null;
     pode_editar: boolean;
     estado: EstadoLead | null;
+    objecao: string | null;
+    respostas_objecao: string[] | null;
   }>(
     `select
        r.email,
@@ -73,16 +77,19 @@ export async function listarLeadsConsolidado(
        (array_agg(ea.nome order by r.criado_em desc))[1] as trazido_por_nome,
        (array_agg(r.referencia_email order by r.criado_em desc))[1] as referencia_email_mais_recente,
        bool_or(r.referencia_email = $3) as pode_editar,
-       el.estado
+       el.estado,
+       ol.objecao,
+       ol.respostas as respostas_objecao
      from registrations r
      join webinars w on w.id = r.webinar_id
      left join equipa_afiliados ea on ea.email = r.referencia_email
      left join estados_lead el on el.lead_email = r.email
+     left join objecoes_lead ol on ol.lead_email = r.email
      where w.titulo = $1
        and r.cancelada_em is null
        and r.referencia_email = any($2::text[])
        and not exists (select 1 from equipa_afiliados ea2 where ea2.email = r.email)
-     group by r.email, el.estado
+     group by r.email, el.estado, ol.objecao, ol.respostas
      order by max(r.criado_em) desc`,
     [TITULO_WEBINAR_PUBLICO, referenciaEmails, proprioEmail],
   );
@@ -99,6 +106,8 @@ export async function listarLeadsConsolidado(
     trazidoPor: r.referencia_email_mais_recente === proprioEmail ? null : r.trazido_por_nome,
     estado: r.estado,
     podeEditar: r.pode_editar,
+    objecao: r.objecao,
+    respostasObjecao: r.respostas_objecao,
   }));
 
   return {

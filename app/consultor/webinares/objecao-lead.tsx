@@ -4,23 +4,34 @@ import { useState } from "react";
 
 type Estado = "pronto" | "a-gerar";
 
-/** Caixa compacta por lead — gera hipóteses de resposta ali mesmo, sem sair da tabela. */
-export function ObjecaoLead({ email }: { email: string }) {
-  const [objecao, setObjecao] = useState("");
+interface Props {
+  email: string;
+  leadEmail: string;
+  objecaoInicial: string | null;
+  respostasIniciais: string[] | null;
+}
+
+/**
+ * Caixa compacta por lead — gera hipóteses de resposta ali mesmo, sem sair
+ * da tabela. O que aqui fica escrito é guardado por lead (ver
+ * guardarObjecaoLead em src/lib/objecoes.ts) para reaparecer quando o
+ * consultor voltar à tabela depois de responder à lead por fora.
+ */
+export function ObjecaoLead({ email, leadEmail, objecaoInicial, respostasIniciais }: Props) {
+  const [objecao, setObjecao] = useState(objecaoInicial ?? "");
   const [estado, setEstado] = useState<Estado>("pronto");
-  const [respostas, setRespostas] = useState<string[]>([]);
+  const [respostas, setRespostas] = useState<string[]>(respostasIniciais ?? []);
   const [erro, setErro] = useState("");
 
   async function gerar(): Promise<void> {
     if (!objecao.trim()) return;
     setEstado("a-gerar");
     setErro("");
-    setRespostas([]);
     try {
       const resposta = await fetch("/api/consultor/objecoes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, objecao }),
+        body: JSON.stringify({ email, objecao, leadEmail }),
       });
       const corpo = await resposta.json().catch(() => ({}));
       if (!resposta.ok) {

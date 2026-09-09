@@ -137,6 +137,40 @@ export async function apagarConhecimentoObjecao(id: string): Promise<void> {
 }
 
 /**
+ * Guarda a última objeção descrita (e as respostas geradas) para uma lead —
+ * para reaparecer na tabela de leads quando o consultor voltar, ver
+ * migrations/030_objecoes_lead.sql. Mesma regra de posse que
+ * `definirEstadoLead` em src/lib/leads.ts: só quem trouxe a lead pode
+ * guardar. Uma falha aqui não deve impedir mostrar as respostas geradas —
+ * quem chama trata isso como best-effort.
+ */
+export async function guardarObjecaoLead(
+  leadEmail: string,
+  objecao: string,
+  respostas: string[],
+  consultorEmail: string,
+): Promise<void> {
+  const { rows } = await db().query<{ existe: boolean }>(
+    `select exists(
+       select 1 from registrations
+       where email = $1 and referencia_email = $2 and cancelada_em is null
+     ) as existe`,
+    [leadEmail, consultorEmail],
+  );
+  if (!rows[0]?.existe) {
+    throw new Error("não podes guardar a objeção de uma lead que não trouxeste");
+  }
+
+  await db().query(
+    `insert into objecoes_lead (lead_email, objecao, respostas, atualizado_em)
+     values ($1, $2, $3, now())
+     on conflict (lead_email) do update
+       set objecao = excluded.objecao, respostas = excluded.respostas, atualizado_em = now()`,
+    [leadEmail, objecao, JSON.stringify(respostas)],
+  );
+}
+
+/**
  * Importação feita aqui dentro (não no topo do ficheiro) de propósito — só
  * é usada quando alguém anexa mesmo um PDF; carregá-la sempre que este
  * ficheiro é importado arriscava levar a página de listagem de conhecimento
