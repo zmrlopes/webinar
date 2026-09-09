@@ -137,21 +137,23 @@ export async function apagarConhecimentoObjecao(id: string): Promise<void> {
 }
 
 /**
- * Importação feita aqui dentro (não no topo do ficheiro) de propósito — é
- * uma biblioteca pesada, só usada quando alguém anexa mesmo um PDF; carregá-la
- * sempre que este ficheiro é importado arriscava levar a página de listagem
- * de conhecimento (que nem PDFs precisa de ler) a abaixo se algo corresse
- * mal a carregá-la.
+ * Importação feita aqui dentro (não no topo do ficheiro) de propósito — só
+ * é usada quando alguém anexa mesmo um PDF; carregá-la sempre que este
+ * ficheiro é importado arriscava levar a página de listagem de conhecimento
+ * (que nem PDFs precisa de ler) a abaixo se algo corresse mal a carregá-la.
+ *
+ * Nota: usa `unpdf` (não `pdf-parse`) de propósito — testadas as duas: a
+ * `pdf-parse` 2.x depende de um binário nativo que não carrega no ambiente
+ * da Vercel ("DOMMatrix is not defined"), e a 1.x (JavaScript puro) falha a
+ * ler PDFs normais gerados por ferramentas atuais ("bad XRef entry" — usa
+ * uma versão do pdf.js demasiado antiga). A `unpdf` é feita mesmo para
+ * ambientes serverless, sem binários nativos, e lê tudo isto sem problemas.
  */
 async function extrairTextoPdf(bytes: Buffer): Promise<string> {
-  const { PDFParse } = await import("pdf-parse");
-  const parser = new PDFParse({ data: bytes });
-  try {
-    const resultado = await parser.getText();
-    return resultado.text;
-  } finally {
-    await parser.destroy();
-  }
+  const { extractText, getDocumentProxy } = await import("unpdf");
+  const documento = await getDocumentProxy(new Uint8Array(bytes));
+  const { text } = await extractText(documento, { mergePages: true });
+  return text;
 }
 
 /** Linha única (id=1) — ver migrations/028_objecoes_diretrizes_gerais.sql. */
