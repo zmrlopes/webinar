@@ -192,6 +192,22 @@ export async function adicionarConhecimentoObjecaoPdf(
   return resultado;
 }
 
+/** Linha única (id=1) — ver migrations/028_objecoes_diretrizes_gerais.sql. */
+export async function obterDiretrizesGeraisObjecoes(): Promise<string> {
+  const { rows } = await db().query<{ conteudo: string }>(
+    `select conteudo from objecoes_diretrizes_gerais where id = 1`,
+  );
+  return rows[0]?.conteudo ?? "";
+}
+
+export async function guardarDiretrizesGeraisObjecoes(conteudo: string): Promise<void> {
+  await db().query(
+    `insert into objecoes_diretrizes_gerais (id, conteudo) values (1, $1)
+     on conflict (id) do update set conteudo = excluded.conteudo`,
+    [conteudo],
+  );
+}
+
 export async function buscarPdfConhecimentoObjecao(
   id: string,
 ): Promise<{ bytes: Buffer; nome: string } | undefined> {
@@ -217,10 +233,16 @@ export async function buscarPdfConhecimentoObjecao(
  * a apresentação, a tentar ajudar essa pessoa a avançar.
  */
 export async function gerarRespostasObjecao(objecao: string): Promise<string[]> {
-  const conhecimento = await listarConhecimentoObjecoes();
+  const [diretrizesGerais, conhecimento] = await Promise.all([
+    obterDiretrizesGeraisObjecoes(),
+    listarConhecimentoObjecoes(),
+  ]);
+  const blocoDiretrizesGerais = diretrizesGerais.trim()
+    ? `Diretrizes gerais a seguir em TODAS as respostas, sejam quais forem os temas abaixo:\n${diretrizesGerais.trim()}\n\n`
+    : "";
   const blocoConhecimento =
     conhecimento.length === 0
-      ? "(ainda não há nenhuma diretriz guardada — responde com cautela genérica, sem inventar valores, políticas ou promessas específicas da empresa)"
+      ? "(ainda não há nenhuma diretriz por tema guardada — responde com cautela genérica, sem inventar valores, políticas ou promessas específicas da empresa)"
       : conhecimento.map((c) => `## ${c.titulo}\n${c.conteudo}`).join("\n\n");
 
   const textoResposta = await chamarClaude(
@@ -229,6 +251,7 @@ export async function gerarRespostasObjecao(objecao: string): Promise<string[]> 
       `indecisas quanto a começar o negócio como consultor(a) de viagens (ex: "não tenho dinheiro para ` +
       `investir agora", "não tenho tempo", "não sei se consigo vender", "tenho medo de não dar certo") — ` +
       `não são objeções de venda de pacotes de viagem a clientes, são dúvidas sobre entrar no negócio.\n\n` +
+      `${blocoDiretrizesGerais}` +
       `Usa só o conhecimento abaixo, fornecido pela equipa — não inventes valores, políticas ou ` +
       `promessas que não estejam aqui:\n\n${blocoConhecimento}\n\n` +
       `Quando o consultor descrever a dúvida da lead, responde SÓ com um JSON neste formato exato, ` +

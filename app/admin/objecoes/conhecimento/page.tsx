@@ -1,11 +1,15 @@
 import Link from "next/link";
-import { listarConhecimentoObjecoes } from "@/lib/objecoes";
+import { listarConhecimentoObjecoes, obterDiretrizesGeraisObjecoes } from "@/lib/objecoes";
+import { DiretrizesGerais } from "./diretrizes-gerais";
 import { GestorConhecimento } from "./gestor-conhecimento";
 
 export const dynamic = "force-dynamic";
 
 export default async function ConhecimentoObjecoesPagina() {
-  const itens = await listarConhecimentoObjecoes();
+  const [itens, diretrizesGerais] = await Promise.all([
+    listarConhecimentoObjecoes(),
+    obterDiretrizesGeraisObjecoes(),
+  ]);
 
   return (
     <main className="ad-pagina">
@@ -29,6 +33,12 @@ export default async function ConhecimentoObjecoesPagina() {
           border-radius: 12px;
           padding: 1.5rem;
         }
+        .ob-cartao-diretrizes {
+          margin-bottom: 2rem;
+          border-color: #4b5320;
+          background: #f2f4ea;
+        }
+        .ob-secao { color: #000000; font-size: 1.05rem; margin: 0 0 0.4rem; }
         .ob-campo { margin-bottom: 1.1rem; }
         .ob-campo label {
           display: block;
@@ -106,6 +116,12 @@ export default async function ConhecimentoObjecoesPagina() {
         <p className="ad-subtitulo">
           Diretrizes, exemplos e referências que o assistente de objeções (painel do consultor) usa para
           construir as respostas. Adiciona quantas entradas quiseres — todas são consultadas de cada vez.
+        </p>
+        <DiretrizesGerais inicial={diretrizesGerais} />
+        <h2 className="ob-secao">Conhecimento por tema</h2>
+        <p className="ad-subtitulo">
+          Ao contrário das diretrizes gerais acima, isto só entra na resposta quando o tema bate certo
+          com a dúvida da lead.
         </p>
         <GestorConhecimento itens={itens} />
       </div>
