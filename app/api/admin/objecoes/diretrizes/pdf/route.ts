@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { adicionarPdfDiretrizesGerais } from "@/lib/objecoes";
 
-const TAMANHO_MAXIMO_PDF = 8 * 1024 * 1024; // 8MB — margem sob o limite de payload do Vercel
+// 4MB — a Vercel rejeita o pedido inteiro (sem sequer chegar a este código)
+// acima de ~4.5MB, por isso tem de ficar bem abaixo disso, não perto.
+const TAMANHO_MAXIMO_PDF = 4 * 1024 * 1024;
 
 export async function POST(request: Request): Promise<Response> {
   try {

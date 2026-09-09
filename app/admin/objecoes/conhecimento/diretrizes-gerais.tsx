@@ -4,6 +4,11 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { PdfDiretrizesGerais } from "@/lib/objecoes";
 
+// A Vercel rejeita o pedido inteiro acima de ~4.5MB, antes de chegar ao
+// código — por isso avisa-se aqui já, em vez de deixar tentar e falhar com
+// um erro confuso.
+const TAMANHO_MAXIMO_PDF = 4 * 1024 * 1024;
+
 export function DiretrizesGerais({ inicial, pdfs }: { inicial: string; pdfs: PdfDiretrizesGerais[] }) {
   const router = useRouter();
   const [conteudo, setConteudo] = useState(inicial);
@@ -39,15 +44,23 @@ export function DiretrizesGerais({ inicial, pdfs }: { inicial: string; pdfs: Pdf
 
   async function enviarPdf(): Promise<void> {
     if (!pdf) return;
+    if (pdf.size > TAMANHO_MAXIMO_PDF) {
+      setErroPdf(`este PDF tem ${(pdf.size / 1024 / 1024).toFixed(1)}MB — o máximo é 4MB`);
+      return;
+    }
     setAEnviarPdf(true);
     setErroPdf("");
     try {
       const dados = new FormData();
       dados.set("pdf", pdf);
       const resposta = await fetch("/api/admin/objecoes/diretrizes/pdf", { method: "POST", body: dados });
-      const corpo = await resposta.json().catch(() => ({}));
+      const corpo = await resposta.json().catch(() => null);
       if (!resposta.ok) {
-        setErroPdf(typeof corpo.erro === "string" ? corpo.erro : "não foi possível gravar");
+        setErroPdf(
+          corpo && typeof corpo.erro === "string"
+            ? corpo.erro
+            : `não foi possível gravar (o servidor respondeu ${resposta.status}, provavelmente o ficheiro é grande demais)`,
+        );
         return;
       }
       setPdf(null);
