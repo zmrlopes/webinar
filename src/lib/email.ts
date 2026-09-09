@@ -19,8 +19,8 @@ export interface EmailSender {
 /**
  * Implementação por omissão: só regista no log, não envia nada a sério.
  *
- * Usada como recurso (fallback) quando não há `BREVO_API_KEY` configurada —
- * ver `criarEmailSender()` mais abaixo.
+ * Usada como recurso (fallback) quando não há nenhum fornecedor de email
+ * configurado — ver `criarEmailSender()` mais abaixo.
  */
 export class ConsoleEmailSender implements EmailSender {
   async enviar(mensagem: Mensagem): Promise<void> {
@@ -76,11 +76,100 @@ export class BrevoEmailSender implements EmailSender {
 }
 
 /**
- * Com BREVO_API_KEY definida, envia a sério; sem ela, só regista no log
- * (útil em desenvolvimento, sem custos nem risco de mandar email a ninguém).
+ * Envia a sério, pela ActiveCampaign — não tem uma API de "enviar este email
+ * agora" como a Brevo, então o truque é: atualizar dois campos do contacto
+ * (assunto e corpo, já prontos como texto simples, ver
+ * migrations/pastas... na conta AC) e disparar uma automação de um único
+ * passo ("Enviar email" com %ASSUNTO_EMAIL% e %CORPO_EMAIL%) que lê esses
+ * campos. Não suporta anexos — a ActiveCampaign não tem forma de anexar um
+ * ficheiro gerado dinamicamente (como o QR code do evento) dentro de uma
+ * automação, por isso `criarEmailSender()` mais abaixo manda essas
+ * mensagens à Brevo mesmo que a ActiveCampaign esteja configurada.
+ */
+export class ActiveCampaignEmailSender implements EmailSender {
+  async enviar(mensagem: Mensagem): Promise<void> {
+    const chave = process.env.ACTIVECAMPAIGN_API_KEY;
+    const base = process.env.ACTIVECAMPAIGN_API_URL;
+    const automacaoId = process.env.ACTIVECAMPAIGN_AUTOMATION_ID;
+    if (!chave || !base || !automacaoId) {
+      throw new Error(
+        "variáveis de ambiente em falta: ACTIVECAMPAIGN_API_KEY / ACTIVECAMPAIGN_API_URL / ACTIVECAMPAIGN_AUTOMATION_ID",
+      );
+    }
+
+    const cabecalhos = {
+      "Api-Token": chave,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    };
+
+    const respostaContacto = await fetch(`${base}/api/3/contact/sync`, {
+      method: "POST",
+      headers: cabecalhos,
+      body: JSON.stringify({
+        contact: {
+          email: mensagem.destinatario,
+          fieldValues: [
+            { field: ACTIVECAMPAIGN_CAMPO_ASSUNTO, value: mensagem.assunto },
+            { field: ACTIVECAMPAIGN_CAMPO_CORPO, value: mensagem.corpoTexto },
+          ],
+        },
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!respostaContacto.ok) {
+      const corpo = await respostaContacto.text();
+      throw new Error(`ActiveCampaign devolveu ${respostaContacto.status} ao criar/atualizar contacto: ${corpo}`);
+    }
+    const dadosContacto = (await respostaContacto.json()) as { contact: { id: string } };
+
+    const respostaAutomacao = await fetch(`${base}/api/3/contactAutomations`, {
+      method: "POST",
+      headers: cabecalhos,
+      body: JSON.stringify({
+        contactAutomation: { contact: dadosContacto.contact.id, automation: automacaoId },
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!respostaAutomacao.ok) {
+      const corpo = await respostaAutomacao.text();
+      throw new Error(`ActiveCampaign devolveu ${respostaAutomacao.status} ao disparar a automação: ${corpo}`);
+    }
+  }
+}
+
+/** IDs dos campos "Assunto do email (sistema)" e "Corpo do email (sistema)" criados na conta AC. */
+const ACTIVECAMPAIGN_CAMPO_ASSUNTO = "33";
+const ACTIVECAMPAIGN_CAMPO_CORPO = "34";
+
+/** Manda sempre para quem sabe lidar com anexos (Brevo) — a ActiveCampaign não suporta. */
+class EmailSenderComFallbackParaAnexos implements EmailSender {
+  constructor(
+    private readonly padrao: EmailSender,
+    private readonly paraAnexos: EmailSender,
+  ) {}
+
+  async enviar(mensagem: Mensagem): Promise<void> {
+    const sender = mensagem.anexos && mensagem.anexos.length > 0 ? this.paraAnexos : this.padrao;
+    await sender.enviar(mensagem);
+  }
+}
+
+/**
+ * Com ACTIVECAMPAIGN_API_KEY/API_URL/AUTOMATION_ID definidas, envia por ali
+ * (exceto emails com anexos, que vão sempre pela Brevo — ver
+ * ActiveCampaignEmailSender). Sem isso, cai na Brevo sozinha como antes; sem
+ * nenhuma das duas, só regista no log.
  */
 export function criarEmailSender(): EmailSender {
-  return process.env.BREVO_API_KEY ? new BrevoEmailSender() : new ConsoleEmailSender();
+  const brevo = process.env.BREVO_API_KEY ? new BrevoEmailSender() : null;
+  const activeCampaign =
+    process.env.ACTIVECAMPAIGN_API_KEY && process.env.ACTIVECAMPAIGN_API_URL && process.env.ACTIVECAMPAIGN_AUTOMATION_ID
+      ? new ActiveCampaignEmailSender()
+      : null;
+
+  if (activeCampaign && brevo) return new EmailSenderComFallbackParaAnexos(activeCampaign, brevo);
+  return activeCampaign ?? brevo ?? new ConsoleEmailSender();
 }
 
 interface RegistroParaEmail {
