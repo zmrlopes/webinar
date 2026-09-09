@@ -1,4 +1,3 @@
-import { PDFParse } from "pdf-parse";
 import { db } from "./db";
 
 export interface ConhecimentoObjecao {
@@ -147,7 +146,15 @@ export async function apagarConhecimentoObjecao(id: string): Promise<void> {
   await db().query(`delete from conhecimento_objecoes where id = $1`, [id]);
 }
 
+/**
+ * Importação feita aqui dentro (não no topo do ficheiro) de propósito — é
+ * uma biblioteca pesada, só usada quando alguém anexa mesmo um PDF; carregá-la
+ * sempre que este ficheiro é importado arriscava levar a página de listagem
+ * de conhecimento (que nem PDFs precisa de ler) a abaixo se algo corresse
+ * mal a carregá-la.
+ */
 async function extrairTextoPdf(bytes: Buffer): Promise<string> {
+  const { PDFParse } = await import("pdf-parse");
   const parser = new PDFParse({ data: bytes });
   try {
     const resultado = await parser.getText();
