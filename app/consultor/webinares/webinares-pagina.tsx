@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { lerEmailGuardado } from "../armazenamento";
+import { ObjecaoLead } from "./objecao-lead";
 import { SessaoUnica } from "./sessao-unica";
 
 type EstadoLead = "follow_up" | "convertido" | "desistiu";
@@ -155,6 +156,40 @@ export function WebinaresPagina() {
           border: 1px solid #000000;
         }
         .vqw-tabela { width: 100%; min-width: 950px; border-collapse: collapse; background: #f7f6f3; }
+        .vqw-tabela th:last-child, .vqw-tabela td:last-child { min-width: 220px; }
+        .vqw-objecao { display: flex; flex-direction: column; gap: 0.4rem; }
+        .vqw-objecao textarea {
+          box-sizing: border-box;
+          width: 100%;
+          min-height: 3rem;
+          resize: vertical;
+          padding: 0.4rem 0.55rem;
+          border-radius: 6px;
+          border: 1px solid #cfcdc3;
+          font-size: 0.82rem;
+          font-family: inherit;
+        }
+        .vqw-objecao button {
+          align-self: flex-start;
+          background: #4b5320;
+          color: #ffffff;
+          border: none;
+          border-radius: 6px;
+          padding: 0.3rem 0.7rem;
+          font-size: 0.78rem;
+          font-weight: 600;
+          cursor: pointer;
+        }
+        .vqw-objecao button:disabled { opacity: 0.5; cursor: default; }
+        .vqw-objecao-erro { color: #b3261e; font-size: 0.8rem; margin: 0; }
+        .vqw-objecao-resposta {
+          background: #ffffff;
+          border: 1px solid #eae7de;
+          border-radius: 6px;
+          padding: 0.4rem 0.55rem;
+          font-size: 0.8rem;
+          margin: 0;
+        }
         .vqw-tabela th, .vqw-tabela td {
           text-align: left;
           padding: 0.6rem 0.9rem;
@@ -303,6 +338,7 @@ export function WebinaresPagina() {
                           <th>% assistência</th>
                           <th>Última sessão assistida</th>
                           <th>Estado</th>
+                          {aba === "pessoais" && <th>Ultrapassar objeção</th>}
                         </tr>
                       </thead>
                       <tbody>
@@ -353,6 +389,11 @@ export function WebinaresPagina() {
                                 )}
                               </div>
                             </td>
+                            {aba === "pessoais" && email && (
+                              <td>
+                                <ObjecaoLead email={email} />
+                              </td>
+                            )}
                           </tr>
                         ))}
                       </tbody>
