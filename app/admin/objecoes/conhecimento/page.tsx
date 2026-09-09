@@ -50,6 +50,17 @@ export default async function ConhecimentoObjecoesPagina() {
           font-family: inherit;
         }
         .ob-campo textarea { min-height: 7rem; resize: vertical; }
+        .ob-campo textarea:disabled, .ob-campo input:disabled { opacity: 0.5; }
+        .ob-ou { text-align: center; color: #6b6a63; font-size: 0.8rem; margin: -0.4rem 0 1.1rem; }
+        .ob-pdf-escolhido { color: #4b5320; font-size: 0.85rem; margin: 0.4rem 0 0; }
+        .ob-pdf-link {
+          display: inline-block;
+          margin-top: 0.5rem;
+          color: #4b5320;
+          font-size: 0.85rem;
+          text-decoration: none;
+        }
+        .ob-pdf-link:hover { text-decoration: underline; }
         .ob-erro { color: #c0392b; font-size: 0.9rem; margin: 0 0 1rem; }
         .ob-resultado { color: #4b5320; font-size: 0.9rem; margin: 0 0 1rem; }
         .ob-cartao button {
