@@ -22,6 +22,7 @@ export function ObjecaoLead({ email, leadEmail, objecaoInicial, respostasIniciai
   const [estado, setEstado] = useState<Estado>("pronto");
   const [respostas, setRespostas] = useState<string[]>(respostasIniciais ?? []);
   const [erro, setErro] = useState("");
+  const [abertas, setAbertas] = useState(false);
 
   async function gerar(): Promise<void> {
     if (!objecao.trim()) return;
@@ -40,6 +41,7 @@ export function ObjecaoLead({ email, leadEmail, objecaoInicial, respostasIniciai
         return;
       }
       setRespostas(Array.isArray(corpo.respostas) ? corpo.respostas : []);
+      setAbertas(true);
       setEstado("pronto");
     } catch {
       setErro("falha de ligação — tenta outra vez");
@@ -55,15 +57,23 @@ export function ObjecaoLead({ email, leadEmail, objecaoInicial, respostasIniciai
         placeholder="Qual é a dúvida dela?"
         disabled={estado === "a-gerar"}
       />
-      <button type="button" disabled={!objecao.trim() || estado === "a-gerar"} onClick={gerar}>
-        {estado === "a-gerar" ? "A pensar…" : "Gerar respostas"}
-      </button>
+      <div className="vqw-objecao-botoes">
+        <button type="button" disabled={!objecao.trim() || estado === "a-gerar"} onClick={gerar}>
+          {estado === "a-gerar" ? "A pensar…" : "Gerar respostas"}
+        </button>
+        {respostas.length > 0 && (
+          <button type="button" className="vqw-objecao-toggle" onClick={() => setAbertas(!abertas)}>
+            {abertas ? "Esconder respostas" : `Ver respostas (${respostas.length})`}
+          </button>
+        )}
+      </div>
       {erro && <p className="vqw-objecao-erro">{erro}</p>}
-      {respostas.map((r, i) => (
-        <p className="vqw-objecao-resposta" key={i}>
-          <strong>{i + 1}.</strong> {r}
-        </p>
-      ))}
+      {abertas &&
+        respostas.map((r, i) => (
+          <p className="vqw-objecao-resposta" key={i}>
+            <strong>{i + 1}.</strong> {r}
+          </p>
+        ))}
     </div>
   );
 }

@@ -171,8 +171,8 @@ export function WebinaresPagina() {
           font-size: 0.82rem;
           font-family: inherit;
         }
+        .vqw-objecao-botoes { display: flex; gap: 0.4rem; flex-wrap: wrap; }
         .vqw-objecao button {
-          align-self: flex-start;
           background: #4b5320;
           color: #ffffff;
           border: none;
@@ -183,6 +183,11 @@ export function WebinaresPagina() {
           cursor: pointer;
         }
         .vqw-objecao button:disabled { opacity: 0.5; cursor: default; }
+        .vqw-objecao-toggle {
+          background: transparent !important;
+          color: #4b5320 !important;
+          border: 1px solid #4b5320 !important;
+        }
         .vqw-objecao-erro { color: #b3261e; font-size: 0.8rem; margin: 0; }
         .vqw-objecao-resposta {
           background: #ffffff;
