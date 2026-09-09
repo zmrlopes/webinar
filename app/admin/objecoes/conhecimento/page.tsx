@@ -1,14 +1,19 @@
 import Link from "next/link";
-import { listarConhecimentoObjecoes, obterDiretrizesGeraisObjecoes } from "@/lib/objecoes";
+import {
+  listarConhecimentoObjecoes,
+  listarPdfsDiretrizesGerais,
+  obterDiretrizesGeraisObjecoes,
+} from "@/lib/objecoes";
 import { DiretrizesGerais } from "./diretrizes-gerais";
 import { GestorConhecimento } from "./gestor-conhecimento";
 
 export const dynamic = "force-dynamic";
 
 export default async function ConhecimentoObjecoesPagina() {
-  const [itens, diretrizesGerais] = await Promise.all([
+  const [itens, diretrizesGerais, pdfsDiretrizesGerais] = await Promise.all([
     listarConhecimentoObjecoes(),
     obterDiretrizesGeraisObjecoes(),
+    listarPdfsDiretrizesGerais(),
   ]);
 
   return (
@@ -71,6 +76,20 @@ export default async function ConhecimentoObjecoesPagina() {
           text-decoration: none;
         }
         .ob-pdf-link:hover { text-decoration: underline; }
+        .ob-pdfs-lista {
+          list-style: none;
+          margin: 1rem 0 0;
+          padding: 0;
+        }
+        .ob-pdfs-lista li {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          padding: 0.5rem 0;
+          border-top: 1px solid #dedcd3;
+        }
+        .ob-pdfs-lista .ob-pdf-link { margin: 0; }
         .ob-erro { color: #c0392b; font-size: 0.9rem; margin: 0 0 1rem; }
         .ob-resultado { color: #4b5320; font-size: 0.9rem; margin: 0 0 1rem; }
         .ob-cartao button {
@@ -117,7 +136,7 @@ export default async function ConhecimentoObjecoesPagina() {
           Diretrizes, exemplos e referências que o assistente de objeções (painel do consultor) usa para
           construir as respostas. Adiciona quantas entradas quiseres — todas são consultadas de cada vez.
         </p>
-        <DiretrizesGerais inicial={diretrizesGerais} />
+        <DiretrizesGerais inicial={diretrizesGerais} pdfs={pdfsDiretrizesGerais} />
         <h2 className="ob-secao">Conhecimento por tema</h2>
         <p className="ad-subtitulo">
           Ao contrário das diretrizes gerais acima, isto só entra na resposta quando o tema bate certo

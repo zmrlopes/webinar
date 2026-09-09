@@ -1,12 +1,19 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import type { PdfDiretrizesGerais } from "@/lib/objecoes";
 
-export function DiretrizesGerais({ inicial }: { inicial: string }) {
+export function DiretrizesGerais({ inicial, pdfs }: { inicial: string; pdfs: PdfDiretrizesGerais[] }) {
+  const router = useRouter();
   const [conteudo, setConteudo] = useState(inicial);
   const [aGuardar, setAGuardar] = useState(false);
   const [guardado, setGuardado] = useState(false);
   const [erro, setErro] = useState("");
+  const [pdf, setPdf] = useState<File | null>(null);
+  const [aEnviarPdf, setAEnviarPdf] = useState(false);
+  const [erroPdf, setErroPdf] = useState("");
+  const [aApagarPdf, setAApagarPdf] = useState<string | null>(null);
 
   async function guardar(): Promise<void> {
     setAGuardar(true);
@@ -30,6 +37,39 @@ export function DiretrizesGerais({ inicial }: { inicial: string }) {
     }
   }
 
+  async function enviarPdf(): Promise<void> {
+    if (!pdf) return;
+    setAEnviarPdf(true);
+    setErroPdf("");
+    try {
+      const dados = new FormData();
+      dados.set("pdf", pdf);
+      const resposta = await fetch("/api/admin/objecoes/diretrizes/pdf", { method: "POST", body: dados });
+      const corpo = await resposta.json().catch(() => ({}));
+      if (!resposta.ok) {
+        setErroPdf(typeof corpo.erro === "string" ? corpo.erro : "não foi possível gravar");
+        return;
+      }
+      setPdf(null);
+      router.refresh();
+    } catch {
+      setErroPdf("falha de ligação — tenta outra vez");
+    } finally {
+      setAEnviarPdf(false);
+    }
+  }
+
+  async function apagarPdf(id: string): Promise<void> {
+    if (!window.confirm("Apagar este PDF das diretrizes gerais?")) return;
+    setAApagarPdf(id);
+    try {
+      await fetch(`/api/admin/objecoes/diretrizes/pdf/${id}/apagar`, { method: "POST" });
+      router.refresh();
+    } finally {
+      setAApagarPdf(null);
+    }
+  }
+
   return (
     <div className="ob-cartao ob-cartao-diretrizes">
       <div className="ob-campo">
@@ -49,6 +89,41 @@ export function DiretrizesGerais({ inicial }: { inicial: string }) {
       <button type="button" disabled={aGuardar} onClick={guardar}>
         {aGuardar ? "A guardar…" : "Guardar diretrizes gerais"}
       </button>
+
+      <p className="ob-ou">— e/ou anexa PDFs, também sempre incluídos —</p>
+      <div className="ob-campo">
+        <label htmlFor="ob-diretrizes-pdf">PDF</label>
+        <input
+          id="ob-diretrizes-pdf"
+          type="file"
+          accept="application/pdf"
+          onChange={(e) => setPdf(e.target.files?.[0] ?? null)}
+        />
+      </div>
+      {erroPdf && <p className="ob-erro">{erroPdf}</p>}
+      <button type="button" disabled={!pdf || aEnviarPdf} onClick={enviarPdf}>
+        {aEnviarPdf ? "A ler o PDF e a adicionar…" : "Adicionar PDF"}
+      </button>
+
+      {pdfs.length > 0 && (
+        <ul className="ob-pdfs-lista">
+          {pdfs.map((p) => (
+            <li key={p.id}>
+              <a href={`/api/admin/objecoes/diretrizes/pdf/${p.id}`} className="ob-pdf-link">
+                📄 {p.nome}
+              </a>
+              <button
+                type="button"
+                className="ob-apagar"
+                disabled={aApagarPdf === p.id}
+                onClick={() => apagarPdf(p.id)}
+              >
+                {aApagarPdf === p.id ? "A apagar…" : "Apagar"}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

@@ -8,31 +8,22 @@ export function GestorConhecimento({ itens }: { itens: ConhecimentoObjecao[] }) 
   const router = useRouter();
   const [titulo, setTitulo] = useState("");
   const [conteudo, setConteudo] = useState("");
-  const [pdf, setPdf] = useState<File | null>(null);
   const [aGuardar, setAGuardar] = useState(false);
   const [erro, setErro] = useState("");
   const [ultimoResultado, setUltimoResultado] = useState<{ titulo: string; juntou: boolean } | null>(null);
   const [aApagar, setAApagar] = useState<string | null>(null);
 
   async function adicionar(): Promise<void> {
-    if (!titulo.trim() || (!conteudo.trim() && !pdf)) return;
+    if (!titulo.trim() || !conteudo.trim()) return;
     setAGuardar(true);
     setErro("");
     setUltimoResultado(null);
     try {
-      let resposta: Response;
-      if (pdf) {
-        const dados = new FormData();
-        dados.set("titulo", titulo);
-        dados.set("pdf", pdf);
-        resposta = await fetch("/api/admin/objecoes/conhecimento/pdf", { method: "POST", body: dados });
-      } else {
-        resposta = await fetch("/api/admin/objecoes/conhecimento", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ titulo, conteudo }),
-        });
-      }
+      const resposta = await fetch("/api/admin/objecoes/conhecimento", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ titulo, conteudo }),
+      });
       const corpo = await resposta.json().catch(() => ({}));
       if (!resposta.ok) {
         setErro(typeof corpo.erro === "string" ? corpo.erro : "não foi possível gravar");
@@ -41,7 +32,6 @@ export function GestorConhecimento({ itens }: { itens: ConhecimentoObjecao[] }) 
       }
       setTitulo("");
       setConteudo("");
-      setPdf(null);
       setUltimoResultado({ titulo: corpo.titulo, juntou: corpo.juntou === true });
       router.refresh();
     } catch {
@@ -81,20 +71,8 @@ export function GestorConhecimento({ itens }: { itens: ConhecimentoObjecao[] }) 
             id="ob-conteudo"
             value={conteudo}
             onChange={(e) => setConteudo(e.target.value)}
-            disabled={pdf !== null}
             placeholder="Diretriz, exemplo, referência ou conhecimento que o assistente deve usar..."
           />
-        </div>
-        <p className="ob-ou">— ou, em vez de escrever, anexa um PDF —</p>
-        <div className="ob-campo">
-          <label htmlFor="ob-pdf">PDF</label>
-          <input
-            id="ob-pdf"
-            type="file"
-            accept="application/pdf"
-            onChange={(e) => setPdf(e.target.files?.[0] ?? null)}
-          />
-          {pdf && <p className="ob-pdf-escolhido">Vai extrair o texto de "{pdf.name}".</p>}
         </div>
         {erro && <p className="ob-erro">{erro}</p>}
         {ultimoResultado && (
@@ -104,12 +82,8 @@ export function GestorConhecimento({ itens }: { itens: ConhecimentoObjecao[] }) 
               : `Novo tema criado: "${ultimoResultado.titulo}".`}
           </p>
         )}
-        <button
-          type="button"
-          disabled={!titulo.trim() || (!conteudo.trim() && !pdf) || aGuardar}
-          onClick={adicionar}
-        >
-          {aGuardar ? (pdf ? "A ler o PDF e a adicionar…" : "A verificar temas e a adicionar…") : "Adicionar"}
+        <button type="button" disabled={!titulo.trim() || !conteudo.trim() || aGuardar} onClick={adicionar}>
+          {aGuardar ? "A verificar temas e a adicionar…" : "Adicionar"}
         </button>
       </div>
 
@@ -121,11 +95,6 @@ export function GestorConhecimento({ itens }: { itens: ConhecimentoObjecao[] }) 
             <div>
               <strong>{item.titulo}</strong>
               <p>{item.conteudo}</p>
-              {item.pdfNome && (
-                <a href={`/api/admin/objecoes/conhecimento/${item.id}/pdf`} className="ob-pdf-link">
-                  📄 {item.pdfNome}
-                </a>
-              )}
             </div>
             <button
               type="button"

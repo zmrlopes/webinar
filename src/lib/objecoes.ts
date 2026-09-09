@@ -5,7 +5,6 @@ export interface ConhecimentoObjecao {
   titulo: string;
   conteudo: string;
   criadoEm: Date;
-  pdfNome: string | null;
 }
 
 export async function listarConhecimentoObjecoes(): Promise<ConhecimentoObjecao[]> {
@@ -14,17 +13,8 @@ export async function listarConhecimentoObjecoes(): Promise<ConhecimentoObjecao[
     titulo: string;
     conteudo: string;
     criado_em: Date;
-    pdf_nome: string | null;
-  }>(
-    `select id, titulo, conteudo, criado_em, pdf_nome from conhecimento_objecoes order by criado_em asc`,
-  );
-  return rows.map((r) => ({
-    id: r.id,
-    titulo: r.titulo,
-    conteudo: r.conteudo,
-    criadoEm: r.criado_em,
-    pdfNome: r.pdf_nome,
-  }));
+  }>(`select id, titulo, conteudo, criado_em from conhecimento_objecoes order by criado_em asc`);
+  return rows.map((r) => ({ id: r.id, titulo: r.titulo, conteudo: r.conteudo, criadoEm: r.criado_em }));
 }
 
 /**
@@ -164,34 +154,6 @@ async function extrairTextoPdf(bytes: Buffer): Promise<string> {
   }
 }
 
-/**
- * Igual a `adicionarConhecimentoObjecao`, mas a partir de um PDF em vez de
- * texto escrito à mão — extrai o texto e segue a mesma lógica de juntar a um
- * tema já existente ou criar um novo. O ficheiro original só fica guardado
- * quando cria um tema novo (numa junção, o texto extra entra no `conteudo`
- * do tema já existente, que pode já ter o seu próprio PDF de origem).
- */
-export async function adicionarConhecimentoObjecaoPdf(
-  titulo: string,
-  pdfBytes: Buffer,
-  pdfNome: string,
-): Promise<ResultadoAdicionarConhecimento> {
-  const textoExtraido = (await extrairTextoPdf(pdfBytes)).trim();
-  if (!textoExtraido) {
-    throw new Error("não foi possível ler texto deste PDF — pode ser só imagens ou estar protegido");
-  }
-
-  const resultado = await adicionarConhecimentoObjecao(titulo, textoExtraido);
-  if (!resultado.juntou) {
-    await db().query(`update conhecimento_objecoes set pdf_nome = $2, pdf_bytes = $3 where titulo = $1`, [
-      resultado.titulo,
-      pdfNome,
-      pdfBytes,
-    ]);
-  }
-  return resultado;
-}
-
 /** Linha única (id=1) — ver migrations/028_objecoes_diretrizes_gerais.sql. */
 export async function obterDiretrizesGeraisObjecoes(): Promise<string> {
   const { rows } = await db().query<{ conteudo: string }>(
@@ -208,16 +170,57 @@ export async function guardarDiretrizesGeraisObjecoes(conteudo: string): Promise
   );
 }
 
-export async function buscarPdfConhecimentoObjecao(
+export interface PdfDiretrizesGerais {
+  id: string;
+  nome: string;
+  criadoEm: Date;
+}
+
+/** Sem o texto/bytes — só o essencial para listar em admin/objecoes/conhecimento. */
+export async function listarPdfsDiretrizesGerais(): Promise<PdfDiretrizesGerais[]> {
+  const { rows } = await db().query<{ id: string; nome: string; criado_em: Date }>(
+    `select id, nome, criado_em from objecoes_diretrizes_pdfs order by criado_em asc`,
+  );
+  return rows.map((r) => ({ id: r.id, nome: r.nome, criadoEm: r.criado_em }));
+}
+
+/**
+ * Ao contrário do conhecimento por tema, um PDF anexado aqui entra sempre em
+ * TODAS as respostas, tal como as diretrizes gerais escritas à mão — por
+ * isso não passa pela lógica de "juntar a um tema existente", cada PDF fica
+ * na sua própria linha, sempre incluído.
+ */
+export async function adicionarPdfDiretrizesGerais(nome: string, bytes: Buffer): Promise<void> {
+  const texto = (await extrairTextoPdf(bytes)).trim();
+  if (!texto) {
+    throw new Error("não foi possível ler texto deste PDF — pode ser só imagens ou estar protegido");
+  }
+  await db().query(`insert into objecoes_diretrizes_pdfs (nome, texto, bytes) values ($1, $2, $3)`, [
+    nome,
+    texto,
+    bytes,
+  ]);
+}
+
+export async function apagarPdfDiretrizesGerais(id: string): Promise<void> {
+  await db().query(`delete from objecoes_diretrizes_pdfs where id = $1`, [id]);
+}
+
+export async function buscarPdfDiretrizesGerais(
   id: string,
 ): Promise<{ bytes: Buffer; nome: string } | undefined> {
-  const { rows } = await db().query<{ pdf_bytes: Buffer | null; pdf_nome: string | null }>(
-    `select pdf_bytes, pdf_nome from conhecimento_objecoes where id = $1`,
+  const { rows } = await db().query<{ bytes: Buffer; nome: string }>(
+    `select bytes, nome from objecoes_diretrizes_pdfs where id = $1`,
     [id],
   );
-  const r = rows[0];
-  if (!r || !r.pdf_bytes || !r.pdf_nome) return undefined;
-  return { bytes: r.pdf_bytes, nome: r.pdf_nome };
+  return rows[0];
+}
+
+async function listarTextosPdfsDiretrizesGerais(): Promise<{ nome: string; texto: string }[]> {
+  const { rows } = await db().query<{ nome: string; texto: string }>(
+    `select nome, texto from objecoes_diretrizes_pdfs`,
+  );
+  return rows;
 }
 
 /**
@@ -233,13 +236,19 @@ export async function buscarPdfConhecimentoObjecao(
  * a apresentação, a tentar ajudar essa pessoa a avançar.
  */
 export async function gerarRespostasObjecao(objecao: string): Promise<string[]> {
-  const [diretrizesGerais, conhecimento] = await Promise.all([
+  const [diretrizesGerais, pdfsDiretrizesGerais, conhecimento] = await Promise.all([
     obterDiretrizesGeraisObjecoes(),
+    listarTextosPdfsDiretrizesGerais(),
     listarConhecimentoObjecoes(),
   ]);
-  const blocoDiretrizesGerais = diretrizesGerais.trim()
-    ? `Diretrizes gerais a seguir em TODAS as respostas, sejam quais forem os temas abaixo:\n${diretrizesGerais.trim()}\n\n`
-    : "";
+  const partesDiretrizesGerais = [
+    diretrizesGerais.trim(),
+    ...pdfsDiretrizesGerais.map((p) => `## ${p.nome}\n${p.texto}`),
+  ].filter((p) => p !== "");
+  const blocoDiretrizesGerais =
+    partesDiretrizesGerais.length > 0
+      ? `Diretrizes gerais a seguir em TODAS as respostas, sejam quais forem os temas abaixo:\n${partesDiretrizesGerais.join("\n\n")}\n\n`
+      : "";
   const blocoConhecimento =
     conhecimento.length === 0
       ? "(ainda não há nenhuma diretriz por tema guardada — responde com cautela genérica, sem inventar valores, políticas ou promessas específicas da empresa)"
