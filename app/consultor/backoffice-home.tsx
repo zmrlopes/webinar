@@ -302,8 +302,8 @@ export function BackofficeHome() {
         .vqb-destaque-data { margin: 0 0 0.75rem; color: #6b6a63; font-size: 0.95rem; }
         .vqb-destaque-texto { margin: 0 0 1.1rem; color: #6b6a63; font-size: 0.9rem; }
         .vqb-destaque-botao { display: block; width: 100%; text-align: center; padding: 0.85rem; font-size: 1.05rem; }
-        .vqb-cartao-icligo { background: #fff6ef; border-color: #e8590c; }
-        .vqb-destaque-etiqueta-icligo { color: #d9540a; display: flex; align-items: center; gap: 0.4rem; }
+        .vqb-cartao-icligo { background: #fff2ee; border-color: #f0603f; }
+        .vqb-destaque-etiqueta-icligo { color: #e0532f; display: flex; align-items: center; gap: 0.4rem; }
         .vqb-icligo-badge {
           display: inline-flex;
           align-items: center;
@@ -311,7 +311,7 @@ export function BackofficeHome() {
           width: 1.1rem;
           height: 1.1rem;
           border-radius: 50%;
-          background: linear-gradient(135deg, #ff8a3d, #e8590c);
+          background: linear-gradient(135deg, #f5895f, #f0603f);
           color: #ffffff;
           font-size: 0.65rem;
           font-weight: 800;
@@ -326,7 +326,7 @@ export function BackofficeHome() {
           box-sizing: border-box;
         }
         .vqb-pagina a.vqb-destaque-botao-icligo {
-          background: linear-gradient(135deg, #ff8a3d, #e8590c);
+          background: linear-gradient(135deg, #f5895f, #f0603f);
         }
         .vqb-menu { display: flex; gap: 0.6rem; flex-wrap: wrap; margin: 1.75rem 0 0; }
         .vqb-pagina button.vqb-menu-item,
