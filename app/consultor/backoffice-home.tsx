@@ -304,18 +304,7 @@ export function BackofficeHome() {
         .vqb-destaque-botao { display: block; width: 100%; text-align: center; padding: 0.85rem; font-size: 1.05rem; }
         .vqb-cartao-icligo { background: #fff2ee; border-color: #f0603f; }
         .vqb-destaque-etiqueta-icligo { color: #e0532f; display: flex; align-items: center; gap: 0.4rem; }
-        .vqb-icligo-badge {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          width: 1.1rem;
-          height: 1.1rem;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #f5895f, #f0603f);
-          color: #ffffff;
-          font-size: 0.65rem;
-          font-weight: 800;
-        }
+        .vqb-icligo-badge { display: inline-flex; width: 1.1rem; height: 1.1rem; }
         .vqb-destaque-data-icligo { margin: 0 0 1.1rem; color: #6b6a63; font-size: 0.95rem; }
         .vqb-pagina a.vqb-destaque-botao {
           background: linear-gradient(135deg, #5d6b2a, #4b5320);
@@ -568,7 +557,7 @@ export function BackofficeHome() {
                       return (
                         <div className="vqb-cartao vqb-cartao-icligo" key={s.id}>
                           <span className="vqb-destaque-etiqueta vqb-destaque-etiqueta-icligo">
-                            <span className="vqb-icligo-badge">iC</span>
+                            <img src="/icligo-logo.png" alt="" className="vqb-icligo-badge" />
                             Formação iCliGo
                           </span>
                           <h3 className="vqb-destaque-titulo">{s.titulo}</h3>
