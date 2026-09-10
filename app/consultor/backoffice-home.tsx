@@ -222,7 +222,7 @@ export function BackofficeHome() {
           padding: 2.5rem 1.25rem 4rem;
           min-height: calc(100vh - 4rem);
         }
-        .vqb-caixa { max-width: 760px; margin: 0 auto; }
+        .vqb-caixa { max-width: 1100px; margin: 0 auto; }
         .vqb-pagina h1 { color: #000000; font-size: 1.6rem; margin: 0 0 0.4rem; }
         .vqb-pagina h2 { color: #4b5320; font-size: 1.15rem; margin: 2rem 0 0.6rem; }
         .vqb-mudo { color: #6b6a63; font-size: 0.9rem; margin: 0 0 1.25rem; }
@@ -342,6 +342,14 @@ export function BackofficeHome() {
           background: linear-gradient(135deg, #3a4118, #23280e);
         }
         .vqb-seccao { margin-top: 1.5rem; }
+        .vqb-sessoes-grade {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 1rem;
+        }
+        .vqb-sessoes-grade .vqb-cartao { margin: 0; height: 100%; display: flex; flex-direction: column; }
+        .vqb-sessoes-grade .vqb-cartao + .vqb-cartao { margin-top: 0; }
+        .vqb-sessoes-grade .vqb-destaque-botao { margin-top: auto; }
         .vqb-avisos {
           margin: 2rem 0;
           padding: 1.75rem 0;
@@ -485,7 +493,7 @@ export function BackofficeHome() {
               );
 
               return (
-                <div className="vqb-seccao">
+                <div className="vqb-seccao vqb-sessoes-grade">
                   {sessoes.length === 0 && (
                     <p className="vqb-mudo">Sem sessões agendadas de momento.</p>
                   )}
@@ -569,7 +577,6 @@ export function BackofficeHome() {
                             target="_blank"
                             rel="noreferrer"
                             className="vqb-destaque-botao vqb-destaque-botao-icligo"
-                            style={{ display: "inline-block", textDecoration: "none", textAlign: "center" }}
                           >
                             Ir para a formação
                           </a>
