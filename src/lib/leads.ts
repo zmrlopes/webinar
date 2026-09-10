@@ -21,6 +21,7 @@ export interface LeadConsolidado {
   podeEditar: boolean;
   objecao: string | null;
   respostasObjecao: string[] | null;
+  assistiuCorrigido: boolean;
 }
 
 export interface ResumoLeads {
@@ -59,13 +60,15 @@ export async function listarLeadsConsolidado(
     estado: EstadoLead | null;
     objecao: string | null;
     respostas_objecao: string[] | null;
+    assistiu_manual: boolean | null;
   }>(
     `select
        r.email,
        (array_agg(r.nome order by r.criado_em desc))[1] as nome,
        (array_agg(r.telemovel order by r.criado_em desc))[1] as telemovel,
        count(*) as sessoes_feitas,
-       bool_or(r.presenca = 'attended') as assistiu,
+       coalesce(pm.assistiu, bool_or(r.presenca = 'attended')) as assistiu,
+       pm.assistiu as assistiu_manual,
        max(
          case
            when r.presenca = 'attended' and r.presenca_minutos is not null and w.duracao_minutos > 0
@@ -85,11 +88,12 @@ export async function listarLeadsConsolidado(
      left join equipa_afiliados ea on ea.email = r.referencia_email
      left join estados_lead el on el.lead_email = r.email
      left join objecoes_lead ol on ol.lead_email = r.email
+     left join presenca_manual_lead pm on pm.lead_email = r.email
      where w.titulo = $1
        and r.cancelada_em is null
        and r.referencia_email = any($2::text[])
        and not exists (select 1 from equipa_afiliados ea2 where ea2.email = r.email)
-     group by r.email, el.estado, ol.objecao, ol.respostas
+     group by r.email, el.estado, ol.objecao, ol.respostas, pm.assistiu
      order by max(r.criado_em) desc`,
     [TITULO_WEBINAR_PUBLICO, referenciaEmails, proprioEmail],
   );
@@ -108,6 +112,7 @@ export async function listarLeadsConsolidado(
     podeEditar: r.pode_editar,
     objecao: r.objecao,
     respostasObjecao: r.respostas_objecao,
+    assistiuCorrigido: r.assistiu_manual !== null,
   }));
 
   return {
@@ -147,6 +152,37 @@ export async function definirEstadoLead(
      on conflict (lead_email) do update
        set estado = excluded.estado, atualizado_por = excluded.atualizado_por, atualizado_em = now()`,
     [leadEmail, estado, consultorEmail],
+  );
+}
+
+/**
+ * Correção manual do "assistiu" — a sala Zoom partilhada do Patrick às
+ * vezes marca presença errada, e isto dá ao consultor que trouxe a lead
+ * forma de corrigir. Mesma regra de posse que `definirEstadoLead`; fica
+ * sempre a valer sobre o cálculo automático (ver listarLeadsConsolidado).
+ */
+export async function definirPresencaManualLead(
+  leadEmail: string,
+  assistiu: boolean,
+  consultorEmail: string,
+): Promise<void> {
+  const { rows } = await db().query<{ existe: boolean }>(
+    `select exists(
+       select 1 from registrations
+       where email = $1 and referencia_email = $2 and cancelada_em is null
+     ) as existe`,
+    [leadEmail, consultorEmail],
+  );
+  if (!rows[0]?.existe) {
+    throw new Error("não podes corrigir a presença de uma lead que não trouxeste");
+  }
+
+  await db().query(
+    `insert into presenca_manual_lead (lead_email, assistiu, atualizado_por, atualizado_em)
+     values ($1, $2, $3, now())
+     on conflict (lead_email) do update
+       set assistiu = excluded.assistiu, atualizado_por = excluded.atualizado_por, atualizado_em = now()`,
+    [leadEmail, assistiu, consultorEmail],
   );
 }
 

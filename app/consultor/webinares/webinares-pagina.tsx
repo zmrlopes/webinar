@@ -21,6 +21,7 @@ interface LeadConsolidado {
   podeEditar: boolean;
   objecao: string | null;
   respostasObjecao: string[] | null;
+  assistiuCorrigido: boolean;
 }
 
 interface SessaoResumo {
@@ -108,6 +109,24 @@ export function WebinaresPagina() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, leadEmail, estado }),
+      });
+      if (resposta.ok) {
+        await carregar(email);
+      }
+    } finally {
+      setAAtualizar(null);
+    }
+  }
+
+  /** Corrige "assistiu" à mão — a sala Zoom partilhada do Patrick às vezes marca presença errada. */
+  async function mudarPresenca(leadEmail: string, assistiu: boolean): Promise<void> {
+    if (!email) return;
+    setAAtualizar(leadEmail);
+    try {
+      const resposta = await fetch("/api/consultor/backoffice/presenca", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, leadEmail, assistiu }),
       });
       if (resposta.ok) {
         await carregar(email);
@@ -232,6 +251,8 @@ export function WebinaresPagina() {
         .vqw-tabela button.vqw-pilula.vqw-ativa-follow_up { background: #f1e6c9; color: #4a3c10; border-color: #e2cf94; }
         .vqw-tabela button.vqw-pilula.vqw-ativa-convertido { background: #e4f3e4; color: #0ca30c; border-color: #c9e8c9; }
         .vqw-tabela button.vqw-pilula.vqw-ativa-desistiu { background: #f8e2e0; color: #a33; border-color: #f0c4c1; }
+        .vqw-tabela button.vqw-pilula-assistiu { background: #e4f3e4; color: #0ca30c; border-color: #c9e8c9; }
+        .vqw-tabela button.vqw-pilula-assistiu.vqw-inativa { background: #eee; color: #999; border-color: #ddd; }
         .vqw-pilula.vqw-ativa-follow_up { background: #f1e6c9; color: #4a3c10; border-color: #e2cf94; }
         .vqw-pilula.vqw-ativa-convertido { background: #e4f3e4; color: #0ca30c; border-color: #c9e8c9; }
         .vqw-pilula.vqw-ativa-desistiu { background: #f8e2e0; color: #a33; border-color: #f0c4c1; }
@@ -368,9 +389,35 @@ export function WebinaresPagina() {
                             </td>
                             <td>
                               <div className="vqw-estados">
-                                <span className={lead.assistiu ? "vqw-pilula vqw-pilula-assistiu" : "vqw-pilula vqw-pilula-assistiu vqw-inativa"}>
-                                  Assistiu
-                                </span>
+                                {aba === "pessoais" ? (
+                                  <button
+                                    type="button"
+                                    className={
+                                      lead.assistiu
+                                        ? "vqw-pilula vqw-pilula-assistiu"
+                                        : "vqw-pilula vqw-pilula-assistiu vqw-inativa"
+                                    }
+                                    disabled={aAtualizar === lead.email}
+                                    title={
+                                      lead.assistiuCorrigido
+                                        ? "Corrigido à mão — clica para trocar"
+                                        : "Clica para corrigir, se a sala Zoom marcou mal"
+                                    }
+                                    onClick={() => mudarPresenca(lead.email, !lead.assistiu)}
+                                  >
+                                    Assistiu{lead.assistiuCorrigido ? " ✎" : ""}
+                                  </button>
+                                ) : (
+                                  <span
+                                    className={
+                                      lead.assistiu
+                                        ? "vqw-pilula vqw-pilula-assistiu"
+                                        : "vqw-pilula vqw-pilula-assistiu vqw-inativa"
+                                    }
+                                  >
+                                    Assistiu
+                                  </span>
+                                )}
                                 {aba === "pessoais" ? (
                                   ESTADOS.map((e) => (
                                     <button
