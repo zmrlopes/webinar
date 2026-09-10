@@ -302,6 +302,21 @@ export function BackofficeHome() {
         .vqb-destaque-data { margin: 0 0 0.75rem; color: #6b6a63; font-size: 0.95rem; }
         .vqb-destaque-texto { margin: 0 0 1.1rem; color: #6b6a63; font-size: 0.9rem; }
         .vqb-destaque-botao { display: block; width: 100%; text-align: center; padding: 0.85rem; font-size: 1.05rem; }
+        .vqb-cartao-icligo { background: #fff6ef; border-color: #e8590c; }
+        .vqb-destaque-etiqueta-icligo { color: #d9540a; display: flex; align-items: center; gap: 0.4rem; }
+        .vqb-icligo-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 1.1rem;
+          height: 1.1rem;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #ff8a3d, #e8590c);
+          color: #ffffff;
+          font-size: 0.65rem;
+          font-weight: 800;
+        }
+        .vqb-destaque-data-icligo { margin: 0 0 1.1rem; color: #6b6a63; font-size: 0.95rem; }
         .vqb-pagina a.vqb-destaque-botao {
           background: linear-gradient(135deg, #5d6b2a, #4b5320);
           color: #ffffff;
@@ -309,6 +324,9 @@ export function BackofficeHome() {
           font-weight: 700;
           text-decoration: none;
           box-sizing: border-box;
+        }
+        .vqb-pagina a.vqb-destaque-botao-icligo {
+          background: linear-gradient(135deg, #ff8a3d, #e8590c);
         }
         .vqb-menu { display: flex; gap: 0.6rem; flex-wrap: wrap; margin: 1.75rem 0 0; }
         .vqb-pagina button.vqb-menu-item,
@@ -548,15 +566,20 @@ export function BackofficeHome() {
 
                     if (s.tipo === "formacao-externa") {
                       return (
-                        <div className="vqb-cartao" key={s.id}>
-                          <span className="vqb-destaque-etiqueta">Formação iCliGo</span>
+                        <div className="vqb-cartao vqb-cartao-icligo" key={s.id}>
+                          <span className="vqb-destaque-etiqueta vqb-destaque-etiqueta-icligo">
+                            <span className="vqb-icligo-badge">iC</span>
+                            Formação iCliGo
+                          </span>
                           <h3 className="vqb-destaque-titulo">{s.titulo}</h3>
-                          <p className="vqb-destaque-data">{formatarData(s.sessaoExternaEm)}</p>
+                          <p className="vqb-destaque-data vqb-destaque-data-icligo">
+                            {formatarData(s.sessaoExternaEm)}
+                          </p>
                           <a
                             href={s.link}
                             target="_blank"
                             rel="noreferrer"
-                            className="vqb-destaque-botao"
+                            className="vqb-destaque-botao vqb-destaque-botao-icligo"
                             style={{ display: "inline-block", textDecoration: "none", textAlign: "center" }}
                           >
                             Ir para a formação
