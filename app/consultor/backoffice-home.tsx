@@ -16,6 +16,7 @@ interface DadosIdentificacao {
   formacoesEquipa: { id: string; titulo: string; sessaoExternaEm: string; inscrito: boolean }[];
   precisaResponderTeambuilding: boolean;
   inscricoesEventoAbertas: boolean;
+  formacoesExternas: { id: string; titulo: string; sessaoExternaEm: string; link: string }[];
 }
 
 type Estado = "a-carregar" | "por-identificar" | "pronto" | "erro";
@@ -458,7 +459,8 @@ export function BackofficeHome() {
               type Sessao =
                 | { tipo: "formacao-recorrente"; titulo: string; sessaoExternaEm: string }
                 | { tipo: "formacao-adhoc"; id: string; titulo: string; sessaoExternaEm: string }
-                | { tipo: "webinar-publico"; titulo: string; sessaoExternaEm: string };
+                | { tipo: "webinar-publico"; titulo: string; sessaoExternaEm: string }
+                | { tipo: "formacao-externa"; id: string; titulo: string; sessaoExternaEm: string; link: string };
 
               const sessoes: Sessao[] = [
                 ...(dados.ehConsultorEquipa && dados.formacao
@@ -470,6 +472,7 @@ export function BackofficeHome() {
                 ...(dados.proximoWebinar
                   ? [{ tipo: "webinar-publico" as const, ...dados.proximoWebinar }]
                   : []),
+                ...dados.formacoesExternas.map((f) => ({ tipo: "formacao-externa" as const, ...f })),
               ].sort(
                 (a, b) => new Date(a.sessaoExternaEm).getTime() - new Date(b.sessaoExternaEm).getTime(),
               );
@@ -539,6 +542,25 @@ export function BackofficeHome() {
                           {erroFormacao && (
                             <p className="vqb-erro" style={{ marginTop: "0.75rem" }}>{erroFormacao}</p>
                           )}
+                        </div>
+                      );
+                    }
+
+                    if (s.tipo === "formacao-externa") {
+                      return (
+                        <div className="vqb-cartao" key={s.id}>
+                          <span className="vqb-destaque-etiqueta">Formação iCliGo</span>
+                          <h3 className="vqb-destaque-titulo">{s.titulo}</h3>
+                          <p className="vqb-destaque-data">{formatarData(s.sessaoExternaEm)}</p>
+                          <a
+                            href={s.link}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="vqb-destaque-botao"
+                            style={{ display: "inline-block", textDecoration: "none", textAlign: "center" }}
+                          >
+                            Ir para a formação
+                          </a>
                         </div>
                       );
                     }

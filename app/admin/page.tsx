@@ -338,6 +338,13 @@ export default async function AdminDashboard() {
               <div className="ad-acao-sub">Ver eventos →</div>
             </div>
           </Link>
+          <Link href="/admin/formacoes-externas" className="ad-cartao ad-acao">
+            <div className="ad-icone-badge"><IconRelogio /></div>
+            <div>
+              <div className="ad-acao-titulo">Formações externas</div>
+              <div className="ad-acao-sub">iCliGo →</div>
+            </div>
+          </Link>
         </div>
 
         <div className="ad-grid-2 ad-bloco">
