@@ -399,24 +399,25 @@ export function BackofficeHome() {
           box-shadow: 0 4px 18px rgba(75, 83, 32, 0.18);
         }
         .vqb-pagina label.vqb-check-sessao {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          width: 100%;
-          box-sizing: border-box;
+          display: grid !important;
+          grid-template-columns: 1.15rem 1fr !important;
+          align-items: center !important;
+          column-gap: 0.6rem !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
           font-size: 0.9rem;
           font-weight: 400;
           color: #000000;
+          cursor: pointer;
         }
         .vqb-check-sessao + .vqb-check-sessao { margin-top: 0.5rem; }
         .vqb-check-sessao input[type="checkbox"] {
-          flex: 0 0 auto;
-          width: 1.15rem;
-          height: 1.15rem;
-          margin: 0;
+          margin: 0 !important;
+          width: 1.15rem !important;
+          height: 1.15rem !important;
           accent-color: #4b5320;
         }
-        .vqb-check-sessao span { flex: 1 1 auto; text-align: left; }
+        .vqb-check-sessao span { text-align: left !important; }
       `}</style>
 
       <div className="vqb-caixa">
