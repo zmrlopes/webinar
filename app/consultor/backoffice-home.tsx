@@ -54,6 +54,7 @@ export function BackofficeHome() {
   const [webinarInscrito, setWebinarInscrito] = useState(false);
   const [webinarAcabadoDeInscrever, setWebinarAcabadoDeInscrever] = useState(false);
   const [seccaoAtiva, setSeccaoAtiva] = useState<Seccao>(null);
+  const [aMarcarWelcomeAboard, setAMarcarWelcomeAboard] = useState<1 | 2 | null>(null);
 
   function alternarSeccao(seccao: Seccao): void {
     setSeccaoAtiva((atual) => (atual === seccao ? null : seccao));
@@ -90,6 +91,34 @@ export function BackofficeHome() {
     } catch {
       setErro("falha de ligação — tenta outra vez");
       setEstado("por-identificar");
+    }
+  }
+
+  /** Atualiza só localmente — evita o piscar de "a entrar..." que identificar() causaria por uma checkbox. */
+  async function marcarSessaoWelcomeAboard(sessao: 1 | 2, concluida: boolean): Promise<void> {
+    if (!dados?.welcomeAboard) return;
+    setAMarcarWelcomeAboard(sessao);
+    try {
+      const resposta = await fetch("/api/consultor/backoffice/welcome-aboard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, sessao, concluida }),
+      });
+      if (resposta.ok) {
+        setDados((atual) =>
+          atual && atual.welcomeAboard
+            ? {
+                ...atual,
+                welcomeAboard: {
+                  sessao1Concluida: sessao === 1 ? concluida : atual.welcomeAboard.sessao1Concluida,
+                  sessao2Concluida: sessao === 2 ? concluida : atual.welcomeAboard.sessao2Concluida,
+                },
+              }
+            : atual,
+        );
+      }
+    } finally {
+      setAMarcarWelcomeAboard(null);
     }
   }
 
@@ -369,6 +398,15 @@ export function BackofficeHome() {
           padding: 1.5rem 1.5rem 1.75rem;
           box-shadow: 0 4px 18px rgba(75, 83, 32, 0.18);
         }
+        .vqb-check-sessao {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.9rem;
+          color: #000000;
+        }
+        .vqb-check-sessao + .vqb-check-sessao { margin-top: 0.5rem; }
+        .vqb-check-sessao input[type="checkbox"] { width: 1.15rem; height: 1.15rem; accent-color: #4b5320; }
       `}</style>
 
       <div className="vqb-caixa">
@@ -438,22 +476,38 @@ export function BackofficeHome() {
                     className="vqb-aviso-destaque"
                     style={dados.precisaResponderTeambuilding ? { marginTop: "1rem" } : undefined}
                   >
-                    <span className="vqb-destaque-etiqueta">
-                      Welcome Aboard — {dados.welcomeAboard.sessao1Concluida ? "sessão 2 de 2" : "sessão 1 de 2"}
-                    </span>
+                    <span className="vqb-destaque-etiqueta">Welcome Aboard</span>
                     <p className="vqb-destaque-texto" style={{ marginBottom: "1.1rem" }}>
-                      {dados.welcomeAboard.sessao1Concluida
-                        ? "Já assististe à primeira sessão — falta a segunda, é obrigatória para terminares o processo."
-                        : "Como estás no negócio há pouco tempo, tens de assistir a 2 sessões de Welcome Aboard (às quartas-feiras). Inscreve-te já na primeira."}
+                      Como estás no negócio há pouco tempo, tens de assistir a 2 sessões de Welcome Aboard
+                      (às quartas-feiras). Inscreve-te e marca aqui à medida que forem acontecendo.
                     </p>
                     <a
                       href={LINK_WELCOME_ABOARD}
                       target="_blank"
                       rel="noreferrer"
                       className="vqb-destaque-botao"
+                      style={{ marginBottom: "1.1rem" }}
                     >
-                      Inscrever na {dados.welcomeAboard.sessao1Concluida ? "2ª" : "1ª"} sessão
+                      Inscrever-me numa sessão
                     </a>
+                    <label className="vqb-check-sessao">
+                      <input
+                        type="checkbox"
+                        checked={dados.welcomeAboard.sessao1Concluida}
+                        disabled={aMarcarWelcomeAboard === 1}
+                        onChange={(e) => marcarSessaoWelcomeAboard(1, e.target.checked)}
+                      />
+                      Já assisti à 1ª sessão
+                    </label>
+                    <label className="vqb-check-sessao">
+                      <input
+                        type="checkbox"
+                        checked={dados.welcomeAboard.sessao2Concluida}
+                        disabled={aMarcarWelcomeAboard === 2 || !dados.welcomeAboard.sessao1Concluida}
+                        onChange={(e) => marcarSessaoWelcomeAboard(2, e.target.checked)}
+                      />
+                      Já assisti à 2ª sessão
+                    </label>
                   </div>
                 )}
               </div>
