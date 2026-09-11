@@ -7,6 +7,7 @@ export interface LinhaEquipa {
   nivel: string | null;
   estado: string;
   vendas: number | null;
+  dataRegisto: Date | null;
 }
 
 export interface ResultadoParseCsvEquipa {
@@ -90,6 +91,7 @@ export function parseCsvEquipa(texto: string): ResultadoParseCsvEquipa {
       continue;
     }
     const vendas = Number(l.sales);
+    const dataRegistoBruta = l.User_creation_date ? new Date(l.User_creation_date.trim()) : null;
     linhas.push({
       email,
       nome: (l.user_name ?? "").trim(),
@@ -97,6 +99,8 @@ export function parseCsvEquipa(texto: string): ResultadoParseCsvEquipa {
       nivel: l.user_level ? l.user_level.trim() : null,
       estado: (l.subscription_status ?? "ACTIVE").trim() || "ACTIVE",
       vendas: Number.isFinite(vendas) ? vendas : null,
+      dataRegisto:
+        dataRegistoBruta && !Number.isNaN(dataRegistoBruta.getTime()) ? dataRegistoBruta : null,
     });
   }
 
@@ -113,16 +117,17 @@ export function parseCsvEquipa(texto: string): ResultadoParseCsvEquipa {
 export async function importarLinhasEquipa(linhas: LinhaEquipa[]): Promise<void> {
   for (const l of linhas) {
     await db().query(
-      `insert into equipa_afiliados (email, nome, upline_email, nivel, estado, vendas, atualizado_em)
-       values ($1, $2, $3, $4, $5, $6, now())
+      `insert into equipa_afiliados (email, nome, upline_email, nivel, estado, vendas, data_registo, atualizado_em)
+       values ($1, $2, $3, $4, $5, $6, $7, now())
        on conflict (email) do update
          set nome = excluded.nome,
              upline_email = excluded.upline_email,
              nivel = excluded.nivel,
              estado = excluded.estado,
              vendas = excluded.vendas,
+             data_registo = excluded.data_registo,
              atualizado_em = now()`,
-      [l.email, l.nome, l.uplineEmail, l.nivel, l.estado, l.vendas],
+      [l.email, l.nome, l.uplineEmail, l.nivel, l.estado, l.vendas, l.dataRegisto],
     );
   }
 }

@@ -17,7 +17,10 @@ interface DadosIdentificacao {
   precisaResponderTeambuilding: boolean;
   inscricoesEventoAbertas: boolean;
   formacoesExternas: { id: string; titulo: string; sessaoExternaEm: string; link: string }[];
+  welcomeAboard: { sessao1Concluida: boolean; sessao2Concluida: boolean } | null;
 }
+
+const LINK_WELCOME_ABOARD = "https://calendly.com/intravel/reuniao-welcome-aboard-1";
 
 type Estado = "a-carregar" | "por-identificar" | "pronto" | "erro";
 type Seccao = "sessoes" | "eventos" | null;
@@ -415,19 +418,44 @@ export function BackofficeHome() {
               </button>
             </div>
 
-            {dados.precisaResponderTeambuilding && (
+            {(dados.precisaResponderTeambuilding || dados.welcomeAboard) && (
               <div className="vqb-avisos">
                 <h2>Avisos</h2>
-                <div className="vqb-aviso-destaque">
-                  <span className="vqb-destaque-etiqueta">Teambuilding — 14 de novembro</span>
-                  <p className="vqb-destaque-texto" style={{ marginBottom: "1.1rem" }}>
-                    Inscreveste-te no Teambuilding — ajuda-nos a preparar o dia: responde a 4 perguntas
-                    rápidas sobre o que esperas e que formações gostavas de ver.
-                  </p>
-                  <Link href="/consultor/teambuilding" className="vqb-destaque-botao">
-                    Responder ao formulário
-                  </Link>
-                </div>
+                {dados.precisaResponderTeambuilding && (
+                  <div className="vqb-aviso-destaque">
+                    <span className="vqb-destaque-etiqueta">Teambuilding — 14 de novembro</span>
+                    <p className="vqb-destaque-texto" style={{ marginBottom: "1.1rem" }}>
+                      Inscreveste-te no Teambuilding — ajuda-nos a preparar o dia: responde a 4 perguntas
+                      rápidas sobre o que esperas e que formações gostavas de ver.
+                    </p>
+                    <Link href="/consultor/teambuilding" className="vqb-destaque-botao">
+                      Responder ao formulário
+                    </Link>
+                  </div>
+                )}
+                {dados.welcomeAboard && (
+                  <div
+                    className="vqb-aviso-destaque"
+                    style={dados.precisaResponderTeambuilding ? { marginTop: "1rem" } : undefined}
+                  >
+                    <span className="vqb-destaque-etiqueta">
+                      Welcome Aboard — {dados.welcomeAboard.sessao1Concluida ? "sessão 2 de 2" : "sessão 1 de 2"}
+                    </span>
+                    <p className="vqb-destaque-texto" style={{ marginBottom: "1.1rem" }}>
+                      {dados.welcomeAboard.sessao1Concluida
+                        ? "Já assististe à primeira sessão — falta a segunda, é obrigatória para terminares o processo."
+                        : "Como estás no negócio há pouco tempo, tens de assistir a 2 sessões de Welcome Aboard (às quartas-feiras). Inscreve-te já na primeira."}
+                    </p>
+                    <a
+                      href={LINK_WELCOME_ABOARD}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="vqb-destaque-botao"
+                    >
+                      Inscrever na {dados.welcomeAboard.sessao1Concluida ? "2ª" : "1ª"} sessão
+                    </a>
+                  </div>
+                )}
               </div>
             )}
 

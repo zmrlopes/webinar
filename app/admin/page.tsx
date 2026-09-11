@@ -345,6 +345,13 @@ export default async function AdminDashboard() {
               <div className="ad-acao-sub">iCliGo →</div>
             </div>
           </Link>
+          <Link href="/admin/welcome-aboard" className="ad-cartao ad-acao">
+            <div className="ad-icone-badge"><IconCheck /></div>
+            <div>
+              <div className="ad-acao-titulo">Welcome Aboard</div>
+              <div className="ad-acao-sub">Sessões novo consultor →</div>
+            </div>
+          </Link>
         </div>
 
         <div className="ad-grid-2 ad-bloco">
