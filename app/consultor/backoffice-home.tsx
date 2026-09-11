@@ -402,12 +402,21 @@ export function BackofficeHome() {
           display: flex;
           align-items: center;
           gap: 0.5rem;
+          width: 100%;
+          box-sizing: border-box;
           font-size: 0.9rem;
           font-weight: 400;
           color: #000000;
         }
         .vqb-check-sessao + .vqb-check-sessao { margin-top: 0.5rem; }
-        .vqb-check-sessao input[type="checkbox"] { width: 1.15rem; height: 1.15rem; accent-color: #4b5320; }
+        .vqb-check-sessao input[type="checkbox"] {
+          flex: 0 0 auto;
+          width: 1.15rem;
+          height: 1.15rem;
+          margin: 0;
+          accent-color: #4b5320;
+        }
+        .vqb-check-sessao span { flex: 1 1 auto; text-align: left; }
       `}</style>
 
       <div className="vqb-caixa">
@@ -498,7 +507,7 @@ export function BackofficeHome() {
                         disabled={aMarcarWelcomeAboard === 1}
                         onChange={(e) => marcarSessaoWelcomeAboard(1, e.target.checked)}
                       />
-                      Já assisti à 1ª sessão
+                      <span>Já assisti à 1ª sessão</span>
                     </label>
                     <label className="vqb-check-sessao">
                       <input
@@ -507,7 +516,7 @@ export function BackofficeHome() {
                         disabled={aMarcarWelcomeAboard === 2 || !dados.welcomeAboard.sessao1Concluida}
                         onChange={(e) => marcarSessaoWelcomeAboard(2, e.target.checked)}
                       />
-                      Já assisti à 2ª sessão
+                      <span>Já assisti à 2ª sessão</span>
                     </label>
                   </div>
                 )}
