@@ -398,11 +398,12 @@ export function BackofficeHome() {
           padding: 1.5rem 1.5rem 1.75rem;
           box-shadow: 0 4px 18px rgba(75, 83, 32, 0.18);
         }
-        .vqb-check-sessao {
+        .vqb-pagina label.vqb-check-sessao {
           display: flex;
           align-items: center;
           gap: 0.5rem;
           font-size: 0.9rem;
+          font-weight: 400;
           color: #000000;
         }
         .vqb-check-sessao + .vqb-check-sessao { margin-top: 0.5rem; }

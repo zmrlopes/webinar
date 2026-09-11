@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { EMAIL_PAINEL_DEMONSTRACAO } from "./demo";
 
 /**
  * Temporário — até o Patrick construir isto do lado dele, por API. Duas
@@ -8,9 +9,6 @@ import { db } from "./db";
  */
 export const LINK_WELCOME_ABOARD = "https://calendly.com/intravel/reuniao-welcome-aboard-1";
 const MESES_ELEGIVEL = 3;
-
-/** Painel de demonstração — mostra sempre tudo, para testes e apresentações. */
-const EMAIL_DEMO = "zmrlopes@gmail.com";
 
 function dentroDoPrazo(dataRegisto: Date | null): boolean {
   if (!dataRegisto) return false;
@@ -30,7 +28,7 @@ export interface EstadoWelcomeAboard {
  * terminar a sessão 2, mesmo que os 3 meses já tenham passado entretanto.
  */
 export async function obterElegibilidadeWelcomeAboard(email: string): Promise<EstadoWelcomeAboard | null> {
-  if (email === EMAIL_DEMO) {
+  if (email === EMAIL_PAINEL_DEMONSTRACAO) {
     return { sessao1Concluida: false, sessao2Concluida: false };
   }
 

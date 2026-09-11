@@ -1,12 +1,16 @@
 import { db } from "./db";
+import { EMAIL_PAINEL_DEMONSTRACAO } from "./demo";
 import type { EmailSender } from "./email";
 
 /**
  * Só faz sentido perguntar a quem se inscreveu no evento — evento_inscricoes
  * é a única fonte disso (ver src/lib/eventos.ts). Quem já respondeu não
- * volta a ver o aviso.
+ * volta a ver o aviso. Exceção: o painel de demonstração vê sempre, mesmo
+ * sem estar inscrito (ver EMAIL_PAINEL_DEMONSTRACAO).
  */
 export async function precisaResponderTeambuilding(email: string): Promise<boolean> {
+  if (email === EMAIL_PAINEL_DEMONSTRACAO) return true;
+
   const { rows } = await db().query<{ precisa: boolean }>(
     `select
        exists(select 1 from evento_inscricoes where email = $1)
