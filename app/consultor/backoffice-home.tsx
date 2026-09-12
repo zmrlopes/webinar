@@ -398,26 +398,28 @@ export function BackofficeHome() {
           padding: 1.5rem 1.5rem 1.75rem;
           box-shadow: 0 4px 18px rgba(75, 83, 32, 0.18);
         }
-        .vqb-pagina label.vqb-check-sessao {
-          display: grid !important;
-          grid-template-columns: 2.5rem minmax(0, 1fr) !important;
-          align-items: center !important;
-          width: 100% !important;
-          box-sizing: border-box !important;
+        .vqb-pagina div.vqb-check-sessao {
+          display: grid;
+          grid-template-columns: 2rem minmax(0, 1fr);
+          align-items: center;
+          width: 100%;
+          box-sizing: border-box;
           font-size: 0.9rem;
           font-weight: 400;
           color: #000000;
           cursor: pointer;
+          user-select: none;
         }
+        .vqb-check-sessao.vqb-check-desativada { cursor: default; opacity: 0.5; }
         .vqb-check-sessao + .vqb-check-sessao { margin-top: 0.5rem; }
         .vqb-check-sessao input[type="checkbox"] {
-          justify-self: start !important;
-          margin: 0 !important;
-          width: 1.15rem !important;
-          height: 1.15rem !important;
+          pointer-events: none;
+          margin: 0;
+          width: 1.15rem;
+          height: 1.15rem;
           accent-color: #4b5320;
         }
-        .vqb-check-sessao span { text-align: left !important; min-width: 0; }
+        .vqb-check-sessao span { text-align: left; }
       `}</style>
 
       <div className="vqb-caixa">
@@ -501,24 +503,35 @@ export function BackofficeHome() {
                     >
                       Inscrever-me numa sessão
                     </a>
-                    <label className="vqb-check-sessao">
-                      <input
-                        type="checkbox"
-                        checked={dados.welcomeAboard.sessao1Concluida}
-                        disabled={aMarcarWelcomeAboard === 1}
-                        onChange={(e) => marcarSessaoWelcomeAboard(1, e.target.checked)}
-                      />
+                    <div
+                      className="vqb-check-sessao"
+                      role="checkbox"
+                      aria-checked={dados.welcomeAboard.sessao1Concluida}
+                      onClick={() =>
+                        aMarcarWelcomeAboard !== 1 &&
+                        marcarSessaoWelcomeAboard(1, !dados.welcomeAboard!.sessao1Concluida)
+                      }
+                    >
+                      <input type="checkbox" checked={dados.welcomeAboard.sessao1Concluida} readOnly />
                       <span>Já assisti à 1ª sessão</span>
-                    </label>
-                    <label className="vqb-check-sessao">
-                      <input
-                        type="checkbox"
-                        checked={dados.welcomeAboard.sessao2Concluida}
-                        disabled={aMarcarWelcomeAboard === 2 || !dados.welcomeAboard.sessao1Concluida}
-                        onChange={(e) => marcarSessaoWelcomeAboard(2, e.target.checked)}
-                      />
+                    </div>
+                    <div
+                      className={
+                        dados.welcomeAboard.sessao1Concluida
+                          ? "vqb-check-sessao"
+                          : "vqb-check-sessao vqb-check-desativada"
+                      }
+                      role="checkbox"
+                      aria-checked={dados.welcomeAboard.sessao2Concluida}
+                      onClick={() =>
+                        dados.welcomeAboard!.sessao1Concluida &&
+                        aMarcarWelcomeAboard !== 2 &&
+                        marcarSessaoWelcomeAboard(2, !dados.welcomeAboard!.sessao2Concluida)
+                      }
+                    >
+                      <input type="checkbox" checked={dados.welcomeAboard.sessao2Concluida} readOnly />
                       <span>Já assisti à 2ª sessão</span>
-                    </label>
+                    </div>
                   </div>
                 )}
               </div>
