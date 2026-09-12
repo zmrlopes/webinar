@@ -398,6 +398,8 @@ export function BackofficeHome() {
           padding: 1.5rem 1.5rem 1.75rem;
           box-shadow: 0 4px 18px rgba(75, 83, 32, 0.18);
         }
+        .vqb-wa-linha { margin: 0 0 0.55rem; color: #6b6a63; font-size: 0.9rem; }
+        .vqb-wa-linha strong { color: #000000; }
         .vqb-pagina div.vqb-check-sessao {
           display: flex;
           align-items: center;
@@ -496,9 +498,20 @@ export function BackofficeHome() {
                     style={dados.precisaResponderTeambuilding ? { marginTop: "1rem" } : undefined}
                   >
                     <span className="vqb-destaque-etiqueta">Welcome Aboard</span>
+                    <p className="vqb-wa-linha">
+                      Duas sessões de acolhimento para quem entrou no negócio há pouco tempo:
+                    </p>
+                    <p className="vqb-wa-linha">
+                      <strong>1ª sessão</strong> — os primeiros passos como consultor, com truques e dicas
+                      para começares bem.
+                    </p>
+                    <p className="vqb-wa-linha">
+                      <strong>2ª sessão</strong> — o potencial do negócio: até onde isto pode crescer.
+                    </p>
                     <p className="vqb-destaque-texto" style={{ marginBottom: "1.1rem" }}>
-                      Como estás no negócio há pouco tempo, tens de assistir a 2 sessões de Welcome Aboard
-                      (às quartas-feiras). Inscreve-te e marca aqui à medida que forem acontecendo.
+                      Acontecem às quartas-feiras e tens de assistir às duas. Inscreve-te numa, marca-a
+                      aqui como feita, e depois inscreve-te na seguinte — só podes fazer a 2ª depois de
+                      teres feito a 1ª.
                     </p>
                     <a
                       href={LINK_WELCOME_ABOARD}
