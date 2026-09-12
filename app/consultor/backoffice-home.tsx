@@ -399,27 +399,33 @@ export function BackofficeHome() {
           box-shadow: 0 4px 18px rgba(75, 83, 32, 0.18);
         }
         .vqb-pagina div.vqb-check-sessao {
-          display: grid;
-          grid-template-columns: 2rem minmax(0, 1fr);
+          display: flex;
           align-items: center;
-          width: 100%;
-          box-sizing: border-box;
+          gap: 0.55rem;
           font-size: 0.9rem;
-          font-weight: 400;
           color: #000000;
           cursor: pointer;
           user-select: none;
         }
         .vqb-check-sessao.vqb-check-desativada { cursor: default; opacity: 0.5; }
         .vqb-check-sessao + .vqb-check-sessao { margin-top: 0.5rem; }
+        /*
+         * O min-width de 260px e o padding da regra ".vqb-pagina input"
+         * (feitos para o campo de email) também pegavam nesta checkbox — e
+         * como min-width ganha sempre ao width, ela ficava com 260px de
+         * largura, com o desenho nativo ao centro dessa caixa, no meio do
+         * texto. Daí este reset.
+         */
         .vqb-check-sessao input[type="checkbox"] {
-          pointer-events: none;
-          margin: 0;
+          flex: none;
+          min-width: 0;
           width: 1.15rem;
           height: 1.15rem;
+          margin: 0;
+          padding: 0;
+          pointer-events: none;
           accent-color: #4b5320;
         }
-        .vqb-check-sessao span { text-align: left; }
       `}</style>
 
       <div className="vqb-caixa">
