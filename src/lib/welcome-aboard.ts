@@ -80,6 +80,53 @@ export async function listarWelcomeAboard(): Promise<PessoaWelcomeAboard[]> {
   }));
 }
 
+export interface MembroEquipaWelcomeAboard {
+  nome: string;
+  email: string;
+  dataRegisto: Date | null;
+  sessao1Concluida: boolean;
+  sessao2Concluida: boolean;
+}
+
+/**
+ * Os consultores da equipa (toda a descendência, não só os diretos) que
+ * entraram há menos de 3 meses, para o líder ver quem já fez cada sessão.
+ * Ao contrário do aviso pessoal, aqui não se escondem os que já terminaram
+ * as duas — o líder quer justamente ver quem está e quem não está feito.
+ */
+export async function listarWelcomeAboardDaEquipa(
+  emailLider: string,
+): Promise<MembroEquipaWelcomeAboard[]> {
+  const { rows } = await db().query<{
+    nome: string;
+    email: string;
+    data_registo: Date | null;
+    welcome_aboard_sessao1: boolean;
+    welcome_aboard_sessao2: boolean;
+  }>(
+    `with recursive descendentes as (
+       select email from equipa_afiliados where upline_email = $1
+       union all
+       select ea.email from equipa_afiliados ea
+       join descendentes d on ea.upline_email = d.email
+     )
+     select ea.nome, ea.email, ea.data_registo,
+            ea.welcome_aboard_sessao1, ea.welcome_aboard_sessao2
+     from equipa_afiliados ea
+     join descendentes d on d.email = ea.email
+     where ea.data_registo >= now() - interval '${MESES_ELEGIVEL} months'
+     order by ea.data_registo desc`,
+    [emailLider],
+  );
+  return rows.map((r) => ({
+    nome: r.nome,
+    email: r.email,
+    dataRegisto: r.data_registo,
+    sessao1Concluida: r.welcome_aboard_sessao1,
+    sessao2Concluida: r.welcome_aboard_sessao2,
+  }));
+}
+
 export async function definirSessaoWelcomeAboard(
   email: string,
   sessao: 1 | 2,

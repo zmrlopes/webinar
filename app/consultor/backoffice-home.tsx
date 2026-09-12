@@ -18,17 +18,31 @@ interface DadosIdentificacao {
   inscricoesEventoAbertas: boolean;
   formacoesExternas: { id: string; titulo: string; sessaoExternaEm: string; link: string }[];
   welcomeAboard: { sessao1Concluida: boolean; sessao2Concluida: boolean } | null;
+  equipaWelcomeAboard: {
+    nome: string;
+    email: string;
+    dataRegisto: string | null;
+    sessao1Concluida: boolean;
+    sessao2Concluida: boolean;
+  }[];
 }
 
 const LINK_WELCOME_ABOARD = "https://calendly.com/intravel/reuniao-welcome-aboard-1";
 
 type Estado = "a-carregar" | "por-identificar" | "pronto" | "erro";
-type Seccao = "sessoes" | "eventos" | null;
+type Seccao = "sessoes" | "eventos" | "equipa-nova" | null;
 
 function formatarData(iso: string): string {
   return new Date(iso).toLocaleString("pt-PT", {
     dateStyle: "long",
     timeStyle: "short",
+    timeZone: "Europe/Lisbon",
+  });
+}
+
+function formatarDataCurta(iso: string): string {
+  return new Date(iso).toLocaleDateString("pt-PT", {
+    dateStyle: "medium",
     timeZone: "Europe/Lisbon",
   });
 }
@@ -398,6 +412,21 @@ export function BackofficeHome() {
           padding: 1.5rem 1.5rem 1.75rem;
           box-shadow: 0 4px 18px rgba(75, 83, 32, 0.18);
         }
+        .vqb-tabela-wrap { border: 1px solid #000000; border-radius: 10px; overflow-x: auto; }
+        .vqb-tabela { width: 100%; min-width: 460px; border-collapse: collapse; background: #f7f6f3; }
+        .vqb-tabela th, .vqb-tabela td {
+          text-align: left;
+          padding: 0.6rem 0.9rem;
+          border-bottom: 1px solid #eae7de;
+          font-size: 0.9rem;
+        }
+        .vqb-tabela th {
+          color: #6b6a63;
+          font-size: 0.75rem;
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
+        }
+        .vqb-tabela tr:last-child td { border-bottom: none; }
         .vqb-wa-linha { margin: 0 0 0.55rem; color: #6b6a63; font-size: 0.9rem; }
         .vqb-wa-linha strong { color: #000000; }
         .vqb-pagina div.vqb-check-sessao {
@@ -593,6 +622,17 @@ export function BackofficeHome() {
               >
                 Eventos
               </button>
+              {dados.equipaWelcomeAboard.length > 0 && (
+                <button
+                  type="button"
+                  className={
+                    seccaoAtiva === "equipa-nova" ? "vqb-menu-item vqb-menu-ativo" : "vqb-menu-item"
+                  }
+                  onClick={() => alternarSeccao("equipa-nova")}
+                >
+                  Equipa nova
+                </button>
+              )}
             </div>
 
             {seccaoAtiva === "sessoes" && (() => {
@@ -751,6 +791,43 @@ export function BackofficeHome() {
                 ) : (
                   <p className="vqb-mudo">As inscrições para este evento já estão encerradas.</p>
                 )}
+              </div>
+            )}
+
+            {seccaoAtiva === "equipa-nova" && (
+              <div className="vqb-seccao">
+                <h2>Welcome Aboard da tua equipa</h2>
+                <p className="vqb-mudo">
+                  Quem entrou na tua equipa há menos de 3 meses e as duas sessões obrigatórias de
+                  acolhimento. Quem ainda tiver sessões por fazer precisa de um empurrão teu.
+                </p>
+                <div className="vqb-tabela-wrap">
+                  <table className="vqb-tabela">
+                    <thead>
+                      <tr>
+                        <th>Consultor</th>
+                        <th>Entrou em</th>
+                        <th>1ª sessão</th>
+                        <th>2ª sessão</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dados.equipaWelcomeAboard.map((m) => (
+                        <tr key={m.email}>
+                          <td>
+                            <div>{m.nome}</div>
+                            <div className="vqb-mudo" style={{ margin: 0, fontSize: "0.8rem" }}>
+                              {m.email}
+                            </div>
+                          </td>
+                          <td>{m.dataRegisto ? formatarDataCurta(m.dataRegisto) : "—"}</td>
+                          <td>{m.sessao1Concluida ? "✅" : "—"}</td>
+                          <td>{m.sessao2Concluida ? "✅" : "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </>
