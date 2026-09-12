@@ -8,7 +8,6 @@ import { estaoInscricoesAbertas } from "@/lib/eventos";
 import { precisaResponderTeambuilding } from "@/lib/teambuilding";
 import { listarFormacoesExternasFuturas } from "@/lib/formacoes-externas";
 import { listarWelcomeAboardDaEquipa, obterElegibilidadeWelcomeAboard } from "@/lib/welcome-aboard";
-import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
 
 /**
  * Identifica o consultor no backoffice: valida o email em `equipa_afiliados`
@@ -65,12 +64,7 @@ export async function POST(request: Request): Promise<Response> {
       obterElegibilidadeWelcomeAboard(emailNormalizado),
     ]);
 
-    // Ainda só no painel de demonstração, para o dono ver como fica antes de
-    // abrir isto a todos os líderes.
-    const equipaWelcomeAboard =
-      emailNormalizado === EMAIL_PAINEL_DEMONSTRACAO
-        ? await listarWelcomeAboardDaEquipa(emailNormalizado)
-        : [];
+    const equipaWelcomeAboard = await listarWelcomeAboardDaEquipa(emailNormalizado);
 
     async function jaInscrito(webinarId: string): Promise<boolean> {
       const { rows } = await db().query<{ existe: boolean }>(

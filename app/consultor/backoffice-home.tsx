@@ -630,7 +630,7 @@ export function BackofficeHome() {
                   }
                   onClick={() => alternarSeccao("equipa-nova")}
                 >
-                  Equipa nova
+                  Welcome Aboard Equipa
                 </button>
               )}
             </div>
