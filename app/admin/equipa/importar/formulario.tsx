@@ -9,6 +9,10 @@ interface Resultado {
   importados: number;
   ignorados: string[];
   jaExistiam: string;
+  colunas: string[];
+  colunaDataRegisto: string | null;
+  comDataRegisto: number;
+  exemploDataRegisto: string | null;
 }
 
 export function FormularioImportarEquipa() {
@@ -82,6 +86,21 @@ export function FormularioImportarEquipa() {
               {resultado.ignorados.length > 5 ? ", …" : ""})
             </li>
           )}
+          <li>
+            Data de registo:{" "}
+            {resultado.colunaDataRegisto ? (
+              <>
+                lida da coluna <strong>{resultado.colunaDataRegisto}</strong> — {resultado.comDataRegisto}{" "}
+                de {resultado.importados} com data
+                {resultado.exemploDataRegisto ? ` (exemplo: "${resultado.exemploDataRegisto}")` : ""}
+              </>
+            ) : (
+              <strong style={{ color: "#c0392b" }}>
+                nenhuma coluna de data encontrada neste ficheiro
+              </strong>
+            )}
+          </li>
+          <li>Colunas do ficheiro: {resultado.colunas.join(", ")}</li>
         </ul>
       )}
 

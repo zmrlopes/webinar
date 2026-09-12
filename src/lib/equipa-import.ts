@@ -14,6 +14,41 @@ export interface ResultadoParseCsvEquipa {
   linhas: LinhaEquipa[];
   totalLinhasCru: number;
   semEmail: string[];
+  /** Diagnóstico da importação — ver app/admin/equipa/importar: sem isto não há forma de perceber, a partir do site, porque é que uma coluna do CSV não foi lida. */
+  colunas: string[];
+  colunaDataRegisto: string | null;
+  comDataRegisto: number;
+  exemploDataRegisto: string | null;
+}
+
+/**
+ * O nome exato da coluna da data de registo varia conforme a exportação, por
+ * isso não se exige um nome fixo: procura-se sem distinguir maiúsculas nem
+ * separadores, e depois por palavras parecidas.
+ */
+function encontrarColunaData(colunas: string[]): string | null {
+  const normalizar = (c: string) => c.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  const exata = colunas.find((c) => normalizar(c) === "user_creation_date");
+  if (exata) return exata;
+  return (
+    colunas.find((c) => /creation|created|registo|register|signup|sign_up|join/.test(normalizar(c))) ??
+    null
+  );
+}
+
+/** Aceita ISO (2026-09-07) e o formato europeu (07/09/2026), que o `new Date` leria ao contrário. */
+function parseDataRegisto(valor: string): Date | null {
+  const texto = valor.trim();
+  if (!texto) return null;
+
+  const europeu = texto.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})/);
+  if (europeu) {
+    const data = new Date(Number(europeu[3]), Number(europeu[2]) - 1, Number(europeu[1]));
+    return Number.isNaN(data.getTime()) ? null : data;
+  }
+
+  const data = new Date(texto);
+  return Number.isNaN(data.getTime()) ? null : data;
 }
 
 /** Parser CSV mínimo (RFC4180: campos entre aspas, aspas escapadas como ""). */
@@ -83,6 +118,9 @@ export function parseCsvEquipa(texto: string): ResultadoParseCsvEquipa {
   const linhasCru = parseCsv(texto);
   const linhas: LinhaEquipa[] = [];
   const semEmail: string[] = [];
+  const colunas = linhasCru[0] ? Object.keys(linhasCru[0]) : [];
+  const colunaDataRegisto = encontrarColunaData(colunas);
+  let exemploDataRegisto: string | null = null;
 
   for (const l of linhasCru) {
     const email = normalizarEmail(l.user_email ?? "");
@@ -91,7 +129,10 @@ export function parseCsvEquipa(texto: string): ResultadoParseCsvEquipa {
       continue;
     }
     const vendas = Number(l.sales);
-    const dataRegistoBruta = l.User_creation_date ? new Date(l.User_creation_date.trim()) : null;
+    const dataRegistoBruta = colunaDataRegisto ? (l[colunaDataRegisto] ?? "") : "";
+    if (dataRegistoBruta.trim() && exemploDataRegisto === null) {
+      exemploDataRegisto = dataRegistoBruta.trim();
+    }
     linhas.push({
       email,
       nome: (l.user_name ?? "").trim(),
@@ -99,12 +140,19 @@ export function parseCsvEquipa(texto: string): ResultadoParseCsvEquipa {
       nivel: l.user_level ? l.user_level.trim() : null,
       estado: (l.subscription_status ?? "ACTIVE").trim() || "ACTIVE",
       vendas: Number.isFinite(vendas) ? vendas : null,
-      dataRegisto:
-        dataRegistoBruta && !Number.isNaN(dataRegistoBruta.getTime()) ? dataRegistoBruta : null,
+      dataRegisto: parseDataRegisto(dataRegistoBruta),
     });
   }
 
-  return { linhas, totalLinhasCru: linhasCru.length, semEmail };
+  return {
+    linhas,
+    totalLinhasCru: linhasCru.length,
+    semEmail,
+    colunas,
+    colunaDataRegisto,
+    comDataRegisto: linhas.filter((l) => l.dataRegisto !== null).length,
+    exemploDataRegisto,
+  };
 }
 
 /**

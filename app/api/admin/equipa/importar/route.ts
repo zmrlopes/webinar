@@ -16,7 +16,8 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const texto = await ficheiro.text();
-  const { linhas, totalLinhasCru, semEmail } = parseCsvEquipa(texto);
+  const { linhas, totalLinhasCru, semEmail, colunas, colunaDataRegisto, comDataRegisto, exemploDataRegisto } =
+    parseCsvEquipa(texto);
 
   if (linhas.length === 0) {
     return NextResponse.json(
@@ -37,5 +38,9 @@ export async function POST(request: Request): Promise<Response> {
     importados: linhas.length,
     ignorados: semEmail,
     jaExistiam: existentes[0]?.total ?? "0",
+    colunas,
+    colunaDataRegisto,
+    comDataRegisto,
+    exemploDataRegisto,
   });
 }
