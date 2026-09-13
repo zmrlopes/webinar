@@ -147,6 +147,43 @@ export async function inscreverNoEventoEEnviarEmail(
   return { id, total, emailEnviado };
 }
 
+export interface DocumentoEvento {
+  id: string;
+  nome: string;
+  tipo: string;
+  criadoEm: Date;
+}
+
+/** Sem os bytes — só o essencial para listar em /admin/eventos. */
+export async function listarDocumentosEvento(): Promise<DocumentoEvento[]> {
+  const { rows } = await db().query<{ id: string; nome: string; tipo: string; criado_em: Date }>(
+    `select id, nome, tipo, criado_em from evento_documentos order by criado_em desc`,
+  );
+  return rows.map((r) => ({ id: r.id, nome: r.nome, tipo: r.tipo, criadoEm: r.criado_em }));
+}
+
+export async function guardarDocumentoEvento(nome: string, tipo: string, bytes: Buffer): Promise<void> {
+  await db().query(`insert into evento_documentos (nome, tipo, bytes) values ($1, $2, $3)`, [
+    nome,
+    tipo,
+    bytes,
+  ]);
+}
+
+export async function apagarDocumentoEvento(id: string): Promise<void> {
+  await db().query(`delete from evento_documentos where id = $1`, [id]);
+}
+
+export async function buscarDocumentoEvento(
+  id: string,
+): Promise<{ bytes: Buffer; nome: string; tipo: string } | undefined> {
+  const { rows } = await db().query<{ bytes: Buffer; nome: string; tipo: string }>(
+    `select bytes, nome, tipo from evento_documentos where id = $1`,
+    [id],
+  );
+  return rows[0];
+}
+
 export interface BilheteEvento {
   id: string;
   rotulo: string;

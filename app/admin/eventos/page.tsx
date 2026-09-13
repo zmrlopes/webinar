@@ -6,18 +6,21 @@ import {
   EVENTO_LOCAL,
   EVENTO_PRECO_ADULTO,
   EVENTO_TITULO,
+  listarDocumentosEvento,
   listarInscricoesEvento,
 } from "@/lib/eventos";
 import { BotaoEstadoInscricoes } from "./botao-estado";
+import { DocumentosEvento } from "./documentos-evento";
 import { TabelaInscricoesEvento } from "./tabela-inscricoes-evento";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminEventos() {
-  const [inscricoes, consultoresPorLider, inscricoesAbertas] = await Promise.all([
+  const [inscricoes, consultoresPorLider, inscricoesAbertas, documentos] = await Promise.all([
     listarInscricoesEvento(),
     listarConsultoresInscritosEventoPorLider(),
     estaoInscricoesAbertas(),
+    listarDocumentosEvento(),
   ]);
   const totalAdultos = inscricoes.reduce((soma, i) => soma + i.adultos, 0);
   const totalCriancasMais10 = inscricoes.reduce((soma, i) => soma + i.criancasMais10, 0);
@@ -230,6 +233,9 @@ export default async function AdminEventos() {
             </div>
           </>
         )}
+
+        <h2>Documentos do evento</h2>
+        <DocumentosEvento itens={documentos} />
 
         <h2>Todas as inscrições</h2>
         {inscricoes.length === 0 ? (
