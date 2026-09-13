@@ -72,7 +72,7 @@ export default function NovaInscricaoManualPagina() {
         .ei-voltar:hover { text-decoration: underline; }
       `}</style>
       <div className="ei-caixa">
-        <Link href="/admin/eventos" className="ei-voltar-topo">
+        <Link href="/admin/eventos/teambuilding" className="ei-voltar-topo">
           ← Eventos
         </Link>
         <h1>Inscrição manual — Teambuilding</h1>

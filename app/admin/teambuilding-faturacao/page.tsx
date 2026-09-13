@@ -55,7 +55,7 @@ export default async function TeambuildingFaturacaoPagina() {
         .ad-pagina button.ad-th-ordenar:hover { color: #4b5320; }
       `}</style>
       <div className="ad-caixa">
-        <Link href="/admin/eventos" className="ad-voltar">
+        <Link href="/admin/eventos/teambuilding" className="ad-voltar">
           ← Teambuilding
         </Link>
         <h1>Inscritos — patamar e faturação</h1>

@@ -60,7 +60,7 @@ export function FormularioInscricaoManual() {
             A inscrição ficou registada, mas não foi possível enviar o email com o QR code.
           </p>
         )}
-        <a href="/admin/eventos" className="ei-voltar">
+        <a href="/admin/eventos/teambuilding" className="ei-voltar">
           ← Voltar aos eventos
         </a>
       </div>
