@@ -1,3 +1,4 @@
+import { garantirConsultorNaLista } from "./activecampaign";
 import { contarCliques } from "./cliques";
 import { db } from "./db";
 
@@ -8,19 +9,37 @@ const CODIGOS_RESERVADOS = new Set(["admin", "consultor", "webinar", "api"]);
  * Liga o código curto (a "referencia") ao email do consultor, para o link
  * de inscrição poder ser só "/<referencia>" (ver app/[codigo]/page.tsx).
  * Upsert: pedir o link outra vez com o mesmo nome atualiza a mesma linha.
+ *
+ * Esta é a linha que define quem é "consultor registado na plataforma"
+ * (ver CONDICAO_CONSULTOR_COM_PAINEL em equipa.ts), por isso é também aqui
+ * que a pessoa entra na lista de emails da ActiveCampaign — só quando a
+ * linha é mesmo nova, senão fazia-se um par de chamadas à API deles de
+ * cada vez que alguém abre o painel. Uma falha a subscrever fica no log e
+ * não trava nada: ninguém pode perder o acesso ao painel por causa do
+ * fornecedor de email, e a sincronização em /admin/activecampaign apanha
+ * depois quem tenha escapado.
  */
 export async function guardarLinkConsultor(
   referencia: string,
   referenciaEmail: string,
   nome: string | null,
 ): Promise<void> {
-  await db().query(
+  const { rows } = await db().query<{ nova: boolean }>(
     `insert into links_consultor (referencia, referencia_email, nome)
      values ($1, $2, $3)
      on conflict (referencia) do update
-       set referencia_email = excluded.referencia_email, nome = excluded.nome, atualizado_em = now()`,
+       set referencia_email = excluded.referencia_email, nome = excluded.nome, atualizado_em = now()
+     returning (xmax = 0) as nova`,
     [referencia, referenciaEmail, nome],
   );
+
+  if (rows[0]?.nova) {
+    try {
+      await garantirConsultorNaLista(referenciaEmail, nome);
+    } catch (erro) {
+      console.error(`falha ao pôr ${referenciaEmail} na lista de emails da ActiveCampaign:`, erro);
+    }
+  }
 }
 
 export async function procurarLinkConsultor(

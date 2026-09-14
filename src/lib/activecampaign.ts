@@ -192,3 +192,36 @@ export async function subscreverContactoNaLista(
     throw new Error(`ActiveCampaign devolveu ${resposta.status} ao subscrever na lista ${listaId}: ${corpo}`);
   }
 }
+
+/**
+ * Mete um consultor acabado de registar na lista dos emails, sem esperar
+ * pela sincronização em massa. Chamada quando alguém gera o seu link pela
+ * primeira vez (ver guardarLinkConsultor em consultor.ts) — é esse o
+ * momento em que a pessoa passa a ser "consultor com painel" e, portanto,
+ * destinatário dos avisos.
+ *
+ * Não estoira se a ActiveCampaign não estiver configurada nem se a API
+ * falhar: quem chama trata o erro como um aviso, porque não se deixa
+ * alguém de fora do painel por causa de um problema no fornecedor de
+ * email. A sincronização em massa em /admin/activecampaign apanha depois
+ * quem tenha escapado.
+ */
+export async function garantirConsultorNaLista(email: string, nome: string | null): Promise<boolean> {
+  const config = configActiveCampaign();
+  if (!config) return false;
+
+  const resposta = await fetch(`${config.base}/api/3/contact/sync`, {
+    method: "POST",
+    headers: cabecalhosActiveCampaign(config.chave),
+    body: JSON.stringify({ contact: { email, ...(nome ? { firstName: nome } : {}) } }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!resposta.ok) {
+    const corpo = await resposta.text();
+    throw new Error(`ActiveCampaign devolveu ${resposta.status} ao criar/atualizar contacto: ${corpo}`);
+  }
+  const dados = (await resposta.json()) as { contact: { id: string } };
+
+  await subscreverContactoNaLista(config, dados.contact.id, config.listaConsultores);
+  return true;
+}
