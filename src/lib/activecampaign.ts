@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { CONDICAO_CONSULTOR_COM_PAINEL } from "./equipa";
 
 /**
  * Configuração da conta ActiveCampaign. Sem as três variáveis obrigatórias
@@ -41,9 +42,10 @@ export function cabecalhosActiveCampaign(chave: string): Record<string, string> 
 
 export interface ResultadoSincronizacaoLista {
   lista: string;
-  consultoresAtivos: number;
+  consultoresComPainel: number;
   enviados: number;
   lotes: number;
+  removidos: number;
   erros: string[];
 }
 
@@ -51,12 +53,17 @@ export interface ResultadoSincronizacaoLista {
 const TAMANHO_LOTE = 200;
 
 /**
- * Põe todos os consultores ativos (equipa_afiliados, estado ACTIVE) dentro da
- * lista "Consultores ativos" da ActiveCampaign, subscritos. Usa o
- * bulk_import — 567 pessoas dão 3 chamadas em vez de 1134, o que cabe
- * folgadamente no tempo de uma função da Vercel.
+ * Põe na lista "Consultores ativos" da ActiveCampaign exatamente os
+ * consultores que têm painel — o mesmo critério de quem recebe os avisos
+ * (ver CONDICAO_CONSULTOR_COM_PAINEL em email.ts). Usa o bulk_import, que
+ * leva 200 de cada vez em vez de um pedido por pessoa.
  *
- * Nota honesta sobre o que isto *não* faz: quem está marcado como "bounced"
+ * Também limpa: quem estiver na lista e já não pertencer a este conjunto é
+ * retirado. Sem isso, a lista ia acumulando gente do CSV da equipa que
+ * nunca se registou na plataforma, e uma campanha enviada à lista acabava
+ * por lhes chegar.
+ *
+ * Nota honesta sobre o que isto não faz: quem está marcado como "bounced"
  * na AC continua bloqueado globalmente e não recebe nada, esteja em que
  * lista estiver. Só uma morada que volte a aceitar email resolve esses.
  */
@@ -69,7 +76,9 @@ export async function sincronizarConsultoresAtivosNaLista(): Promise<ResultadoSi
   }
 
   const { rows } = await db().query<{ email: string; nome: string }>(
-    `select email, nome from equipa_afiliados where estado = 'ACTIVE' order by email`,
+    `select email, nome from equipa_afiliados
+     where ${CONDICAO_CONSULTOR_COM_PAINEL}
+     order by email`,
   );
 
   const erros: string[] = [];
@@ -100,13 +109,67 @@ export async function sincronizarConsultoresAtivosNaLista(): Promise<ResultadoSi
     enviados += lote.length;
   }
 
+  let removidos = 0;
+  try {
+    removidos = await retirarDaListaQuemJaNaoPertence(
+      config,
+      new Set(rows.map((r) => r.email.toLowerCase())),
+    );
+  } catch (erro) {
+    erros.push(`limpeza da lista: ${erro instanceof Error ? erro.message : String(erro)}`);
+  }
+
   return {
     lista: config.listaConsultores,
-    consultoresAtivos: rows.length,
+    consultoresComPainel: rows.length,
     enviados,
     lotes,
+    removidos,
     erros,
   };
+}
+
+/**
+ * Tira da lista quem lá está e não consta de `emailsQueFicam`. Na AC não se
+ * apaga uma subscrição — põe-se o status a 2 (descansado), que é o que a
+ * impede de receber seja campanha seja automação associada à lista.
+ */
+async function retirarDaListaQuemJaNaoPertence(
+  config: ConfigActiveCampaign,
+  emailsQueFicam: Set<string>,
+): Promise<number> {
+  const porPagina = 100;
+  const aRetirar: { id: string; email: string }[] = [];
+
+  for (let offset = 0; ; offset += porPagina) {
+    const url = `${config.base}/api/3/contacts?listid=${config.listaConsultores}&status=1&limit=${porPagina}&offset=${offset}`;
+    const resposta = await fetch(url, {
+      headers: cabecalhosActiveCampaign(config.chave),
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (!resposta.ok) {
+      throw new Error(`a ActiveCampaign devolveu ${resposta.status} ao listar a lista`);
+    }
+    const dados = (await resposta.json()) as { contacts?: { id: string; email: string }[] };
+    const pagina = dados.contacts ?? [];
+    for (const c of pagina) {
+      if (!emailsQueFicam.has(c.email.toLowerCase())) aRetirar.push({ id: c.id, email: c.email });
+    }
+    if (pagina.length < porPagina) break;
+  }
+
+  for (const c of aRetirar) {
+    await fetch(`${config.base}/api/3/contactLists`, {
+      method: "POST",
+      headers: cabecalhosActiveCampaign(config.chave),
+      body: JSON.stringify({
+        contactList: { list: config.listaConsultores, contact: c.id, status: 2 },
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+  }
+
+  return aRetirar.length;
 }
 
 /**

@@ -1,5 +1,21 @@
 import { db } from "./db";
 
+/**
+ * Quem recebe os avisos do sistema: não a equipa toda do CSV de afiliados
+ * (são centenas de pessoas que nunca puseram os pés no painel), mas só
+ * quem está mesmo registado na plataforma — isto é, quem já gerou o seu
+ * link em /consultor e por isso tem linha em `links_consultor`. Um aviso
+ * "vai ao teu painel inscrever-te" não diz nada a quem não tem painel.
+ * Vive aqui, exportado, para a lista da ActiveCampaign usar exatamente o
+ * mesmo critério (ver src/lib/activecampaign.ts) — se as duas coisas
+ * divergirem, voltamos a mandar email a quem não devia.
+ */
+export const CONDICAO_CONSULTOR_COM_PAINEL = `
+  estado = 'ACTIVE'
+  and exists (
+    select 1 from links_consultor lc where lc.referencia_email = equipa_afiliados.email
+  )`;
+
 export interface MembroEquipa {
   nome: string;
 }

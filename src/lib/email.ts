@@ -4,6 +4,7 @@ import {
   subscreverContactoNaLista,
 } from "./activecampaign";
 import { db } from "./db";
+import { CONDICAO_CONSULTOR_COM_PAINEL } from "./equipa";
 
 export interface AnexoMensagem {
   nome: string;
@@ -322,8 +323,8 @@ export interface NotificacaoNovaSessao {
 }
 
 /**
- * Avisa toda a equipa (equipa_afiliados) que uma nova sessão ficou
- * disponível — webinar público, formação recorrente do Patrick, ou
+ * Avisa os consultores com painel (ver CONDICAO_CONSULTOR_COM_PAINEL) que
+ * uma nova sessão ficou disponível — webinar público, formação recorrente do Patrick, ou
  * formação ad-hoc criada no admin. Não leva o link do Zoom (ninguém está
  * inscrito ainda) — só o aviso e o link para o painel do consultor, onde
  * cada um se inscreve à sua vez. Cada tentativa (sucesso ou falha) fica
@@ -342,10 +343,11 @@ export async function notificarEquipaNovaSessao(
 ): Promise<ResultadoNotificacaoEquipa> {
   const { rows } = await db().query<{ email: string; nome: string }>(
     `select email, nome from equipa_afiliados
-     where not exists (
-       select 1 from notificacoes_equipa ne
-       where ne.webinar_id = $1 and ne.destinatario = equipa_afiliados.email
-     )
+     where ${CONDICAO_CONSULTOR_COM_PAINEL}
+       and not exists (
+         select 1 from notificacoes_equipa ne
+         where ne.webinar_id = $1 and ne.destinatario = equipa_afiliados.email
+       )
      order by email
      ${limite ? "limit $2" : ""}`,
     limite ? [sessao.webinarId, limite] : [sessao.webinarId],
@@ -395,10 +397,11 @@ export async function notificarEquipaNovaSessao(
 
   const { rows: porNotificar } = await db().query<{ restantes: string }>(
     `select count(*) as restantes from equipa_afiliados
-     where not exists (
-       select 1 from notificacoes_equipa ne
-       where ne.webinar_id = $1 and ne.destinatario = equipa_afiliados.email
-     )`,
+     where ${CONDICAO_CONSULTOR_COM_PAINEL}
+       and not exists (
+         select 1 from notificacoes_equipa ne
+         where ne.webinar_id = $1 and ne.destinatario = equipa_afiliados.email
+       )`,
     [sessao.webinarId],
   );
 

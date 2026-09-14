@@ -1,14 +1,17 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { CONDICAO_CONSULTOR_COM_PAINEL } from "@/lib/equipa";
 import { BotaoSincronizarLista } from "./botao-sincronizar";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminActiveCampaign() {
-  const { rows } = await db().query<{ ativos: string; total: string }>(
-    `select count(*) filter (where estado = 'ACTIVE') as ativos, count(*) as total from equipa_afiliados`,
+  const { rows } = await db().query<{ com_painel: string; total: string }>(
+    `select count(*) filter (where ${CONDICAO_CONSULTOR_COM_PAINEL}) as com_painel,
+            count(*) as total
+     from equipa_afiliados`,
   );
-  const ativos = Number(rows[0]?.ativos ?? 0);
+  const comPainel = Number(rows[0]?.com_painel ?? 0);
   const total = Number(rows[0]?.total ?? 0);
 
   return (
@@ -66,8 +69,15 @@ export default async function AdminActiveCampaign() {
         <p>
           A lista &ldquo;Consultores ativos&rdquo; é nova, portanto ninguém se descansou dela. Ao pôr lá os
           consultores, os avisos voltam a chegar. A partir de agora cada aviso também subscreve o
-          destinatário nesta lista antes de sair, por isso quem entrar de novo na equipa fica coberto sem
-          mais nada.
+          destinatário nesta lista antes de sair, por isso quem gerar o seu link fica coberto sem mais
+          nada.
+        </p>
+
+        <h2>Quem conta como consultor</h2>
+        <p>
+          Quem está <strong>registado na plataforma</strong>: já entrou em <code>/consultor</code> e gerou
+          o seu link. O CSV da equipa traz centenas de pessoas que nunca o fizeram — um aviso a dizer
+          &ldquo;vai ao teu painel inscrever-te&rdquo; não lhes diz nada, por isso não o recebem.
         </p>
 
         <div className="ad-aviso">
@@ -78,8 +88,10 @@ export default async function AdminActiveCampaign() {
 
         <h2>Sincronizar</h2>
         <p>
-          {ativos} consultores ativos (de {total} na equipa importada) prontos a entrar na lista. Podes
-          carregar quantas vezes quiseres — quem já lá está não fica duplicado.
+          <strong>{comPainel}</strong> consultores com painel, dos {total} que vêm no CSV da equipa. São
+          estes — e só estes — que entram na lista e recebem os avisos. Podes carregar quantas vezes
+          quiseres: quem já lá está não fica duplicado, e quem entretanto deixou de pertencer ao conjunto
+          é retirado da lista.
         </p>
         <BotaoSincronizarLista />
       </div>

@@ -4,9 +4,10 @@ import { useState } from "react";
 
 interface Resultado {
   lista: string;
-  consultoresAtivos: number;
+  consultoresComPainel: number;
   enviados: number;
   lotes: number;
+  removidos: number;
   erros: string[];
 }
 
@@ -51,7 +52,7 @@ export function BotaoSincronizarLista() {
           cursor: estado === "a-sincronizar" ? "default" : "pointer",
         }}
       >
-        {estado === "a-sincronizar" ? "A sincronizar…" : "Sincronizar consultores ativos"}
+        {estado === "a-sincronizar" ? "A sincronizar…" : "Sincronizar consultores com painel"}
       </button>
 
       {erro && <p style={{ color: "#c0392b", fontSize: "0.9rem", marginTop: "0.75rem" }}>{erro}</p>}
@@ -59,9 +60,16 @@ export function BotaoSincronizarLista() {
       {resultado && (
         <div className="ad-cartao" style={{ marginTop: "1rem" }}>
           <p style={{ margin: 0, fontSize: "0.95rem" }}>
-            <strong>{resultado.enviados}</strong> de <strong>{resultado.consultoresAtivos}</strong> consultores
-            ativos enviados para a lista {resultado.lista} da ActiveCampaign, em {resultado.lotes}{" "}
-            {resultado.lotes === 1 ? "lote" : "lotes"}.
+            <strong>{resultado.enviados}</strong> de <strong>{resultado.consultoresComPainel}</strong>{" "}
+            consultores com painel enviados para a lista {resultado.lista} da ActiveCampaign, em{" "}
+            {resultado.lotes} {resultado.lotes === 1 ? "lote" : "lotes"}
+            {resultado.removidos > 0 && (
+              <>
+                {" "}
+                · <strong>{resultado.removidos}</strong> retirado(s) da lista por já não pertencerem
+              </>
+            )}
+            .
           </p>
           <p className="ad-legenda">
             A ActiveCampaign processa a importação do lado dela — os contactos aparecem na lista dentro de
