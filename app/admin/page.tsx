@@ -62,6 +62,15 @@ function IconTicket(): React.JSX.Element {
   );
 }
 
+function IconEnvelope(): React.JSX.Element {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3.5 6.5 12 13l8.5-6.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function CartaoVisaoGeral({ v }: { v: VisaoGeralCategoria }): React.JSX.Element {
   return (
     <div className="ad-grid-geral ad-bloco">
@@ -350,6 +359,13 @@ export default async function AdminDashboard() {
             <div>
               <div className="ad-acao-titulo">Welcome Aboard</div>
               <div className="ad-acao-sub">Sessões novo consultor →</div>
+            </div>
+          </Link>
+          <Link href="/admin/activecampaign" className="ad-cartao ad-acao">
+            <div className="ad-icone-badge"><IconEnvelope /></div>
+            <div>
+              <div className="ad-acao-titulo">ActiveCampaign</div>
+              <div className="ad-acao-sub">Lista dos consultores →</div>
             </div>
           </Link>
         </div>

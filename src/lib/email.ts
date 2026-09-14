@@ -1,3 +1,8 @@
+import {
+  cabecalhosActiveCampaign,
+  configActiveCampaign,
+  subscreverContactoNaLista,
+} from "./activecampaign";
 import { db } from "./db";
 
 export interface AnexoMensagem {
@@ -10,6 +15,14 @@ export interface Mensagem {
   assunto: string;
   corpoTexto: string;
   anexos?: AnexoMensagem[];
+  /**
+   * Lista da ActiveCampaign onde o destinatário tem de estar subscrito para
+   * este email lhe chegar. Na AC o cancelamento de subscrição é por lista, e
+   * uma automação não entrega a quem está descansado da lista — por isso os
+   * avisos operacionais à equipa passam a lista dos consultores ativos aqui
+   * (ver notificarEquipaNovaSessao). Sem isto, fica como estava.
+   */
+  listaActiveCampaign?: string;
 }
 
 export interface EmailSender {
@@ -88,22 +101,16 @@ export class BrevoEmailSender implements EmailSender {
  */
 export class ActiveCampaignEmailSender implements EmailSender {
   async enviar(mensagem: Mensagem): Promise<void> {
-    const chave = process.env.ACTIVECAMPAIGN_API_KEY;
-    const base = process.env.ACTIVECAMPAIGN_API_URL;
-    const automacaoId = process.env.ACTIVECAMPAIGN_AUTOMATION_ID;
-    if (!chave || !base || !automacaoId) {
+    const config = configActiveCampaign();
+    if (!config) {
       throw new Error(
         "variáveis de ambiente em falta: ACTIVECAMPAIGN_API_KEY / ACTIVECAMPAIGN_API_URL / ACTIVECAMPAIGN_AUTOMATION_ID",
       );
     }
 
-    const cabecalhos = {
-      "Api-Token": chave,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    };
+    const cabecalhos = cabecalhosActiveCampaign(config.chave);
 
-    const respostaContacto = await fetch(`${base}/api/3/contact/sync`, {
+    const respostaContacto = await fetch(`${config.base}/api/3/contact/sync`, {
       method: "POST",
       headers: cabecalhos,
       body: JSON.stringify({
@@ -123,11 +130,15 @@ export class ActiveCampaignEmailSender implements EmailSender {
     }
     const dadosContacto = (await respostaContacto.json()) as { contact: { id: string } };
 
-    const respostaAutomacao = await fetch(`${base}/api/3/contactAutomations`, {
+    if (mensagem.listaActiveCampaign) {
+      await subscreverContactoNaLista(config, dadosContacto.contact.id, mensagem.listaActiveCampaign);
+    }
+
+    const respostaAutomacao = await fetch(`${config.base}/api/3/contactAutomations`, {
       method: "POST",
       headers: cabecalhos,
       body: JSON.stringify({
-        contactAutomation: { contact: dadosContacto.contact.id, automation: automacaoId },
+        contactAutomation: { contact: dadosContacto.contact.id, automation: config.automacaoId },
       }),
       signal: AbortSignal.timeout(15_000),
     });
@@ -163,10 +174,7 @@ class EmailSenderComFallbackParaAnexos implements EmailSender {
  */
 export function criarEmailSender(): EmailSender {
   const brevo = process.env.BREVO_API_KEY ? new BrevoEmailSender() : null;
-  const activeCampaign =
-    process.env.ACTIVECAMPAIGN_API_KEY && process.env.ACTIVECAMPAIGN_API_URL && process.env.ACTIVECAMPAIGN_AUTOMATION_ID
-      ? new ActiveCampaignEmailSender()
-      : null;
+  const activeCampaign = configActiveCampaign() ? new ActiveCampaignEmailSender() : null;
 
   if (activeCampaign && brevo) return new EmailSenderComFallbackParaAnexos(activeCampaign, brevo);
   return activeCampaign ?? brevo ?? new ConsoleEmailSender();
@@ -341,6 +349,9 @@ export async function notificarEquipaNovaSessao(
       })
     : "brevemente";
   const rotulo = sessao.tipo === "formacao" ? "formação" : "webinar";
+  // Ver o comentário em Mensagem.listaActiveCampaign: sem isto, quem se
+  // descansou de uma lista antiga da AC nunca chega a receber este aviso.
+  const listaConsultores = configActiveCampaign()?.listaConsultores;
 
   for (const r of rows) {
     let sucesso = true;
@@ -352,6 +363,7 @@ export async function notificarEquipaNovaSessao(
         corpoTexto:
           `Olá ${r.nome},\n\nHá uma nova sessão disponível: "${sessao.titulo}", ${dataTexto}.\n\n` +
           `Vai ao teu painel para te inscreveres:\n${base}/consultor`,
+        listaActiveCampaign: listaConsultores,
       });
     } catch (erro) {
       sucesso = false;
