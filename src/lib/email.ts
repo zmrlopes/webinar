@@ -307,6 +307,13 @@ export async function notificarConsultorSobreLead(
   });
 }
 
+export interface ResultadoNotificacaoEquipa {
+  enviados: number;
+  falhas: number;
+  /** Quantos membros da equipa faltam avisar — 0 quando o aviso ficou completo. */
+  restantes: number;
+}
+
 export interface NotificacaoNovaSessao {
   webinarId: string;
   titulo: string;
@@ -331,14 +338,17 @@ export interface NotificacaoNovaSessao {
 export async function notificarEquipaNovaSessao(
   sender: EmailSender,
   sessao: NotificacaoNovaSessao,
-): Promise<void> {
+  limite?: number,
+): Promise<ResultadoNotificacaoEquipa> {
   const { rows } = await db().query<{ email: string; nome: string }>(
     `select email, nome from equipa_afiliados
      where not exists (
        select 1 from notificacoes_equipa ne
        where ne.webinar_id = $1 and ne.destinatario = equipa_afiliados.email
-     )`,
-    [sessao.webinarId],
+     )
+     order by email
+     ${limite ? "limit $2" : ""}`,
+    limite ? [sessao.webinarId, limite] : [sessao.webinarId],
   );
   const base = process.env.SITE_BASE_URL ?? "https://webinar.viajareviver.net";
   const dataTexto = sessao.sessaoExternaEm
@@ -352,6 +362,9 @@ export async function notificarEquipaNovaSessao(
   // Ver o comentário em Mensagem.listaActiveCampaign: sem isto, quem se
   // descansou de uma lista antiga da AC nunca chega a receber este aviso.
   const listaConsultores = configActiveCampaign()?.listaConsultores;
+
+  let enviados = 0;
+  let falhas = 0;
 
   for (const r of rows) {
     let sucesso = true;
@@ -376,5 +389,33 @@ export async function notificarEquipaNovaSessao(
        on conflict (webinar_id, destinatario) do nothing`,
       [sessao.webinarId, r.email, sucesso, mensagemErro],
     );
+    if (sucesso) enviados += 1;
+    else falhas += 1;
   }
+
+  const { rows: porNotificar } = await db().query<{ restantes: string }>(
+    `select count(*) as restantes from equipa_afiliados
+     where not exists (
+       select 1 from notificacoes_equipa ne
+       where ne.webinar_id = $1 and ne.destinatario = equipa_afiliados.email
+     )`,
+    [sessao.webinarId],
+  );
+
+  return { enviados, falhas, restantes: Number(porNotificar[0]?.restantes ?? 0) };
+}
+
+/**
+ * Apaga o registo de quem já foi avisado sobre esta sessão, para que a
+ * próxima chamada a `notificarEquipaNovaSessao` volte a avisar toda a
+ * gente. É o que permite reenviar um aviso que, por um problema do lado do
+ * fornecedor de email, ficou marcado como enviado sem ter chegado a
+ * ninguém — sem isto a deduplicação do `unique (webinar_id, destinatario)`
+ * torna o reenvio silenciosamente vazio.
+ */
+export async function reiniciarAvisoEquipa(webinarId: string): Promise<number> {
+  const { rowCount } = await db().query(`delete from notificacoes_equipa where webinar_id = $1`, [
+    webinarId,
+  ]);
+  return rowCount ?? 0;
 }

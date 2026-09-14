@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { listarConsultoresInscritosPorLider, listarInscricoesAdmin, resumoNotificacaoEquipa } from "@/lib/admin";
 import { buscarWebinar } from "@/lib/webinars";
+import { AvisarEquipa } from "./avisar-equipa";
 import { CancelarFormacao } from "./cancelar-formacao";
 import { TabelaInscricoes } from "./tabela-inscricoes";
 
@@ -183,6 +184,8 @@ export default async function AdminWebinar({
             </div>
           )}
         </div>
+
+        <AvisarEquipa webinarId={webinar.id} titulo={webinar.titulo} />
 
         {notificacaoEquipa && (
           <p className="ad-legenda" style={{ marginBottom: "1rem" }}>
