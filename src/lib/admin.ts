@@ -869,6 +869,41 @@ export async function listarTopEmpreendedores(limite: number): Promise<Empreende
     .slice(0, limite);
 }
 
+export interface MentorAdmin {
+  email: string;
+  nome: string;
+  conversoes: number;
+  leads: number;
+}
+
+/**
+ * Quem converteu mais leads em consultores — pelo próprio pé, sem contar a
+ * equipa abaixo. É o contraponto de "Top empreendedor": aquele ordena por
+ * rácio (para não favorecer quem tem mais gente na equipa) e soma a árvore
+ * toda; este é o número absoluto de conversões da pessoa, que é o que
+ * mostra quem está mesmo a trazer gente nova para dentro.
+ *
+ * "Conversão" é o mesmo de sempre — o estado 'convertido' em estados_lead,
+ * marcado pelo consultor no painel ou pelo admin. Só entram consultores
+ * com `estado = 'ACTIVE'`: quem saiu da equipa não aparece, mesmo com
+ * conversões históricas. Desempate por menos leads trazidas — entre dois
+ * com o mesmo número de conversões, fica à frente quem lá chegou com menos
+ * leads.
+ */
+export async function listarTopMentores(limite: number): Promise<MentorAdmin[]> {
+  const { todos } = await construirArvoreEquipa();
+  return todos
+    .filter((no) => no.estado === "ACTIVE" && no.conversoesProprias > 0)
+    .map((no) => ({
+      email: no.email,
+      nome: no.nome,
+      conversoes: no.conversoesProprias,
+      leads: no.leadsProprios,
+    }))
+    .sort((a, b) => b.conversoes - a.conversoes || a.leads - b.leads)
+    .slice(0, limite);
+}
+
 /**
  * Correção manual, feita por um humano. A automação (secção 7-D) só toca em
  * quem está `unknown`; esta função é a exceção deliberada a essa regra.

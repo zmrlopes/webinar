@@ -12,6 +12,7 @@ import {
   listarInscricoesPorDia,
   listarTopEmpreendedores,
   listarTopLideres,
+  listarTopMentores,
   type VisaoGeralCategoria,
 } from "@/lib/admin";
 import { listarInscricoesEvento } from "@/lib/eventos";
@@ -140,6 +141,7 @@ export default async function AdminDashboard() {
     alertas,
     assiduidade,
     equipaPorLider,
+    mentores,
   ] = await Promise.all([
     buscarVisaoGeralAdmin(),
     buscarVisaoGeralPorCategoria(),
@@ -154,6 +156,7 @@ export default async function AdminDashboard() {
     listarAlertasAdmin(),
     listarAssiduidadeFormacoesConsultores(),
     listarEquipaPorLider(),
+    listarTopMentores(5),
   ]);
 
   const totalEquipaLideres = equipaPorLider.reduce((soma, l) => soma + l.pessoas, 0);
@@ -487,6 +490,30 @@ export default async function AdminDashboard() {
                       <span className="ad-lista-sub">({l.pessoas} na equipa)</span>
                     </span>
                     <strong>{l.leadsEquipa}</strong>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="ad-cartao">
+            <h2>Top Mentor</h2>
+            <p className="ad-legenda" style={{ marginTop: "-0.5rem", marginBottom: "0.5rem" }}>
+              Leads que o próprio converteu em consultores (não conta a equipa), desde sempre
+            </p>
+            {mentores.length === 0 ? (
+              <p className="ad-mudo">Ainda sem conversões marcadas.</p>
+            ) : (
+              <ul className="ad-lista">
+                {mentores.map((m, i) => (
+                  <li key={m.email}>
+                    <span className="ad-lista-nome">
+                      <span className="ad-lista-numero">{i + 1}</span> {m.nome}{" "}
+                      <span className="ad-lista-sub">
+                        (de {m.leads} {m.leads === 1 ? "lead trazida" : "leads trazidas"})
+                      </span>
+                    </span>
+                    <strong>{m.conversoes}</strong>
                   </li>
                 ))}
               </ul>
