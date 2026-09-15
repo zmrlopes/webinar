@@ -1,11 +1,24 @@
 import Link from "next/link";
+import { ultimaImportacaoEquipa } from "@/lib/equipa-import";
 import { listarInscritosComFaturacao } from "@/lib/teambuilding";
 import { TabelaFaturacao } from "./tabela-faturacao";
 
 export const dynamic = "force-dynamic";
 
+function formatarQuando(data: Date | null): string {
+  if (!data) return "nunca";
+  return new Date(data).toLocaleString("pt-PT", {
+    dateStyle: "long",
+    timeStyle: "short",
+    timeZone: "Europe/Lisbon",
+  });
+}
+
 export default async function TeambuildingFaturacaoPagina() {
-  const inscritos = await listarInscritosComFaturacao();
+  const [inscritos, ultimaImportacao] = await Promise.all([
+    listarInscritosComFaturacao(),
+    ultimaImportacaoEquipa(),
+  ]);
   const totalAdultos = inscritos.reduce((soma, i) => soma + i.adultos, 0);
   const totalCriancasMais10 = inscritos.reduce((soma, i) => soma + i.criancasMais10, 0);
   const totalCriancasMenos10 = inscritos.reduce((soma, i) => soma + i.criancasMenos10, 0);
@@ -61,9 +74,13 @@ export default async function TeambuildingFaturacaoPagina() {
         <h1>Inscritos — patamar e faturação</h1>
         <p className="ad-subtitulo">
           {inscritos.length} inscrito(s) — {totalAdultos} adulto(s), {totalCriancasMais10} criança(s)
-          pagante(s) (+10) e {totalCriancasMenos10} criança(s) não pagante(s) (-10). Patamar e faturação vêm
-          do último CSV importado (/admin/equipa/importar) — se aparecer &quot;sem dados&quot;, reimporta o
-          CSV mais recente. Clica num título de coluna para ordenar por ela.
+          pagante(s) (+10) e {totalCriancasMenos10} criança(s) não pagante(s) (-10). Clica num título de
+          coluna para ordenar por ela.
+        </p>
+        <p className="ad-subtitulo">
+          Patamar e faturação vêm do CSV da equipa, importado pela última vez a{" "}
+          <strong>{formatarQuando(ultimaImportacao)}</strong>. Para os atualizar, carrega o CSV mais
+          recente em <Link href="/admin/equipa/importar" style={{ color: "#4b5320" }}>/admin/equipa/importar</Link>.
         </p>
 
         {inscritos.length === 0 ? (

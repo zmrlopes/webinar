@@ -161,6 +161,15 @@ export function parseCsvEquipa(texto: string): ResultadoParseCsvEquipa {
  * pessoa que saiu da plataforma de afiliados simplesmente deixa de aparecer
  * no CSV seguinte, mas fica com o estado antigo até o CSV trazer o estado
  * novo dela).
+ *
+ * `vendas` e `data_registo` são as duas colunas que um CSV pode
+ * simplesmente não trazer (a exportação da plataforma nem sempre inclui
+ * `sales`, e a coluna da data já apareceu com nomes diferentes). Nesse caso
+ * chegam aqui a null em todas as linhas, e um `set` direto apagava o que já
+ * estava — a faturação do evento ficava vazia e, pior, toda a gente perdia
+ * a data de registo de que depende o Welcome Aboard. O coalesce mantém o
+ * valor antigo quando o CSV não traz nada; um valor a sério (mesmo que
+ * zero) continua a substituir o anterior.
  */
 export async function importarLinhasEquipa(linhas: LinhaEquipa[]): Promise<void> {
   for (const l of linhas) {
@@ -172,10 +181,23 @@ export async function importarLinhasEquipa(linhas: LinhaEquipa[]): Promise<void>
              upline_email = excluded.upline_email,
              nivel = excluded.nivel,
              estado = excluded.estado,
-             vendas = excluded.vendas,
-             data_registo = excluded.data_registo,
+             vendas = coalesce(excluded.vendas, equipa_afiliados.vendas),
+             data_registo = coalesce(excluded.data_registo, equipa_afiliados.data_registo),
              atualizado_em = now()`,
       [l.email, l.nome, l.uplineEmail, l.nivel, l.estado, l.vendas, l.dataRegisto],
     );
   }
+}
+
+/**
+ * Quando é que o CSV da equipa foi importado pela última vez. Serve para as
+ * páginas que dependem dele (patamar e faturação dos inscritos) poderem
+ * dizer de quando são os números — sem isto não havia forma de distinguir
+ * "este consultor não faturou" de "o CSV é de há três meses".
+ */
+export async function ultimaImportacaoEquipa(): Promise<Date | null> {
+  const { rows } = await db().query<{ quando: Date | null }>(
+    `select max(atualizado_em) as quando from equipa_afiliados`,
+  );
+  return rows[0]?.quando ?? null;
 }
