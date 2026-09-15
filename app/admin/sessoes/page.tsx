@@ -16,8 +16,18 @@ function formatarData(data: Date | null): string {
   });
 }
 
-function CartaoSessao({ w }: { w: WebinarAdmin }): React.JSX.Element {
-  const pctPresentes = w.totalInscritos > 0 ? Math.round((w.presentes / w.totalInscritos) * 100) : 0;
+/**
+ * `soLeads` troca os três números para a contagem só de leads. É o que os
+ * webinares usam: são sessões para mostrar o negócio a quem está de fora, e
+ * os consultores que se inscrevem para assistir inflavam o número de
+ * inscritos. Nas formações fica a falso — aí os inscritos são os
+ * consultores, e filtrar leads dava zero.
+ */
+function CartaoSessao({ w, soLeads }: { w: WebinarAdmin; soLeads: boolean }): React.JSX.Element {
+  const inscritos = soLeads ? w.leadsInscritas : w.totalInscritos;
+  const presentes = soLeads ? w.leadsPresentes : w.presentes;
+  const mediaAssistencia = soLeads ? w.mediaAssistenciaLeads : w.mediaAssistencia;
+  const pctPresentes = inscritos > 0 ? Math.round((presentes / inscritos) * 100) : 0;
 
   return (
     <Link href={`/admin/webinar/${w.id}`} className="ad-cartao ad-sessao">
@@ -35,13 +45,13 @@ function CartaoSessao({ w }: { w: WebinarAdmin }): React.JSX.Element {
 
       <div className="ad-numeros-linha">
         <div>
-          <div className="ad-numero-pequeno">{w.totalInscritos}</div>
-          <div className="ad-legenda">Inscritos</div>
+          <div className="ad-numero-pequeno">{inscritos}</div>
+          <div className="ad-legenda">{soLeads ? "Leads inscritas" : "Inscritos"}</div>
         </div>
         <div>
           <div className="ad-numero-pequeno" style={{ color: COR_PRESENTE }}>
-            {w.presentes}
-            {w.totalInscritos > 0 && (
+            {presentes}
+            {inscritos > 0 && (
               <span style={{ fontSize: "0.9rem", fontWeight: 600 }}> ({pctPresentes}%)</span>
             )}
           </div>
@@ -49,13 +59,13 @@ function CartaoSessao({ w }: { w: WebinarAdmin }): React.JSX.Element {
         </div>
         <div>
           <div className="ad-numero-pequeno">
-            {w.mediaAssistencia !== null ? `${w.mediaAssistencia}%` : "—"}
+            {mediaAssistencia !== null ? `${mediaAssistencia}%` : "—"}
           </div>
           <div className="ad-legenda">Média assistência</div>
         </div>
       </div>
 
-      {w.totalInscritos > 0 && (
+      {inscritos > 0 && (
         <div
           style={{
             height: 8,
@@ -76,7 +86,15 @@ function CartaoSessao({ w }: { w: WebinarAdmin }): React.JSX.Element {
   );
 }
 
-function GrupoSessoes({ titulo, webinars }: { titulo: string; webinars: WebinarAdmin[] }): React.JSX.Element {
+function GrupoSessoes({
+  titulo,
+  webinars,
+  soLeads = false,
+}: {
+  titulo: string;
+  webinars: WebinarAdmin[];
+  soLeads?: boolean;
+}): React.JSX.Element {
   return (
     <div className="ad-grupo">
       <h2>{titulo}</h2>
@@ -85,7 +103,7 @@ function GrupoSessoes({ titulo, webinars }: { titulo: string; webinars: WebinarA
       ) : (
         <div className="ad-grid-sessoes">
           {webinars.map((w) => (
-            <CartaoSessao key={w.id} w={w} />
+            <CartaoSessao key={w.id} w={w} soLeads={soLeads} />
           ))}
         </div>
       )}
@@ -169,7 +187,7 @@ export default async function AdminSessoes() {
           </div>
         </div>
 
-        <GrupoSessoes titulo="Webinares" webinars={webinares} />
+        <GrupoSessoes titulo="Webinares" webinars={webinares} soLeads />
         <GrupoSessoes titulo="Formações internas" webinars={formacoesInternas} />
         <GrupoSessoes titulo="Formações gerais" webinars={formacoesGerais} />
       </div>

@@ -2,6 +2,25 @@ import { db } from "./db";
 import type { EstadoLead } from "./leads";
 import { TITULO_WEBINAR_PUBLICO } from "./webinars";
 
+/**
+ * O que conta como inscrição de uma lead, por oposição a um consultor que
+ * se inscreveu a si próprio. É a mesma regra que a tabela de cada sessão
+ * usa para separar as duas listas (ver `ehConsultor` em
+ * listarInscricoesAdmin, mais abaixo): tem link gerado em /consultor e
+ * nunca passou por estados_lead. Uma lead convertida que passou a
+ * consultora continua a contar como lead — tem estado em estados_lead —
+ * senão desaparecia da sessão onde converteu.
+ *
+ * Vive aqui, num sítio só, para o número do cartão de cada sessão bater
+ * certo com o número que aparece quando se clica nele. Espera a tabela
+ * `registrations` com o alias `r`.
+ */
+const CONDICAO_INSCRICAO_DE_LEAD = `
+  not (
+    exists(select 1 from links_consultor lcp where lcp.referencia_email = r.email)
+    and not exists(select 1 from estados_lead el2 where el2.lead_email = r.email)
+  )`;
+
 export interface WebinarAdmin {
   id: string;
   titulo: string;
@@ -16,11 +35,29 @@ export interface WebinarAdmin {
   linksFalhados: number;
   presentes: number;
   mediaAssistencia: number | null;
+  /** Os mesmos três números, contando só leads — ver CONDICAO_INSCRICAO_DE_LEAD. */
+  leadsInscritas: number;
+  leadsPresentes: number;
+  mediaAssistenciaLeads: number | null;
+}
+
+/** Minutos médios assistidos como percentagem da duração da sessão. */
+function percentagemAssistencia(minutos: string | null, duracao: number | null): number | null {
+  if (minutos === null || !duracao) return null;
+  return Math.min(100, Math.round((Number(minutos) / duracao) * 100));
 }
 
 /**
  * Nunca seleciona `link_pessoal` — o painel de administração não pode
  * mostrar a credencial de entrada de ninguém (secção 6 do guia).
+ *
+ * Devolve os números duas vezes: com toda a gente e só com leads (ver
+ * CONDICAO_INSCRICAO_DE_LEAD). Quem mostra decide qual usa — num webinar
+ * interessa o alcance junto de quem está de fora, e os consultores que se
+ * auto-inscrevem inflavam o número; numa formação os inscritos são
+ * precisamente os consultores, e filtrar leads dava zero. Os contadores
+ * dos links ficam sempre inteiros — são o estado da fila que vai buscar os
+ * links ao Zoom, e essa trata toda a gente por igual.
  */
 export async function listarWebinarsAdmin(): Promise<WebinarAdmin[]> {
   const { rows } = await db().query<{
@@ -37,6 +74,9 @@ export async function listarWebinarsAdmin(): Promise<WebinarAdmin[]> {
     links_falhados: string;
     presentes: string;
     media_assistencia: string | null;
+    leads_inscritas: string;
+    leads_presentes: string;
+    media_assistencia_leads: string | null;
   }>(
     `select
        w.id, w.titulo, w.tipo, w.publico_para_leads, w.sessao_externa_em, w.duracao_minutos,
@@ -48,7 +88,17 @@ export async function listarWebinarsAdmin(): Promise<WebinarAdmin[]> {
        count(r.id) filter (where r.cancelada_em is null and r.presenca = 'attended') as presentes,
        avg(r.presenca_minutos) filter (
          where r.cancelada_em is null and r.presenca = 'attended' and r.presenca_minutos is not null
-       ) as media_assistencia
+       ) as media_assistencia,
+       count(r.id) filter (
+         where r.cancelada_em is null and ${CONDICAO_INSCRICAO_DE_LEAD}
+       ) as leads_inscritas,
+       count(r.id) filter (
+         where r.cancelada_em is null and r.presenca = 'attended' and ${CONDICAO_INSCRICAO_DE_LEAD}
+       ) as leads_presentes,
+       avg(r.presenca_minutos) filter (
+         where r.cancelada_em is null and r.presenca = 'attended' and r.presenca_minutos is not null
+           and ${CONDICAO_INSCRICAO_DE_LEAD}
+       ) as media_assistencia_leads
      from webinars w
      left join registrations r on r.webinar_id = w.id
      where w.cancelada_em is null
@@ -69,10 +119,10 @@ export async function listarWebinarsAdmin(): Promise<WebinarAdmin[]> {
     linksPendentes: Number(r.links_pendentes),
     linksFalhados: Number(r.links_falhados),
     presentes: Number(r.presentes),
-    mediaAssistencia:
-      r.media_assistencia !== null && r.duracao_minutos
-        ? Math.min(100, Math.round((Number(r.media_assistencia) / r.duracao_minutos) * 100))
-        : null,
+    mediaAssistencia: percentagemAssistencia(r.media_assistencia, r.duracao_minutos),
+    leadsInscritas: Number(r.leads_inscritas),
+    leadsPresentes: Number(r.leads_presentes),
+    mediaAssistenciaLeads: percentagemAssistencia(r.media_assistencia_leads, r.duracao_minutos),
   }));
 }
 
@@ -731,10 +781,7 @@ export async function listarInscricoesAdmin(webinarId: string): Promise<Inscrica
     `select r.id, r.nome, r.apelido, r.telemovel, r.email, r.link_estado, r.link_tentativas,
             r.link_ultimo_erro, r.presenca, r.presenca_minutos, r.referencia,
             lc.nome as referencia_nome,
-            (
-              exists(select 1 from links_consultor lcp where lcp.referencia_email = r.email)
-              and not exists(select 1 from estados_lead el2 where el2.lead_email = r.email)
-            ) as eh_consultor,
+            (not (${CONDICAO_INSCRICAO_DE_LEAD})) as eh_consultor,
             r.link_zoom_clicado_em,
             el.estado
      from registrations r
