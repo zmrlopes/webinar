@@ -42,13 +42,6 @@ export default function TabelaMapa({ ano, mes, linhas, feriados, empresa, onMuda
     const linhaNova = { ...linhaAtual, ...alteracoes };
 
     if (alteracoes.servico !== undefined) {
-      lembrar(servicosConhecidos, setServicosConhecidos, alteracoes.servico);
-    }
-    if (alteracoes.local !== undefined) {
-      lembrar(locaisConhecidos, setLocaisConhecidos, alteracoes.local);
-    }
-
-    if (alteracoes.servico !== undefined) {
       const tinhaServico = linhaAtual.servico.trim() !== "";
       const temServicoAgora = alteracoes.servico.trim() !== "";
       if (!temServicoAgora) {
@@ -70,6 +63,8 @@ export default function TabelaMapa({ ano, mes, linhas, feriados, empresa, onMuda
     if (indice === 0) return;
     const anterior = linhas[indice - 1]!;
     atualizarLinha(indice, { servico: anterior.servico, local: anterior.local, tipo: anterior.tipo });
+    lembrar(servicosConhecidos, setServicosConhecidos, anterior.servico);
+    lembrar(locaisConhecidos, setLocaisConhecidos, anterior.local);
   }
 
   return (
@@ -121,6 +116,7 @@ export default function TabelaMapa({ ano, mes, linhas, feriados, empresa, onMuda
                     list="sugestoes-servico"
                     value={linha.servico}
                     onChange={(e) => atualizarLinha(indice, { servico: e.target.value })}
+                    onBlur={(e) => lembrar(servicosConhecidos, setServicosConhecidos, e.target.value)}
                     className={classeInput}
                   />
                 </td>
@@ -129,6 +125,7 @@ export default function TabelaMapa({ ano, mes, linhas, feriados, empresa, onMuda
                     list="sugestoes-local"
                     value={linha.local}
                     onChange={(e) => atualizarLinha(indice, { local: e.target.value })}
+                    onBlur={(e) => lembrar(locaisConhecidos, setLocaisConhecidos, e.target.value)}
                     className={classeInput}
                   />
                 </td>
