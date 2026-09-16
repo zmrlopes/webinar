@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { DadosEmpresa } from "@/config/empresa";
 import { linhaEhCinzenta, valorLinha, type LinhaMapa, type TipoAjuda } from "@/lib/calculos";
 import { formatarMoedaTabela } from "@/lib/formatacao";
@@ -18,12 +19,34 @@ const classeInput =
   "w-full min-w-0 border-0 bg-transparent px-1 py-1 text-sm outline-none focus:bg-white focus:ring-1 focus:ring-[#4b5320]";
 
 export default function TabelaMapa({ ano, mes, linhas, feriados, empresa, onMudar }: Props) {
-  const sugestoesServico = Array.from(new Set(linhas.map((l) => l.servico.trim()).filter(Boolean)));
-  const sugestoesLocal = Array.from(new Set(linhas.map((l) => l.local.trim()).filter(Boolean)));
+  // Lembra, só nesta sessão (não é guardado em disco nem localStorage), tudo
+  // o que já foi escrito em SERVIÇO/LOCAL, para as sugestões sobreviverem à
+  // troca de mês mesmo depois de a tabela ser regenerada em branco.
+  const [servicosConhecidos, setServicosConhecidos] = useState<Set<string>>(new Set());
+  const [locaisConhecidos, setLocaisConhecidos] = useState<Set<string>>(new Set());
+
+  function lembrar(conjunto: Set<string>, definir: (novo: Set<string>) => void, valor: string) {
+    const limpo = valor.trim();
+    if (limpo && !conjunto.has(limpo)) definir(new Set(conjunto).add(limpo));
+  }
+
+  const sugestoesServico = Array.from(
+    new Set([...servicosConhecidos, ...linhas.map((l) => l.servico.trim()).filter(Boolean)]),
+  );
+  const sugestoesLocal = Array.from(
+    new Set([...locaisConhecidos, ...linhas.map((l) => l.local.trim()).filter(Boolean)]),
+  );
 
   function atualizarLinha(indice: number, alteracoes: Partial<LinhaMapa>) {
     const linhaAtual = linhas[indice]!;
     const linhaNova = { ...linhaAtual, ...alteracoes };
+
+    if (alteracoes.servico !== undefined) {
+      lembrar(servicosConhecidos, setServicosConhecidos, alteracoes.servico);
+    }
+    if (alteracoes.local !== undefined) {
+      lembrar(locaisConhecidos, setLocaisConhecidos, alteracoes.local);
+    }
 
     if (alteracoes.servico !== undefined) {
       const tinhaServico = linhaAtual.servico.trim() !== "";
