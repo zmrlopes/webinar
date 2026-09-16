@@ -1,10 +1,13 @@
 import Link from "next/link";
+import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
 import {
   contarTrofeus,
   listarInscritosSemRespostaTrofeus,
   listarRespostasTrofeus,
+  questionarioTrofeusPublicado,
   TROFEUS_JA_TENHO,
 } from "@/lib/trofeus";
+import { BotoesAvisar } from "./botoes-avisar";
 
 export const dynamic = "force-dynamic";
 
@@ -97,7 +100,13 @@ export default async function TrofeusRespostasPagina() {
           {semResposta.length} inscrito(s) ainda por responder.
         </p>
 
-        <h2>Quantos mandar fazer</h2>
+        <BotoesAvisar
+          porResponder={semResposta.length}
+          publicado={questionarioTrofeusPublicado()}
+          emailDemonstracao={EMAIL_PAINEL_DEMONSTRACAO}
+        />
+
+        <h2 style={{ marginTop: 0 }}>Quantos mandar fazer</h2>
         <div className="ad-cartao">
           {contagens.map((c) => (
             <div className="ad-linha" key={c.chave}>

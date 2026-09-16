@@ -1,5 +1,7 @@
+import { configActiveCampaign } from "./activecampaign";
 import { db } from "./db";
 import { EMAIL_PAINEL_DEMONSTRACAO } from "./demo";
+import type { EmailSender } from "./email";
 import { TROFEUS_JA_TENHO, TROFEUS_QUERO } from "./trofeus-lista";
 
 export { TROFEUS_JA_TENHO, TROFEUS_QUERO } from "./trofeus-lista";
@@ -21,6 +23,11 @@ const CHAVES_JA_TENHO = new Set(TROFEUS_JA_TENHO.map((t) => t.chave));
  * responder — é o que permite continuar a testar o formulário sem ficar
  * sem forma de lá voltar.
  */
+/** O questionário já está no ar para os inscritos, ou ainda só na demonstração? */
+export function questionarioTrofeusPublicado(): boolean {
+  return !SO_PAINEL_DEMONSTRACAO;
+}
+
 export async function precisaResponderTrofeus(email: string): Promise<boolean> {
   if (email === EMAIL_PAINEL_DEMONSTRACAO) return true;
   if (SO_PAINEL_DEMONSTRACAO) return false;
@@ -126,4 +133,85 @@ export async function listarInscritosSemRespostaTrofeus(): Promise<InscritoSemRe
      order by ei.email, ei.criado_em desc`,
   );
   return rows;
+}
+
+/**
+ * O texto do aviso. Por agora é uma mensagem de teste — antes de isto sair
+ * para os 76 inscritos há uma mensagem definitiva a escrever, e é este o
+ * único sítio a mexer. `notificarInscritosTrofeus` recusa-se a enviar a
+ * toda a gente enquanto o questionário estiver só na demonstração, o que
+ * também serve de travão a mandar este texto de teste por engano.
+ */
+function mensagemAvisoTrofeus(nome: string, base: string): { assunto: string; corpoTexto: string } {
+  return {
+    assunto: "Teste — questionário dos troféus",
+    corpoTexto:
+      `Olá${nome ? ` ${nome}` : ""},\n\n` +
+      `Mensagem de teste para o questionário dos troféus do Teambuilding de 14 de novembro.\n\n` +
+      `O questionário está no teu painel, na secção "Avisos":\n${base}/consultor`,
+  };
+}
+
+export interface ResultadoNotificacaoTrofeus {
+  enviados: number;
+  falhas: { email: string; erro: string }[];
+}
+
+/**
+ * Aviso manual, disparado por um clique no admin. Com `teste`, vai só ao
+ * painel de demonstração — é como se confirma que o email sai mesmo antes
+ * de o mandar a 76 pessoas. Sem `teste`, vai a quem está inscrito no
+ * evento e ainda não respondeu, e só depois de o questionário estar
+ * publicado (ver questionarioTrofeusPublicado).
+ *
+ * Cada email passa pela lista dos consultores na ActiveCampaign: sem isso,
+ * quem se descansou de uma lista antiga não recebe nada e nós ficávamos a
+ * contar o envio como bem-sucedido (ver Mensagem.listaActiveCampaign).
+ * Uma falha a avisar alguém não trava as restantes.
+ */
+export async function notificarInscritosTrofeus(
+  sender: EmailSender,
+  teste: boolean,
+): Promise<ResultadoNotificacaoTrofeus> {
+  if (!teste && !questionarioTrofeusPublicado()) {
+    throw new Error(
+      "o questionário ainda só está no painel de demonstração — publica-o antes de avisar os inscritos",
+    );
+  }
+
+  const destinatarios = teste
+    ? [{ email: EMAIL_PAINEL_DEMONSTRACAO, nome: await nomeDe(EMAIL_PAINEL_DEMONSTRACAO) }]
+    : await listarInscritosSemRespostaTrofeus();
+
+  const base = process.env.SITE_BASE_URL ?? "https://webinar.viajareviver.net";
+  const lista = configActiveCampaign()?.listaConsultores;
+  const falhas: { email: string; erro: string }[] = [];
+  let enviados = 0;
+
+  for (const d of destinatarios) {
+    try {
+      await sender.enviar({
+        destinatario: d.email,
+        ...mensagemAvisoTrofeus(d.nome, base),
+        listaActiveCampaign: lista,
+      });
+      enviados += 1;
+    } catch (erro) {
+      falhas.push({ email: d.email, erro: erro instanceof Error ? erro.message : String(erro) });
+    }
+  }
+
+  return { enviados, falhas };
+}
+
+/** O nome da pessoa, como aparece na inscrição do evento ou no CSV da equipa. */
+async function nomeDe(email: string): Promise<string> {
+  const { rows } = await db().query<{ nome: string | null }>(
+    `select coalesce(
+              (select max(ei.nome) from evento_inscricoes ei where ei.email = $1),
+              (select ea.nome from equipa_afiliados ea where ea.email = $1)
+            ) as nome`,
+    [email],
+  );
+  return rows[0]?.nome ?? "";
 }
