@@ -6,6 +6,7 @@ import { gerarSlug } from "@/lib/slug";
 import { buscarProximoWebinarPublico, buscarWebinarFormacao, listarFormacoesEquipa } from "@/lib/webinars";
 import { estaoInscricoesAbertas } from "@/lib/eventos";
 import { precisaResponderTeambuilding } from "@/lib/teambuilding";
+import { precisaResponderTrofeus } from "@/lib/trofeus";
 import { listarFormacoesExternasFuturas } from "@/lib/formacoes-externas";
 import { listarWelcomeAboardDaEquipa, obterElegibilidadeWelcomeAboard } from "@/lib/welcome-aboard";
 
@@ -54,6 +55,7 @@ export async function POST(request: Request): Promise<Response> {
       inscricoesEventoAbertas,
       formacoesExternas,
       welcomeAboard,
+      precisaResponderTrofeusBool,
     ] = await Promise.all([
       buscarWebinarFormacao(),
       buscarProximoWebinarPublico(),
@@ -62,6 +64,7 @@ export async function POST(request: Request): Promise<Response> {
       estaoInscricoesAbertas(),
       listarFormacoesExternasFuturas(),
       obterElegibilidadeWelcomeAboard(emailNormalizado),
+      precisaResponderTrofeus(emailNormalizado),
     ]);
 
     const equipaWelcomeAboard = await listarWelcomeAboardDaEquipa(emailNormalizado);
@@ -102,6 +105,7 @@ export async function POST(request: Request): Promise<Response> {
         inscrito: formacoesEquipaInscritas[i],
       })),
       precisaResponderTeambuilding: precisaResponderTeambuildingBool,
+      precisaResponderTrofeus: precisaResponderTrofeusBool,
       inscricoesEventoAbertas,
       formacoesExternas: formacoesExternas.map((f) => ({
         id: f.id,

@@ -15,6 +15,7 @@ interface DadosIdentificacao {
   inscritoProximoWebinar: boolean;
   formacoesEquipa: { id: string; titulo: string; sessaoExternaEm: string; inscrito: boolean }[];
   precisaResponderTeambuilding: boolean;
+  precisaResponderTrofeus: boolean;
   inscricoesEventoAbertas: boolean;
   formacoesExternas: { id: string; titulo: string; sessaoExternaEm: string; link: string }[];
   welcomeAboard: { sessao1Concluida: boolean; sessao2Concluida: boolean } | null;
@@ -506,7 +507,7 @@ export function BackofficeHome() {
               </button>
             </div>
 
-            {(dados.precisaResponderTeambuilding || dados.welcomeAboard) && (
+            {(dados.precisaResponderTeambuilding || dados.precisaResponderTrofeus || dados.welcomeAboard) && (
               <div className="vqb-avisos">
                 <h2>Avisos</h2>
                 {dados.precisaResponderTeambuilding && (
@@ -521,10 +522,30 @@ export function BackofficeHome() {
                     </Link>
                   </div>
                 )}
-                {dados.welcomeAboard && (
+                {dados.precisaResponderTrofeus && (
                   <div
                     className="vqb-aviso-destaque"
                     style={dados.precisaResponderTeambuilding ? { marginTop: "1rem" } : undefined}
+                  >
+                    <span className="vqb-destaque-etiqueta">Troféus — 14 de novembro</span>
+                    <p className="vqb-destaque-texto" style={{ marginBottom: "1.1rem" }}>
+                      Vamos entregar os troféus no Teambuilding. Diz-nos quais queres receber e quais já
+                      tens em casa, para mandarmos fazer o número certo — ninguém fica sem o seu nem recebe
+                      um repetido.
+                    </p>
+                    <Link href="/consultor/trofeus" className="vqb-destaque-botao">
+                      Escolher os meus troféus
+                    </Link>
+                  </div>
+                )}
+                {dados.welcomeAboard && (
+                  <div
+                    className="vqb-aviso-destaque"
+                    style={
+                      dados.precisaResponderTeambuilding || dados.precisaResponderTrofeus
+                        ? { marginTop: "1rem" }
+                        : undefined
+                    }
                   >
                     <span className="vqb-destaque-etiqueta">Welcome Aboard</span>
                     <p className="vqb-wa-linha">
