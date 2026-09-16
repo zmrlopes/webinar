@@ -141,6 +141,9 @@ export interface InscritoFaturacao {
   adultos: number;
   criancasMais10: number;
   criancasMenos10: number;
+  /** null = ainda não respondeu ao questionário; [] = respondeu e não marcou nada. */
+  trofeusQuero: string[] | null;
+  trofeusJaTenho: string[] | null;
 }
 
 /**
@@ -151,6 +154,13 @@ export interface InscritoFaturacao {
  * ainda não tiver sido reimportado depois desta coluna passar a ser lida.
  * Adultos/crianças são a soma de todas as inscrições desse email — uma
  * pessoa pode ter-se inscrito mais do que uma vez.
+ *
+ * Traz também as escolhas do questionário dos troféus (src/lib/trofeus.ts),
+ * para esta tabela ser o único sítio onde se cruza tudo sobre cada
+ * inscrito: patamar, faturação, quantas pessoas leva e que troféus quer.
+ * Vêm por subconsulta em vez de join para não mexerem no group by — o
+ * email é único em respostas_trofeus, portanto devolvem no máximo uma
+ * linha.
  */
 export async function listarInscritosComFaturacao(): Promise<InscritoFaturacao[]> {
   const { rows } = await db().query<{
@@ -161,11 +171,15 @@ export async function listarInscritosComFaturacao(): Promise<InscritoFaturacao[]
     adultos: string;
     criancas_mais10: string;
     criancas_menos10: string;
+    trofeus_quero: string[] | null;
+    trofeus_ja_tenho: string[] | null;
   }>(
     `select ei.email, max(ei.nome) as nome, max(ea.nivel) as nivel, max(ea.vendas) as vendas,
             sum(ei.adultos) as adultos,
             sum(ei.criancas_mais10) as criancas_mais10,
-            sum(ei.criancas_menos10) as criancas_menos10
+            sum(ei.criancas_menos10) as criancas_menos10,
+            (select rt.quero from respostas_trofeus rt where rt.email = ei.email) as trofeus_quero,
+            (select rt.ja_tenho from respostas_trofeus rt where rt.email = ei.email) as trofeus_ja_tenho
      from evento_inscricoes ei
      left join equipa_afiliados ea on ea.email = ei.email
      group by ei.email`,
@@ -178,6 +192,8 @@ export async function listarInscritosComFaturacao(): Promise<InscritoFaturacao[]
     adultos: Number(r.adultos),
     criancasMais10: Number(r.criancas_mais10),
     criancasMenos10: Number(r.criancas_menos10),
+    trofeusQuero: r.trofeus_quero,
+    trofeusJaTenho: r.trofeus_ja_tenho,
   }));
 }
 

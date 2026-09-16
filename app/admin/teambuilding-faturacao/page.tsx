@@ -66,6 +66,16 @@ export default async function TeambuildingFaturacaoPagina() {
           white-space: nowrap;
         }
         .ad-pagina button.ad-th-ordenar:hover { color: #4b5320; }
+        .ad-pilula {
+          display: inline-block;
+          background: #eef1e4;
+          color: #4b5320;
+          border-radius: 999px;
+          padding: 0.12rem 0.5rem;
+          font-size: 0.75rem;
+          margin: 0 0.2rem 0.2rem 0;
+          white-space: nowrap;
+        }
       `}</style>
       <div className="ad-caixa">
         <Link href="/admin/eventos/teambuilding" className="ad-voltar">
@@ -81,6 +91,9 @@ export default async function TeambuildingFaturacaoPagina() {
           Patamar e faturação vêm do CSV da equipa, importado pela última vez a{" "}
           <strong>{formatarQuando(ultimaImportacao)}</strong>. Para os atualizar, carrega o CSV mais
           recente em <Link href="/admin/equipa/importar" style={{ color: "#4b5320" }}>/admin/equipa/importar</Link>.
+          As duas últimas colunas vêm do questionário dos troféus, respondido no painel de cada consultor —
+          a contagem por troféu, para saberes quantos encomendar, está em{" "}
+          <Link href="/admin/trofeus-respostas" style={{ color: "#4b5320" }}>Troféus a entregar</Link>.
         </p>
 
         {inscritos.length === 0 ? (

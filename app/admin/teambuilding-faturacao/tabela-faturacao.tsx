@@ -2,9 +2,42 @@
 
 import { useMemo, useState } from "react";
 import type { InscritoFaturacao } from "@/lib/teambuilding";
+import { TROFEUS_JA_TENHO } from "@/lib/trofeus-lista";
 
 type Valor = string | number | null;
-type Chave = "nome" | "email" | "nivel" | "vendas" | "adultos" | "criancasMais10" | "criancasMenos10";
+type Chave =
+  | "nome"
+  | "email"
+  | "nivel"
+  | "vendas"
+  | "adultos"
+  | "criancasMais10"
+  | "criancasMenos10"
+  | "trofeusQuero"
+  | "trofeusJaTenho";
+
+/**
+ * Ordenar troféus é ordenar pela quantidade. Quem ainda não respondeu fica
+ * a null de propósito — assim vai sempre para o fim, em vez de se misturar
+ * com quem respondeu e não quer nenhum.
+ */
+function quantos(escolhas: string[] | null): number | null {
+  return escolhas === null ? null : escolhas.length;
+}
+
+function CelulaTrofeus({ escolhas }: { escolhas: string[] | null }) {
+  if (escolhas === null) return <span className="ad-sem-dados">não respondeu</span>;
+  if (escolhas.length === 0) return <span className="ad-sem-dados">nenhum</span>;
+  return (
+    <>
+      {escolhas.map((c) => (
+        <span className="ad-pilula" key={c}>
+          {TROFEUS_JA_TENHO.find((t) => t.chave === c)?.curto ?? c}
+        </span>
+      ))}
+    </>
+  );
+}
 
 const COLUNAS: { chave: Chave; rotulo: string; valor: (i: InscritoFaturacao) => Valor }[] = [
   { chave: "nome", rotulo: "Nome", valor: (i) => i.nome },
@@ -14,6 +47,8 @@ const COLUNAS: { chave: Chave; rotulo: string; valor: (i: InscritoFaturacao) => 
   { chave: "adultos", rotulo: "Adultos", valor: (i) => i.adultos },
   { chave: "criancasMais10", rotulo: "Crianças pagantes (+10)", valor: (i) => i.criancasMais10 },
   { chave: "criancasMenos10", rotulo: "Crianças não pagantes (-10)", valor: (i) => i.criancasMenos10 },
+  { chave: "trofeusQuero", rotulo: "Troféus que quer", valor: (i) => quantos(i.trofeusQuero) },
+  { chave: "trofeusJaTenho", rotulo: "Troféus que já tem", valor: (i) => quantos(i.trofeusJaTenho) },
 ];
 
 /** null/undefined ficam sempre no fim, independentemente da direção. */
@@ -84,6 +119,12 @@ export function TabelaFaturacao({ inscritos }: { inscritos: InscritoFaturacao[] 
               <td>{i.adultos}</td>
               <td>{i.criancasMais10}</td>
               <td>{i.criancasMenos10}</td>
+              <td>
+                <CelulaTrofeus escolhas={i.trofeusQuero} />
+              </td>
+              <td>
+                <CelulaTrofeus escolhas={i.trofeusJaTenho} />
+              </td>
             </tr>
           ))}
         </tbody>
