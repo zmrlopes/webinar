@@ -36,3 +36,44 @@ export const TROFEUS_JA_TENHO: Trofeu[] = [
   { chave: "faturacao-100k", rotulo: "Troféu de faturação 100K", curto: "100K" },
   { chave: "faturacao-250k", rotulo: "Troféu de faturação 250K", curto: "250K" },
 ];
+
+/**
+ * A ordem dos patamares de troféu, do mais baixo para o mais alto —
+ * TROFEUS_QUERO já vem nesta ordem (confirmada com o utilizador: Bronze é
+ * o patamar mais alto, apesar de ser o último nome na lista). Usada para
+ * saber, dado o patamar atual de alguém, que troféus de patamar ela já
+ * devia ter recebido.
+ */
+const ORDEM_PATAMARES = TROFEUS_QUERO.map((t) => t.chave);
+
+/** "COORDENADOR", "Coordenador ", "coordenador" → "patamar-coordenador". null se não reconhecer. */
+export function chaveDoPatamar(nivel: string | null): string | null {
+  if (!nivel) return null;
+  const normalizado = nivel
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim()
+    .toUpperCase();
+  const chave = `patamar-${normalizado.toLowerCase()}`;
+  return ORDEM_PATAMARES.includes(chave) ? chave : null;
+}
+
+/**
+ * Os troféus de patamar que alguém já devia ter — o seu e todos os
+ * abaixo dele — mas que não constam do que declarou em "já tenho" no
+ * questionário. É como se cruza o patamar de cada um (vindo do CSV da
+ * equipa) com o que a pessoa disse já ter: alguém que chegou a Coordenador
+ * mas só marcou o troféu de Júnior está com dois troféus por entregar,
+ * mesmo que não os tenha pedido.
+ *
+ * Devolve null quando não há dados suficientes para responder — patamar
+ * desconhecido/não reconhecido, ou a pessoa ainda não respondeu ao
+ * questionário (jaTenho null) — para não se confundir "não sabemos" com
+ * "não falta nada".
+ */
+export function trofeusPatamarEmFalta(nivel: string | null, jaTenho: string[] | null): string[] | null {
+  const chaveAtual = chaveDoPatamar(nivel);
+  if (chaveAtual === null || jaTenho === null) return null;
+  const indice = ORDEM_PATAMARES.indexOf(chaveAtual);
+  return ORDEM_PATAMARES.slice(0, indice + 1).filter((c) => !jaTenho.includes(c));
+}

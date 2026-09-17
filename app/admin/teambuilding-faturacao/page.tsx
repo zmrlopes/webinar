@@ -76,6 +76,8 @@ export default async function TeambuildingFaturacaoPagina() {
           margin: 0 0.2rem 0.2rem 0;
           white-space: nowrap;
         }
+        .ad-pilula-ok { background: #e4f3e4; color: #0ca30c; font-weight: 700; }
+        .ad-pilula-alerta { background: #fdeee0; color: #b3541e; font-weight: 700; }
       `}</style>
       <div className="ad-caixa">
         <Link href="/admin/eventos/teambuilding" className="ad-voltar">
@@ -91,8 +93,11 @@ export default async function TeambuildingFaturacaoPagina() {
           Patamar e faturação vêm do CSV da equipa, importado pela última vez a{" "}
           <strong>{formatarQuando(ultimaImportacao)}</strong>. Para os atualizar, carrega o CSV mais
           recente em <Link href="/admin/equipa/importar" style={{ color: "#4b5320" }}>/admin/equipa/importar</Link>.
-          As duas últimas colunas vêm do questionário dos troféus, respondido no painel de cada consultor —
-          a contagem por troféu, para saberes quantos encomendar, está em{" "}
+          As três últimas colunas vêm do questionário dos troféus, respondido no painel de cada consultor.
+          &ldquo;Falta entregar&rdquo; cruza o patamar de cada um com o que já disse ter recebido: mostra os
+          troféus do patamar que já alcançou e ainda não tem, mesmo que não os tenha pedido — a laranja
+          quando falta algo, a verde quando está em dia. A contagem por troféu, para saberes quantos
+          encomendar, está em{" "}
           <Link href="/admin/trofeus-respostas" style={{ color: "#4b5320" }}>Troféus a entregar</Link>.
         </p>
 
