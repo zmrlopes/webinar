@@ -34,13 +34,13 @@ export default async function TeambuildingFaturacaoPagina() {
           padding: 2.5rem clamp(1.25rem, 5vw, 4rem) 4rem;
           min-height: calc(100vh - 4rem);
         }
-        .ad-caixa { max-width: 900px; margin: 0 auto; }
+        .ad-caixa { max-width: 1400px; margin: 0 auto; }
         .ad-pagina h1 { color: #000000; font-size: 1.5rem; margin: 0.75rem 0 0.4rem; }
         .ad-voltar { color: #4b5320; font-size: 0.85rem; text-decoration: none; }
         .ad-voltar:hover { text-decoration: underline; }
         .ad-subtitulo { color: #6b6a63; font-size: 0.9rem; margin: 0 0 1.5rem; }
         .ad-tabela-wrap { border-radius: 10px; overflow-x: auto; border: 1px solid #000000; }
-        .ad-tabela { width: 100%; min-width: 560px; border-collapse: collapse; background: #f7f6f3; }
+        .ad-tabela { width: 100%; min-width: 1280px; border-collapse: collapse; background: #f7f6f3; }
         .ad-tabela th, .ad-tabela td {
           text-align: left;
           padding: 0.6rem 0.9rem;
@@ -66,18 +66,20 @@ export default async function TeambuildingFaturacaoPagina() {
           white-space: nowrap;
         }
         .ad-pagina button.ad-th-ordenar:hover { color: #4b5320; }
-        .ad-pilula {
-          display: inline-block;
-          background: #eef1e4;
-          color: #4b5320;
+        .ad-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 1.4rem;
+          height: 1.4rem;
           border-radius: 999px;
-          padding: 0.12rem 0.5rem;
-          font-size: 0.75rem;
-          margin: 0 0.2rem 0.2rem 0;
-          white-space: nowrap;
+          font-weight: 800;
+          font-size: 0.8rem;
         }
-        .ad-pilula-ok { background: #e4f3e4; color: #0ca30c; font-weight: 700; }
-        .ad-pilula-alerta { background: #fdeee0; color: #b3541e; font-weight: 700; }
+        .ad-badge-tem { background: #e4f3e4; color: #0ca30c; }
+        .ad-badge-falta { background: #fdeee0; color: #b3541e; }
+        .ad-badge-pedido { background: #e9eaf7; color: #3a2f77; }
+        .ad-badge-vazio { color: #d8d6cc; }
       `}</style>
       <div className="ad-caixa">
         <Link href="/admin/eventos/teambuilding" className="ad-voltar">
@@ -93,10 +95,12 @@ export default async function TeambuildingFaturacaoPagina() {
           Patamar e faturação vêm do CSV da equipa, importado pela última vez a{" "}
           <strong>{formatarQuando(ultimaImportacao)}</strong>. Para os atualizar, carrega o CSV mais
           recente em <Link href="/admin/equipa/importar" style={{ color: "#4b5320" }}>/admin/equipa/importar</Link>.
-          As três últimas colunas vêm do questionário dos troféus, respondido no painel de cada consultor.
-          &ldquo;Falta entregar&rdquo; cruza o patamar de cada um com o que já disse ter recebido: mostra os
-          troféus do patamar que já alcançou e ainda não tem, mesmo que não os tenha pedido — a laranja
-          quando falta algo, a verde quando está em dia. A contagem por troféu, para saberes quantos
+          As últimas colunas, uma por troféu, cruzam o questionário (respondido no painel de cada
+          consultor) com o patamar e a faturação própria: <strong className="ad-badge ad-badge-tem">✓</strong>{" "}
+          já tem, <strong className="ad-badge ad-badge-falta">!</strong> os dados dizem que já alcançou este
+          troféu mas ainda não o declarou como recebido (falta entregar, mesmo sem ter sido pedido),{" "}
+          <strong className="ad-badge ad-badge-pedido">○</strong> pediu no questionário mas os dados ainda
+          não confirmam, e — quer dizer que ainda não respondeu. A contagem por troféu, para saberes quantos
           encomendar, está em{" "}
           <Link href="/admin/trofeus-respostas" style={{ color: "#4b5320" }}>Troféus a entregar</Link>.
         </p>

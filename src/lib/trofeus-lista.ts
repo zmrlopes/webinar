@@ -77,3 +77,23 @@ export function trofeusPatamarEmFalta(nivel: string | null, jaTenho: string[] | 
   const indice = ORDEM_PATAMARES.indexOf(chaveAtual);
   return ORDEM_PATAMARES.slice(0, indice + 1).filter((c) => !jaTenho.includes(c));
 }
+
+/** Os troféus de faturação e o volume (em euros) que os desbloqueia. */
+const LIMIARES_FATURACAO: [chave: string, limiar: number][] = [
+  ["faturacao-100k", 100_000],
+  ["faturacao-250k", 250_000],
+];
+
+/**
+ * A mesma ideia de trofeusPatamarEmFalta, mas para faturação: os troféus de
+ * faturação que o volume de vendas próprio (do CSV da equipa) diz que a
+ * pessoa já atingiu, mas que não constam do que declarou em "já tenho".
+ * null quando não há dados para responder — sem valor de vendas, ou a
+ * pessoa ainda não respondeu ao questionário.
+ */
+export function trofeusFaturacaoEmFalta(vendas: number | null, jaTenho: string[] | null): string[] | null {
+  if (vendas === null || jaTenho === null) return null;
+  return LIMIARES_FATURACAO.filter(([chave, limiar]) => vendas >= limiar && !jaTenho.includes(chave)).map(
+    ([chave]) => chave,
+  );
+}

@@ -2,68 +2,95 @@
 
 import { useMemo, useState } from "react";
 import type { InscritoFaturacao } from "@/lib/teambuilding";
-import { TROFEUS_JA_TENHO, trofeusPatamarEmFalta } from "@/lib/trofeus-lista";
+import {
+  TROFEUS_JA_TENHO,
+  trofeusFaturacaoEmFalta,
+  trofeusPatamarEmFalta,
+  type Trofeu,
+} from "@/lib/trofeus-lista";
 
 type Valor = string | number | null;
-type Chave =
-  | "nome"
-  | "email"
-  | "nivel"
-  | "vendas"
-  | "adultos"
-  | "criancasMais10"
-  | "criancasMenos10"
-  | "trofeusQuero"
-  | "trofeusJaTenho"
-  | "trofeusEmFalta";
 
 /**
- * Ordenar troféus é ordenar pela quantidade. Quem ainda não respondeu fica
- * a null de propósito — assim vai sempre para o fim, em vez de se misturar
- * com quem respondeu e não quer nenhum.
+ * Estado de uma pessoa perante um troféu específico:
+ * - "sem-resposta": ainda não respondeu ao questionário — não sabemos nada.
+ * - "tem": já o declarou como recebido.
+ * - "falta": os dados (patamar ou faturação própria) dizem que já o
+ *   alcançou, mas não está em "já tenho" — falta entregar-lho, mesmo que
+ *   não o tenha pedido no questionário.
+ * - "pedido": marcou "quero" no questionário, mas os dados não confirmam
+ *   que já o tenha direito (só acontece com troféus de patamar).
+ * - "nada": não tem, não foi pedido, e nada indica que falte.
  */
-function quantos(escolhas: string[] | null): number | null {
-  return escolhas === null ? null : escolhas.length;
+type EstadoTrofeu = "sem-resposta" | "tem" | "falta" | "pedido" | "nada";
+
+function estadoDoTrofeu(t: Trofeu, i: InscritoFaturacao): EstadoTrofeu {
+  if (i.trofeusJaTenho === null) return "sem-resposta";
+  if (i.trofeusJaTenho.includes(t.chave)) return "tem";
+
+  const emFalta = t.chave.startsWith("patamar-")
+    ? trofeusPatamarEmFalta(i.nivel, i.trofeusJaTenho)
+    : trofeusFaturacaoEmFalta(i.vendas, i.trofeusJaTenho);
+  if (emFalta?.includes(t.chave)) return "falta";
+
+  if ((i.trofeusQuero ?? []).includes(t.chave)) return "pedido";
+  return "nada";
 }
 
-function CelulaTrofeus({ escolhas }: { escolhas: string[] | null }) {
-  if (escolhas === null) return <span className="ad-sem-dados">não respondeu</span>;
-  if (escolhas.length === 0) return <span className="ad-sem-dados">nenhum</span>;
-  return (
-    <>
-      {escolhas.map((c) => (
-        <span className="ad-pilula" key={c}>
-          {TROFEUS_JA_TENHO.find((t) => t.chave === c)?.curto ?? c}
+/** Para ordenar: quem tem mais urgência à frente. Sem resposta fica sempre no fim. */
+function pesoEstado(estado: EstadoTrofeu): number | null {
+  switch (estado) {
+    case "tem":
+      return 3;
+    case "falta":
+      return 2;
+    case "pedido":
+      return 1;
+    case "nada":
+      return 0;
+    case "sem-resposta":
+      return null;
+  }
+}
+
+function BadgeTrofeu({ estado, trofeu }: { estado: EstadoTrofeu; trofeu: Trofeu }) {
+  switch (estado) {
+    case "sem-resposta":
+      return (
+        <span className="ad-sem-dados" title="ainda não respondeu ao questionário">
+          —
         </span>
-      ))}
-    </>
-  );
-}
-
-/**
- * Cruza o patamar (do CSV da equipa) com o que a pessoa já declarou ter
- * recebido — mostra os troféus de patamar que faltam entregar, mesmo que
- * não tenham sido pedidos no questionário. Três estados: patamar
- * desconhecido ou pessoa ainda sem resposta ("—", não dá para saber),
- * nada em falta ("em dia", a verde) e a lista do que falta (a laranja, para
- * chamar a atenção).
- */
-function CelulaEmFalta({ nivel, jaTenho }: { nivel: string | null; jaTenho: string[] | null }) {
-  const emFalta = trofeusPatamarEmFalta(nivel, jaTenho);
-  if (emFalta === null) return <span className="ad-sem-dados">—</span>;
-  if (emFalta.length === 0) return <span className="ad-pilula ad-pilula-ok">em dia</span>;
-  return (
-    <>
-      {emFalta.map((c) => (
-        <span className="ad-pilula ad-pilula-alerta" key={c}>
-          {TROFEUS_JA_TENHO.find((t) => t.chave === c)?.curto ?? c}
+      );
+    case "tem":
+      return (
+        <span className="ad-badge ad-badge-tem" title={`já tem — ${trofeu.rotulo}`}>
+          ✓
         </span>
-      ))}
-    </>
-  );
+      );
+    case "falta":
+      return (
+        <span className="ad-badge ad-badge-falta" title={`falta entregar — ${trofeu.rotulo}`}>
+          !
+        </span>
+      );
+    case "pedido":
+      return (
+        <span className="ad-badge ad-badge-pedido" title={`pediu, mas ainda não confirmado — ${trofeu.rotulo}`}>
+          ○
+        </span>
+      );
+    case "nada":
+      return <span className="ad-badge-vazio">·</span>;
+  }
 }
 
-const COLUNAS: { chave: Chave; rotulo: string; valor: (i: InscritoFaturacao) => Valor }[] = [
+interface ColunaBase {
+  chave: string;
+  rotulo: string;
+  valor: (i: InscritoFaturacao) => Valor;
+}
+
+const COLUNAS_BASE: ColunaBase[] = [
   { chave: "nome", rotulo: "Nome", valor: (i) => i.nome },
   { chave: "email", rotulo: "Email", valor: (i) => i.email },
   { chave: "nivel", rotulo: "Patamar", valor: (i) => i.nivel },
@@ -71,13 +98,6 @@ const COLUNAS: { chave: Chave; rotulo: string; valor: (i: InscritoFaturacao) => 
   { chave: "adultos", rotulo: "Adultos", valor: (i) => i.adultos },
   { chave: "criancasMais10", rotulo: "Crianças pagantes (+10)", valor: (i) => i.criancasMais10 },
   { chave: "criancasMenos10", rotulo: "Crianças não pagantes (-10)", valor: (i) => i.criancasMenos10 },
-  { chave: "trofeusQuero", rotulo: "Troféus que quer", valor: (i) => quantos(i.trofeusQuero) },
-  { chave: "trofeusJaTenho", rotulo: "Troféus que já tem", valor: (i) => quantos(i.trofeusJaTenho) },
-  {
-    chave: "trofeusEmFalta",
-    rotulo: "Falta entregar",
-    valor: (i) => quantos(trofeusPatamarEmFalta(i.nivel, i.trofeusJaTenho)),
-  },
 ];
 
 /** null/undefined ficam sempre no fim, independentemente da direção. */
@@ -90,10 +110,10 @@ function comparar(a: Valor, b: Valor): number {
 }
 
 export function TabelaFaturacao({ inscritos }: { inscritos: InscritoFaturacao[] }) {
-  const [colunaOrdenada, setColunaOrdenada] = useState<Chave>("vendas");
+  const [colunaOrdenada, setColunaOrdenada] = useState<string>("vendas");
   const [direcao, setDirecao] = useState<"asc" | "desc">("desc");
 
-  function alternarOrdenacao(chave: Chave): void {
+  function alternarOrdenacao(chave: string): void {
     if (colunaOrdenada === chave) {
       setDirecao((d) => (d === "asc" ? "desc" : "asc"));
     } else {
@@ -102,33 +122,50 @@ export function TabelaFaturacao({ inscritos }: { inscritos: InscritoFaturacao[] 
     }
   }
 
+  function valorDaColuna(chave: string, i: InscritoFaturacao): Valor {
+    const base = COLUNAS_BASE.find((c) => c.chave === chave);
+    if (base) return base.valor(i);
+    const trofeu = TROFEUS_JA_TENHO.find((t) => t.chave === chave);
+    return trofeu ? pesoEstado(estadoDoTrofeu(trofeu, i)) : null;
+  }
+
   const ordenados = useMemo(() => {
-    const coluna = COLUNAS.find((c) => c.chave === colunaOrdenada);
-    if (!coluna) return inscritos;
     const sinal = direcao === "asc" ? 1 : -1;
-    return [...inscritos].sort((a, b) => sinal * comparar(coluna.valor(a), coluna.valor(b)));
+    return [...inscritos].sort(
+      (a, b) => sinal * comparar(valorDaColuna(colunaOrdenada, a), valorDaColuna(colunaOrdenada, b)),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inscritos, colunaOrdenada, direcao]);
+
+  function Cabecalho({ chave, rotulo }: { chave: string; rotulo: string }) {
+    return (
+      <th>
+        <button type="button" className="ad-th-ordenar" onClick={() => alternarOrdenacao(chave)}>
+          {rotulo}{" "}
+          <span
+            style={{
+              display: "inline-block",
+              fontSize: "0.95rem",
+              color: colunaOrdenada === chave ? "#4b5320" : "#c9c7bd",
+            }}
+          >
+            {colunaOrdenada === chave ? (direcao === "asc" ? "↑" : "↓") : "↕"}
+          </span>
+        </button>
+      </th>
+    );
+  }
 
   return (
     <div className="ad-tabela-wrap">
       <table className="ad-tabela">
         <thead>
           <tr>
-            {COLUNAS.map((c) => (
-              <th key={c.chave}>
-                <button type="button" className="ad-th-ordenar" onClick={() => alternarOrdenacao(c.chave)}>
-                  {c.rotulo}{" "}
-                  <span
-                    style={{
-                      display: "inline-block",
-                      fontSize: "0.95rem",
-                      color: colunaOrdenada === c.chave ? "#4b5320" : "#c9c7bd",
-                    }}
-                  >
-                    {colunaOrdenada === c.chave ? (direcao === "asc" ? "↑" : "↓") : "↕"}
-                  </span>
-                </button>
-              </th>
+            {COLUNAS_BASE.map((c) => (
+              <Cabecalho key={c.chave} chave={c.chave} rotulo={c.rotulo} />
+            ))}
+            {TROFEUS_JA_TENHO.map((t) => (
+              <Cabecalho key={t.chave} chave={t.chave} rotulo={t.curto} />
             ))}
           </tr>
         </thead>
@@ -148,15 +185,11 @@ export function TabelaFaturacao({ inscritos }: { inscritos: InscritoFaturacao[] 
               <td>{i.adultos}</td>
               <td>{i.criancasMais10}</td>
               <td>{i.criancasMenos10}</td>
-              <td>
-                <CelulaTrofeus escolhas={i.trofeusQuero} />
-              </td>
-              <td>
-                <CelulaTrofeus escolhas={i.trofeusJaTenho} />
-              </td>
-              <td>
-                <CelulaEmFalta nivel={i.nivel} jaTenho={i.trofeusJaTenho} />
-              </td>
+              {TROFEUS_JA_TENHO.map((t) => (
+                <td key={t.chave} style={{ textAlign: "center" }}>
+                  <BadgeTrofeu estado={estadoDoTrofeu(t, i)} trofeu={t} />
+                </td>
+              ))}
             </tr>
           ))}
         </tbody>
