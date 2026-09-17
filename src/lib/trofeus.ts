@@ -12,7 +12,7 @@ export type { Trofeu } from "./trofeus-lista";
  * (zmrlopes@gmail.com). Passar a `false` publica-o para os consultores
  * inscritos no evento — é o único sítio a mexer para o pôr no ar.
  */
-const SO_PAINEL_DEMONSTRACAO = true;
+const SO_PAINEL_DEMONSTRACAO = false;
 
 const CHAVES_QUERO = new Set(TROFEUS_QUERO.map((t) => t.chave));
 const CHAVES_JA_TENHO = new Set(TROFEUS_JA_TENHO.map((t) => t.chave));
@@ -135,20 +135,20 @@ export async function listarInscritosSemRespostaTrofeus(): Promise<InscritoSemRe
   return rows;
 }
 
-/**
- * O texto do aviso. Por agora é uma mensagem de teste — antes de isto sair
- * para os 76 inscritos há uma mensagem definitiva a escrever, e é este o
- * único sítio a mexer. `notificarInscritosTrofeus` recusa-se a enviar a
- * toda a gente enquanto o questionário estiver só na demonstração, o que
- * também serve de travão a mandar este texto de teste por engano.
- */
+/** O texto do aviso — único sítio a mexer para o mudar. */
 function mensagemAvisoTrofeus(nome: string, base: string): { assunto: string; corpoTexto: string } {
   return {
-    assunto: "Teste — questionário dos troféus",
+    assunto: "🏆 Troféus do Teambuilding — diz-nos quais queres",
     corpoTexto:
       `Olá${nome ? ` ${nome}` : ""},\n\n` +
-      `Mensagem de teste para o questionário dos troféus do Teambuilding de 14 de novembro.\n\n` +
-      `O questionário está no teu painel, na secção "Avisos":\n${base}/consultor`,
+      `No Teambuilding de 14 de novembro vamos entregar os troféus de patamar. Precisamos da tua ajuda ` +
+      `para acertar exactamente quantos mandar fazer.\n\n` +
+      `Preparámos um questionário rápido (1 minuto) no teu painel, onde marcas:\n` +
+      `- que troféus ainda te faltam e queres receber nesse dia\n` +
+      `- que troféus já tens em casa\n\n` +
+      `Assim ninguém fica sem o seu.\n\n` +
+      `Responde ao questionário aqui:\n${base}/consultor\n\n` +
+      `Até dia 14!\nEquipa Viajar é Viver`,
   };
 }
 
