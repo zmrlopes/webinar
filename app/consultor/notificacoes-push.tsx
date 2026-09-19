@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
 
 /**
  * Regista o service worker (public/sw.js) assim que o painel carrega —
@@ -36,6 +37,7 @@ export function NotificacoesPush({ email }: { email: string }) {
   const [erro, setErro] = useState<string | null>(null);
   const [promptInstalacao, setPromptInstalacao] = useState<{ prompt: () => Promise<void> } | null>(null);
   const [appInstalada, setAppInstalada] = useState(false);
+  const [teste, setTeste] = useState<"pronto" | "a-enviar" | "enviado" | "erro">("pronto");
 
   useEffect(() => {
     registarServiceWorker();
@@ -108,9 +110,30 @@ export function NotificacoesPush({ email }: { email: string }) {
     setPromptInstalacao(null);
   }
 
-  if (estadoPush === "sem-suporte" && appInstalada) return null;
-  if (estadoPush === "a-verificar") return null;
-  if (estadoPush === "ativo" && appInstalada) return null;
+  async function enviarTeste(): Promise<void> {
+    setTeste("a-enviar");
+    try {
+      const resposta = await fetch("/api/consultor/push/teste", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      setTeste(resposta.ok ? "enviado" : "erro");
+    } catch {
+      setTeste("erro");
+    }
+  }
+
+  const ehPainelDemonstracao = email === EMAIL_PAINEL_DEMONSTRACAO;
+
+  // No painel de demonstração o cartão nunca desaparece — precisa de ficar
+  // sempre à mão para se poder testar o botão de notificação de teste,
+  // mesmo depois de já estar tudo instalado e ativado.
+  if (!ehPainelDemonstracao) {
+    if (estadoPush === "sem-suporte" && appInstalada) return null;
+    if (estadoPush === "a-verificar") return null;
+    if (estadoPush === "ativo" && appInstalada) return null;
+  }
 
   return (
     <div className="vqb-aviso-destaque" style={{ marginTop: "1rem" }}>
@@ -140,6 +163,27 @@ export function NotificacoesPush({ email }: { email: string }) {
         {estadoPush === "ativo" && (
           <span className="vqb-destaque-texto" style={{ marginBottom: 0, color: "#0ca30c" }}>
             ✓ Notificações ativas
+          </span>
+        )}
+        {estadoPush === "ativo" && ehPainelDemonstracao && (
+          <button
+            type="button"
+            onClick={enviarTeste}
+            disabled={teste === "a-enviar"}
+            className="vqb-destaque-botao"
+            style={{ background: "#3a2f77" }}
+          >
+            {teste === "a-enviar" ? "A enviar…" : "Enviar notificação de teste"}
+          </button>
+        )}
+        {teste === "enviado" && (
+          <span className="vqb-destaque-texto" style={{ marginBottom: 0, color: "#0ca30c" }}>
+            Enviada — devias vê-la a chegar em segundos.
+          </span>
+        )}
+        {teste === "erro" && (
+          <span className="vqb-destaque-texto" style={{ marginBottom: 0, color: "#c0392b" }}>
+            Falhou — se acabaste de ativar, tenta outra vez daqui a pouco.
           </span>
         )}
         {estadoPush === "recusado" && (
