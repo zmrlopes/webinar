@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Viajar é Viver",
+    title: "Tropa de Elite",
   },
   icons: {
     icon: [

@@ -1,6 +1,6 @@
 {
-  "name": "Viajar é Viver — Consultor",
-  "short_name": "Viajar é Viver",
+  "name": "Tropa de Elite",
+  "short_name": "Tropa de Elite",
   "description": "Painel do consultor: inscrições, sessões e avisos da equipa.",
   "start_url": "/consultor",
   "scope": "/",
