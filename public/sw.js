@@ -29,7 +29,12 @@ self.addEventListener("push", (evento) => {
     self.registration.showNotification(dados.titulo, {
       body: dados.corpo,
       icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png",
+      // O "badge" é o ícone pequeno na barra de estado do Android — tem de
+      // ser uma silhueta (fundo transparente, forma a branco). O Android
+      // ignora a cor e usa só o alfa; passar-lhe o ícone normal (fundo
+      // preto sólido, sem transparência) dava um quadrado branco cheio,
+      // sem forma nenhuma.
+      badge: "/icons/badge-96.png",
       data: { url: dados.url },
     }),
   );
