@@ -2,6 +2,7 @@ import { configActiveCampaign } from "./activecampaign";
 import { db } from "./db";
 import { EMAIL_PAINEL_DEMONSTRACAO } from "./demo";
 import type { EmailSender } from "./email";
+import { notificarPush } from "./push";
 import { TROFEUS_JA_TENHO, TROFEUS_QUERO } from "./trofeus-lista";
 
 export { TROFEUS_JA_TENHO, TROFEUS_QUERO } from "./trofeus-lista";
@@ -195,6 +196,11 @@ export async function notificarInscritosTrofeus(
         ...mensagemAvisoTrofeus(d.nome, base),
         listaActiveCampaign: lista,
       });
+      await notificarPush(d.email, {
+        titulo: "Troféus do Teambuilding",
+        corpo: "Diz-nos quais queres receber e quais já tens — questionário rápido no teu painel.",
+        url: "/consultor/trofeus",
+      }).catch((erroPush) => console.error(`falha ao enviar push a ${d.email}:`, erroPush));
       enviados += 1;
     } catch (erro) {
       falhas.push({ email: d.email, erro: erro instanceof Error ? erro.message : String(erro) });

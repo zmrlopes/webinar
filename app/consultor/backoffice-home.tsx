@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { guardarEmail, lerEmailGuardado, limparEmailGuardado } from "./armazenamento";
 import { EventoForm } from "./evento-form";
+import { NotificacoesPush } from "./notificacoes-push";
 
 interface DadosIdentificacao {
   nome: string | null;
@@ -353,14 +354,18 @@ export function BackofficeHome() {
         .vqb-destaque-etiqueta-icligo { color: #e0532f; display: flex; align-items: center; gap: 0.4rem; }
         .vqb-icligo-badge { display: inline-flex; width: 1.1rem; height: 1.1rem; }
         .vqb-destaque-data-icligo { margin: 0 0 1.1rem; color: #6b6a63; font-size: 0.95rem; }
-        .vqb-pagina a.vqb-destaque-botao {
+        .vqb-pagina a.vqb-destaque-botao,
+        .vqb-pagina button.vqb-destaque-botao {
           background: linear-gradient(135deg, #5d6b2a, #4b5320);
           color: #ffffff;
           border-radius: 8px;
           font-weight: 700;
           text-decoration: none;
           box-sizing: border-box;
+          font-family: inherit;
+          cursor: pointer;
         }
+        .vqb-pagina button.vqb-destaque-botao:disabled { opacity: 0.6; cursor: default; }
         .vqb-pagina a.vqb-destaque-botao-icligo {
           background: linear-gradient(135deg, #f5895f, #f0603f);
         }
@@ -507,10 +512,18 @@ export function BackofficeHome() {
               </button>
             </div>
 
-            {(dados.precisaResponderTeambuilding || dados.precisaResponderTrofeus || dados.welcomeAboard) && (
-              <div className="vqb-avisos">
-                <h2>Avisos</h2>
-                {dados.precisaResponderTeambuilding && (
+            {
+              // A secção fica sempre aberta (deixou de depender só dos
+              // outros três avisos) porque o cartão de notificações tem
+              // sempre algo para mostrar a quem ainda não o ativou — ele
+              // próprio decide voltar null quando já não há nada a pedir.
+            }
+            <div className="vqb-avisos">
+              <h2>Avisos</h2>
+              <NotificacoesPush email={email} />
+              {(dados.precisaResponderTeambuilding || dados.precisaResponderTrofeus || dados.welcomeAboard) && (
+                <>
+                  {dados.precisaResponderTeambuilding && (
                   <div className="vqb-aviso-destaque">
                     <span className="vqb-destaque-etiqueta">Teambuilding — 14 de novembro</span>
                     <p className="vqb-destaque-texto" style={{ marginBottom: "1.1rem" }}>
@@ -603,8 +616,9 @@ export function BackofficeHome() {
                     </div>
                   </div>
                 )}
-              </div>
-            )}
+                </>
+              )}
+            </div>
 
             <h2>Página da Equipa</h2>
             <div className="vqb-cartao">

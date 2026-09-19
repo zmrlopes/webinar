@@ -5,6 +5,7 @@ import {
 } from "./activecampaign";
 import { db } from "./db";
 import { CONDICAO_CONSULTOR_COM_PAINEL } from "./equipa";
+import { notificarPush } from "./push";
 
 export interface AnexoMensagem {
   nome: string;
@@ -306,6 +307,12 @@ export async function notificarConsultorSobreLead(
       `Telemóvel: ${registro.telemovel ?? "(não indicado)"}\n` +
       `Email: ${registro.email}`,
   });
+
+  await notificarPush(registro.referencia_email, {
+    titulo: "Nova inscrição pelo teu link",
+    corpo: `${registro.nome} inscreveu-se em "${registro.titulo}"`,
+    url: "/consultor",
+  }).catch((erro) => console.error(`falha ao enviar push a ${registro.referencia_email}:`, erro));
 }
 
 export interface ResultadoNotificacaoEquipa {
@@ -380,6 +387,11 @@ export async function notificarEquipaNovaSessao(
           `Vai ao teu painel para te inscreveres:\n${base}/consultor`,
         listaActiveCampaign: listaConsultores,
       });
+      await notificarPush(r.email, {
+        titulo: `Nova ${rotulo} disponível`,
+        corpo: sessao.titulo,
+        url: "/consultor",
+      }).catch((erroPush) => console.error(`falha ao enviar push a ${r.email}:`, erroPush));
     } catch (erro) {
       sucesso = false;
       mensagemErro = erro instanceof Error ? erro.message : String(erro);
