@@ -11,6 +11,12 @@ self.addEventListener("activate", (evento) => {
   evento.waitUntil(self.clients.claim());
 });
 
+// Sem isto, alguns Chrome/Android mais antigos não consideram o site
+// "instalável" e nunca oferecem o botão de instalação — mesmo sem cache
+// nenhuma, um handler de fetch (que só deixa o pedido seguir normalmente)
+// já satisfaz o critério.
+self.addEventListener("fetch", () => {});
+
 self.addEventListener("push", (evento) => {
   let dados = { titulo: "Viajar é Viver", corpo: "", url: "/consultor" };
   try {
