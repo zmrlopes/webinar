@@ -124,6 +124,51 @@ export async function listarRespostasHotel(): Promise<RespostaHotelAdmin[]> {
   }));
 }
 
+/** Uma célula segura para CSV: aspas duplicadas e o campo todo entre aspas. */
+function celula(valor: string): string {
+  return `"${valor.replace(/"/g, '""')}"`;
+}
+
+/**
+ * Todas as respostas numa tabela de texto — para se descarregar ou copiar
+ * de uma vez em /admin/hotel-respostas. Existe porque a base de dados não
+ * é acessível de fora do site: sem isto, a única forma de levar estas
+ * respostas para outro lado (o hotel, uma folha de cálculo, uma conversa)
+ * era copiar linha a linha do ecrã.
+ *
+ * Separador `;` e BOM à frente porque é o que o Excel em português abre
+ * direito — com `,` mete tudo numa coluna só.
+ */
+export function csvRespostasHotel(respostas: RespostaHotelAdmin[]): string {
+  const cabecalho = [
+    "Nome",
+    "Email",
+    "Quer quarto",
+    "Tipo de quarto",
+    "Noite 13-14",
+    "Noite 14-15",
+    "Total de noites",
+    "Leva crianças",
+    "Idades das crianças",
+    "Respondido em",
+  ];
+
+  const linhas = respostas.map((r) => [
+    r.nome,
+    r.email,
+    r.querQuarto ? "Sim" : "Não",
+    !r.querQuarto ? "" : r.tipoQuarto === "single" ? "Single" : r.tipoQuarto === "duplo" ? "Duplo/Twin" : "",
+    r.querQuarto && r.noiteAnterior ? "Sim" : "Não",
+    r.querQuarto && r.noiteSeguinte ? "Sim" : "Não",
+    r.querQuarto ? String((r.noiteAnterior ? 1 : 0) + (r.noiteSeguinte ? 1 : 0)) : "0",
+    r.querQuarto && r.temCriancas ? "Sim" : "Não",
+    r.querQuarto && r.temCriancas ? (r.idadesCriancas ?? "") : "",
+    r.criadoEm.toISOString(),
+  ]);
+
+  return `﻿${[cabecalho, ...linhas].map((l) => l.map(celula).join(";")).join("\n")}`;
+}
+
 export interface InscritoSemRespostaHotel {
   nome: string;
   email: string;

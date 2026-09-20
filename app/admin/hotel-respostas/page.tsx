@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
 import {
+  csvRespostasHotel,
   listarInscritosSemRespostaHotel,
   listarRespostasHotel,
   PRECO_DUPLO,
@@ -8,6 +9,7 @@ import {
   questionarioHotelPublicado,
 } from "@/lib/hotel";
 import { BotoesAvisar } from "./botoes-avisar";
+import { Exportar } from "./exportar";
 
 export const dynamic = "force-dynamic";
 
@@ -126,6 +128,7 @@ export default async function HotelRespostasPagina() {
         </div>
 
         <h2>Respostas</h2>
+        <Exportar csv={csvRespostasHotel(respostas)} total={respostas.length} />
         {respostas.length === 0 ? (
           <p className="ad-legenda">Ainda ninguém respondeu.</p>
         ) : (
