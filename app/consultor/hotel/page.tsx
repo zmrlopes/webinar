@@ -292,7 +292,7 @@ function HotelFormulario() {
                     </label>
                   </div>
 
-                  <h2>Crianças</h2>
+                  <h2>Crianças?</h2>
                   <div className="vqx-lista">
                     <label className="vqx-linha" htmlFor="tem-criancas">
                       <input
