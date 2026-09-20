@@ -304,7 +304,7 @@ function HotelFormulario() {
                           if (temCriancas) setIdadesCriancas("");
                         }}
                       />
-                      <span>Vou levar crianças para o quarto</span>
+                      <span>Sim</span>
                     </label>
                   </div>
 
