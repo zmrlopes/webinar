@@ -192,6 +192,12 @@ export function NotificacoesPush({ email }: { email: string }) {
             definições do browser (junto ao endereço do site).
           </span>
         )}
+        {estadoPush === "sem-suporte" && !appInstalada && (
+          <span className="vqb-destaque-texto" style={{ marginBottom: 0 }}>
+            No iPhone o botão de notificações só aparece depois de instalares a app (instruções em
+            baixo) — a Apple exige isso.
+          </span>
+        )}
       </div>
 
       {!appInstalada && !promptInstalacao && (
