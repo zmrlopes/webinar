@@ -3,7 +3,13 @@ import { guardarLinkConsultor, referenciaSemColisao } from "@/lib/consultor";
 import { db } from "@/lib/db";
 import { buscarMembroEquipa } from "@/lib/equipa";
 import { gerarSlug } from "@/lib/slug";
-import { buscarProximoWebinarPublico, buscarWebinarFormacao, listarFormacoesEquipa } from "@/lib/webinars";
+import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
+import {
+  buscarProximaSessaoWelcomeAboard,
+  buscarProximoWebinarPublico,
+  buscarWebinarFormacao,
+  listarFormacoesEquipa,
+} from "@/lib/webinars";
 import { estaoInscricoesAbertas } from "@/lib/eventos";
 import { precisaResponderTeambuilding } from "@/lib/teambuilding";
 import { precisaResponderTrofeus } from "@/lib/trofeus";
@@ -56,6 +62,7 @@ export async function POST(request: Request): Promise<Response> {
       formacoesExternas,
       welcomeAboard,
       precisaResponderTrofeusBool,
+      proximaSessaoWelcomeAboard,
     ] = await Promise.all([
       buscarWebinarFormacao(),
       buscarProximoWebinarPublico(),
@@ -65,6 +72,12 @@ export async function POST(request: Request): Promise<Response> {
       listarFormacoesExternasFuturas(),
       obterElegibilidadeWelcomeAboard(emailNormalizado),
       precisaResponderTrofeus(emailNormalizado),
+      // Só o painel de demonstração usa isto por agora (ver
+      // NOVO_SISTEMA_SO_DEMO em welcome-aboard.ts) — poupa esta consulta
+      // extra em todos os outros pedidos, até a funcionalidade publicar.
+      emailNormalizado === EMAIL_PAINEL_DEMONSTRACAO
+        ? buscarProximaSessaoWelcomeAboard()
+        : Promise.resolve(undefined),
     ]);
 
     const equipaWelcomeAboard = await listarWelcomeAboardDaEquipa(emailNormalizado);
@@ -80,11 +93,13 @@ export async function POST(request: Request): Promise<Response> {
       return rows[0]?.existe ?? false;
     }
 
-    const [inscritoProximoWebinar, inscritoFormacao, formacoesEquipaInscritas] = await Promise.all([
-      proximoWebinar ? jaInscrito(proximoWebinar.id) : Promise.resolve(false),
-      formacao ? jaInscrito(formacao.id) : Promise.resolve(false),
-      Promise.all(formacoesEquipa.map((f) => jaInscrito(f.id))),
-    ]);
+    const [inscritoProximoWebinar, inscritoFormacao, formacoesEquipaInscritas, inscritoWelcomeAboard] =
+      await Promise.all([
+        proximoWebinar ? jaInscrito(proximoWebinar.id) : Promise.resolve(false),
+        formacao ? jaInscrito(formacao.id) : Promise.resolve(false),
+        Promise.all(formacoesEquipa.map((f) => jaInscrito(f.id))),
+        proximaSessaoWelcomeAboard ? jaInscrito(proximaSessaoWelcomeAboard.id) : Promise.resolve(false),
+      ]);
 
     return NextResponse.json({
       nome: membro.nome,
@@ -115,6 +130,10 @@ export async function POST(request: Request): Promise<Response> {
       })),
       welcomeAboard,
       equipaWelcomeAboard,
+      proximaSessaoWelcomeAboard: proximaSessaoWelcomeAboard
+        ? { id: proximaSessaoWelcomeAboard.id, sessaoExternaEm: proximaSessaoWelcomeAboard.sessaoExternaEm }
+        : null,
+      inscritoWelcomeAboard,
     });
   } catch (erro) {
     console.error("falha ao identificar consultor no backoffice:", erro);

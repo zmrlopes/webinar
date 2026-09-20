@@ -116,6 +116,18 @@ export async function listarWebinarsParaPainel(): Promise<WebinarResumo[]> {
 export const TITULO_WEBINAR_PUBLICO = "A tua oportunidade de negócio no turismo";
 
 /**
+ * Título fixo das sessões semanais (quartas-feiras) de acolhimento a novo
+ * consultor, sincronizadas da sala do Patrick — ver src/lib/welcome-aboard.ts.
+ * Ao contrário da formação recorrente "de segunda", não há um título
+ * diferente para a 1ª e a 2ª vez: é sempre "Welcome Aboard", e é quem dá a
+ * sessão nesse dia que decide, ao vivo, se trata alguém como estando na
+ * primeira ou na segunda — o nosso sistema só consegue contar quantas
+ * sessões distintas cada consultor assistiu mesmo, não qual conteúdo foi
+ * dado em cada uma.
+ */
+export const TITULO_WELCOME_ABOARD = "Welcome Aboard";
+
+/**
  * A próxima sessão pública que ainda dá para entrar — a mais próxima no
  * tempo entre as que ainda não começaram e as que já começaram mas ainda
  * não devem ter acabado (usa `duracao_minutos` para saber quando acaba;
@@ -266,6 +278,44 @@ export async function listarFormacoesEquipa(): Promise<WebinarResumo[]> {
     sessaoExternaEm: r.sessao_externa_em,
     duracaoMinutos: r.duracao_minutos,
   }));
+}
+
+/**
+ * A próxima sessão do Welcome Aboard ainda por acontecer — independente
+ * de qual outra formação sincronizada esteja mais próxima
+ * (`buscarWebinarFormacao` só devolve UMA, a mais próxima entre todas, e
+ * podia nunca ser esta). O botão de inscrição do cartão Welcome Aboard usa
+ * isto diretamente, para nunca depender de qual sessão calha estar mais
+ * perto nesse momento.
+ */
+export async function buscarProximaSessaoWelcomeAboard(): Promise<WebinarResumo | undefined> {
+  const { rows } = await db().query<{
+    id: string;
+    titulo: string;
+    tipo: string;
+    sessao_externa_em: Date;
+    duracao_minutos: number;
+  }>(
+    `select id, titulo, tipo, sessao_externa_em, duracao_minutos
+     from webinars
+     where cancelada_em is null
+       and sessao_externa_id is not null
+       and tipo = 'sincronizado'
+       and titulo = $1
+       and sessao_externa_em + (coalesce(duracao_minutos, 90) * interval '1 minute') > now()
+     order by sessao_externa_em asc
+     limit 1`,
+    [TITULO_WELCOME_ABOARD],
+  );
+  const r = rows[0];
+  if (!r) return undefined;
+  return {
+    id: r.id,
+    titulo: r.titulo,
+    tipo: r.tipo,
+    sessaoExternaEm: r.sessao_externa_em,
+    duracaoMinutos: r.duracao_minutos,
+  };
 }
 
 export interface DadosNovaFormacao {

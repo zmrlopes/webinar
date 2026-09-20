@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
 import { guardarEmail, lerEmailGuardado, limparEmailGuardado } from "./armazenamento";
 import { EventoForm } from "./evento-form";
 import { NotificacoesPush } from "./notificacoes-push";
@@ -20,6 +21,8 @@ interface DadosIdentificacao {
   inscricoesEventoAbertas: boolean;
   formacoesExternas: { id: string; titulo: string; sessaoExternaEm: string; link: string }[];
   welcomeAboard: { sessao1Concluida: boolean; sessao2Concluida: boolean } | null;
+  proximaSessaoWelcomeAboard: { id: string; sessaoExternaEm: string } | null;
+  inscritoWelcomeAboard: boolean;
   equipaWelcomeAboard: {
     nome: string;
     email: string;
@@ -71,6 +74,10 @@ export function BackofficeHome() {
   const [webinarAcabadoDeInscrever, setWebinarAcabadoDeInscrever] = useState(false);
   const [seccaoAtiva, setSeccaoAtiva] = useState<Seccao>(null);
   const [aMarcarWelcomeAboard, setAMarcarWelcomeAboard] = useState<1 | 2 | null>(null);
+  // O Welcome Aboard "novo" (presença real, sem checkboxes) só aparece
+  // aqui — para toda a gente continua exatamente como estava, até ser
+  // publicado (ver NOVO_SISTEMA_SO_DEMO em src/lib/welcome-aboard.ts).
+  const ehContaDemonstracao = email === EMAIL_PAINEL_DEMONSTRACAO;
 
   function alternarSeccao(seccao: Seccao): void {
     setSeccaoAtiva((atual) => (atual === seccao ? null : seccao));
@@ -98,11 +105,16 @@ export function BackofficeHome() {
       setWebinarInscrito(corpo.inscritoProximoWebinar === true);
       setFormacaoInscrita(corpo.inscritoFormacao === true);
       const formacoesEquipa = Array.isArray(corpo.formacoesEquipa) ? corpo.formacoesEquipa : [];
-      setFormacoesAdHocInscritas(
-        Object.fromEntries(
-          formacoesEquipa.map((f: { id: string; inscrito: boolean }) => [f.id, f.inscrito === true]),
-        ),
+      const inscricoesIniciais: Record<string, boolean> = Object.fromEntries(
+        formacoesEquipa.map((f: { id: string; inscrito: boolean }) => [f.id, f.inscrito === true]),
       );
+      // A sessão do Welcome Aboard usa o mesmíssimo mecanismo de
+      // inscrição das formações ad-hoc (pedirFormacaoAdHoc) — junta-se ao
+      // mesmo mapa em vez de duplicar estado e funções só para ela.
+      if (corpo.proximaSessaoWelcomeAboard?.id) {
+        inscricoesIniciais[corpo.proximaSessaoWelcomeAboard.id] = corpo.inscritoWelcomeAboard === true;
+      }
+      setFormacoesAdHocInscritas(inscricoesIniciais);
       setEstado("pronto");
     } catch {
       setErro("falha de ligação — tenta outra vez");
@@ -435,6 +447,18 @@ export function BackofficeHome() {
         .vqb-tabela tr:last-child td { border-bottom: none; }
         .vqb-wa-linha { margin: 0 0 0.55rem; color: #6b6a63; font-size: 0.9rem; }
         .vqb-wa-linha strong { color: #000000; }
+        .vqb-wa-progresso { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+        .vqb-wa-progresso span {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.3rem;
+          padding: 0.3rem 0.7rem;
+          border-radius: 999px;
+          font-size: 0.85rem;
+          font-weight: 700;
+        }
+        .vqb-wa-feito { background: #e4f3e4; color: #0ca30c; }
+        .vqb-wa-porfazer { background: #f0f0e8; color: #6b6a63; }
         .vqb-pagina div.vqb-check-sessao {
           display: flex;
           align-items: center;
@@ -551,7 +575,77 @@ export function BackofficeHome() {
                     </Link>
                   </div>
                 )}
-                {dados.welcomeAboard && (
+                {dados.welcomeAboard && ehContaDemonstracao && (
+                  <div
+                    className="vqb-aviso-destaque"
+                    style={
+                      dados.precisaResponderTeambuilding || dados.precisaResponderTrofeus
+                        ? { marginTop: "1rem" }
+                        : undefined
+                    }
+                  >
+                    <span className="vqb-destaque-etiqueta">Welcome Aboard (novo — presença real)</span>
+                    <p className="vqb-wa-linha">
+                      Duas sessões de acolhimento para quem entrou no negócio há pouco tempo, às
+                      quartas-feiras. Quem dá a sessão nesse dia é que decide, ao vivo, se é a tua 1ª ou a
+                      tua 2ª vez — tu só tens de te inscrever e aparecer.
+                    </p>
+                    <div className="vqb-wa-progresso">
+                      <span className={dados.welcomeAboard.sessao1Concluida ? "vqb-wa-feito" : "vqb-wa-porfazer"}>
+                        {dados.welcomeAboard.sessao1Concluida ? "✓" : "○"} 1ª sessão
+                      </span>
+                      <span className={dados.welcomeAboard.sessao2Concluida ? "vqb-wa-feito" : "vqb-wa-porfazer"}>
+                        {dados.welcomeAboard.sessao2Concluida ? "✓" : "○"} 2ª sessão
+                      </span>
+                    </div>
+                    <p className="vqb-destaque-texto" style={{ marginTop: "0.6rem", marginBottom: "1.1rem" }}>
+                      {dados.welcomeAboard.sessao1Concluida
+                        ? "A tua presença na 1ª já ficou confirmada. Falta a 2ª."
+                        : "Confirmamos a tua presença pela sessão de Zoom — não precisas de marcar nada aqui."}
+                    </p>
+                    {dados.proximaSessaoWelcomeAboard ? (
+                      (() => {
+                        const idSessao = dados.proximaSessaoWelcomeAboard.id;
+                        const inscrita = formacoesAdHocInscritas[idSessao] === true;
+                        const aInscrever = aPedirFormacaoId === idSessao;
+                        return (
+                          <>
+                            <button
+                              type="button"
+                              className="vqb-destaque-botao"
+                              disabled={aInscrever}
+                              onClick={() => pedirFormacaoAdHoc(idSessao)}
+                            >
+                              {aInscrever
+                                ? "Um momento…"
+                                : inscrita
+                                  ? "Entrar na próxima sessão"
+                                  : "Inscrever-me na próxima sessão"}
+                            </button>
+                            <p className="vqb-destaque-data" style={{ marginTop: "0.5rem", marginBottom: 0 }}>
+                              {formatarData(dados.proximaSessaoWelcomeAboard.sessaoExternaEm)}
+                            </p>
+                            {formacoesAdHocAcabadasDeInscrever[idSessao] && (
+                              <p className="vqb-sucesso" style={{ marginTop: "0.75rem", fontSize: "0.9rem" }}>
+                                ✅ Inscrição confirmada — o link chegou ao teu email.
+                              </p>
+                            )}
+                            {errosFormacaoAdHoc[idSessao] && (
+                              <p className="vqb-erro" style={{ marginTop: "0.75rem" }}>
+                                {errosFormacaoAdHoc[idSessao]}
+                              </p>
+                            )}
+                          </>
+                        );
+                      })()
+                    ) : (
+                      <p className="vqb-destaque-texto">
+                        Sem sessão agendada de momento — volta a olhar aqui em breve.
+                      </p>
+                    )}
+                  </div>
+                )}
+                {dados.welcomeAboard && !ehContaDemonstracao && (
                   <div
                     className="vqb-aviso-destaque"
                     style={

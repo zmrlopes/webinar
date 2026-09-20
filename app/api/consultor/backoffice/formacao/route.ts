@@ -3,21 +3,23 @@ import { db } from "@/lib/db";
 import { criarEmailSender, enviarConfirmacao } from "@/lib/email";
 import { buscarMembroEquipa } from "@/lib/equipa";
 import { pedirLinkPessoal, SalaError } from "@/lib/sala-zoom";
-import { buscarWebinarFormacao } from "@/lib/webinars";
+import { buscarWebinarFormacao, TITULO_WEBINAR_PUBLICO } from "@/lib/webinars";
 
 /**
  * "Quero assistir" a uma formação: só para quem está em equipa_afiliados.
  * Sem `webinarId` no corpo, usa a Formação de segunda recorrente do Patrick
- * (`buscarWebinarFormacao`); com `webinarId`, entra numa formação ad-hoc
- * específica escolhida na lista "Outras formações" do painel (pode haver
- * várias em simultâneo). Ao contrário do fluxo público (fila assíncrona,
- * secção 7-C), pede o link ao Zoom aqui mesmo, na hora — é uma ação
- * pontual de uma pessoa de cada vez, não um lote de inscrições públicas.
- * O link devolvido passa por /api/entrar/<id>, como tudo o resto, para
- * ficar rastreado. Envia sempre o email de confirmação com esse link
- * (enviarConfirmacao já deduplica) — garante que a pessoa fica com o link
- * na caixa de correio mesmo que só volte a "entrar" já depois da sessão
- * ter começado.
+ * (`buscarWebinarFormacao`); com `webinarId`, entra numa sessão específica
+ * escolhida no painel — uma formação ad-hoc da lista "Outras formações"
+ * (tipo 'formacao') ou uma sessão sincronizada específica como o Welcome
+ * Aboard (tipo 'sincronizado', ver buscarProximaSessaoWelcomeAboard) — pode
+ * haver várias em simultâneo. Ao contrário do fluxo público (fila
+ * assíncrona, secção 7-C), pede o link ao Zoom aqui mesmo, na hora — é uma
+ * ação pontual de uma pessoa de cada vez, não um lote de inscrições
+ * públicas. O link devolvido passa por /api/entrar/<id>, como tudo o
+ * resto, para ficar rastreado. Envia sempre o email de confirmação com
+ * esse link (enviarConfirmacao já deduplica) — garante que a pessoa fica
+ * com o link na caixa de correio mesmo que só volte a "entrar" já depois
+ * da sessão ter começado.
  */
 export async function POST(request: Request): Promise<Response> {
   const corpo = (await request.json().catch(() => null)) as Record<string, unknown> | null;
@@ -50,8 +52,12 @@ export async function POST(request: Request): Promise<Response> {
         link_zoom: string | null;
       }>(
         `select id, sessao_externa_id, tipo, link_zoom from webinars
-         where id = $1 and tipo = 'formacao' and not publico_para_leads and cancelada_em is null`,
-        [webinarId],
+         where id = $1
+           and tipo in ('formacao', 'sincronizado')
+           and not publico_para_leads
+           and titulo <> $2
+           and cancelada_em is null`,
+        [webinarId, TITULO_WEBINAR_PUBLICO],
       );
       if (!rows[0]) {
         return NextResponse.json({ erro: "formação não encontrada" }, { status: 404 });
