@@ -115,6 +115,15 @@ export async function notificarInscritosSemResposta(
   let enviados = 0;
 
   for (const p of pendentes) {
+    // Fora do try do email, pela mesma razão dos outros avisos: a
+    // notificação existe para chegar a quem o email não chega, portanto
+    // não pode depender de o email ter ido.
+    await notificarPush(p.email, {
+      titulo: "Teambuilding — 14 de novembro",
+      corpo: "Ainda não respondeste ao formulário de preparação. Responde no teu painel.",
+      url: "/consultor/teambuilding",
+    }).catch((erroPush) => console.error(`falha ao enviar push a ${p.email}:`, erroPush));
+
     try {
       await sender.enviar({
         destinatario: p.email,
@@ -125,11 +134,6 @@ export async function notificarInscritosSemResposta(
           `(4 perguntas) sobre o que esperas do dia e que formações gostavas de ver.\n\n` +
           `Entra no teu painel e responde por lá (secção "Avisos"):\n${base}/consultor`,
       });
-      await notificarPush(p.email, {
-        titulo: "Teambuilding — 14 de novembro",
-        corpo: "Ainda não respondeste ao formulário de preparação. Responde no teu painel.",
-        url: "/consultor/teambuilding",
-      }).catch((erroPush) => console.error(`falha ao enviar push a ${p.email}:`, erroPush));
       enviados += 1;
     } catch (erro) {
       falhas.push({ email: p.email, erro: erro instanceof Error ? erro.message : String(erro) });

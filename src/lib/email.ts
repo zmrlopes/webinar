@@ -201,7 +201,9 @@ async function buscarRegistro(registrationId: string): Promise<RegistroParaEmail
   return rows[0];
 }
 
-async function jaEnviado(registrationId: string, tipo: "confirmacao" | "lembrete"): Promise<boolean> {
+type TipoEnvio = "confirmacao" | "lembrete" | "push-confirmacao" | "push-lembrete";
+
+async function jaEnviado(registrationId: string, tipo: TipoEnvio): Promise<boolean> {
   const { rowCount } = await db().query(
     `select 1 from emails where registration_id = $1 and tipo = $2`,
     [registrationId, tipo],
@@ -209,11 +211,25 @@ async function jaEnviado(registrationId: string, tipo: "confirmacao" | "lembrete
   return (rowCount ?? 0) > 0;
 }
 
-async function registarEnvio(registrationId: string, tipo: "confirmacao" | "lembrete"): Promise<void> {
+async function registarEnvio(registrationId: string, tipo: TipoEnvio): Promise<void> {
   await db().query(
     `insert into emails (registration_id, tipo) values ($1, $2) on conflict do nothing`,
     [registrationId, tipo],
   );
+}
+
+/**
+ * Marca e diz se foi esta chamada que marcou — `true` só à primeira vez.
+ * Numa consulta só, e atómico: dois ciclos do cron em simultâneo não
+ * conseguem ambos receber `true` para o mesmo par, porque quem perde a
+ * corrida bate no índice único e não conta linha nenhuma.
+ */
+async function marcarSePrimeiraVez(registrationId: string, tipo: TipoEnvio): Promise<boolean> {
+  const { rowCount } = await db().query(
+    `insert into emails (registration_id, tipo) values ($1, $2) on conflict do nothing`,
+    [registrationId, tipo],
+  );
+  return (rowCount ?? 0) > 0;
 }
 
 /**
@@ -241,16 +257,24 @@ export async function enviarConfirmacao(
   if (!registro.link_pessoal) return;
   if (await jaEnviado(registrationId, "confirmacao")) return;
 
+  // Antes do email e com registo próprio: quem tem a app instalada tem de
+  // ser avisado mesmo que o email falhe — e falha, por exemplo a quem se
+  // descansou da lista da ActiveCampaign. O registo próprio é o que
+  // garante que continua a sair uma só vez, independentemente do que o
+  // email faça a seguir.
+  if (await marcarSePrimeiraVez(registrationId, "push-confirmacao")) {
+    await notificarPush(registro.email, {
+      titulo: "Inscrição confirmada",
+      corpo: `"${registro.titulo}" — o teu link de entrada já está pronto.`,
+      url: `/api/entrar/${registrationId}`,
+    }).catch((erro) => console.error(`falha ao enviar push a ${registro.email}:`, erro));
+  }
+
   await sender.enviar({
     destinatario: registro.email,
     assunto: `A tua entrada para "${registro.titulo}"`,
     corpoTexto: `Olá ${registro.nome},\n\nO teu link pessoal de entrada:\n${linkEntrada(registrationId)}\n\nEste link é só teu — não o partilhes.`,
   });
-  await notificarPush(registro.email, {
-    titulo: "Inscrição confirmada",
-    corpo: `"${registro.titulo}" — o teu link de entrada já está pronto.`,
-    url: `/api/entrar/${registrationId}`,
-  }).catch((erro) => console.error(`falha ao enviar push a ${registro.email}:`, erro));
 
   await registarEnvio(registrationId, "confirmacao");
 }
@@ -265,16 +289,23 @@ export async function enviarLembrete(
   if (!registro.link_pessoal) return;
   if (await jaEnviado(registrationId, "lembrete")) return;
 
+  // Ver enviarConfirmacao. Aqui o registo próprio conta ainda mais: este
+  // lembrete é reprocessado a cada 15 minutos enquanto o email falhar
+  // (ver processarLembretes), e sem ele a mesma pessoa levava com uma
+  // notificação repetida em cada tentativa.
+  if (await marcarSePrimeiraVez(registrationId, "push-lembrete")) {
+    await notificarPush(registro.email, {
+      titulo: "A sessão está a começar em breve",
+      corpo: `"${registro.titulo}" — toca para entrar.`,
+      url: `/api/entrar/${registrationId}`,
+    }).catch((erro) => console.error(`falha ao enviar push a ${registro.email}:`, erro));
+  }
+
   await sender.enviar({
     destinatario: registro.email,
     assunto: `A sessão "${registro.titulo}" está a começar em breve`,
     corpoTexto: `Olá ${registro.nome},\n\nO teu link pessoal de entrada:\n${linkEntrada(registrationId)}\n\nEste link é só teu — não o partilhes.`,
   });
-  await notificarPush(registro.email, {
-    titulo: "A sessão está a começar em breve",
-    corpo: `"${registro.titulo}" — toca para entrar.`,
-    url: `/api/entrar/${registrationId}`,
-  }).catch((erro) => console.error(`falha ao enviar push a ${registro.email}:`, erro));
 
   await registarEnvio(registrationId, "lembrete");
 }
@@ -308,6 +339,15 @@ export async function notificarConsultorSobreLead(
   const registro = rows[0];
   if (!registro || !registro.referencia_email) return;
 
+  // Primeiro a notificação: se o email ao consultor falhar, esta é a única
+  // forma de ele ficar a saber da lead, e antes era a primeira coisa a
+  // perder-se por estar a seguir ao envio.
+  await notificarPush(registro.referencia_email, {
+    titulo: "Nova inscrição pelo teu link",
+    corpo: `${registro.nome} inscreveu-se em "${registro.titulo}"`,
+    url: "/consultor",
+  }).catch((erro) => console.error(`falha ao enviar push a ${registro.referencia_email}:`, erro));
+
   await sender.enviar({
     destinatario: registro.referencia_email,
     assunto: `Nova inscrição via o teu link — "${registro.titulo}"`,
@@ -317,12 +357,6 @@ export async function notificarConsultorSobreLead(
       `Telemóvel: ${registro.telemovel ?? "(não indicado)"}\n` +
       `Email: ${registro.email}`,
   });
-
-  await notificarPush(registro.referencia_email, {
-    titulo: "Nova inscrição pelo teu link",
-    corpo: `${registro.nome} inscreveu-se em "${registro.titulo}"`,
-    url: "/consultor",
-  }).catch((erro) => console.error(`falha ao enviar push a ${registro.referencia_email}:`, erro));
 }
 
 export interface ResultadoNotificacaoEquipa {
@@ -388,6 +422,16 @@ export async function notificarEquipaNovaSessao(
   for (const r of rows) {
     let sucesso = true;
     let mensagemErro: string | null = null;
+    // Fora do try do email, de propósito: um email falhado não pode levar
+    // atrás a notificação de quem tem a app instalada. Cada pessoa só
+    // passa por aqui uma vez — quem falha fica registado em
+    // notificacoes_equipa e não volta a ser apanhado.
+    await notificarPush(r.email, {
+      titulo: `Nova ${rotulo} disponível`,
+      corpo: sessao.titulo,
+      url: "/consultor",
+    }).catch((erroPush) => console.error(`falha ao enviar push a ${r.email}:`, erroPush));
+
     try {
       await sender.enviar({
         destinatario: r.email,
@@ -397,11 +441,6 @@ export async function notificarEquipaNovaSessao(
           `Vai ao teu painel para te inscreveres:\n${base}/consultor`,
         listaActiveCampaign: listaConsultores,
       });
-      await notificarPush(r.email, {
-        titulo: `Nova ${rotulo} disponível`,
-        corpo: sessao.titulo,
-        url: "/consultor",
-      }).catch((erroPush) => console.error(`falha ao enviar push a ${r.email}:`, erroPush));
     } catch (erro) {
       sucesso = false;
       mensagemErro = erro instanceof Error ? erro.message : String(erro);

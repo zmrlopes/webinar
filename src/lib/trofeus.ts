@@ -190,17 +190,22 @@ export async function notificarInscritosTrofeus(
   let enviados = 0;
 
   for (const d of destinatarios) {
+    // Fora do try do email: se o email falhar — acontece a quem se
+    // descansou da lista da ActiveCampaign — quem tem a app instalada
+    // ficava sem aviso nenhum, que é exatamente o contrário do que a
+    // notificação serve.
+    await notificarPush(d.email, {
+      titulo: "Troféus do Teambuilding",
+      corpo: "Diz-nos quais queres receber e quais já tens — questionário rápido no teu painel.",
+      url: "/consultor/trofeus",
+    }).catch((erroPush) => console.error(`falha ao enviar push a ${d.email}:`, erroPush));
+
     try {
       await sender.enviar({
         destinatario: d.email,
         ...mensagemAvisoTrofeus(d.nome, base),
         listaActiveCampaign: lista,
       });
-      await notificarPush(d.email, {
-        titulo: "Troféus do Teambuilding",
-        corpo: "Diz-nos quais queres receber e quais já tens — questionário rápido no teu painel.",
-        url: "/consultor/trofeus",
-      }).catch((erroPush) => console.error(`falha ao enviar push a ${d.email}:`, erroPush));
       enviados += 1;
     } catch (erro) {
       falhas.push({ email: d.email, erro: erro instanceof Error ? erro.message : String(erro) });
