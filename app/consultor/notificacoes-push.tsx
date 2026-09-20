@@ -42,7 +42,15 @@ export function NotificacoesPush({ email }: { email: string }) {
   useEffect(() => {
     registarServiceWorker();
 
-    if (window.matchMedia("(display-mode: standalone)").matches) {
+    // No iPhone, a media query "display-mode: standalone" nem sempre
+    // funciona (depende da versão do iOS) — o Safari usa há mais tempo
+    // esta propriedade própria, não normalizada, `navigator.standalone`.
+    // Sem este OR, uma app instalada e aberta pelo ícone do ecrã principal
+    // continuava a parecer "não instalada" nalguns iPhones.
+    const eStandalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    if (eStandalone) {
       setAppInstalada(true);
     }
 
