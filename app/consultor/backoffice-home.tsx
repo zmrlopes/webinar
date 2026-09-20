@@ -596,8 +596,7 @@ export function BackofficeHome() {
                       <strong>2ª sessão</strong> — o potencial do negócio: até onde isto pode crescer.
                     </p>
                     <p className="vqb-wa-linha">
-                      Acontecem às quartas-feiras. Quem dá a sessão nesse dia é que decide, ao vivo, se é a
-                      tua 1ª ou a tua 2ª vez — tu só tens de te inscrever e aparecer.
+                      Acontecem às quartas-feiras. Só tens de te inscrever e aparecer.
                     </p>
                     <div className="vqb-wa-progresso">
                       <span className={dados.welcomeAboard.sessao1Concluida ? "vqb-wa-feito" : "vqb-wa-porfazer"}>
