@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
 import { guardarEmail, lerEmailGuardado, limparEmailGuardado } from "./armazenamento";
 import { EventoForm } from "./evento-form";
 import { NotificacoesPush } from "./notificacoes-push";
@@ -31,8 +30,6 @@ interface DadosIdentificacao {
     sessao2Concluida: boolean;
   }[];
 }
-
-const LINK_WELCOME_ABOARD = "https://calendly.com/intravel/reuniao-welcome-aboard-1";
 
 type Estado = "a-carregar" | "por-identificar" | "pronto" | "erro";
 type Seccao = "sessoes" | "eventos" | "equipa-nova" | null;
@@ -73,12 +70,6 @@ export function BackofficeHome() {
   const [webinarInscrito, setWebinarInscrito] = useState(false);
   const [webinarAcabadoDeInscrever, setWebinarAcabadoDeInscrever] = useState(false);
   const [seccaoAtiva, setSeccaoAtiva] = useState<Seccao>(null);
-  const [aMarcarWelcomeAboard, setAMarcarWelcomeAboard] = useState<1 | 2 | null>(null);
-  // O Welcome Aboard "novo" (presença real, sem checkboxes) só aparece
-  // aqui — para toda a gente continua exatamente como estava, até ser
-  // publicado (ver NOVO_SISTEMA_SO_DEMO em src/lib/welcome-aboard.ts).
-  const ehContaDemonstracao = email === EMAIL_PAINEL_DEMONSTRACAO;
-
   function alternarSeccao(seccao: Seccao): void {
     setSeccaoAtiva((atual) => (atual === seccao ? null : seccao));
   }
@@ -122,33 +113,6 @@ export function BackofficeHome() {
     }
   }
 
-  /** Atualiza só localmente — evita o piscar de "a entrar..." que identificar() causaria por uma checkbox. */
-  async function marcarSessaoWelcomeAboard(sessao: 1 | 2, concluida: boolean): Promise<void> {
-    if (!dados?.welcomeAboard) return;
-    setAMarcarWelcomeAboard(sessao);
-    try {
-      const resposta = await fetch("/api/consultor/backoffice/welcome-aboard", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, sessao, concluida }),
-      });
-      if (resposta.ok) {
-        setDados((atual) =>
-          atual && atual.welcomeAboard
-            ? {
-                ...atual,
-                welcomeAboard: {
-                  sessao1Concluida: sessao === 1 ? concluida : atual.welcomeAboard.sessao1Concluida,
-                  sessao2Concluida: sessao === 2 ? concluida : atual.welcomeAboard.sessao2Concluida,
-                },
-              }
-            : atual,
-        );
-      }
-    } finally {
-      setAMarcarWelcomeAboard(null);
-    }
-  }
 
   useEffect(() => {
     const guardado = lerEmailGuardado();
@@ -459,34 +423,6 @@ export function BackofficeHome() {
         }
         .vqb-wa-feito { background: #e4f3e4; color: #0ca30c; }
         .vqb-wa-porfazer { background: #f0f0e8; color: #6b6a63; }
-        .vqb-pagina div.vqb-check-sessao {
-          display: flex;
-          align-items: center;
-          gap: 0.55rem;
-          font-size: 0.9rem;
-          color: #000000;
-          cursor: pointer;
-          user-select: none;
-        }
-        .vqb-check-sessao.vqb-check-desativada { cursor: default; opacity: 0.5; }
-        .vqb-check-sessao + .vqb-check-sessao { margin-top: 0.5rem; }
-        /*
-         * O min-width de 260px e o padding da regra ".vqb-pagina input"
-         * (feitos para o campo de email) também pegavam nesta checkbox — e
-         * como min-width ganha sempre ao width, ela ficava com 260px de
-         * largura, com o desenho nativo ao centro dessa caixa, no meio do
-         * texto. Daí este reset.
-         */
-        .vqb-check-sessao input[type="checkbox"] {
-          flex: none;
-          min-width: 0;
-          width: 1.15rem;
-          height: 1.15rem;
-          margin: 0;
-          padding: 0;
-          pointer-events: none;
-          accent-color: #4b5320;
-        }
       `}</style>
 
       <div className="vqb-caixa">
@@ -575,7 +511,7 @@ export function BackofficeHome() {
                     </Link>
                   </div>
                 )}
-                {dados.welcomeAboard && ehContaDemonstracao && (
+                {dados.welcomeAboard && (
                   <div
                     className="vqb-aviso-destaque"
                     style={
@@ -584,7 +520,7 @@ export function BackofficeHome() {
                         : undefined
                     }
                   >
-                    <span className="vqb-destaque-etiqueta">Welcome Aboard (novo — presença real)</span>
+                    <span className="vqb-destaque-etiqueta">Welcome Aboard</span>
                     <p className="vqb-wa-linha">
                       Duas sessões de acolhimento para quem entrou no negócio há pouco tempo:
                     </p>
@@ -651,71 +587,6 @@ export function BackofficeHome() {
                         Sem sessão agendada de momento — volta a olhar aqui em breve.
                       </p>
                     )}
-                  </div>
-                )}
-                {dados.welcomeAboard && !ehContaDemonstracao && (
-                  <div
-                    className="vqb-aviso-destaque"
-                    style={
-                      dados.precisaResponderTeambuilding || dados.precisaResponderTrofeus
-                        ? { marginTop: "1rem" }
-                        : undefined
-                    }
-                  >
-                    <span className="vqb-destaque-etiqueta">Welcome Aboard</span>
-                    <p className="vqb-wa-linha">
-                      Duas sessões de acolhimento para quem entrou no negócio há pouco tempo:
-                    </p>
-                    <p className="vqb-wa-linha">
-                      <strong>1ª sessão</strong> — os primeiros passos como consultor, com truques e dicas
-                      para começares bem.
-                    </p>
-                    <p className="vqb-wa-linha">
-                      <strong>2ª sessão</strong> — o potencial do negócio: até onde isto pode crescer.
-                    </p>
-                    <p className="vqb-destaque-texto" style={{ marginBottom: "1.1rem" }}>
-                      Acontecem às quartas-feiras e tens de assistir às duas. Inscreve-te numa, marca-a
-                      aqui como feita, e depois inscreve-te na seguinte — só podes fazer a 2ª depois de
-                      teres feito a 1ª.
-                    </p>
-                    <a
-                      href={LINK_WELCOME_ABOARD}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="vqb-destaque-botao"
-                      style={{ marginBottom: "1.1rem" }}
-                    >
-                      Inscrever-me numa sessão
-                    </a>
-                    <div
-                      className="vqb-check-sessao"
-                      role="checkbox"
-                      aria-checked={dados.welcomeAboard.sessao1Concluida}
-                      onClick={() =>
-                        aMarcarWelcomeAboard !== 1 &&
-                        marcarSessaoWelcomeAboard(1, !dados.welcomeAboard!.sessao1Concluida)
-                      }
-                    >
-                      <input type="checkbox" checked={dados.welcomeAboard.sessao1Concluida} readOnly />
-                      <span>Já assisti à 1ª sessão</span>
-                    </div>
-                    <div
-                      className={
-                        dados.welcomeAboard.sessao1Concluida
-                          ? "vqb-check-sessao"
-                          : "vqb-check-sessao vqb-check-desativada"
-                      }
-                      role="checkbox"
-                      aria-checked={dados.welcomeAboard.sessao2Concluida}
-                      onClick={() =>
-                        dados.welcomeAboard!.sessao1Concluida &&
-                        aMarcarWelcomeAboard !== 2 &&
-                        marcarSessaoWelcomeAboard(2, !dados.welcomeAboard!.sessao2Concluida)
-                      }
-                    >
-                      <input type="checkbox" checked={dados.welcomeAboard.sessao2Concluida} readOnly />
-                      <span>Já assisti à 2ª sessão</span>
-                    </div>
                   </div>
                 )}
                 </>
