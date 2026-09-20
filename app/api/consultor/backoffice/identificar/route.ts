@@ -10,6 +10,7 @@ import {
   listarFormacoesEquipa,
 } from "@/lib/webinars";
 import { estaoInscricoesAbertas } from "@/lib/eventos";
+import { precisaResponderHotel } from "@/lib/hotel";
 import { precisaResponderTeambuilding } from "@/lib/teambuilding";
 import { precisaResponderTrofeus } from "@/lib/trofeus";
 import { listarFormacoesExternasFuturas } from "@/lib/formacoes-externas";
@@ -61,6 +62,7 @@ export async function POST(request: Request): Promise<Response> {
       formacoesExternas,
       welcomeAboard,
       precisaResponderTrofeusBool,
+      precisaResponderHotelBool,
     ] = await Promise.all([
       buscarWebinarFormacao(),
       buscarProximoWebinarPublico(),
@@ -70,6 +72,7 @@ export async function POST(request: Request): Promise<Response> {
       listarFormacoesExternasFuturas(),
       obterElegibilidadeWelcomeAboard(emailNormalizado),
       precisaResponderTrofeus(emailNormalizado),
+      precisaResponderHotel(emailNormalizado),
     ]);
 
     // Só vale a pena ir buscar a próxima sessão a quem realmente vai ver o
@@ -118,6 +121,7 @@ export async function POST(request: Request): Promise<Response> {
       })),
       precisaResponderTeambuilding: precisaResponderTeambuildingBool,
       precisaResponderTrofeus: precisaResponderTrofeusBool,
+      precisaResponderHotel: precisaResponderHotelBool,
       inscricoesEventoAbertas,
       formacoesExternas: formacoesExternas.map((f) => ({
         id: f.id,

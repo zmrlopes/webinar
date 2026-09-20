@@ -17,6 +17,7 @@ interface DadosIdentificacao {
   formacoesEquipa: { id: string; titulo: string; sessaoExternaEm: string; inscrito: boolean }[];
   precisaResponderTeambuilding: boolean;
   precisaResponderTrofeus: boolean;
+  precisaResponderHotel: boolean;
   inscricoesEventoAbertas: boolean;
   formacoesExternas: { id: string; titulo: string; sessaoExternaEm: string; link: string }[];
   welcomeAboard: { sessao1Concluida: boolean; sessao2Concluida: boolean } | null;
@@ -481,7 +482,10 @@ export function BackofficeHome() {
             <div className="vqb-avisos">
               <h2>Avisos</h2>
               <NotificacoesPush email={email} />
-              {(dados.precisaResponderTeambuilding || dados.precisaResponderTrofeus || dados.welcomeAboard) && (
+              {(dados.precisaResponderTeambuilding ||
+                dados.precisaResponderTrofeus ||
+                dados.precisaResponderHotel ||
+                dados.welcomeAboard) && (
                 <>
                   {dados.precisaResponderTeambuilding && (
                   <div className="vqb-aviso-destaque">
@@ -511,11 +515,32 @@ export function BackofficeHome() {
                     </Link>
                   </div>
                 )}
-                {dados.welcomeAboard && (
+                {dados.precisaResponderHotel && (
                   <div
                     className="vqb-aviso-destaque"
                     style={
                       dados.precisaResponderTeambuilding || dados.precisaResponderTrofeus
+                        ? { marginTop: "1rem" }
+                        : undefined
+                    }
+                  >
+                    <span className="vqb-destaque-etiqueta">Hotel — 14 de novembro</span>
+                    <p className="vqb-destaque-texto" style={{ marginBottom: "1.1rem" }}>
+                      Reservámos o Aurea Fátima Hotel Congress & Spa para quem quiser ficar. Diz-nos se
+                      precisas de quarto, que tipo e que noites, para acertarmos a reserva com o hotel.
+                    </p>
+                    <Link href="/consultor/hotel" className="vqb-destaque-botao">
+                      Responder sobre o quarto
+                    </Link>
+                  </div>
+                )}
+                {dados.welcomeAboard && (
+                  <div
+                    className="vqb-aviso-destaque"
+                    style={
+                      dados.precisaResponderTeambuilding ||
+                      dados.precisaResponderTrofeus ||
+                      dados.precisaResponderHotel
                         ? { marginTop: "1rem" }
                         : undefined
                     }

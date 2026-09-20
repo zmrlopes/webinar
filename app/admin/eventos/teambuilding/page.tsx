@@ -209,6 +209,22 @@ export default async function AdminEventos() {
             >
               Patamar e faturação dos inscritos
             </Link>
+            <Link
+              href="/admin/hotel-respostas"
+              style={{
+                display: "inline-block",
+                background: "linear-gradient(135deg, #5d6b2a, #4b5320)",
+                color: "#ffffff",
+                borderRadius: "8px",
+                padding: "0.5rem 1rem",
+                fontSize: "0.85rem",
+                fontWeight: 700,
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Quartos do hotel
+            </Link>
           </div>
         </div>
         <p className="ad-subtitulo">
