@@ -246,6 +246,11 @@ export async function enviarConfirmacao(
     assunto: `A tua entrada para "${registro.titulo}"`,
     corpoTexto: `Olá ${registro.nome},\n\nO teu link pessoal de entrada:\n${linkEntrada(registrationId)}\n\nEste link é só teu — não o partilhes.`,
   });
+  await notificarPush(registro.email, {
+    titulo: "Inscrição confirmada",
+    corpo: `"${registro.titulo}" — o teu link de entrada já está pronto.`,
+    url: `/api/entrar/${registrationId}`,
+  }).catch((erro) => console.error(`falha ao enviar push a ${registro.email}:`, erro));
 
   await registarEnvio(registrationId, "confirmacao");
 }
@@ -265,6 +270,11 @@ export async function enviarLembrete(
     assunto: `A sessão "${registro.titulo}" está a começar em breve`,
     corpoTexto: `Olá ${registro.nome},\n\nO teu link pessoal de entrada:\n${linkEntrada(registrationId)}\n\nEste link é só teu — não o partilhes.`,
   });
+  await notificarPush(registro.email, {
+    titulo: "A sessão está a começar em breve",
+    corpo: `"${registro.titulo}" — toca para entrar.`,
+    url: `/api/entrar/${registrationId}`,
+  }).catch((erro) => console.error(`falha ao enviar push a ${registro.email}:`, erro));
 
   await registarEnvio(registrationId, "lembrete");
 }
