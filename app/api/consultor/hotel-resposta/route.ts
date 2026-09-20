@@ -10,6 +10,8 @@ export async function POST(request: Request): Promise<Response> {
   const tipoQuartoBruto = corpo?.tipoQuarto ?? null;
   const noiteAnterior = corpo?.noiteAnterior;
   const noiteSeguinte = corpo?.noiteSeguinte;
+  const temCriancas = corpo?.temCriancas;
+  const idadesCriancasBruto = corpo?.idadesCriancas ?? null;
 
   if (
     typeof email !== "string" ||
@@ -17,6 +19,8 @@ export async function POST(request: Request): Promise<Response> {
     typeof querQuarto !== "boolean" ||
     typeof noiteAnterior !== "boolean" ||
     typeof noiteSeguinte !== "boolean" ||
+    typeof temCriancas !== "boolean" ||
+    (idadesCriancasBruto !== null && typeof idadesCriancasBruto !== "string") ||
     (tipoQuartoBruto !== null && tipoQuartoBruto !== "single" && tipoQuartoBruto !== "duplo")
   ) {
     return NextResponse.json({ erro: "dados inválidos" }, { status: 400 });
@@ -26,6 +30,7 @@ export async function POST(request: Request): Promise<Response> {
   }
   const emailNormalizado = email.trim().toLowerCase();
   const tipoQuarto = tipoQuartoBruto as TipoQuarto | null;
+  const idadesCriancas = idadesCriancasBruto as string | null;
 
   try {
     // Mesma regra do formulário de preparação e dos troféus: só responde
@@ -43,7 +48,14 @@ export async function POST(request: Request): Promise<Response> {
       }
     }
 
-    await guardarRespostaHotel(emailNormalizado, { querQuarto, tipoQuarto, noiteAnterior, noiteSeguinte });
+    await guardarRespostaHotel(emailNormalizado, {
+      querQuarto,
+      tipoQuarto,
+      noiteAnterior,
+      noiteSeguinte,
+      temCriancas,
+      idadesCriancas,
+    });
     return NextResponse.json({ ok: true });
   } catch (erro) {
     console.error("falha ao gravar resposta do hotel:", erro);

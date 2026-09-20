@@ -26,6 +26,8 @@ function HotelFormulario() {
   const [tipoQuarto, setTipoQuarto] = useState<TipoQuarto | null>(null);
   const [noiteAnterior, setNoiteAnterior] = useState(false);
   const [noiteSeguinte, setNoiteSeguinte] = useState(false);
+  const [temCriancas, setTemCriancas] = useState(false);
+  const [idadesCriancas, setIdadesCriancas] = useState("");
 
   useEffect(() => {
     if (emPreview) {
@@ -51,6 +53,10 @@ function HotelFormulario() {
       setErro("escolhe o tipo de quarto");
       return;
     }
+    if (querQuarto && temCriancas && idadesCriancas.trim() === "") {
+      setErro("diz-nos as idades das crianças");
+      return;
+    }
     if (emPreview) {
       setEstado("enviado");
       return;
@@ -69,6 +75,8 @@ function HotelFormulario() {
           tipoQuarto: querQuarto ? tipoQuarto : null,
           noiteAnterior: querQuarto ? noiteAnterior : false,
           noiteSeguinte: querQuarto ? noiteSeguinte : false,
+          temCriancas: querQuarto ? temCriancas : false,
+          idadesCriancas: querQuarto && temCriancas ? idadesCriancas : null,
         }),
       });
       const corpo = await resposta.json().catch(() => ({}));
@@ -127,6 +135,17 @@ function HotelFormulario() {
           accent-color: #4b5320;
         }
         .vqx-preco { color: #6b6a63; font-size: 0.85rem; margin-left: auto; }
+        .vqx-campo {
+          width: 100%;
+          box-sizing: border-box;
+          border: 1px solid #e2e0d8;
+          border-radius: 10px;
+          padding: 0.65rem 0.9rem;
+          font-size: 0.95rem;
+          color: #000000;
+          background: #ffffff;
+        }
+        .vqx-campo:focus { outline: 2px solid #4b5320; outline-offset: 1px; }
         .vqx-pagina button {
           margin-top: 1.75rem;
           background: linear-gradient(135deg, #5d6b2a, #4b5320);
@@ -211,6 +230,8 @@ function HotelFormulario() {
                       setTipoQuarto(null);
                       setNoiteAnterior(false);
                       setNoiteSeguinte(false);
+                      setTemCriancas(false);
+                      setIdadesCriancas("");
                     }}
                   />
                   <span>Não</span>
@@ -270,6 +291,35 @@ function HotelFormulario() {
                       <span>Noite de 14 para 15 (fico depois do evento)</span>
                     </label>
                   </div>
+
+                  <h2>Crianças</h2>
+                  <div className="vqx-lista">
+                    <label className="vqx-linha" htmlFor="tem-criancas">
+                      <input
+                        id="tem-criancas"
+                        type="checkbox"
+                        checked={temCriancas}
+                        onChange={() => {
+                          setTemCriancas(!temCriancas);
+                          if (temCriancas) setIdadesCriancas("");
+                        }}
+                      />
+                      <span>Vou levar crianças para o quarto</span>
+                    </label>
+                  </div>
+
+                  {temCriancas && (
+                    <>
+                      <p className="vqx-sub">Que idades têm (ex: 5, 8)?</p>
+                      <input
+                        type="text"
+                        className="vqx-campo"
+                        value={idadesCriancas}
+                        onChange={(e) => setIdadesCriancas(e.target.value)}
+                        placeholder="Idades das crianças"
+                      />
+                    </>
+                  )}
                 </>
               )}
 

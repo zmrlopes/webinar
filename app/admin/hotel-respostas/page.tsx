@@ -33,6 +33,7 @@ export default async function HotelRespostasPagina() {
   const singles = querem.filter((r) => r.tipoQuarto === "single").length;
   const duplos = querem.filter((r) => r.tipoQuarto === "duplo").length;
   const naoQuerem = respostas.length - querem.length;
+  const comCriancas = querem.filter((r) => r.temCriancas).length;
 
   return (
     <main className="ad-pagina">
@@ -118,6 +119,10 @@ export default async function HotelRespostasPagina() {
             <div className="ad-numero">{naoQuerem}</div>
             <div className="ad-legenda">Não quer quarto</div>
           </div>
+          <div className="ad-cartao">
+            <div className="ad-numero">{comCriancas}</div>
+            <div className="ad-legenda">Quartos com crianças</div>
+          </div>
         </div>
 
         <h2>Respostas</h2>
@@ -132,6 +137,7 @@ export default async function HotelRespostasPagina() {
                   <th>Quer quarto</th>
                   <th>Tipo</th>
                   <th>Noites</th>
+                  <th>Crianças</th>
                   <th>Quando</th>
                 </tr>
               </thead>
@@ -170,6 +176,15 @@ export default async function HotelRespostasPagina() {
                             </div>
                           )}
                         </>
+                      )}
+                    </td>
+                    <td>
+                      {!r.querQuarto ? (
+                        <span className="ad-legenda">—</span>
+                      ) : r.temCriancas ? (
+                        <span className="ad-pilula">{r.idadesCriancas || "sim (idades não indicadas)"}</span>
+                      ) : (
+                        <span className="ad-legenda">não</span>
                       )}
                     </td>
                     <td className="ad-legenda">{formatarData(r.criadoEm)}</td>

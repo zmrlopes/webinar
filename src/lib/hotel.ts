@@ -47,30 +47,37 @@ export interface RespostaHotelDados {
   tipoQuarto: TipoQuarto | null;
   noiteAnterior: boolean;
   noiteSeguinte: boolean;
+  temCriancas: boolean;
+  idadesCriancas: string | null;
 }
 
 /**
  * Upsert pelo email — responder outra vez substitui a resposta anterior.
- * Quem não quer quarto não precisa de tipo nem de noites — gravam-se
- * sempre a null/false nesse caso, mesmo que o pedido traga outra coisa,
- * para a listagem do admin nunca mostrar um tipo de quarto para quem
- * disse que não quer ficar.
+ * Quem não quer quarto não precisa de mais nada — gravam-se sempre os
+ * valores em branco nesse caso, mesmo que o pedido traga outra coisa, para
+ * a listagem do admin nunca mostrar dados de quem disse que não quer
+ * ficar. As idades só se gravam quando há mesmo crianças marcadas.
  */
 export async function guardarRespostaHotel(email: string, dados: RespostaHotelDados): Promise<void> {
   const tipoQuarto = dados.querQuarto ? dados.tipoQuarto : null;
   const noiteAnterior = dados.querQuarto ? dados.noiteAnterior : false;
   const noiteSeguinte = dados.querQuarto ? dados.noiteSeguinte : false;
+  const temCriancas = dados.querQuarto ? dados.temCriancas : false;
+  const idadesCriancas = temCriancas ? dados.idadesCriancas?.trim() || null : null;
 
   await db().query(
-    `insert into respostas_hotel (email, quer_quarto, tipo_quarto, noite_anterior, noite_seguinte)
-     values ($1, $2, $3, $4, $5)
+    `insert into respostas_hotel
+       (email, quer_quarto, tipo_quarto, noite_anterior, noite_seguinte, tem_criancas, idades_criancas)
+     values ($1, $2, $3, $4, $5, $6, $7)
      on conflict (email) do update
        set quer_quarto = excluded.quer_quarto,
            tipo_quarto = excluded.tipo_quarto,
            noite_anterior = excluded.noite_anterior,
            noite_seguinte = excluded.noite_seguinte,
+           tem_criancas = excluded.tem_criancas,
+           idades_criancas = excluded.idades_criancas,
            criado_em = now()`,
-    [email, dados.querQuarto, tipoQuarto, noiteAnterior, noiteSeguinte],
+    [email, dados.querQuarto, tipoQuarto, noiteAnterior, noiteSeguinte, temCriancas, idadesCriancas],
   );
 }
 
@@ -81,6 +88,8 @@ export interface RespostaHotelAdmin {
   tipoQuarto: TipoQuarto | null;
   noiteAnterior: boolean;
   noiteSeguinte: boolean;
+  temCriancas: boolean;
+  idadesCriancas: string | null;
   criadoEm: Date;
 }
 
@@ -92,9 +101,12 @@ export async function listarRespostasHotel(): Promise<RespostaHotelAdmin[]> {
     tipo_quarto: TipoQuarto | null;
     noite_anterior: boolean;
     noite_seguinte: boolean;
+    tem_criancas: boolean;
+    idades_criancas: string | null;
     criado_em: Date;
   }>(
-    `select rh.email, rh.quer_quarto, rh.tipo_quarto, rh.noite_anterior, rh.noite_seguinte, rh.criado_em,
+    `select rh.email, rh.quer_quarto, rh.tipo_quarto, rh.noite_anterior, rh.noite_seguinte,
+            rh.tem_criancas, rh.idades_criancas, rh.criado_em,
             (select max(ei.nome) from evento_inscricoes ei where ei.email = rh.email) as nome
      from respostas_hotel rh
      order by rh.criado_em desc`,
@@ -106,6 +118,8 @@ export async function listarRespostasHotel(): Promise<RespostaHotelAdmin[]> {
     tipoQuarto: r.tipo_quarto,
     noiteAnterior: r.noite_anterior,
     noiteSeguinte: r.noite_seguinte,
+    temCriancas: r.tem_criancas,
+    idadesCriancas: r.idades_criancas,
     criadoEm: r.criado_em,
   }));
 }
