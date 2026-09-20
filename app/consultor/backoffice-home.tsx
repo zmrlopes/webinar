@@ -586,9 +586,18 @@ export function BackofficeHome() {
                   >
                     <span className="vqb-destaque-etiqueta">Welcome Aboard (novo — presença real)</span>
                     <p className="vqb-wa-linha">
-                      Duas sessões de acolhimento para quem entrou no negócio há pouco tempo, às
-                      quartas-feiras. Quem dá a sessão nesse dia é que decide, ao vivo, se é a tua 1ª ou a
-                      tua 2ª vez — tu só tens de te inscrever e aparecer.
+                      Duas sessões de acolhimento para quem entrou no negócio há pouco tempo:
+                    </p>
+                    <p className="vqb-wa-linha">
+                      <strong>1ª sessão</strong> — os primeiros passos como consultor, com truques e dicas
+                      para começares bem.
+                    </p>
+                    <p className="vqb-wa-linha">
+                      <strong>2ª sessão</strong> — o potencial do negócio: até onde isto pode crescer.
+                    </p>
+                    <p className="vqb-wa-linha">
+                      Acontecem às quartas-feiras. Quem dá a sessão nesse dia é que decide, ao vivo, se é a
+                      tua 1ª ou a tua 2ª vez — tu só tens de te inscrever e aparecer.
                     </p>
                     <div className="vqb-wa-progresso">
                       <span className={dados.welcomeAboard.sessao1Concluida ? "vqb-wa-feito" : "vqb-wa-porfazer"}>
