@@ -12,7 +12,7 @@ import { notificarPush } from "./push";
  * (zmrlopes@gmail.com). Passar a `false` publica-o para os consultores
  * inscritos no evento — é o único sítio a mexer para o pôr no ar.
  */
-const SO_PAINEL_DEMONSTRACAO = true;
+const SO_PAINEL_DEMONSTRACAO = false;
 
 export const PRECO_SINGLE = 60;
 export const PRECO_DUPLO = 72;
@@ -231,17 +231,25 @@ export async function notificarInscritosHotel(
   let enviados = 0;
 
   for (const d of destinatarios) {
+    // A notificação sai por sua conta, antes e fora do try do email: quem
+    // tem a app instalada tem de ser avisado mesmo que o email falhe — e
+    // falha mesmo, por exemplo a quem se descansou da lista da
+    // ActiveCampaign (ver Mensagem.listaActiveCampaign). Antes ficava
+    // dentro do try a seguir ao envio, portanto um email falhado levava
+    // atrás a notificação dessa pessoa, que era o pior dos dois mundos:
+    // não recebia nada por lado nenhum.
+    await notificarPush(d.email, {
+      titulo: "Teambuilding — precisas de quarto?",
+      corpo: "Diz-nos se precisas de quarto no hotel — questionário rápido no teu painel.",
+      url: "/consultor/hotel",
+    }).catch((erroPush) => console.error(`falha ao enviar push a ${d.email}:`, erroPush));
+
     try {
       await sender.enviar({
         destinatario: d.email,
         ...mensagemAvisoHotel(d.nome, base),
         listaActiveCampaign: lista,
       });
-      await notificarPush(d.email, {
-        titulo: "Teambuilding — precisas de quarto?",
-        corpo: "Diz-nos se precisas de quarto no hotel — questionário rápido no teu painel.",
-        url: "/consultor/hotel",
-      }).catch((erroPush) => console.error(`falha ao enviar push a ${d.email}:`, erroPush));
       enviados += 1;
     } catch (erro) {
       falhas.push({ email: d.email, erro: erro instanceof Error ? erro.message : String(erro) });
