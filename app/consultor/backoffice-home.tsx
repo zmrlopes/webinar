@@ -627,7 +627,7 @@ export function BackofficeHome() {
                             </p>
                             {formacoesAdHocAcabadasDeInscrever[idSessao] && (
                               <p className="vqb-sucesso" style={{ marginTop: "0.75rem", fontSize: "0.9rem" }}>
-                                ✅ Inscrição confirmada — o link chegou ao teu email.
+                                ✅ Inscrição confirmada — vais receber o link no teu email.
                               </p>
                             )}
                             {errosFormacaoAdHoc[idSessao] && (
@@ -814,7 +814,7 @@ export function BackofficeHome() {
                           </button>
                           {webinarAcabadoDeInscrever && (
                             <p className="vqb-sucesso" style={{ marginTop: "0.75rem", fontSize: "0.9rem" }}>
-                              ✅ Inscrição confirmada — o link chegou ao teu email.
+                              ✅ Inscrição confirmada — vais receber o link no teu email.
                             </p>
                           )}
                           {erroWebinar && (
@@ -845,7 +845,7 @@ export function BackofficeHome() {
                           </button>
                           {formacaoAcabadaDeInscrever && (
                             <p className="vqb-sucesso" style={{ marginTop: "0.75rem", fontSize: "0.9rem" }}>
-                              ✅ Inscrição confirmada — o link chegou ao teu email.
+                              ✅ Inscrição confirmada — vais receber o link no teu email.
                             </p>
                           )}
                           {erroFormacao && (
@@ -897,7 +897,7 @@ export function BackofficeHome() {
                         </button>
                         {formacoesAdHocAcabadasDeInscrever[s.id] && (
                           <p className="vqb-sucesso" style={{ marginTop: "0.75rem", fontSize: "0.9rem" }}>
-                            ✅ Inscrição confirmada — o link chegou ao teu email.
+                            ✅ Inscrição confirmada — vais receber o link no teu email.
                           </p>
                         )}
                         {errosFormacaoAdHoc[s.id] && (
