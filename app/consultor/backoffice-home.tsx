@@ -409,7 +409,11 @@ export function BackofficeHome() {
         }
         .vqb-urgente h2 { margin: 0; color: #7a5c0a; font-size: 1.15rem; }
         .vqb-urgente-sub { margin: 0.15rem 0 0; color: #8a6d1f; font-size: 0.85rem; }
-        .vqb-urgente-lista { display: grid; gap: 0.65rem; }
+        .vqb-urgente-lista {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 0.65rem;
+        }
         .vqb-pagina a.vqb-urgente-item {
           display: flex;
           align-items: center;
