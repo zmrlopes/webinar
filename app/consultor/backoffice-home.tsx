@@ -438,9 +438,15 @@ export function BackofficeHome() {
           border-bottom: 2px solid #eae7de;
         }
         .vqb-avisos h2 { margin: 0 0 1rem; text-align: center; }
+        .vqb-avisos-lista {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 1rem;
+        }
         .vqb-aviso-destaque {
+          flex: 1 1 380px;
           max-width: 420px;
-          margin: 0 auto;
           background: #fbfaf6;
           border: 2px solid #4b5320;
           border-radius: 14px;
@@ -596,6 +602,7 @@ export function BackofficeHome() {
             }
             <div className="vqb-avisos">
               <h2>Avisos</h2>
+              <div className="vqb-avisos-lista">
               <NotificacoesPush email={email} />
               {dados.welcomeAboard && (
                   <div className="vqb-aviso-destaque">
@@ -668,6 +675,7 @@ export function BackofficeHome() {
                     )}
                   </div>
               )}
+              </div>
             </div>
 
             <h2>Página da Equipa</h2>

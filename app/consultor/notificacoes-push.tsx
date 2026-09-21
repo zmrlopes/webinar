@@ -144,7 +144,7 @@ export function NotificacoesPush({ email }: { email: string }) {
   }
 
   return (
-    <div className="vqb-aviso-destaque" style={{ marginTop: "1rem" }}>
+    <div className="vqb-aviso-destaque">
       <span className="vqb-destaque-etiqueta">App e notificações</span>
       <p className="vqb-destaque-texto" style={{ marginBottom: "1rem" }}>
         Instala o painel no ecrã principal do telemóvel e recebe aqui os mesmos avisos que já chegam por
