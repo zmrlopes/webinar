@@ -379,6 +379,54 @@ export function BackofficeHome() {
         .vqb-sessoes-grade .vqb-cartao { margin: 0; height: 100%; display: flex; flex-direction: column; }
         .vqb-sessoes-grade .vqb-cartao + .vqb-cartao { margin-top: 0; }
         .vqb-sessoes-grade .vqb-destaque-botao { margin-top: auto; }
+        .vqb-urgente {
+          margin: 1.5rem 0 0;
+          background: linear-gradient(135deg, #fff8e6, #fff1d1);
+          border: 3px solid #c9971c;
+          border-radius: 16px;
+          padding: 1.5rem;
+          box-shadow: 0 6px 24px rgba(201, 151, 28, 0.28);
+        }
+        .vqb-urgente-cabecalho { display: flex; align-items: center; gap: 0.9rem; margin-bottom: 1.1rem; }
+        .vqb-urgente-badge {
+          flex: none;
+          width: 2.6rem;
+          height: 2.6rem;
+          border-radius: 50%;
+          background: #c9971c;
+          color: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 800;
+          font-size: 1.3rem;
+          animation: vqb-pulso 2.2s infinite;
+        }
+        @keyframes vqb-pulso {
+          0% { box-shadow: 0 0 0 0 rgba(201, 151, 28, 0.45); }
+          70% { box-shadow: 0 0 0 14px rgba(201, 151, 28, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(201, 151, 28, 0); }
+        }
+        .vqb-urgente h2 { margin: 0; color: #7a5c0a; font-size: 1.15rem; }
+        .vqb-urgente-sub { margin: 0.15rem 0 0; color: #8a6d1f; font-size: 0.85rem; }
+        .vqb-urgente-lista { display: grid; gap: 0.65rem; }
+        .vqb-pagina a.vqb-urgente-item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          background: #ffffff;
+          border: 1px solid #e8d190;
+          border-radius: 10px;
+          padding: 0.85rem 1rem;
+          text-decoration: none;
+          color: #000000;
+          font-weight: 700;
+          font-size: 0.95rem;
+        }
+        .vqb-pagina a.vqb-urgente-item:hover { border-color: #c9971c; background: #fffdf5; }
+        .vqb-urgente-item-sub { display: block; font-weight: 400; color: #6b6a63; font-size: 0.8rem; margin-top: 0.1rem; }
+        .vqb-urgente-seta { color: #c9971c; font-size: 1.3rem; flex: none; }
         .vqb-avisos {
           margin: 2rem 0;
           padding: 1.75rem 0;
@@ -461,6 +509,69 @@ export function BackofficeHome() {
               </button>
             </div>
 
+            {
+              // Primeira coisa depois do cumprimento, de propósito — para
+              // ninguém ter dúvidas de que há questionários do evento por
+              // responder, mesmo sem descer a página. Os três só existem
+              // enquanto o Teambuilding de 14 de novembro estiver a
+              // decorrer, por isso vivem à parte dos avisos permanentes
+              // (notificações, Welcome Aboard) lá mais abaixo.
+            }
+            {(() => {
+              const pendentes = [
+                dados.precisaResponderTeambuilding && {
+                  href: "/consultor/teambuilding",
+                  icone: "📋",
+                  titulo: "Preparação do Teambuilding",
+                  texto: "4 perguntas rápidas sobre o que esperas do dia.",
+                },
+                dados.precisaResponderTrofeus && {
+                  href: "/consultor/trofeus",
+                  icone: "🏆",
+                  titulo: "Troféus a entregar",
+                  texto: "Quais queres receber e quais já tens.",
+                },
+                dados.precisaResponderHotel && {
+                  href: "/consultor/hotel",
+                  icone: "🏨",
+                  titulo: "Quarto no hotel",
+                  texto: "Precisas de quarto? Que tipo, que noites.",
+                },
+              ].filter((p): p is { href: string; icone: string; titulo: string; texto: string } => Boolean(p));
+
+              if (pendentes.length === 0) return null;
+
+              return (
+                <div className="vqb-urgente">
+                  <div className="vqb-urgente-cabecalho">
+                    <span className="vqb-urgente-badge">{pendentes.length}</span>
+                    <div>
+                      <h2>
+                        {pendentes.length === 1
+                          ? "Tens 1 questionário do evento por responder"
+                          : `Tens ${pendentes.length} questionários do evento por responder`}
+                      </h2>
+                      <p className="vqb-urgente-sub">Sobre o Teambuilding de 14 de novembro — menos de 1 minuto cada.</p>
+                    </div>
+                  </div>
+                  <div className="vqb-urgente-lista">
+                    {pendentes.map((p) => (
+                      <Link href={p.href} className="vqb-urgente-item" key={p.href}>
+                        <span style={{ display: "flex", alignItems: "center", gap: "0.7rem" }}>
+                          <span style={{ fontSize: "1.3rem" }}>{p.icone}</span>
+                          <span>
+                            <span style={{ display: "block" }}>{p.titulo}</span>
+                            <span className="vqb-urgente-item-sub">{p.texto}</span>
+                          </span>
+                        </span>
+                        <span className="vqb-urgente-seta">→</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
             <h2>O teu link de partilha</h2>
             <p className="vqb-mudo">
               É este o link que partilhas para as pessoas se inscreverem no webinar. Quem se inscrever
@@ -482,69 +593,8 @@ export function BackofficeHome() {
             <div className="vqb-avisos">
               <h2>Avisos</h2>
               <NotificacoesPush email={email} />
-              {(dados.precisaResponderTeambuilding ||
-                dados.precisaResponderTrofeus ||
-                dados.precisaResponderHotel ||
-                dados.welcomeAboard) && (
-                <>
-                  {dados.precisaResponderTeambuilding && (
+              {dados.welcomeAboard && (
                   <div className="vqb-aviso-destaque">
-                    <span className="vqb-destaque-etiqueta">Teambuilding — 14 de novembro</span>
-                    <p className="vqb-destaque-texto" style={{ marginBottom: "1.1rem" }}>
-                      Inscreveste-te no Teambuilding — ajuda-nos a preparar o dia: responde a 4 perguntas
-                      rápidas sobre o que esperas e que formações gostavas de ver.
-                    </p>
-                    <Link href="/consultor/teambuilding" className="vqb-destaque-botao">
-                      Responder ao formulário
-                    </Link>
-                  </div>
-                )}
-                {dados.precisaResponderTrofeus && (
-                  <div
-                    className="vqb-aviso-destaque"
-                    style={dados.precisaResponderTeambuilding ? { marginTop: "1rem" } : undefined}
-                  >
-                    <span className="vqb-destaque-etiqueta">Troféus — 14 de novembro</span>
-                    <p className="vqb-destaque-texto" style={{ marginBottom: "1.1rem" }}>
-                      Vamos entregar os troféus no Teambuilding. Diz-nos quais queres receber e quais já
-                      tens em casa, para mandarmos fazer o número certo — ninguém fica sem o seu nem recebe
-                      um repetido.
-                    </p>
-                    <Link href="/consultor/trofeus" className="vqb-destaque-botao">
-                      Escolher os meus troféus
-                    </Link>
-                  </div>
-                )}
-                {dados.precisaResponderHotel && (
-                  <div
-                    className="vqb-aviso-destaque"
-                    style={
-                      dados.precisaResponderTeambuilding || dados.precisaResponderTrofeus
-                        ? { marginTop: "1rem" }
-                        : undefined
-                    }
-                  >
-                    <span className="vqb-destaque-etiqueta">Hotel — 14 de novembro</span>
-                    <p className="vqb-destaque-texto" style={{ marginBottom: "1.1rem" }}>
-                      Reservámos o Aurea Fátima Hotel Congress & Spa para quem quiser ficar. Diz-nos se
-                      precisas de quarto, que tipo e que noites, para acertarmos a reserva com o hotel.
-                    </p>
-                    <Link href="/consultor/hotel" className="vqb-destaque-botao">
-                      Responder sobre o quarto
-                    </Link>
-                  </div>
-                )}
-                {dados.welcomeAboard && (
-                  <div
-                    className="vqb-aviso-destaque"
-                    style={
-                      dados.precisaResponderTeambuilding ||
-                      dados.precisaResponderTrofeus ||
-                      dados.precisaResponderHotel
-                        ? { marginTop: "1rem" }
-                        : undefined
-                    }
-                  >
                     <span className="vqb-destaque-etiqueta">Welcome Aboard</span>
                     <p className="vqb-wa-linha">
                       Duas sessões de acolhimento para quem entrou no negócio há pouco tempo:
@@ -613,8 +663,6 @@ export function BackofficeHome() {
                       </p>
                     )}
                   </div>
-                )}
-                </>
               )}
             </div>
 
