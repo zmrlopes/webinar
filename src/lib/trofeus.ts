@@ -5,7 +5,7 @@ import type { EmailSender } from "./email";
 import { notificarPush } from "./push";
 import { TROFEUS_JA_TENHO, TROFEUS_QUERO } from "./trofeus-lista";
 
-export { TROFEUS_JA_TENHO, TROFEUS_QUERO } from "./trofeus-lista";
+export { chaveDoPatamar, TROFEUS_JA_TENHO, TROFEUS_QUERO } from "./trofeus-lista";
 export type { Trofeu } from "./trofeus-lista";
 
 /**
@@ -73,19 +73,30 @@ export interface RespostaTrofeusAdmin {
   email: string;
   quero: string[];
   jaTenho: string[];
+  /** O patamar atual, vindo do CSV da equipa — para detetar quem pediu troféus a mais. */
+  nivel: string | null;
   criadoEm: Date;
 }
 
+/**
+ * Traz o `nivel` (patamar) de equipa_afiliados a par de cada resposta — só
+ * se tem direito ao troféu do próprio patamar, não aos de patamares acima
+ * (ver chaveDoPatamar em trofeus-lista.ts). Sem isto aqui, um engano como
+ * alguém marcar "quero" em todos os patamares fica invisível na tabela do
+ * admin até alguém reparar à mão.
+ */
 export async function listarRespostasTrofeus(): Promise<RespostaTrofeusAdmin[]> {
   const { rows } = await db().query<{
     nome: string | null;
     email: string;
     quero: string[];
     ja_tenho: string[];
+    nivel: string | null;
     criado_em: Date;
   }>(
     `select rt.email, rt.quero, rt.ja_tenho, rt.criado_em,
-            (select max(ei.nome) from evento_inscricoes ei where ei.email = rt.email) as nome
+            (select max(ei.nome) from evento_inscricoes ei where ei.email = rt.email) as nome,
+            (select ea.nivel from equipa_afiliados ea where ea.email = rt.email) as nivel
      from respostas_trofeus rt
      order by rt.criado_em desc`,
   );
@@ -94,8 +105,21 @@ export async function listarRespostasTrofeus(): Promise<RespostaTrofeusAdmin[]> 
     email: r.email,
     quero: r.quero,
     jaTenho: r.ja_tenho,
+    nivel: r.nivel,
     criadoEm: r.criado_em,
   }));
+}
+
+/**
+ * Correção manual pelo admin — a mesma regra do upsert do questionário,
+ * mas sem a exigência de estar inscrito no evento (a resposta já existe;
+ * isto só a corrige). Usada em /admin/trofeus-respostas quando alguém se
+ * enganou a marcar troféus que não são do seu patamar.
+ */
+export async function corrigirRespostaTrofeus(email: string, quero: string[], jaTenho: string[]): Promise<void> {
+  const { rowCount } = await db().query(`select 1 from respostas_trofeus where email = $1`, [email]);
+  if (!rowCount) throw new Error("esta pessoa ainda não respondeu ao questionário — nada para corrigir");
+  await guardarRespostaTrofeus(email, quero, jaTenho);
 }
 
 export interface ContagemTrofeu {

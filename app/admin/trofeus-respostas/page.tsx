@@ -5,23 +5,11 @@ import {
   listarInscritosSemRespostaTrofeus,
   listarRespostasTrofeus,
   questionarioTrofeusPublicado,
-  TROFEUS_JA_TENHO,
 } from "@/lib/trofeus";
 import { BotoesAvisar } from "./botoes-avisar";
+import { LinhaResposta } from "./linha";
 
 export const dynamic = "force-dynamic";
-
-function rotuloDe(chave: string): string {
-  return TROFEUS_JA_TENHO.find((t) => t.chave === chave)?.rotulo ?? chave;
-}
-
-function formatarData(data: Date): string {
-  return new Date(data).toLocaleString("pt-PT", {
-    dateStyle: "short",
-    timeStyle: "short",
-    timeZone: "Europe/Lisbon",
-  });
-}
 
 export default async function TrofeusRespostasPagina() {
   const [respostas, semResposta] = await Promise.all([
@@ -88,6 +76,44 @@ export default async function TrofeusRespostasPagina() {
           margin: 0 0.25rem 0.25rem 0;
         }
         .ad-pilula-cinza { background: #ececE6; color: #6b6a63; }
+        .ad-pilula-aviso { background: #fbe4e0; color: #b3261e; font-weight: 700; }
+        .ad-aviso-texto { color: #b3261e; font-size: 0.8rem; margin-top: 0.3rem; }
+        .ad-botao-corrigir {
+          background: #4b5320;
+          color: #ffffff;
+          border: none;
+          border-radius: 6px;
+          padding: 0.4rem 0.8rem;
+          font-size: 0.82rem;
+          font-weight: 700;
+          cursor: pointer;
+        }
+        .ad-botao-corrigir:disabled { opacity: 0.6; cursor: default; }
+        .ad-botao-cancelar {
+          background: transparent;
+          color: #6b6a63;
+          border: 1px solid #d8d5cb;
+          border-radius: 6px;
+          padding: 0.4rem 0.8rem;
+          font-size: 0.82rem;
+          cursor: pointer;
+        }
+        .ad-botao-sugestao {
+          display: block;
+          background: transparent;
+          color: #4b5320;
+          border: 1px solid #4b5320;
+          border-radius: 6px;
+          padding: 0.35rem 0.7rem;
+          font-size: 0.8rem;
+          font-weight: 700;
+          cursor: pointer;
+          margin-bottom: 0.6rem;
+        }
+        .ad-edicao { padding: 1rem 0.25rem; }
+        .ad-edicao-titulo { font-weight: 700; font-size: 0.85rem; margin-bottom: 0.5rem; color: #4b5320; }
+        .ad-edicao-colunas { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; }
+        .ad-checkbox-linha { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; padding: 0.25rem 0; }
       `}</style>
 
       <div className="ad-caixa">
@@ -134,42 +160,16 @@ export default async function TrofeusRespostasPagina() {
               <thead>
                 <tr>
                   <th>Consultor</th>
+                  <th>Patamar</th>
                   <th>Quer receber</th>
                   <th>Já tem</th>
                   <th>Quando</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
                 {respostas.map((r) => (
-                  <tr key={r.email}>
-                    <td>
-                      {r.nome}
-                      <div className="ad-legenda">{r.email}</div>
-                    </td>
-                    <td>
-                      {r.quero.length === 0 ? (
-                        <span className="ad-legenda">nenhum</span>
-                      ) : (
-                        r.quero.map((c) => (
-                          <span className="ad-pilula" key={c}>
-                            {rotuloDe(c)}
-                          </span>
-                        ))
-                      )}
-                    </td>
-                    <td>
-                      {r.jaTenho.length === 0 ? (
-                        <span className="ad-legenda">nenhum</span>
-                      ) : (
-                        r.jaTenho.map((c) => (
-                          <span className="ad-pilula ad-pilula-cinza" key={c}>
-                            {rotuloDe(c)}
-                          </span>
-                        ))
-                      )}
-                    </td>
-                    <td className="ad-legenda">{formatarData(r.criadoEm)}</td>
-                  </tr>
+                  <LinhaResposta resposta={r} key={r.email} />
                 ))}
               </tbody>
             </table>
