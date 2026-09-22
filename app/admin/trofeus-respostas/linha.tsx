@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { chaveDoPatamar, TROFEUS_JA_TENHO, TROFEUS_QUERO } from "@/lib/trofeus-lista";
+import { patamaresComDireito, TROFEUS_JA_TENHO, TROFEUS_QUERO } from "@/lib/trofeus-lista";
 import type { RespostaTrofeusAdmin } from "@/lib/trofeus";
 
 function rotuloDe(chave: string): string {
@@ -36,8 +36,12 @@ export function LinhaResposta({ resposta }: { resposta: RespostaTrofeusAdmin }) 
   const [aGuardar, setAGuardar] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  const chaveAtual = chaveDoPatamar(resposta.nivel);
-  const extrasQuero = chaveAtual ? resposta.quero.filter((c) => c !== chaveAtual) : [];
+  // Tem direito ao seu patamar E a todos os abaixo (confirmado com o
+  // utilizador: um Master pode pedir Master, Sénior e Júnior) — só quem
+  // pede um patamar ACIMA do seu é que está a marcar algo a mais. Sem
+  // saber o patamar (null), não se assinala nada como errado.
+  const direitos = patamaresComDireito(resposta.nivel);
+  const extrasQuero = direitos ? resposta.quero.filter((c) => !direitos.includes(c)) : [];
 
   function abrirEdicao(): void {
     setQuero(resposta.quero);
@@ -46,8 +50,8 @@ export function LinhaResposta({ resposta }: { resposta: RespostaTrofeusAdmin }) 
     setAEditar(true);
   }
 
-  function aplicarSoPatamarAtual(): void {
-    if (chaveAtual) setQuero([chaveAtual]);
+  function aplicarPatamaresComDireito(): void {
+    if (direitos) setQuero(direitos);
   }
 
   async function guardar(): Promise<void> {
@@ -93,7 +97,9 @@ export function LinhaResposta({ resposta }: { resposta: RespostaTrofeusAdmin }) 
             ))
           )}
           {extrasQuero.length > 0 && (
-            <div className="ad-aviso-texto">⚠ só tem direito ao troféu do seu patamar</div>
+            <div className="ad-aviso-texto">
+              ⚠ pediu patamar(es) acima do atual — confirma se não está quase lá antes de tirar
+            </div>
           )}
         </td>
         <td>
@@ -131,9 +137,9 @@ export function LinhaResposta({ resposta }: { resposta: RespostaTrofeusAdmin }) 
           <div className="ad-edicao-colunas">
             <div>
               <div className="ad-edicao-titulo">Quer receber</div>
-              {chaveAtual && (
-                <button type="button" className="ad-botao-sugestao" onClick={aplicarSoPatamarAtual}>
-                  Só o troféu do patamar atual
+              {direitos && (
+                <button type="button" className="ad-botao-sugestao" onClick={aplicarPatamaresComDireito}>
+                  Só os patamares a que tem direito ({direitos.length})
                 </button>
               )}
               {TROFEUS_QUERO.map((t) => (

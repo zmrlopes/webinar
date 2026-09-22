@@ -78,6 +78,21 @@ export function trofeusPatamarEmFalta(nivel: string | null, jaTenho: string[] | 
   return ORDEM_PATAMARES.slice(0, indice + 1).filter((c) => !jaTenho.includes(c));
 }
 
+/**
+ * Os troféus de patamar a que alguém tem mesmo direito de pedir: o seu e
+ * todos os abaixo dele — não só o seu. Um Master pode legitimamente pedir
+ * o de Master, o de Sénior e o de Júnior (confirmado com o utilizador);
+ * só quem pede um patamar ACIMA do seu é que está a marcar algo a mais.
+ * Mesma regra de null de trofeusPatamarEmFalta: patamar desconhecido não
+ * dá para dizer que está errado, dá para dizer "não sabemos".
+ */
+export function patamaresComDireito(nivel: string | null): string[] | null {
+  const chaveAtual = chaveDoPatamar(nivel);
+  if (chaveAtual === null) return null;
+  const indice = ORDEM_PATAMARES.indexOf(chaveAtual);
+  return ORDEM_PATAMARES.slice(0, indice + 1);
+}
+
 /** Os troféus de faturação e o volume (em euros) que os desbloqueia. */
 const LIMIARES_FATURACAO: [chave: string, limiar: number][] = [
   ["faturacao-100k", 100_000],
