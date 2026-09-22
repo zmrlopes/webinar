@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { patamaresComDireito, TROFEUS_JA_TENHO, TROFEUS_QUERO } from "@/lib/trofeus-lista";
+import { patamaresComDireito, progressoParaPatamar, TROFEUS_JA_TENHO, TROFEUS_QUERO } from "@/lib/trofeus-lista";
 import type { RespostaTrofeusAdmin } from "@/lib/trofeus";
 
 function rotuloDe(chave: string): string {
@@ -85,7 +85,10 @@ export function LinhaResposta({ resposta }: { resposta: RespostaTrofeusAdmin }) 
           {resposta.nome}
           <div className="ad-legenda">{resposta.email}</div>
         </td>
-        <td className="ad-legenda">{resposta.nivel ?? "—"}</td>
+        <td className="ad-legenda">
+          {resposta.nivel ?? "—"}
+          {resposta.pontos !== null && ` (${resposta.pontos} pts)`}
+        </td>
         <td>
           {resposta.quero.length === 0 ? (
             <span className="ad-legenda">nenhum</span>
@@ -96,11 +99,19 @@ export function LinhaResposta({ resposta }: { resposta: RespostaTrofeusAdmin }) 
               </span>
             ))
           )}
-          {extrasQuero.length > 0 && (
-            <div className="ad-aviso-texto">
-              ⚠ pediu patamar(es) acima do atual — confirma se não está quase lá antes de tirar
-            </div>
-          )}
+          {extrasQuero.map((c) => {
+            const progresso = progressoParaPatamar(resposta.pontos, c);
+            return (
+              <div className="ad-aviso-texto" key={c}>
+                ⚠ {rotuloDe(c)}:{" "}
+                {progresso === null
+                  ? "acima do patamar atual — sem pontos importados para confirmar se está perto"
+                  : progresso.faltam === 0
+                    ? "já bate o limiar de pontos — falta só o CSV atualizar o patamar"
+                    : `faltam ${progresso.faltam} pontos para lá chegar (${progresso.percentagem}%)`}
+              </div>
+            );
+          })}
         </td>
         <td>
           {resposta.jaTenho.length === 0 ? (
@@ -132,6 +143,7 @@ export function LinhaResposta({ resposta }: { resposta: RespostaTrofeusAdmin }) 
           </strong>
           <p className="ad-legenda" style={{ margin: "0.2rem 0 0.8rem" }}>
             Patamar atual (CSV da equipa): {resposta.nivel ?? "desconhecido"}
+            {resposta.pontos !== null && ` — ${resposta.pontos} pontos`}
           </p>
 
           <div className="ad-edicao-colunas">

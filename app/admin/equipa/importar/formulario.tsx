@@ -13,6 +13,8 @@ interface Resultado {
   colunaDataRegisto: string | null;
   comDataRegisto: number;
   exemploDataRegisto: string | null;
+  colunaPontos: string | null;
+  comPontos: number;
 }
 
 export function FormularioImportarEquipa() {
@@ -98,6 +100,17 @@ export function FormularioImportarEquipa() {
               <strong style={{ color: "#c0392b" }}>
                 nenhuma coluna de data encontrada neste ficheiro
               </strong>
+            )}
+          </li>
+          <li>
+            Pontos de qualificação:{" "}
+            {resultado.colunaPontos ? (
+              <>
+                lidos da coluna <strong>{resultado.colunaPontos}</strong> — {resultado.comPontos} de{" "}
+                {resultado.importados} com pontos
+              </>
+            ) : (
+              <strong style={{ color: "#c0392b" }}>nenhuma coluna de pontos encontrada neste ficheiro</strong>
             )}
           </li>
           <li>Colunas do ficheiro: {resultado.colunas.join(", ")}</li>

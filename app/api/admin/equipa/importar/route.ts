@@ -16,8 +16,17 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const texto = await ficheiro.text();
-  const { linhas, totalLinhasCru, semEmail, colunas, colunaDataRegisto, comDataRegisto, exemploDataRegisto } =
-    parseCsvEquipa(texto);
+  const {
+    linhas,
+    totalLinhasCru,
+    semEmail,
+    colunas,
+    colunaDataRegisto,
+    comDataRegisto,
+    exemploDataRegisto,
+    colunaPontos,
+    comPontos,
+  } = parseCsvEquipa(texto);
 
   if (linhas.length === 0) {
     return NextResponse.json(
@@ -42,5 +51,7 @@ export async function POST(request: Request): Promise<Response> {
     colunaDataRegisto,
     comDataRegisto,
     exemploDataRegisto,
+    colunaPontos,
+    comPontos,
   });
 }

@@ -93,6 +93,46 @@ export function patamaresComDireito(nivel: string | null): string[] | null {
   return ORDEM_PATAMARES.slice(0, indice + 1);
 }
 
+/**
+ * Pontos de qualificação necessários por patamar (confirmado com o
+ * utilizador) — Júnior é o ponto de partida, toda a gente começa em 0. O
+ * Bronze fica de fora de propósito: é um caso à parte (só um consultor lá
+ * está), sem limiar definido.
+ */
+const LIMIARES_PONTOS: Record<string, number> = {
+  "patamar-junior": 0,
+  "patamar-senior": 15,
+  "patamar-master": 75,
+  "patamar-coordenador": 250,
+  "patamar-diretor": 1000,
+};
+
+export interface ProgressoPatamar {
+  pontosNecessarios: number;
+  pontosAtuais: number;
+  faltam: number;
+  percentagem: number;
+}
+
+/**
+ * Quão perto alguém está de um patamar que pediu no questionário mas
+ * ainda não tem direito a pedir (ver patamaresComDireito) — para quem
+ * está mesmo quase a lá chegar não ser tratado sempre como um engano a
+ * corrigir. null quando não há pontos importados para esta pessoa, ou o
+ * patamar não tem limiar definido (Bronze).
+ */
+export function progressoParaPatamar(
+  pontosAtuais: number | null,
+  chavePatamar: string,
+): ProgressoPatamar | null {
+  const pontosNecessarios = LIMIARES_PONTOS[chavePatamar];
+  if (pontosAtuais === null || pontosNecessarios === undefined) return null;
+  const faltam = Math.max(0, pontosNecessarios - pontosAtuais);
+  const percentagem =
+    pontosNecessarios === 0 ? 100 : Math.min(100, Math.round((pontosAtuais / pontosNecessarios) * 100));
+  return { pontosNecessarios, pontosAtuais, faltam, percentagem };
+}
+
 /** Os troféus de faturação e o volume (em euros) que os desbloqueia. */
 const LIMIARES_FATURACAO: [chave: string, limiar: number][] = [
   ["faturacao-100k", 100_000],

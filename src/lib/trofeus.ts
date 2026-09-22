@@ -75,15 +75,19 @@ export interface RespostaTrofeusAdmin {
   jaTenho: string[];
   /** O patamar atual, vindo do CSV da equipa — para detetar quem pediu troféus a mais. */
   nivel: string | null;
+  /** Pontos de qualificação, vindos do CSV da equipa — para ver quem está perto do patamar que pediu. */
+  pontos: number | null;
   criadoEm: Date;
 }
 
 /**
- * Traz o `nivel` (patamar) de equipa_afiliados a par de cada resposta — só
- * se tem direito ao troféu do próprio patamar, não aos de patamares acima
- * (ver chaveDoPatamar em trofeus-lista.ts). Sem isto aqui, um engano como
- * alguém marcar "quero" em todos os patamares fica invisível na tabela do
- * admin até alguém reparar à mão.
+ * Traz `nivel` e `pontos` de equipa_afiliados a par de cada resposta — só
+ * se tem direito ao troféu do próprio patamar e dos abaixo dele, não aos
+ * de patamares acima (ver patamaresComDireito em trofeus-lista.ts); os
+ * pontos servem para distinguir, dentro de quem pediu um patamar acima,
+ * quem já está mesmo quase lá (ver progressoParaPatamar). Sem isto aqui,
+ * um engano como alguém marcar "quero" em todos os patamares fica
+ * invisível na tabela do admin até alguém reparar à mão.
  */
 export async function listarRespostasTrofeus(): Promise<RespostaTrofeusAdmin[]> {
   const { rows } = await db().query<{
@@ -92,11 +96,13 @@ export async function listarRespostasTrofeus(): Promise<RespostaTrofeusAdmin[]> 
     quero: string[];
     ja_tenho: string[];
     nivel: string | null;
+    pontos: string | null;
     criado_em: Date;
   }>(
     `select rt.email, rt.quero, rt.ja_tenho, rt.criado_em,
             (select max(ei.nome) from evento_inscricoes ei where ei.email = rt.email) as nome,
-            (select ea.nivel from equipa_afiliados ea where ea.email = rt.email) as nivel
+            (select ea.nivel from equipa_afiliados ea where ea.email = rt.email) as nivel,
+            (select ea.pontos from equipa_afiliados ea where ea.email = rt.email) as pontos
      from respostas_trofeus rt
      order by rt.criado_em desc`,
   );
@@ -106,6 +112,7 @@ export async function listarRespostasTrofeus(): Promise<RespostaTrofeusAdmin[]> 
     quero: r.quero,
     jaTenho: r.ja_tenho,
     nivel: r.nivel,
+    pontos: r.pontos === null ? null : Number(r.pontos),
     criadoEm: r.criado_em,
   }));
 }

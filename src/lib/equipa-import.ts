@@ -7,6 +7,7 @@ export interface LinhaEquipa {
   nivel: string | null;
   estado: string;
   vendas: number | null;
+  pontos: number | null;
   dataRegisto: Date | null;
 }
 
@@ -19,6 +20,8 @@ export interface ResultadoParseCsvEquipa {
   colunaDataRegisto: string | null;
   comDataRegisto: number;
   exemploDataRegisto: string | null;
+  colunaPontos: string | null;
+  comPontos: number;
 }
 
 /**
@@ -34,6 +37,16 @@ function encontrarColunaData(colunas: string[]): string | null {
     colunas.find((c) => /creation|created|registo|register|signup|sign_up|join/.test(normalizar(c))) ??
     null
   );
+}
+
+/**
+ * A coluna dos pontos de qualificação de patamar — confirmado que existe
+ * nesta exportação como "ponts" (assim mesmo, sem o "i"), mas aceita
+ * também "points"/"pontos" caso a plataforma alguma vez corrija o nome.
+ */
+function encontrarColunaPontos(colunas: string[]): string | null {
+  const normalizar = (c: string) => c.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  return colunas.find((c) => /^(user_)?(ponts|points|pontos)$/.test(normalizar(c))) ?? null;
 }
 
 /** Aceita ISO (2026-09-07) e o formato europeu (07/09/2026), que o `new Date` leria ao contrário. */
@@ -120,6 +133,7 @@ export function parseCsvEquipa(texto: string): ResultadoParseCsvEquipa {
   const semEmail: string[] = [];
   const colunas = linhasCru[0] ? Object.keys(linhasCru[0]) : [];
   const colunaDataRegisto = encontrarColunaData(colunas);
+  const colunaPontos = encontrarColunaPontos(colunas);
   let exemploDataRegisto: string | null = null;
 
   for (const l of linhasCru) {
@@ -129,6 +143,7 @@ export function parseCsvEquipa(texto: string): ResultadoParseCsvEquipa {
       continue;
     }
     const vendas = Number(l.sales);
+    const pontos = colunaPontos ? Number(l[colunaPontos]) : NaN;
     const dataRegistoBruta = colunaDataRegisto ? (l[colunaDataRegisto] ?? "") : "";
     if (dataRegistoBruta.trim() && exemploDataRegisto === null) {
       exemploDataRegisto = dataRegistoBruta.trim();
@@ -140,6 +155,7 @@ export function parseCsvEquipa(texto: string): ResultadoParseCsvEquipa {
       nivel: l.user_level ? l.user_level.trim() : null,
       estado: (l.subscription_status ?? "ACTIVE").trim() || "ACTIVE",
       vendas: Number.isFinite(vendas) ? vendas : null,
+      pontos: Number.isFinite(pontos) ? pontos : null,
       dataRegisto: parseDataRegisto(dataRegistoBruta),
     });
   }
@@ -152,6 +168,8 @@ export function parseCsvEquipa(texto: string): ResultadoParseCsvEquipa {
     colunaDataRegisto,
     comDataRegisto: linhas.filter((l) => l.dataRegisto !== null).length,
     exemploDataRegisto,
+    colunaPontos,
+    comPontos: linhas.filter((l) => l.pontos !== null).length,
   };
 }
 
@@ -174,17 +192,18 @@ export function parseCsvEquipa(texto: string): ResultadoParseCsvEquipa {
 export async function importarLinhasEquipa(linhas: LinhaEquipa[]): Promise<void> {
   for (const l of linhas) {
     await db().query(
-      `insert into equipa_afiliados (email, nome, upline_email, nivel, estado, vendas, data_registo, atualizado_em)
-       values ($1, $2, $3, $4, $5, $6, $7, now())
+      `insert into equipa_afiliados (email, nome, upline_email, nivel, estado, vendas, pontos, data_registo, atualizado_em)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, now())
        on conflict (email) do update
          set nome = excluded.nome,
              upline_email = excluded.upline_email,
              nivel = excluded.nivel,
              estado = excluded.estado,
              vendas = coalesce(excluded.vendas, equipa_afiliados.vendas),
+             pontos = coalesce(excluded.pontos, equipa_afiliados.pontos),
              data_registo = coalesce(excluded.data_registo, equipa_afiliados.data_registo),
              atualizado_em = now()`,
-      [l.email, l.nome, l.uplineEmail, l.nivel, l.estado, l.vendas, l.dataRegisto],
+      [l.email, l.nome, l.uplineEmail, l.nivel, l.estado, l.vendas, l.pontos, l.dataRegisto],
     );
   }
 }
