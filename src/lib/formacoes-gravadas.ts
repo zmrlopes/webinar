@@ -64,14 +64,12 @@ function modulo(cursoId: string, titulo: string, aulas: AulaBruta[]): Modulo {
   };
 }
 
-const PRIMEIROS_PASSOS = "primeiros-passos";
 const SETE_SKILLS = "7-skills";
 const EXCELENCIA = "consultor-de-excelencia";
-const REDES_SOCIAIS = "redes-sociais";
 const CANVA = "canva";
 const ACELERACAO = "aceleracao-digital";
-const PESQUISA_ORCAMENTOS = "pesquisa-de-orcamentos";
-const DESTINOS = "destinos";
+const GERAIS = "gerais";
+const DESTINOS = "por-destinos";
 const MASTERCLASSES = "masterclasses-especiais";
 const EW_PRIMEIROS_PASSOS = "eric-worre-primeiros-passos";
 const EW_INFLUENCIA = "eric-worre-influencia";
@@ -84,45 +82,9 @@ const essenciais: Categoria = {
   id: "essenciais",
   titulo: "Essenciais",
   descricao:
-    "O ponto de partida: os primeiros passos, as competências para vender e fazer crescer o negócio, o atendimento de excelência ao cliente, as redes sociais e as ferramentas digitais. Segue a ordem recomendada.",
+    "As competências para vender e fazer crescer o negócio, o atendimento de excelência ao cliente e as ferramentas digitais. Segue a ordem recomendada.",
   disponivel: true,
   cursos: [
-    {
-      id: PRIMEIROS_PASSOS,
-      titulo: "Os Primeiros Passos (Welcome Aboard)",
-      descricao:
-        "Começa aqui: a visão e o potencial do negócio, o teu plano de 12 semanas e como gerir o tempo para cumprir as tarefas.",
-      modulos: [
-        modulo(PRIMEIROS_PASSOS, "Visão e Potencial do Negócio", [
-          ["Ser Consultor", null, 4, "2025-02-03"],
-          ["A Visão de Carreira", null, 7, "2025-02-05"],
-          ["O Potencial do Negócio", null, 4, "2025-02-05"],
-          ["Define onde queres estar", null, 6, "2025-02-05"],
-        ]),
-        modulo(PRIMEIROS_PASSOS, "Definição do Objetivo e do Plano de Ação", [
-          ["Qual o teu Objetivo", null, 8, "2025-02-03"],
-          ["O Plano de 12 Semanas", null, 12, "2025-02-05"],
-          ["O Plano de 12 Semanas Detalhado + Mapa 12 Semanas", null, null, "2025-02-06"],
-        ]),
-        modulo(PRIMEIROS_PASSOS, "Quais as Tarefas a Serem Feitas?", [
-          ["Cria uma Lista de Contatos", null, 8, "2025-02-05"],
-          ["Edita os teus Perfis", null, 9, "2025-02-05"],
-          ["Cria e Organiza o Conteúdo nas Redes Sociais", null, 11, "2025-02-05"],
-          ["Aumenta e Retêm mais Clientes", null, 5, "2025-02-05"],
-          ["Alavanca os teus Resultados", null, 7, "2025-02-05"],
-        ]),
-        modulo(PRIMEIROS_PASSOS, "Gestão de Tempo para Realizar as Tarefas", [
-          ["Auto Avalia o teu Tempo", null, 9, "2025-02-05"],
-          ["Prioriza o teu Tempo", null, 6, "2025-02-05"],
-          ["Sê Produtivo(a)", null, 8, "2025-02-05"],
-          ["16 Dicas para Gestão de Tempo", null, 10, "2025-02-05"],
-        ]),
-        modulo(PRIMEIROS_PASSOS, "A Chave para o teu Sucesso", [
-          ["Os Eventos", null, 16, "2025-02-03"],
-          ["A Mentalidade Necessária para Atingir o Topo de Carreira", null, 12, "2025-02-03"],
-        ]),
-      ],
-    },
     {
       id: SETE_SKILLS,
       titulo: "7 Skills: Torna-te um Super Patrocinador",
@@ -236,33 +198,6 @@ const essenciais: Categoria = {
       ],
     },
     {
-      id: REDES_SOCIAIS,
-      titulo: "Domina as Redes Sociais",
-      descricao:
-        "Bio, conteúdo, Reels e promoções: como usar o Instagram para atrair clientes e mostrar o teu trabalho como consultor.",
-      modulos: [
-        modulo(REDES_SOCIAIS, "Conteúdo Poderoso para as Redes Sociais (JUL 25)", [
-          ["Introdução & Sumário do Curso", "YuuBu_N--cQ", 3, "2025-07-11"],
-          ["Cria a tua biografia", null, 4, "2025-07-11"],
-          ["Link na Bio e a tua História", null, 3, "2025-07-11"],
-          ["Que conteúdo devo criar?", null, 3, "2025-07-11"],
-          ["Exemplos para cada tópico de Conteúdo", null, 19, "2025-07-11"],
-          ["Inspira-te com Consultores e Empreendedores", null, 2, "2025-07-11"],
-          ["Não tenho ideias para Reels", null, 5, "2025-07-11"],
-          ["Webinar: Como convidar no instagram?", null, 3, "2025-07-11"],
-          ["Ser Consultor de Viagens", null, 5, "2025-07-11"],
-        ]),
-        modulo(REDES_SOCIAIS, "Instagram", [
-          ["Como usar o Instagram?", "kV3ljOXvuAU", 26, "2025-02-04", "Mariana Figueira"],
-          ["Como Fotografar melhor?", "HKdgf4hOXEI", 10, "2025-05-01", "Mariana Figueira"],
-          ["Melhores Truques se não tens Criatividade", "OEwTmU_Oacg", 5, "2025-05-01", "Mariana Figueira"],
-          ["Vamos Criar Promoções", "8BaQBhum1D0", 20, "2025-05-01", "Mariana Figueira"],
-          ["Reels como forma de Promover", "vodrPYAr95c", 31, "2025-05-01", "Mariana Figueira"],
-          ["Esclarecimento de Questões", "cpW6YClqGE4", 12, "2025-05-01", "Mariana Figueira"],
-        ]),
-      ],
-    },
-    {
       id: CANVA,
       titulo: "Canva: Cria Conteúdo Profissional",
       descricao:
@@ -277,7 +212,6 @@ const essenciais: Categoria = {
           ["Stories Que Envolvem: Cria Interatividade no Instagram!", "xOeoHayY7GY", 4, "2025-02-28"],
           ["Onde Encontrar Conteúdo Pronto da iCliGo para as Tuas Redes!", "tOmpCITsyec", 1, "2025-02-28"],
           ["Cria o Teu Cartão de Visita Digital no Canva!", "AuFEl2jygEA", 3, "2025-02-28"],
-          ["Esclarece as Tuas Dúvidas: Pergunta e Aprende!", "M0OWVehrpjo", 30, "2025-02-28"],
         ]),
       ],
     },
@@ -285,28 +219,10 @@ const essenciais: Categoria = {
       id: ACELERACAO,
       titulo: "Aceleração Digital: Domina Ferramentas",
       descricao:
-        "Aprende a usar ferramentas digitais para automatizar, comunicar melhor e acelerar o teu crescimento: ManyChat, ChatGPT, tráfego pago e follow-up.",
+        "Aprende a usar ferramentas digitais para automatizar, comunicar melhor e acelerar o teu crescimento: ChatGPT e follow-up ao contacto.",
       modulos: [
-        modulo(ACELERACAO, "ManyChat: Fluxos de Conversas Automáticas", [
-          ["Automatiza Conversas e Multiplica Resultados!", "xiFGUuYyitY", 44, "2025-03-27"],
-        ]),
         modulo(ACELERACAO, "ChatGPT ou DeepSeek Inteligente", [
           ["ChatGPT Inteligente: Torna a ferramenta IA ainda mais inteligente!", "E40ZfFjqcg4", 57, "2025-03-01"],
-        ]),
-        modulo(ACELERACAO, "O Poder do Tráfego Pago", [
-          ["O que é o Tráfego pago", "Ecb5KnnGnOk", 5, "2025-03-27"],
-          ["Configurar o Gestor de Negócios", "wOz0lcmMGiU", 15, "2025-03-27"],
-          ["Estrutura dentro da Meta para Anunciar", "IRW2sOvjsi0", 4, "2025-03-27"],
-          ["Conceitos Básicos", "In2cBmF4wtA", 12, "2025-03-27"],
-        ]),
-        modulo(ACELERACAO, "Passos para a Criação de um Anúncio de Raiz", [
-          ["Recapitulação da Sessão Anterior", "lR4nzilf7n4", 2, "2025-03-28"],
-          ["Criação e Definição do Objetivo para a Campanha", "lVEUk0G8vjE", 7, "2025-03-28"],
-          ["Parametrização do Conjunto de Anúncios na Campanha", "pCadu1ccvWo", 16, "2025-03-28"],
-          ["Parametrização do Anúncio para o Conjunto de Anúncios", "QZTbsZDrIow", 5, "2025-03-28"],
-          ["Exemplo: Anúncio com Destino \"Formulário\"", "lZG7ZSJ-86M", 30, "2025-03-28"],
-          ["Exemplo: Anúncio com Destino \"URL Site\"", "xnh3N_tUgBY", 5, "2025-03-28"],
-          ["Dúvidas e Feedback", "oEimVO7Kw-s", 24, "2025-03-28"],
         ]),
         modulo(ACELERACAO, "Chegou um Contacto e Agora?", [
           ["Pontos que Devem ter em Atenção!", "QJTRCxay_Hk", 7, "2025-05-01"],
@@ -325,20 +241,16 @@ const reservas: Categoria = {
   id: "reservas",
   titulo: "Reservas",
   descricao:
-    "Pesquisa de orçamentos e destinos: aulas gravadas por destino e por tipo de viagem, para orçamentares com confiança.",
+    "Pesquisa de orçamentos e destinos: aulas gravadas por tipo de pesquisa e por continente, para orçamentares com confiança.",
   disponivel: true,
   cursos: [
     {
-      id: PESQUISA_ORCAMENTOS,
-      titulo: "Pesquisa de Orçamentos",
+      id: GERAIS,
+      titulo: "Gerais",
       descricao:
-        "Pesquisas passo a passo, por tipo de viagem: multidestino, cruzeiros, operadores, grupos e mais — para orçamentares com confiança.",
+        "Pesquisas que não são de um destino específico: multidestino, cruzeiros, operadores, grupos e mais.",
       modulos: [
-    modulo(PESQUISA_ORCAMENTOS, "Ásia", [
-      ["PESQUISA de orçamentos para Istambul + Capadócia + Pamukkale", "8m7e8_ACZfE", null, "2023-10-17", "Mariana Figueira"],
-      ["PESQUISA de Orçamentos para MALDIVAS", "qun6aJdfygQ", 45, "2022-12-27", "Mariline Ferreira"],
-    ]),
-    modulo(PESQUISA_ORCAMENTOS, "Multidestino", [
+    modulo(GERAIS, "Multidestino", [
       ["Circuito pela Riviera Francesa _ Multidestino", "YaUJu1KFUdg", null, "2025-05-06", "Inês Melgão"],
       ["Circuito pelo Japão _ Multidestino", "ic_gB6i0eQk", 36, "2025-04-08", "Marta Coutinho"],
       ["PESQUISA de um pacote no Quénia", "luFcZ-FGpRk", 14, "2025-03-18", "Inês Evaristo"],
@@ -352,54 +264,34 @@ const reservas: Categoria = {
       ["PESQUISA para circuito EUROPA", "yWe6eN6Vo7E", 63, "2022-11-15", "Sónia Melro"],
       ["PESQUISA para a ÁSIA com o Multidestino", "HDAjpP-A7No", 47, "2022-10-11", "Mariline Ferreira"],
     ]),
-    modulo(PESQUISA_ORCAMENTOS, "Operadores", [
+    modulo(GERAIS, "Operadores", [
       ["Pesquisa de Orçamento para o MÉXICO + Dúvidas", "wnos3deLEeI", 36, "2025-03-25", "Susana Boavida"],
       ["Pacotes Operador vs Pacotes Dinâmicos _ LISTA de PARCEIROS (Operadores Turísticos) iCliGo", "iorRKdReFv8", null, "2023-02-14", "José Ricardo"],
       ["Pesquisa de Orçamentos na New Blue", "jVYoX1BWlO0", null, "2023-01-17", "Rita Líbano"],
       ["PESQUISA e Operadores para as CARAÍBAS", "5tKjDxFKeIs", 65, "2022-11-29", "Lara Rodrigues"],
       ["PESQUISA para a ILHA do SAL e RIVIEIRA MAYA", "lEXrknNIEPQ", 98, "2022-10-18", "Rúben Freitas"],
     ]),
-    modulo(PESQUISA_ORCAMENTOS, "Cruzeiros", [
+    modulo(GERAIS, "Cruzeiros", [
       ["Tudo o que precisas saber sobre Pesquisa de Cruzeiros", "INAJfWYymic", 85, "2025-04-15", "Lara Rodrigues"],
       ["PESQUISA de orçamentos para CRUZEIROS", "zkujJoETxrA", null, "2023-11-21", "Eugénia Fernandes"],
       ["PESQUISA de CRUZEIROS", "ToIlETqCHoI", 110, "2022-10-04", "Lara Rodrigues"],
     ]),
-    modulo(PESQUISA_ORCAMENTOS, "Europa", [
-      ["Mercadinhos de Natal – ORÇAMENTO", "KnEPkKpVNWU", 51, "2024-09-17", "Inês Melgão"],
-      ["PESQUISA de orçamento para a BULGÁRIA", "X9GBVvgFUmc", 49, "2024-05-21", "Margarida Matos"],
-      ["PESQUISA de orçamento para LONDRES e de LONDRES", "HoGWTgW7ewE", null, "2023-07-18", "Andreia Carrasco"],
-      ["PESQUISA de Orçamento para o CHIPRE", "hn-gm1W9m-Y", null, "2023-03-21", "Andreia Dias"],
-      ["AÇORES como destino de férias", "QMV-BFricy0", null, "2023-01-24", "José Franco"],
-      ["PESQUISA para a CROÁCIA", "6kbbGV5VbwE", 75, "2022-11-08", "Rita Líbano"],
-      ["PESQUISA para a ILHA da MADEIRA", "bytJCZuDBmA", 55, "2022-09-13", "Cláudia Santos"],
-    ]),
-    modulo(PESQUISA_ORCAMENTOS, "Disney", [
-      ["PESQUISA de orçamento para a DISNEYLAND PARIS", "bAaLhFIiHOE", 47, "2024-03-12", "Raquel Santos"],
-      ["PESQUISA para a DISNEYLAND PARIS", "v-4WFK2-5Rs", 91, "2022-10-25", "Mariline Ferreira"],
-    ]),
-    modulo(PESQUISA_ORCAMENTOS, "Grupos", [
+    modulo(GERAIS, "Grupos", [
       ["PESQUISA de Orçamentos para muitas pessoas e Pedido de Grupos", "0nRKMqQCV_4", 50, "2022-12-20", "Rúben Freitas"],
     ]),
-    modulo(PESQUISA_ORCAMENTOS, "América", [
-      ["PESQUISA de orçamento para as BAHAMAS", "gQvfhW6C6MY", 79, "2024-07-02", "Alexia Neves"],
-    ]),
-    modulo(PESQUISA_ORCAMENTOS, "Dia dos Namorados", [
+    modulo(GERAIS, "Dia dos Namorados", [
       ["PESQUISA de Voo + Hotel para o dia dos namorados", "AxtDtT1_T5M", null, "2023-01-31", "Cláudia Santos"],
     ]),
-    modulo(PESQUISA_ORCAMENTOS, "África", [
-      ["PESQUISA de orçamento para MARROCOS", "gUZtzPTF9vs", null, "2024-01-01"],
-      ["PESQUISA de Orçamentos para Zanzibar (Tanzânia)", "R1Ydh-DR9k4", null, "2023-02-28", "Filipa Leal"],
-    ]),
-    modulo(PESQUISA_ORCAMENTOS, "Viagens em Família", [
+    modulo(GERAIS, "Viagens em Família", [
       ["Viagens em Família - Dicas", "F-gKq2Wwd8M", 49, "2025-04-01", "Joana Rodrigues"],
     ]),
       ],
     },
     {
       id: DESTINOS,
-      titulo: "Destinos",
+      titulo: "Por Destinos",
       descricao:
-        "Um destino por aula, organizado por continente: o que o torna especial, o que visitar e como o apresentar ao cliente.",
+        "Um separador por continente, com as aulas de destino e de pesquisa de orçamento juntas — o que o torna especial, o que visitar e como orçamentar.",
       modulos: [
     modulo(DESTINOS, "Continente Europeu", [
       ["RIVIERA FRANCESA como destino de férias", "VtPuITSaN-g", 44, "2025-05-06", "Inês Melgão"],
@@ -407,12 +299,21 @@ const reservas: Categoria = {
       ["GRÉCIA: Quais as melhores ilhas a visitar", "JlSO2WpLnyA", 72, "2025-02-25", "Rita Neto"],
       ["NORUEGA como destino de férias", "b5YdgHxZSKg", 46, "2025-01-21", "Luis Rodrigues"],
       ["LAPÓNIA como destino de férias & Criação do Circuito", "KEydOXmehUI", 46, "2024-11-26", "Marisa Araújo"],
+      ["Mercadinhos de Natal – ORÇAMENTO", "KnEPkKpVNWU", 51, "2024-09-17", "Inês Melgão"],
       ["ATENAS como destino de férias", "UkQ9qQocDdc", 50, "2024-07-09", "Ana Gama"],
+      ["PESQUISA de orçamento para a BULGÁRIA", "X9GBVvgFUmc", 49, "2024-05-21", "Margarida Matos"],
       ["SARDENHA como destino de férias", "-HZF9dUb_O0", 52, "2024-05-14", "Ema Aldeano"],
       ["Os BÁLTICOS como destino de férias", "KId8xphRNvM", 30, "2024-04-30", "Maria João Miranda"],
       ["ISLÂNDIA como destino de férias", "sQ1kkKnOsmU", 56, "2024-04-16", "Edgar Santos & Jani Domingues"],
       ["ITÁLIA como destino de férias", "VWMgAfs7L2M", 70, "2024-04-09", "Sara Santos"],
+      ["PESQUISA de orçamento para a DISNEYLAND PARIS", "bAaLhFIiHOE", 47, "2024-03-12", "Raquel Santos"],
+      ["PESQUISA de orçamento para LONDRES e de LONDRES", "HoGWTgW7ewE", null, "2023-07-18", "Andreia Carrasco"],
       ["LITUÂNIA como destino de Férias", "P-7288pNxeo", null, "2023-06-20", "Filipe Teixeira"],
+      ["PESQUISA de Orçamento para o CHIPRE", "hn-gm1W9m-Y", null, "2023-03-21", "Andreia Dias"],
+      ["AÇORES como destino de férias", "QMV-BFricy0", null, "2023-01-24", "José Franco"],
+      ["PESQUISA para a CROÁCIA", "6kbbGV5VbwE", 75, "2022-11-08", "Rita Líbano"],
+      ["PESQUISA para a DISNEYLAND PARIS", "v-4WFK2-5Rs", 91, "2022-10-25", "Mariline Ferreira"],
+      ["PESQUISA para a ILHA da MADEIRA", "bytJCZuDBmA", 55, "2022-09-13", "Cláudia Santos"],
       ["Andaluzia com destino de Férias", "ZHunL_k-bcU", 47, "2022-07-26", "Adília & Nuno Mendes"],
       ["SERRA NEVADA (Neve) como destino para férias", "dWxC8dknuiM", 44, "2021-12-09", "Cláudia Santos"],
       ["Costa AMALFITANA como destino de férias", "s60p4a57woc", 30, "2021-10-05", "Ângela Sousa"],
@@ -425,10 +326,10 @@ const reservas: Categoria = {
       ["Programação de uma Viagem Circuito de Mota pela Europa", "Qmu2eS7eYJs", 63, "2021-03-08", "José Miguel"],
       ["TENERIFE como Destino de Férias e a Visitar", "uPw3uTsWpM8", 73, "2020-12-14", "Rafaela Ferreira"],
       ["AÇORES (Ilha São Miguel) como Destino de Férias", "sVVDXzkclrQ", 62, "2020-11-23", "Joana Pinho"],
-      ["Circuito pela Turquia de 9 dias", "F4WXkj1HYzs", 69, "2020-02-11", "Susana Agostinho"],
       ["MADEIRA como Destino de Férias", "bzHJVPe81v8", 67, "2020-10-19", "Joana Figueira"],
       ["Roteiro por Portugal Continental", "_kODLxgHXgI", 87, "2020-10-08", "Mariana Fernandes"],
       ["Guia Turístico da Ilha Grega Corfu", "IbUQjDRz6A0", 66, "2020-08-03", "Mariana Pires"],
+      ["Circuito pela Turquia de 9 dias", "F4WXkj1HYzs", 69, "2020-02-11", "Susana Agostinho"],
     ]),
     modulo(DESTINOS, "Continente Africano", [
       ["CAPE TOWN (Cidade do Cabo) como destino de férias", "MYtVzqOurj8", 35, "2025-05-20", "Maria Taquelim"],
@@ -437,8 +338,10 @@ const reservas: Categoria = {
       ["DJERBA como destino de férias", "_HTpBJXQ00Y", 40, "2024-12-03", "Ana Caiola"],
       ["Road Trip por MARROCOS", "cuak5-WTFB8", 51, "2024-07-16", "Maria Taquelim"],
       ["SENEGAL como destino de férias", "_l3lw782tFc", 50, "2024-05-07", "Andreia Dias"],
+      ["PESQUISA de orçamento para MARROCOS", "gUZtzPTF9vs", null, "2024-01-01"],
       ["SEYCHELLES como destino de Férias", "fky7a90JgwA", null, "2023-11-14", "Maria João Miranda"],
       ["EGITO como destino de Férias", "5bMEcaoIpvw", null, "2023-10-03", "Tânia Reguengo"],
+      ["PESQUISA de Orçamentos para Zanzibar (Tanzânia)", "R1Ydh-DR9k4", null, "2023-02-28", "Filipa Leal"],
       ["ZANZIBAR como destino de Férias", "zKpgzUczrTw", 44, "2022-11-01", "Filipa Leal"],
       ["Cabo Verde como destino de férias", "i0nZu2MnyAI", 80, "2022-06-02", "Naiza Oliveira"],
       ["MAURÍCIAS como destino de férias", "4RXNJysIsv8", 31, "2022-03-31", "Andreia Carrasco"],
@@ -454,8 +357,10 @@ const reservas: Categoria = {
       ["OMÃ como destino de férias", "IGD0KwGdMDY", 59, "2024-01-16", "Maria Taquelim"],
       ["JAPÃO como destino de férias", "RWCKE8vBQrs", null, "2023-11-28", "Mariana Figueira"],
       ["SRI LANKA como destino de Férias", "jRmObX5IB0A", null, "2023-10-24", "Marisa Vieira"],
+      ["PESQUISA de orçamentos para Istambul + Capadócia + Pamukkale", "8m7e8_ACZfE", null, "2023-10-17", "Mariana Figueira"],
       ["TAILÂNDIA como destino de Férias", "LWglEgkwOlw", null, "2023-04-18", "Mariana Figueira"],
       ["JORDÂNIA como destino de Férias", "a7uKDFHY3gs", null, "2023-03-28", "Maria João Miranda"],
+      ["PESQUISA de Orçamentos para MALDIVAS", "qun6aJdfygQ", 45, "2022-12-27", "Mariline Ferreira"],
       ["SINGAPURA & INDONÉSIA como destino de Férias", "LHUumVQnrdo", 107, "2022-12-13", "Joana Pinho"],
       ["BALI como destino de férias", "bX_HMCV5cWE", 51, "2022-05-12", "Mariline Ferreira"],
       ["China como destino de férias", "GcmU2d6rFEU", 80, "2022-04-21", "Luís Rodrigues"],
@@ -467,6 +372,7 @@ const reservas: Categoria = {
       ["MÉXICO como destino de férias", "cYOXAcvq71w", 25, "2025-03-25", "Susana Boavida"],
       ["ARUBA como destino de férias", "H8ZR3Nf-UoQ", 40, "2025-02-04", "Maria Taquelim"],
       ["CUBA como destino de férias", "Zk8FZWdQs_o", 59, "2024-10-22", "Madalena Antunes"],
+      ["PESQUISA de orçamento para as BAHAMAS", "gQvfhW6C6MY", 79, "2024-07-02", "Alexia Neves"],
       ["NOVA IORQUE como destino de férias", "em7LBTpQJAs", 41, "2024-06-25", "Daniela Casimiro"],
       ["PANAMÁ como destino de férias", "ztTedwdr2WI", 61, "2024-06-04", "Maria Taquelim"],
       ["RoadTrip pela zona OESTE dos EUA", "pE3CdAXSy0Q", 53, "2024-03-26", "Inês Afonso"],
@@ -499,10 +405,6 @@ const equipa: Categoria = {
       ["Introdução: O Desenvolvimento Pessoal como Chave para o teu Sucesso", "b9ll35gOPVg", 7, "2023-09-13", "José Ricardo"],
       ["O Desenvolvimento Pessoal como Chave para o teu Sucesso", "lME6EhUuA8g", 55, "2023-09-13", "Coach Bruno Mendo"],
     ]),
-    modulo(MASTERCLASSES, "[F.I. 10] Formação Intensiva 10 – Quatro Partilhas Inspiradoras: TALK's", [
-      ["Sumário: Quatro Partilhas Inspiradoras _ TALK’s", "h2B4_Psyr_0", 4, "2023-07-04", "José Ricardo"],
-      ["Ema Aldeano | Daniela Cunha & Filipe Dias | Ana Custódia", "u5GhygsEUEo", 123, "2023-07-04"],
-    ]),
     modulo(MASTERCLASSES, "[F.I. 9] Formação Intensiva 9 – Integração de um Novo Afiliado", [
       ["Fundamentos e Objetivo da Integração", "oi9OqzDxZH8", 12, "2023-05-31", "José Ricardo"],
       ["Ação nº1 _ Boas Vindas", "u71X2oA0YGI", 5, "2023-05-31", "José Ricardo"],
@@ -511,21 +413,6 @@ const equipa: Categoria = {
       ["Ação nº4 _ A 4ª TAREFA", "7hphHG74_C4", 2, "2023-05-31", "José Ricardo"],
       ["Ação nº5 _ A 5ª e última TAREFA", "J2quEh4pVGE", 3, "2023-05-31", "José Ricardo"],
       ["AÇÃO Primordial e Fundamental", "Kfrryw3VOog", 10, "2023-05-31", "José Ricardo"],
-    ]),
-    modulo(MASTERCLASSES, "[F.I. 8] Formação Intensiva 8 – Anúncios Pagos _ Marketing Digital", [
-      ["Sumário: Anúncios Pagos _ Marketing Digital", "vXDX4XASHQU", 3, "2023-05-05", "José Ricardo"],
-      ["Universo “Meta” _ Página de FB & Conta Instagram & Business Suite", "1EqRZtJvZkw", 11, "2023-05-05", "José Ricardo"],
-      ["Universo “Meta” _ Definições de Negócio (Configuração do Gestor & Conta de Anúncios)", "FZGEPfOnPAg", 8, "2023-05-05", "José Ricardo"],
-      ["Que tipo de CAMPANHA selecionar consoante o objetivo para um anúncio?", "dLHAhZ8GKEk", 9, "2023-05-05", "José Miguel"],
-      ["Segmentação de Públicos no CONJUNTO DE ANÚNCIOS", "x8KuMfbcIcs", 15, "2023-05-05", "José Miguel"],
-      ["Analisar MÉTRICAS e fazer TESTES para otimizar os Anúncios", "bTD8oLxyIrQ", 18, "2023-05-05", "José Miguel"],
-      ["Parâmetros para a Criação do melhor ANÚNCIO", "yBMauLSxsPY", 18, "2023-05-05", "José Miguel"],
-      ["Tutorial para um anúncio PUBLICAÇÃO EXISTENTE", "IWM6_5hBun4", 8, "2023-05-05", "José Ricardo"],
-      ["Conclusões e Esclarecimento de Dúvidas", "J_fFWaQKePk", 35, "2023-05-05", "Patrick Barros | José Miguel | José Ricardo"],
-    ]),
-    modulo(MASTERCLASSES, "[F.I. 7] Formação Intensiva 7 – TALK's com 4 Afiliados bem-sucedidos", [
-      ["Sumário: TALK’s com 4 Afiliados bem-sucedidos", "HJn6vXeaqos", 4, "2023-03-29", "José Ricardo"],
-      ["Eugénia Fernandes | João Ramalho & Mariline Ferreira | Sérgio Alves", "LeiBu1iYFig", 113, "2023-03-29"],
     ]),
     modulo(MASTERCLASSES, "[F.I. 6] Formação Intensiva 6 – Lançamento de Campanhas BLITZ", [
       ["Sumário: Lançamento de Campanhas BLITZ", "iek1rhTJxDw", 3, "2023-02-25", "José Ricardo"],
