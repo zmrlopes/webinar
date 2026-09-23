@@ -1,0 +1,357 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import type { Aula, Categoria, Curso, Modulo } from "@/lib/formacoes-gravadas";
+import { lerEmailGuardado } from "../../armazenamento";
+import { ESTILOS_FORMACOES } from "../estilos";
+
+type Estado = "a-carregar" | "sem-conta" | "indisponivel" | "nao-encontrada" | "erro" | "pronto";
+
+const MAIS_RECENTES = 6;
+
+interface AulaComOrigem {
+  aula: Aula;
+  curso: Curso;
+  modulo: Modulo;
+}
+
+function semAcentos(texto: string): string {
+  return texto.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+}
+
+function urlDoVideo(youtube: string): string {
+  return `https://www.youtube.com/watch?v=${youtube}`;
+}
+
+function capaDoVideo(youtube: string): string {
+  return `https://i.ytimg.com/vi/${youtube}/mqdefault.jpg`;
+}
+
+function AulaCartao({
+  aula,
+  vista,
+  etiqueta,
+  onAlternar,
+}: {
+  aula: Aula;
+  vista: boolean;
+  etiqueta?: string;
+  onAlternar: (aula: Aula) => void;
+}) {
+  const corpo = (
+    <div className="vqf-aula-corpo">
+      {etiqueta && <p className="vqf-aula-etiqueta">{etiqueta}</p>}
+      <p className="vqf-aula-titulo">{aula.titulo}</p>
+      {aula.formador && <p className="vqf-aula-sub">{aula.formador}</p>}
+    </div>
+  );
+
+  if (aula.youtube === null) {
+    return (
+      <div className="vqf-aula">
+        <div className="vqf-capa vqf-capa-vazia">Vídeo em breve</div>
+        {corpo}
+      </div>
+    );
+  }
+
+  return (
+    <div className={vista ? "vqf-aula vqf-aula-vista" : "vqf-aula"}>
+      <a
+        href={urlDoVideo(aula.youtube)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="vqf-capa"
+        aria-label={`Ver "${aula.titulo}" no YouTube`}
+      >
+        {/* Capa do vídeo tirada do próprio YouTube — <img> simples, sem otimização do Next. */}
+        <img src={capaDoVideo(aula.youtube)} alt="" loading="lazy" />
+        <span className="vqf-play" aria-hidden="true">
+          ▶
+        </span>
+        {aula.min !== null && <span className="vqf-min">{aula.min} min</span>}
+        {vista && <span className="vqf-badge-vista">✓ Vista</span>}
+      </a>
+      {corpo}
+      <div className="vqf-aula-corpo" style={{ paddingTop: 0, flex: "none" }}>
+        <button
+          type="button"
+          className={vista ? "vqf-marcar vqf-marcar-feito" : "vqf-marcar"}
+          onClick={() => onAlternar(aula)}
+        >
+          {vista ? "✓ Vista" : "Marcar como vista"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
+  const [email, setEmail] = useState<string | null>(null);
+  const [estado, setEstado] = useState<Estado>("a-carregar");
+  const [erro, setErro] = useState("");
+  const [categoria, setCategoria] = useState<Categoria | null>(null);
+  const [vistas, setVistas] = useState<Set<string>>(new Set());
+  const [erroGuardar, setErroGuardar] = useState("");
+  const [pesquisa, setPesquisa] = useState("");
+
+  useEffect(() => {
+    const guardado = lerEmailGuardado();
+    if (!guardado) {
+      setEstado("sem-conta");
+      return;
+    }
+    setEmail(guardado);
+    async function carregar(emailConsultor: string): Promise<void> {
+      try {
+        const resposta = await fetch("/api/consultor/formacoes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: emailConsultor, categoria: categoriaId }),
+        });
+        const corpo = await resposta.json().catch(() => ({}));
+        if (resposta.status === 403) {
+          setEstado("indisponivel");
+          return;
+        }
+        if (resposta.status === 404 && corpo.erro === "categoria não encontrada") {
+          setEstado("nao-encontrada");
+          return;
+        }
+        if (!resposta.ok) {
+          setErro(typeof corpo.erro === "string" ? corpo.erro : "não foi possível carregar");
+          setEstado("erro");
+          return;
+        }
+        setCategoria(corpo.categoria as Categoria);
+        setVistas(new Set(Array.isArray(corpo.vistas) ? (corpo.vistas as string[]) : []));
+        setEstado("pronto");
+      } catch {
+        setErro("falha de ligação — tenta outra vez");
+        setEstado("erro");
+      }
+    }
+    void carregar(guardado);
+  }, [categoriaId]);
+
+  const todas: AulaComOrigem[] = useMemo(
+    () =>
+      categoria
+        ? categoria.cursos.flatMap((curso) =>
+            curso.modulos.flatMap((modulo) => modulo.aulas.map((aula) => ({ aula, curso, modulo }))),
+          )
+        : [],
+    [categoria],
+  );
+  const comVideo = useMemo(() => todas.filter((t) => t.aula.youtube !== null), [todas]);
+
+  const maisRecentes = useMemo(
+    () => [...comVideo].sort((a, b) => b.aula.data.localeCompare(a.aula.data)).slice(0, MAIS_RECENTES),
+    [comVideo],
+  );
+
+  const primeiroCursoComVideo = useMemo(
+    () =>
+      categoria?.cursos.find((curso) => curso.modulos.some((m) => m.aulas.some((a) => a.youtube !== null))),
+    [categoria],
+  );
+
+  const termo = semAcentos(pesquisa.trim());
+  const resultados = useMemo(() => {
+    if (!termo) return [];
+    return comVideo.filter(({ aula, curso, modulo }) =>
+      semAcentos(`${aula.titulo} ${aula.formador ?? ""} ${curso.titulo} ${modulo.titulo}`).includes(termo),
+    );
+  }, [comVideo, termo]);
+
+  async function alternarVista(aula: Aula): Promise<void> {
+    if (!email) return;
+    const ficaVista = !vistas.has(aula.id);
+    function aplicar(vista: boolean): void {
+      setVistas((atual) => {
+        const seguinte = new Set(atual);
+        if (vista) seguinte.add(aula.id);
+        else seguinte.delete(aula.id);
+        return seguinte;
+      });
+    }
+    aplicar(ficaVista);
+    setErroGuardar("");
+    try {
+      const resposta = await fetch("/api/consultor/formacoes/vista", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, aulaId: aula.id, vista: ficaVista }),
+      });
+      if (!resposta.ok) throw new Error("falhou");
+    } catch {
+      aplicar(!ficaVista);
+      setErroGuardar("Não foi possível guardar a marcação — tenta outra vez.");
+    }
+  }
+
+  const totalVistas = comVideo.filter((t) => vistas.has(t.aula.id)).length;
+  const percentagem = comVideo.length > 0 ? Math.round((totalVistas / comVideo.length) * 100) : 0;
+
+  return (
+    <div className="vqf-pagina">
+      <style>{ESTILOS_FORMACOES}</style>
+      <div className="vqf-caixa">
+        <Link href="/consultor/formacoes" className="vqf-voltar">
+          ← Formações
+        </Link>
+
+        {estado === "a-carregar" && <p className="vqf-mudo">A carregar…</p>}
+
+        {estado === "sem-conta" && (
+          <p className="vqf-mudo">
+            Primeiro identifica-te no <Link href="/consultor">painel do consultor</Link>.
+          </p>
+        )}
+
+        {estado === "indisponivel" && (
+          <p className="vqf-mudo">As formações gravadas ainda não estão disponíveis.</p>
+        )}
+
+        {estado === "nao-encontrada" && (
+          <p className="vqf-mudo">
+            Esta categoria não existe ou ainda não está disponível.{" "}
+            <Link href="/consultor/formacoes">Ver todas as formações</Link>.
+          </p>
+        )}
+
+        {estado === "erro" && <p className="vqf-erro">{erro}</p>}
+
+        {estado === "pronto" && categoria && (
+          <>
+            <h1>{categoria.titulo}</h1>
+            <p className="vqf-mudo" style={{ marginBottom: 0 }}>
+              {categoria.descricao}
+            </p>
+
+            <div className="vqf-topo-progresso">
+              <div
+                className="vqf-barra"
+                role="progressbar"
+                aria-valuenow={percentagem}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="Progresso nas formações"
+              >
+                <div className="vqf-barra-cheia" style={{ width: `${percentagem}%` }} />
+              </div>
+              <p className="vqf-progresso-texto">
+                {totalVistas} de {comVideo.length} aulas vistas ({percentagem}%)
+              </p>
+            </div>
+
+            <input
+              type="search"
+              className="vqf-pesquisa"
+              placeholder="Pesquisar aulas por título, formador ou curso…"
+              value={pesquisa}
+              onChange={(e) => setPesquisa(e.target.value)}
+              aria-label="Pesquisar aulas"
+            />
+
+            {erroGuardar && <p className="vqf-erro">{erroGuardar}</p>}
+
+            {termo ? (
+              <>
+                <h2>
+                  {resultados.length === 1 ? "1 aula encontrada" : `${resultados.length} aulas encontradas`}
+                </h2>
+                {resultados.length === 0 ? (
+                  <p className="vqf-mudo">Nenhuma aula corresponde a “{pesquisa.trim()}”.</p>
+                ) : (
+                  <div className="vqf-aulas">
+                    {resultados.map(({ aula, curso }) => (
+                      <AulaCartao
+                        key={aula.id}
+                        aula={aula}
+                        vista={vistas.has(aula.id)}
+                        etiqueta={curso.titulo}
+                        onAlternar={alternarVista}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <h2>Mais recentes</h2>
+                <div className="vqf-aulas">
+                  {maisRecentes.map(({ aula, curso }) => (
+                    <AulaCartao
+                      key={aula.id}
+                      aula={aula}
+                      vista={vistas.has(aula.id)}
+                      etiqueta={curso.titulo}
+                      onAlternar={alternarVista}
+                    />
+                  ))}
+                </div>
+
+                <h2>Ordem recomendada</h2>
+                <p className="vqf-mudo" style={{ marginBottom: 0 }}>
+                  Começa pelo curso 1 e avança pela ordem — cada um prepara o seguinte.
+                </p>
+                {categoria.cursos.map((curso, indice) => {
+                  const aulasCurso = curso.modulos.flatMap((m) => m.aulas).filter((a) => a.youtube !== null);
+                  const vistasCurso = aulasCurso.filter((a) => vistas.has(a.id)).length;
+                  const pct = aulasCurso.length > 0 ? Math.round((vistasCurso / aulasCurso.length) * 100) : 0;
+                  // Abre por defeito o primeiro curso que já tem vídeos para ver.
+                  const abreAoEntrar = curso.id === primeiroCursoComVideo?.id;
+                  return (
+                    <details className="vqf-curso" key={curso.id} open={abreAoEntrar}>
+                      <summary>
+                        <span className="vqf-curso-numero">{indice + 1}</span>
+                        <div className="vqf-curso-texto">
+                          <p className="vqf-curso-titulo">{curso.titulo}</p>
+                          <p className="vqf-curso-descricao">{curso.descricao}</p>
+                          <div className="vqf-barra">
+                            <div className="vqf-barra-cheia" style={{ width: `${pct}%` }} />
+                          </div>
+                          <p className="vqf-progresso-texto">
+                            {aulasCurso.length === 0
+                              ? "Vídeos em preparação"
+                              : `${vistasCurso} de ${aulasCurso.length} aulas vistas${
+                                  aulasCurso.length < curso.modulos.reduce((t, m) => t + m.aulas.length, 0)
+                                    ? " · algumas aulas ainda sem vídeo"
+                                    : ""
+                                }`}
+                          </p>
+                        </div>
+                        <span className="vqf-curso-seta" aria-hidden="true">
+                          ▶
+                        </span>
+                      </summary>
+                      <div className="vqf-curso-corpo">
+                        {curso.modulos.map((modulo) => (
+                          <div key={modulo.titulo}>
+                            <h3>{modulo.titulo}</h3>
+                            <div className="vqf-aulas">
+                              {modulo.aulas.map((aula) => (
+                                <AulaCartao
+                                  key={aula.id}
+                                  aula={aula}
+                                  vista={vistas.has(aula.id)}
+                                  onAlternar={alternarVista}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  );
+                })}
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

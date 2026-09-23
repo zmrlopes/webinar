@@ -10,6 +10,7 @@ import {
   listarFormacoesEquipa,
 } from "@/lib/webinars";
 import { estaoInscricoesAbertas } from "@/lib/eventos";
+import { formacoesGravadasVisiveis } from "@/lib/formacoes-gravadas";
 import { precisaResponderHotel } from "@/lib/hotel";
 import { precisaResponderTeambuilding } from "@/lib/teambuilding";
 import { precisaResponderTrofeus } from "@/lib/trofeus";
@@ -135,6 +136,7 @@ export async function POST(request: Request): Promise<Response> {
         ? { id: proximaSessaoWelcomeAboard.id, sessaoExternaEm: proximaSessaoWelcomeAboard.sessaoExternaEm }
         : null,
       inscritoWelcomeAboard,
+      formacoesGravadas: formacoesGravadasVisiveis(emailNormalizado),
     });
   } catch (erro) {
     console.error("falha ao identificar consultor no backoffice:", erro);
