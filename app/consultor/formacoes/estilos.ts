@@ -197,7 +197,28 @@ export const ESTILOS_FORMACOES = `
   .vqf-curso-seta { flex: none; color: #4b5320; font-weight: 700; transition: transform 0.15s; }
   .vqf-curso[open] .vqf-curso-seta { transform: rotate(90deg); }
   .vqf-curso-corpo { padding: 0 1.25rem 1.25rem; }
-  .vqf-curso-corpo h3 { font-size: 0.95rem; color: #4b5320; margin: 1.25rem 0 0.6rem; }
+
+  .vqf-modulo {
+    margin-top: 1rem;
+    background: #ffffff;
+    border: 1px solid #d9d9d9;
+    border-radius: 10px;
+  }
+  .vqf-modulo:first-child { margin-top: 0; }
+  .vqf-modulo-summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+  }
+  .vqf-modulo-summary::-webkit-details-marker { display: none; }
+  .vqf-modulo-titulo { flex: 1; min-width: 0; font-size: 0.9rem; font-weight: 700; color: #000000; }
+  .vqf-modulo-meta { font-size: 0.8rem; color: #6b6a63; white-space: nowrap; }
+  .vqf-modulo-seta { color: #4b5320; font-weight: 700; transition: transform 0.15s; flex: none; }
+  .vqf-modulo[open] .vqf-modulo-seta { transform: rotate(90deg); }
+  .vqf-modulo .vqf-aulas { padding: 0 1rem 1rem; }
 
   @media (max-width: 520px) {
     .vqf-pagina { padding: 1.5rem 0.9rem 3rem; }

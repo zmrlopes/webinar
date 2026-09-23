@@ -328,21 +328,38 @@ export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
                         </span>
                       </summary>
                       <div className="vqf-curso-corpo">
-                        {curso.modulos.map((modulo) => (
-                          <div key={modulo.titulo}>
-                            <h3>{modulo.titulo}</h3>
-                            <div className="vqf-aulas">
-                              {modulo.aulas.map((aula) => (
-                                <AulaCartao
-                                  key={aula.id}
-                                  aula={aula}
-                                  vista={vistas.has(aula.id)}
-                                  onAlternar={alternarVista}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        ))}
+                        {curso.modulos.map((modulo) => {
+                          const aulasModulo = modulo.aulas.filter((a) => a.youtube !== null);
+                          const vistasModulo = aulasModulo.filter((a) => vistas.has(a.id)).length;
+                          // Um só módulo: abre logo. Vários (ex.: um por continente): fecham
+                          // todos, para abrires só o que queres ver.
+                          const abreModulo = curso.modulos.length === 1;
+                          return (
+                            <details className="vqf-modulo" key={modulo.titulo} open={abreModulo}>
+                              <summary className="vqf-modulo-summary">
+                                <span className="vqf-modulo-titulo">{modulo.titulo}</span>
+                                <span className="vqf-modulo-meta">
+                                  {aulasModulo.length === 0
+                                    ? "sem vídeo"
+                                    : `${vistasModulo}/${aulasModulo.length} vistas`}
+                                </span>
+                                <span className="vqf-modulo-seta" aria-hidden="true">
+                                  ▶
+                                </span>
+                              </summary>
+                              <div className="vqf-aulas">
+                                {modulo.aulas.map((aula) => (
+                                  <AulaCartao
+                                    key={aula.id}
+                                    aula={aula}
+                                    vista={vistas.has(aula.id)}
+                                    onAlternar={alternarVista}
+                                  />
+                                ))}
+                              </div>
+                            </details>
+                          );
+                        })}
                       </div>
                     </details>
                   );
