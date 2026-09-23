@@ -130,6 +130,30 @@ function celula(valor: string): string {
 }
 
 /**
+ * O Excel não sabe o que é um fuso horário — grava o número tal como
+ * recebe e mostra-o assim, sem converter nada. `criadoEm` vem em UTC; sem
+ * isto, a hora no ficheiro ficava uma hora (ou duas, no verão) à frente
+ * da que aparece em todo o resto do painel, que já mostra tudo em hora de
+ * Lisboa (ver formatarData nesta página). O truque é escrever os números
+ * da hora de Lisboa como se fossem UTC — o Excel mostra-os tal e qual.
+ */
+function paraExcelHoraLisboa(data: Date): Date {
+  const partes = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Lisbon",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(data);
+  const valor = (tipo: string): number => Number(partes.find((p) => p.type === tipo)?.value ?? "0");
+  return new Date(
+    Date.UTC(valor("year"), valor("month") - 1, valor("day"), valor("hour") % 24, valor("minute")),
+  );
+}
+
+/**
  * Todas as respostas numa tabela de texto — para se descarregar ou copiar
  * de uma vez em /admin/hotel-respostas. Existe porque a base de dados não
  * é acessível de fora do site: sem isto, a única forma de levar estas
@@ -167,6 +191,68 @@ export function csvRespostasHotel(respostas: RespostaHotelAdmin[]): string {
   ]);
 
   return `﻿${[cabecalho, ...linhas].map((l) => l.map(celula).join(";")).join("\n")}`;
+}
+
+/**
+ * A mesma tabela do CSV, mas como ficheiro Excel a sério — uma Tabela
+ * nativa (não só células com cor), com cabeçalho fixo e largura das
+ * colunas ajustada ao conteúdo. Pedido depois do CSV: aberto num CSV, o
+ * Excel mostra tudo espremido numa grelha genérica; como Tabela, já
+ * chega com os filtros e o destaque de linhas a alternar prontos.
+ */
+export async function gerarExcelRespostasHotel(respostas: RespostaHotelAdmin[]): Promise<Buffer> {
+  const ExcelJS = (await import("exceljs")).default;
+  const livro = new ExcelJS.Workbook();
+  livro.creator = "Viajar é Viver";
+  livro.created = new Date();
+
+  const folha = livro.addWorksheet("Quartos do hotel", {
+    views: [{ state: "frozen", ySplit: 1 }],
+  });
+
+  const colunas = [
+    { nome: "Nome", largura: 26 },
+    { nome: "Email", largura: 30 },
+    { nome: "Quer quarto", largura: 12 },
+    { nome: "Tipo de quarto", largura: 15 },
+    { nome: "Noite 13-14", largura: 12 },
+    { nome: "Noite 14-15", largura: 12 },
+    { nome: "Total de noites", largura: 14 },
+    { nome: "Leva crianças", largura: 13 },
+    { nome: "Idades das crianças", largura: 20 },
+    { nome: "Respondido em", largura: 18 },
+  ];
+  folha.columns = colunas.map((c) => ({ width: c.largura }));
+
+  const linhas = respostas.map((r) => [
+    r.nome,
+    r.email,
+    r.querQuarto ? "Sim" : "Não",
+    !r.querQuarto ? "" : r.tipoQuarto === "single" ? "Single" : r.tipoQuarto === "duplo" ? "Duplo/Twin" : "",
+    r.querQuarto && r.noiteAnterior ? "Sim" : "Não",
+    r.querQuarto && r.noiteSeguinte ? "Sim" : "Não",
+    r.querQuarto ? (r.noiteAnterior ? 1 : 0) + (r.noiteSeguinte ? 1 : 0) : 0,
+    r.querQuarto && r.temCriancas ? "Sim" : "Não",
+    r.querQuarto && r.temCriancas ? (r.idadesCriancas ?? "") : "",
+    paraExcelHoraLisboa(r.criadoEm),
+  ]);
+
+  folha.addTable({
+    name: "QuartosHotel",
+    ref: "A1",
+    headerRow: true,
+    style: { theme: "TableStyleMedium2", showRowStripes: true },
+    columns: colunas.map((c) => ({ name: c.nome, filterButton: true })),
+    rows: linhas,
+  });
+
+  // A coluna de data fica com formato de data a sério em vez de texto —
+  // addTable não deixa formatar por coluna, por isso aplica-se a seguir.
+  const colunaData = folha.getColumn(colunas.length);
+  colunaData.numFmt = "dd/mm/yyyy hh:mm";
+
+  const arrayBuffer = await livro.xlsx.writeBuffer();
+  return Buffer.from(arrayBuffer);
 }
 
 export interface InscritoSemRespostaHotel {
