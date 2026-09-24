@@ -306,3 +306,122 @@ export async function marcarPresencaBilhete(
   }
   return { nomeInscricao: linha.nome, rotulo: linha.rotulo, jaEstavaPresente: linha.presente };
 }
+
+/** Todos os números inteiros de um texto livre — "5, 8" ou "5 e 8 anos" dão [5, 8]. */
+function extrairIdades(texto: string | null): number[] {
+  if (!texto) return [];
+  return [...texto.matchAll(/\d+/g)]
+    .map((m) => Number(m[0]))
+    .filter((n) => Number.isFinite(n) && n >= 0 && n < 100);
+}
+
+export interface ParticipanteEvento {
+  nome: string;
+  email: string;
+  adultos: number;
+  criancasMenos5: number;
+  criancasMais5: number;
+  /** true quando as idades do questionário do hotel dizem respeito a mais crianças do que as inscritas — vale a pena confirmar à mão. */
+  contagemPorConfirmar: boolean;
+}
+
+/**
+ * Todos os inscritos no evento, um por email (soma as inscrições de quem
+ * se inscreveu mais do que uma vez — mesma lógica de
+ * listarInscritosComFaturacao), com as crianças separadas por idade: menos
+ * de 5 anos e 5 ou mais.
+ *
+ * A idade real só existe para quem respondeu ao questionário do quarto de
+ * hotel e disse que leva crianças (respostas_hotel.idades_criancas, texto
+ * livre). Para quem não respondeu, ou respondeu com menos idades do que
+ * crianças tem inscritas, as que sobram entram em "5 ou mais" — regra
+ * pedida explicitamente (quem não se sabe a idade, considera-se crescida
+ * o suficiente para não precisar de berço/cama de grades no quarto).
+ */
+export async function listarParticipantesEvento(): Promise<ParticipanteEvento[]> {
+  const { rows } = await db().query<{
+    email: string;
+    nome: string | null;
+    adultos: string;
+    criancas_mais10: string;
+    criancas_menos10: string;
+    idades_criancas: string | null;
+  }>(
+    `select ei.email, max(ei.nome) as nome,
+            sum(ei.adultos) as adultos,
+            sum(ei.criancas_mais10) as criancas_mais10,
+            sum(ei.criancas_menos10) as criancas_menos10,
+            (select rh.idades_criancas from respostas_hotel rh where rh.email = ei.email) as idades_criancas
+     from evento_inscricoes ei
+     group by ei.email
+     order by max(ei.nome)`,
+  );
+
+  return rows.map((r) => {
+    const totalCriancas = Number(r.criancas_mais10) + Number(r.criancas_menos10);
+    const idades = extrairIdades(r.idades_criancas);
+    const menos5Conhecidas = idades.filter((i) => i < 5).length;
+    const mais5Conhecidas = idades.length - menos5Conhecidas;
+    const desconhecidas = Math.max(0, totalCriancas - idades.length);
+
+    return {
+      nome: r.nome ?? r.email,
+      email: r.email,
+      adultos: Number(r.adultos),
+      criancasMenos5: menos5Conhecidas,
+      criancasMais5: mais5Conhecidas + desconhecidas,
+      contagemPorConfirmar: idades.length > totalCriancas,
+    };
+  });
+}
+
+/**
+ * O Excel dos participantes, com uma Tabela nativa e uma linha de Total
+ * no fim (soma a sério, por fórmula — não um número fixo) — ver
+ * gerarExcelRespostasHotel em src/lib/hotel.ts, mesmo padrão.
+ */
+export async function gerarExcelParticipantesEvento(participantes: ParticipanteEvento[]): Promise<Buffer> {
+  const ExcelJS = (await import("exceljs")).default;
+  const livro = new ExcelJS.Workbook();
+  livro.creator = "Viajar é Viver";
+  livro.created = new Date();
+
+  const folha = livro.addWorksheet("Participantes", { views: [{ state: "frozen", ySplit: 1 }] });
+
+  const colunas: { nome: string; largura: number; totalsRowFunction?: "sum"; totalsRowLabel?: string }[] = [
+    { nome: "Nome", largura: 28, totalsRowLabel: "Total" },
+    { nome: "Email", largura: 30 },
+    { nome: "Adultos", largura: 11, totalsRowFunction: "sum" },
+    { nome: "Crianças menos de 5", largura: 18, totalsRowFunction: "sum" },
+    { nome: "Crianças 5 ou mais", largura: 17, totalsRowFunction: "sum" },
+    { nome: "Nota", largura: 26 },
+  ];
+  folha.columns = colunas.map((c) => ({ width: c.largura }));
+
+  const linhas = participantes.map((p) => [
+    p.nome,
+    p.email,
+    p.adultos,
+    p.criancasMenos5,
+    p.criancasMais5,
+    p.contagemPorConfirmar ? "confirmar idades — não batem com as crianças inscritas" : "",
+  ]);
+
+  folha.addTable({
+    name: "ParticipantesEvento",
+    ref: "A1",
+    headerRow: true,
+    totalsRow: true,
+    style: { theme: "TableStyleMedium2", showRowStripes: true },
+    columns: colunas.map((c) => ({
+      name: c.nome,
+      filterButton: true,
+      totalsRowFunction: c.totalsRowFunction ?? "none",
+      totalsRowLabel: c.totalsRowLabel,
+    })),
+    rows: linhas,
+  });
+
+  const arrayBuffer = await livro.xlsx.writeBuffer();
+  return Buffer.from(arrayBuffer);
+}

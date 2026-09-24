@@ -225,6 +225,23 @@ export default async function AdminEventos() {
             >
               Quartos do hotel
             </Link>
+            <a
+              href="/api/admin/eventos-exportar-excel"
+              style={{
+                display: "inline-block",
+                background: "transparent",
+                color: "#4b5320",
+                border: "1px solid #4b5320",
+                borderRadius: "8px",
+                padding: "0.5rem 1rem",
+                fontSize: "0.85rem",
+                fontWeight: 700,
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Participantes em Excel
+            </a>
           </div>
         </div>
         <p className="ad-subtitulo">
