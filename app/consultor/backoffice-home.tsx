@@ -23,6 +23,7 @@ interface DadosIdentificacao {
   welcomeAboard: { sessao1Concluida: boolean; sessao2Concluida: boolean } | null;
   proximaSessaoWelcomeAboard: { id: string; sessaoExternaEm: string } | null;
   inscritoWelcomeAboard: boolean;
+  formacoesGravadas: boolean;
   equipaWelcomeAboard: {
     nome: string;
     email: string;
@@ -327,6 +328,8 @@ export function BackofficeHome() {
         .vqb-destaque-data { margin: 0 0 0.75rem; color: #6b6a63; font-size: 0.95rem; }
         .vqb-destaque-texto { margin: 0 0 1.1rem; color: #6b6a63; font-size: 0.9rem; }
         .vqb-destaque-botao { display: block; width: 100%; text-align: center; padding: 0.85rem; font-size: 1.05rem; }
+        .vqb-cartao-botoes { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+        .vqb-cartao-botoes .vqb-destaque-botao { flex: 1 1 200px; width: auto; }
         .vqb-cartao-icligo { background: #fff2ee; border-color: #f0603f; }
         .vqb-destaque-etiqueta-icligo { color: #e0532f; display: flex; align-items: center; gap: 0.4rem; }
         .vqb-icligo-badge { display: inline-flex; width: 1.1rem; height: 1.1rem; }
@@ -683,14 +686,21 @@ export function BackofficeHome() {
               <p className="vqb-destaque-texto" style={{ marginBottom: "1.1rem" }}>
                 Informações importantes, agenda semanal, incentivos, formações gravadas e muito mais.
               </p>
-              <a
-                href="https://viajareviver.net/equipa"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="vqb-destaque-botao"
-              >
-                Entrar na página
-              </a>
+              <div className="vqb-cartao-botoes">
+                <a
+                  href="https://viajareviver.net/equipa"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="vqb-destaque-botao"
+                >
+                  Entrar na página
+                </a>
+                {dados.formacoesGravadas && (
+                  <Link href="/consultor/formacoes" className="vqb-destaque-botao">
+                    Formações
+                  </Link>
+                )}
+              </div>
             </div>
 
             <div className="vqb-menu">
