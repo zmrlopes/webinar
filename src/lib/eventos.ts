@@ -320,7 +320,8 @@ export interface ParticipanteEvento {
   email: string;
   adultos: number;
   criancasMenos5: number;
-  criancasMais5: number;
+  criancas5a11: number;
+  criancas12Mais: number;
   /** true quando as idades do questionário do hotel dizem respeito a mais crianças do que as inscritas — vale a pena confirmar à mão. */
   contagemPorConfirmar: boolean;
 }
@@ -328,15 +329,15 @@ export interface ParticipanteEvento {
 /**
  * Todos os inscritos no evento, um por email (soma as inscrições de quem
  * se inscreveu mais do que uma vez — mesma lógica de
- * listarInscritosComFaturacao), com as crianças separadas por idade: menos
- * de 5 anos e 5 ou mais.
+ * listarInscritosComFaturacao), com as crianças separadas em três
+ * escalões: menos de 5, 5 a 11, e 12 ou mais.
  *
  * A idade real só existe para quem respondeu ao questionário do quarto de
  * hotel e disse que leva crianças (respostas_hotel.idades_criancas, texto
  * livre). Para quem não respondeu, ou respondeu com menos idades do que
- * crianças tem inscritas, as que sobram entram em "5 ou mais" — regra
- * pedida explicitamente (quem não se sabe a idade, considera-se crescida
- * o suficiente para não precisar de berço/cama de grades no quarto).
+ * crianças tem inscritas, as que sobram entram no escalão mais velho (12
+ * ou mais) — mesma regra já pedida antes para os dois escalões (quem não
+ * se sabe a idade, considera-se crescida o suficiente).
  */
 export async function listarParticipantesEvento(): Promise<ParticipanteEvento[]> {
   const { rows } = await db().query<{
@@ -361,7 +362,8 @@ export async function listarParticipantesEvento(): Promise<ParticipanteEvento[]>
     const totalCriancas = Number(r.criancas_mais10) + Number(r.criancas_menos10);
     const idades = extrairIdades(r.idades_criancas);
     const menos5Conhecidas = idades.filter((i) => i < 5).length;
-    const mais5Conhecidas = idades.length - menos5Conhecidas;
+    const de5a11Conhecidas = idades.filter((i) => i >= 5 && i <= 11).length;
+    const de12MaisConhecidas = idades.filter((i) => i >= 12).length;
     const desconhecidas = Math.max(0, totalCriancas - idades.length);
 
     return {
@@ -369,7 +371,8 @@ export async function listarParticipantesEvento(): Promise<ParticipanteEvento[]>
       email: r.email,
       adultos: Number(r.adultos),
       criancasMenos5: menos5Conhecidas,
-      criancasMais5: mais5Conhecidas + desconhecidas,
+      criancas5a11: de5a11Conhecidas,
+      criancas12Mais: de12MaisConhecidas + desconhecidas,
       contagemPorConfirmar: idades.length > totalCriancas,
     };
   });
@@ -393,7 +396,8 @@ export async function gerarExcelParticipantesEvento(participantes: ParticipanteE
     { nome: "Email", largura: 30 },
     { nome: "Adultos", largura: 11, totalsRowFunction: "sum" },
     { nome: "Crianças menos de 5", largura: 18, totalsRowFunction: "sum" },
-    { nome: "Crianças 5 ou mais", largura: 17, totalsRowFunction: "sum" },
+    { nome: "Crianças 5 a 11", largura: 15, totalsRowFunction: "sum" },
+    { nome: "Crianças 12 ou mais", largura: 18, totalsRowFunction: "sum" },
     { nome: "Nota", largura: 26 },
   ];
   folha.columns = colunas.map((c) => ({ width: c.largura }));
@@ -403,7 +407,8 @@ export async function gerarExcelParticipantesEvento(participantes: ParticipanteE
     p.email,
     p.adultos,
     p.criancasMenos5,
-    p.criancasMais5,
+    p.criancas5a11,
+    p.criancas12Mais,
     p.contagemPorConfirmar ? "confirmar idades — não batem com as crianças inscritas" : "",
   ]);
 
