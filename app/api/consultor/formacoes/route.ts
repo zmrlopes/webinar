@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   CATEGORIAS_FORMACOES,
   contarAulas,
+  contarCursos,
   procurarCategoria,
 } from "@/lib/formacoes-gravadas";
 import { listarAulasVistas, verificarAcessoFormacoes } from "@/lib/formacoes-vistas";
@@ -45,7 +46,7 @@ export async function POST(request: Request): Promise<Response> {
           titulo: c.titulo,
           descricao: c.descricao,
           disponivel: c.disponivel,
-          totalCursos: c.cursos.length,
+          totalCursos: contarCursos(c),
           totalAulas: contarAulas(c),
         })),
       });

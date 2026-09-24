@@ -2,11 +2,19 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import type { Aula, Categoria, Curso, Modulo } from "@/lib/formacoes-gravadas";
+import type { Aula, Categoria, Curso, CursoExterno, Modulo } from "@/lib/formacoes-gravadas";
 import { lerEmailGuardado } from "../../armazenamento";
 import { ESTILOS_FORMACOES } from "../estilos";
 
 type Estado = "a-carregar" | "sem-conta" | "indisponivel" | "nao-encontrada" | "erro" | "pronto";
+
+/** Cada categoria divide-se nas formações da Tropa de Elite e nas da iCliGo. */
+type Subdivisao = "tropa-elite" | "icligo";
+
+const SUBDIVISOES: { id: Subdivisao; titulo: string }[] = [
+  { id: "tropa-elite", titulo: "Tropa de Elite" },
+  { id: "icligo", titulo: "iCliGo" },
+];
 
 const MAIS_RECENTES = 6;
 
@@ -26,6 +34,35 @@ function urlDoVideo(youtube: string): string {
 
 function capaDoVideo(youtube: string): string {
   return `https://i.ytimg.com/vi/${youtube}/mqdefault.jpg`;
+}
+
+/** Agrupa os cursos da iCliGo Academy pelo `grupo`, pela ordem em que aparecem. */
+function agruparExternos(externos: CursoExterno[]): [string, CursoExterno[]][] {
+  const grupos = new Map<string, CursoExterno[]>();
+  for (const e of externos) grupos.set(e.grupo, [...(grupos.get(e.grupo) ?? []), e]);
+  return [...grupos];
+}
+
+function CursoExternoCartao({ curso }: { curso: CursoExterno }) {
+  return (
+    <div className="vqf-aula">
+      <a
+        href={curso.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="vqf-capa vqf-capa-externa"
+        aria-label={`Abrir "${curso.titulo}" na iCliGo Academy`}
+      >
+        <img src={curso.capa} alt="" loading="lazy" />
+      </a>
+      <div className="vqf-aula-corpo">
+        <p className="vqf-aula-titulo">{curso.titulo}</p>
+        <a href={curso.url} target="_blank" rel="noopener noreferrer" className="vqf-marcar vqf-link-externo">
+          Abrir na iCliGo Academy ↗
+        </a>
+      </div>
+    </div>
+  );
 }
 
 function AulaCartao({
@@ -95,6 +132,13 @@ export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
   const [vistas, setVistas] = useState<Set<string>>(new Set());
   const [erroGuardar, setErroGuardar] = useState("");
   const [pesquisa, setPesquisa] = useState("");
+  const [subdivisao, setSubdivisao] = useState<Subdivisao>("tropa-elite");
+
+  const cursos = useMemo(
+    () => (categoria ? (subdivisao === "icligo" ? categoria.icligo.cursos : categoria.cursos) : []),
+    [categoria, subdivisao],
+  );
+  const externos = categoria && subdivisao === "icligo" ? categoria.icligo.externos : [];
 
   useEffect(() => {
     const guardado = lerEmailGuardado();
@@ -137,12 +181,10 @@ export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
 
   const todas: AulaComOrigem[] = useMemo(
     () =>
-      categoria
-        ? categoria.cursos.flatMap((curso) =>
-            curso.modulos.flatMap((modulo) => modulo.aulas.map((aula) => ({ aula, curso, modulo }))),
-          )
-        : [],
-    [categoria],
+      cursos.flatMap((curso) =>
+        curso.modulos.flatMap((modulo) => modulo.aulas.map((aula) => ({ aula, curso, modulo }))),
+      ),
+    [cursos],
   );
   const comVideo = useMemo(() => todas.filter((t) => t.aula.youtube !== null), [todas]);
 
@@ -152,9 +194,8 @@ export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
   );
 
   const primeiroCursoComVideo = useMemo(
-    () =>
-      categoria?.cursos.find((curso) => curso.modulos.some((m) => m.aulas.some((a) => a.youtube !== null))),
-    [categoria],
+    () => cursos.find((curso) => curso.modulos.some((m) => m.aulas.some((a) => a.youtube !== null))),
+    [cursos],
   );
 
   const termo = semAcentos(pesquisa.trim());
@@ -230,30 +271,52 @@ export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
               {categoria.descricao}
             </p>
 
-            <div className="vqf-topo-progresso">
-              <div
-                className="vqf-barra"
-                role="progressbar"
-                aria-valuenow={percentagem}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-label="Progresso nas formações"
-              >
-                <div className="vqf-barra-cheia" style={{ width: `${percentagem}%` }} />
-              </div>
-              <p className="vqf-progresso-texto">
-                {totalVistas} de {comVideo.length} aulas vistas ({percentagem}%)
-              </p>
+            <div className="vqf-separadores" role="tablist" aria-label="Origem das formações">
+              {SUBDIVISOES.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={subdivisao === s.id}
+                  className={subdivisao === s.id ? "vqf-separador vqf-separador-ativo" : "vqf-separador"}
+                  onClick={() => {
+                    setSubdivisao(s.id);
+                    setPesquisa("");
+                  }}
+                >
+                  {s.titulo}
+                </button>
+              ))}
             </div>
 
-            <input
-              type="search"
-              className="vqf-pesquisa"
-              placeholder="Pesquisar aulas por título, formador ou curso…"
-              value={pesquisa}
-              onChange={(e) => setPesquisa(e.target.value)}
-              aria-label="Pesquisar aulas"
-            />
+            {comVideo.length > 0 && (
+              <>
+                <div className="vqf-topo-progresso">
+                  <div
+                    className="vqf-barra"
+                    role="progressbar"
+                    aria-valuenow={percentagem}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label="Progresso nas formações"
+                  >
+                    <div className="vqf-barra-cheia" style={{ width: `${percentagem}%` }} />
+                  </div>
+                  <p className="vqf-progresso-texto">
+                    {totalVistas} de {comVideo.length} aulas vistas ({percentagem}%)
+                  </p>
+                </div>
+
+                <input
+                  type="search"
+                  className="vqf-pesquisa"
+                  placeholder="Pesquisar aulas por título, formador ou curso…"
+                  value={pesquisa}
+                  onChange={(e) => setPesquisa(e.target.value)}
+                  aria-label="Pesquisar aulas"
+                />
+              </>
+            )}
 
             {erroGuardar && <p className="vqf-erro">{erroGuardar}</p>}
 
@@ -280,24 +343,35 @@ export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
               </>
             ) : (
               <>
-                <h2>Mais recentes</h2>
-                <div className="vqf-aulas">
-                  {maisRecentes.map(({ aula, curso }) => (
-                    <AulaCartao
-                      key={aula.id}
-                      aula={aula}
-                      vista={vistas.has(aula.id)}
-                      etiqueta={curso.titulo}
-                      onAlternar={alternarVista}
-                    />
-                  ))}
-                </div>
+                {maisRecentes.length > 0 && subdivisao === "tropa-elite" && (
+                  <>
+                    <h2>Mais recentes</h2>
+                    <div className="vqf-aulas">
+                      {maisRecentes.map(({ aula, curso }) => (
+                        <AulaCartao
+                          key={aula.id}
+                          aula={aula}
+                          vista={vistas.has(aula.id)}
+                          etiqueta={curso.titulo}
+                          onAlternar={alternarVista}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
 
-                <h2>Ordem recomendada</h2>
-                <p className="vqf-mudo" style={{ marginBottom: 0 }}>
-                  Começa pelo curso 1 e avança pela ordem — cada um prepara o seguinte.
-                </p>
-                {categoria.cursos.map((curso, indice) => {
+                {cursos.length > 0 &&
+                  (subdivisao === "tropa-elite" ? (
+                    <>
+                      <h2>Ordem recomendada</h2>
+                      <p className="vqf-mudo" style={{ marginBottom: 0 }}>
+                        Começa pelo curso 1 e avança pela ordem — cada um prepara o seguinte.
+                      </p>
+                    </>
+                  ) : (
+                    <h2>Sessões gravadas</h2>
+                  ))}
+                {cursos.map((curso, indice) => {
                   const aulasCurso = curso.modulos.flatMap((m) => m.aulas).filter((a) => a.youtube !== null);
                   const vistasCurso = aulasCurso.filter((a) => vistas.has(a.id)).length;
                   const pct = aulasCurso.length > 0 ? Math.round((vistasCurso / aulasCurso.length) * 100) : 0;
@@ -364,6 +438,26 @@ export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
                     </details>
                   );
                 })}
+
+                {agruparExternos(externos).map(([grupo, lista]) => (
+                  <section key={grupo}>
+                    <h2>{grupo}</h2>
+                    <p className="vqf-mudo">
+                      Cursos na iCliGo Academy — abrem lá, onde entras com a tua conta iCliGo.
+                    </p>
+                    <div className="vqf-aulas">
+                      {lista.map((curso) => (
+                        <CursoExternoCartao key={curso.id} curso={curso} />
+                      ))}
+                    </div>
+                  </section>
+                ))}
+
+                {cursos.length === 0 && externos.length === 0 && (
+                  <p className="vqf-mudo" style={{ marginTop: "1.5rem" }}>
+                    Ainda não há formações aqui.
+                  </p>
+                )}
               </>
             )}
           </>
