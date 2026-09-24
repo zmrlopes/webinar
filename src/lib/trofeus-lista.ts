@@ -35,6 +35,7 @@ export const TROFEUS_JA_TENHO: Trofeu[] = [
   { chave: "patamar-bronze", rotulo: "Troféu Bronze", curto: "Bronze" },
   { chave: "faturacao-100k", rotulo: "Troféu de faturação 100K", curto: "100K" },
   { chave: "faturacao-250k", rotulo: "Troféu de faturação 250K", curto: "250K" },
+  { chave: "rookie-50k", rotulo: "Prémio Rookie 50K", curto: "Rookie" },
 ];
 
 /**
@@ -151,4 +152,28 @@ export function trofeusFaturacaoEmFalta(vendas: number | null, jaTenho: string[]
   return LIMIARES_FATURACAO.filter(([chave, limiar]) => vendas >= limiar && !jaTenho.includes(chave)).map(
     ([chave]) => chave,
   );
+}
+
+export const CHAVE_ROOKIE = "rookie-50k";
+const ANO_ROOKIE = 2026;
+const LIMIAR_ROOKIE = 50_000;
+
+/**
+ * O Prémio Rookie: quem entrou na equipa em 2026 (ver ANO_ROOKIE) e já fez
+ * 50 mil euros de faturação própria — como só entrou este ano, toda a
+ * faturação que tem registada é mesmo deste ano, não é preciso separar.
+ *
+ * Mesmo padrão de null das outras "em falta": sem data de registo ou
+ * vendas conhecidas, ou sem resposta ao questionário, não dá para dizer
+ * que falta nada — dá para dizer "não sabemos".
+ */
+export function trofeuRookieEmFalta(
+  dataRegisto: Date | null,
+  vendas: number | null,
+  jaTenho: string[] | null,
+): string[] | null {
+  if (dataRegisto === null || vendas === null || jaTenho === null) return null;
+  const ehRookieDoAno = dataRegisto.getFullYear() === ANO_ROOKIE;
+  if (!ehRookieDoAno || vendas < LIMIAR_ROOKIE || jaTenho.includes(CHAVE_ROOKIE)) return [];
+  return [CHAVE_ROOKIE];
 }

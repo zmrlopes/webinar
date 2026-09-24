@@ -3,9 +3,11 @@
 import { useMemo, useState } from "react";
 import type { InscritoFaturacao } from "@/lib/teambuilding";
 import {
+  CHAVE_ROOKIE,
   TROFEUS_JA_TENHO,
   trofeusFaturacaoEmFalta,
   trofeusPatamarEmFalta,
+  trofeuRookieEmFalta,
   type Trofeu,
 } from "@/lib/trofeus-lista";
 
@@ -30,7 +32,9 @@ function estadoDoTrofeu(t: Trofeu, i: InscritoFaturacao): EstadoTrofeu {
 
   const emFalta = t.chave.startsWith("patamar-")
     ? trofeusPatamarEmFalta(i.nivel, i.trofeusJaTenho)
-    : trofeusFaturacaoEmFalta(i.vendas, i.trofeusJaTenho);
+    : t.chave === CHAVE_ROOKIE
+      ? trofeuRookieEmFalta(i.dataRegisto, i.vendas, i.trofeusJaTenho)
+      : trofeusFaturacaoEmFalta(i.vendas, i.trofeusJaTenho);
   if (emFalta?.includes(t.chave)) return "falta";
 
   if ((i.trofeusQuero ?? []).includes(t.chave)) return "pedido";

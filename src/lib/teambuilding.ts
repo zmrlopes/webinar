@@ -148,6 +148,8 @@ export interface InscritoFaturacao {
   email: string;
   nivel: string | null;
   vendas: number | null;
+  /** Quando entrou na equipa — para o Prémio Rookie (quem entrou em 2026 e já fez 50K esse ano). */
+  dataRegisto: Date | null;
   adultos: number;
   criancasMais10: number;
   criancasMenos10: number;
@@ -178,6 +180,7 @@ export async function listarInscritosComFaturacao(): Promise<InscritoFaturacao[]
     email: string;
     nivel: string | null;
     vendas: string | null;
+    data_registo: Date | null;
     adultos: string;
     criancas_mais10: string;
     criancas_menos10: string;
@@ -185,6 +188,7 @@ export async function listarInscritosComFaturacao(): Promise<InscritoFaturacao[]
     trofeus_ja_tenho: string[] | null;
   }>(
     `select ei.email, max(ei.nome) as nome, max(ea.nivel) as nivel, max(ea.vendas) as vendas,
+            max(ea.data_registo) as data_registo,
             sum(ei.adultos) as adultos,
             sum(ei.criancas_mais10) as criancas_mais10,
             sum(ei.criancas_menos10) as criancas_menos10,
@@ -199,6 +203,7 @@ export async function listarInscritosComFaturacao(): Promise<InscritoFaturacao[]
     email: r.email,
     nivel: r.nivel,
     vendas: r.vendas === null ? null : Number(r.vendas),
+    dataRegisto: r.data_registo,
     adultos: Number(r.adultos),
     criancasMais10: Number(r.criancas_mais10),
     criancasMenos10: Number(r.criancas_menos10),
