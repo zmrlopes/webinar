@@ -2,17 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import type {
-  Aula,
-  Categoria,
-  Curso,
-  CursoExterno,
-  LicaoExterna,
-  Modulo,
-  ModuloExterno,
-} from "@/lib/formacoes-gravadas";
+import type { Aula, Categoria, Curso, CursoExterno, Modulo } from "@/lib/formacoes-gravadas";
 import { lerEmailGuardado } from "../../armazenamento";
 import { ESTILOS_FORMACOES } from "../estilos";
+import { LicaoLinha, ResultadosPesquisa, urlDoVideo } from "../pesquisa";
 
 type Estado = "a-carregar" | "sem-conta" | "indisponivel" | "nao-encontrada" | "erro" | "pronto";
 
@@ -30,24 +23,6 @@ interface AulaComOrigem {
   aula: Aula;
   curso: Curso;
   modulo: Modulo;
-}
-
-interface LicaoComOrigem {
-  licao: LicaoExterna;
-  curso: CursoExterno;
-  /** null quando o resultado é o próprio curso (cursos sem lições listadas). */
-  modulo: ModuloExterno | null;
-}
-
-function semAcentos(texto: string): string {
-  return texto
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase();
-}
-
-function urlDoVideo(youtube: string): string {
-  return `https://www.youtube.com/watch?v=${youtube}`;
 }
 
 function capaDoVideo(youtube: string): string {
@@ -80,52 +55,6 @@ function CursoExternoCartao({ curso }: { curso: CursoExterno }) {
         </a>
       </div>
     </div>
-  );
-}
-
-function LicaoLinha({
-  licao,
-  contexto,
-  seta = "↗",
-}: {
-  licao: Pick<LicaoExterna, "titulo" | "url">;
-  contexto?: string;
-  /** ↗ = abre noutro site; ▶ = vídeo do YouTube. */
-  seta?: string;
-}) {
-  return (
-    <li>
-      <a href={licao.url} target="_blank" rel="noopener noreferrer" className="vqf-licao">
-        <span className="vqf-licao-texto">
-          <span className="vqf-licao-titulo">{licao.titulo}</span>
-          {contexto && <span className="vqf-licao-contexto">{contexto}</span>}
-        </span>
-        <span className="vqf-licao-seta" aria-hidden="true">
-          {seta}
-        </span>
-      </a>
-    </li>
-  );
-}
-
-/** Linha de resultado para um vídeo do YouTube, no mesmo formato das lições da Academy. */
-function VideoLinha({ item, vista }: { item: AulaComOrigem; vista: boolean }) {
-  const { aula, curso, modulo } = item;
-  const contexto = [
-    curso.titulo,
-    modulo.titulo,
-    aula.formador,
-    aula.min !== null ? `${aula.min} min` : null,
-    vista ? "✓ Vista" : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-  return (
-    <LicaoLinha
-      licao={{ titulo: aula.titulo, url: urlDoVideo(aula.youtube ?? "") }}
-      contexto={contexto}
-      seta="▶"
-    />
   );
 }
 
@@ -305,50 +234,7 @@ export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
     [cursos],
   );
 
-  // A pesquisa procura nas duas subdivisões ao mesmo tempo: quem procura um
-  // destino quer ver tudo o que há sobre ele, seja da Tropa de Elite ou da iCliGo.
-  const videosPesquisaveis = useMemo(() => {
-    if (!categoria) return [];
-    const origens: [string, Curso[]][] = [
-      ["Tropa de Elite", categoria.cursos],
-      ["iCliGo", categoria.icligo.cursos],
-    ];
-    return origens.flatMap(([origem, lista]) =>
-      lista.flatMap((curso) =>
-        curso.modulos.flatMap((modulo) =>
-          modulo.aulas.filter((a) => a.youtube !== null).map((aula) => ({ aula, curso, modulo, origem })),
-        ),
-      ),
-    );
-  }, [categoria]);
-  const licoesPesquisaveis: LicaoComOrigem[] = useMemo(
-    () =>
-      (categoria?.icligo.externos ?? []).flatMap((curso): LicaoComOrigem[] =>
-        curso.modulos.length > 0
-          ? curso.modulos.flatMap((modulo) => modulo.licoes.map((licao) => ({ licao, curso, modulo })))
-          : [{ licao: { id: curso.id, titulo: curso.titulo, url: curso.url }, curso, modulo: null }],
-      ),
-    [categoria],
-  );
-
-  const termo = semAcentos(pesquisa.trim());
-  const resultados = useMemo(() => {
-    if (!termo) return [];
-    return videosPesquisaveis.filter(({ aula, curso, modulo }) =>
-      semAcentos(`${aula.titulo} ${aula.formador ?? ""} ${curso.titulo} ${modulo.titulo}`).includes(termo),
-    );
-  }, [videosPesquisaveis, termo]);
-  const resultadosAcademy = useMemo(() => {
-    if (!termo) return [];
-    return licoesPesquisaveis.filter(({ licao, curso, modulo }) =>
-      semAcentos(`${licao.titulo} ${licao.palavras ?? ""} ${curso.titulo} ${modulo?.titulo ?? ""}`).includes(
-        termo,
-      ),
-    );
-  }, [licoesPesquisaveis, termo]);
-  const resultadosInternos = resultados.filter((r) => r.origem === "Tropa de Elite");
-  const resultadosIcligoVideo = resultados.filter((r) => r.origem === "iCliGo");
-  const totalResultados = resultados.length + resultadosAcademy.length;
+  const termo = pesquisa.trim();
 
   async function alternarVista(aula: Aula): Promise<void> {
     if (!email) return;
@@ -462,47 +348,7 @@ export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
             {erroGuardar && <p className="vqf-erro">{erroGuardar}</p>}
 
             {termo ? (
-              <>
-                <h2>
-                  {totalResultados === 1 ? "1 resultado" : `${totalResultados} resultados`} para “
-                  {pesquisa.trim()}”
-                </h2>
-                {totalResultados === 0 && (
-                  <p className="vqf-mudo">Nada encontrado — experimenta o nome do país ou do continente.</p>
-                )}
-                {resultadosInternos.length > 0 && (
-                  <>
-                    <h3 className="vqf-subtitulo">Formações internas</h3>
-                    <ul className="vqf-licoes vqf-licoes-caixa">
-                      {resultadosInternos.map((item) => (
-                        <VideoLinha key={item.aula.id} item={item} vista={vistas.has(item.aula.id)} />
-                      ))}
-                    </ul>
-                  </>
-                )}
-                {resultadosIcligoVideo.length + resultadosAcademy.length > 0 && (
-                  <>
-                    <h3 className="vqf-subtitulo">iCliGo</h3>
-                    {resultadosAcademy.length > 0 && (
-                      <p className="vqf-mudo">
-                        As lições da Academy abrem lá, onde entras com a tua conta iCliGo.
-                      </p>
-                    )}
-                    <ul className="vqf-licoes vqf-licoes-caixa">
-                      {resultadosIcligoVideo.map((item) => (
-                        <VideoLinha key={item.aula.id} item={item} vista={vistas.has(item.aula.id)} />
-                      ))}
-                      {resultadosAcademy.map(({ licao, curso, modulo }) => (
-                        <LicaoLinha
-                          key={licao.id}
-                          licao={licao}
-                          contexto={modulo ? `${curso.titulo} · ${modulo.titulo}` : "Curso completo"}
-                        />
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </>
+              <ResultadosPesquisa categorias={[categoria]} pesquisa={pesquisa} vistas={vistas} />
             ) : (
               <>
                 {maisRecentes.length > 0 && subdivisao === "tropa-elite" && (
