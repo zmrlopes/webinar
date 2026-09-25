@@ -83,7 +83,16 @@ function CursoExternoCartao({ curso }: { curso: CursoExterno }) {
   );
 }
 
-function LicaoLinha({ licao, contexto }: { licao: LicaoExterna; contexto?: string }) {
+function LicaoLinha({
+  licao,
+  contexto,
+  seta = "↗",
+}: {
+  licao: Pick<LicaoExterna, "titulo" | "url">;
+  contexto?: string;
+  /** ↗ = abre noutro site; ▶ = vídeo do YouTube. */
+  seta?: string;
+}) {
   return (
     <li>
       <a href={licao.url} target="_blank" rel="noopener noreferrer" className="vqf-licao">
@@ -92,10 +101,31 @@ function LicaoLinha({ licao, contexto }: { licao: LicaoExterna; contexto?: strin
           {contexto && <span className="vqf-licao-contexto">{contexto}</span>}
         </span>
         <span className="vqf-licao-seta" aria-hidden="true">
-          ↗
+          {seta}
         </span>
       </a>
     </li>
+  );
+}
+
+/** Linha de resultado para um vídeo do YouTube, no mesmo formato das lições da Academy. */
+function VideoLinha({ item, vista }: { item: AulaComOrigem; vista: boolean }) {
+  const { aula, curso, modulo } = item;
+  const contexto = [
+    curso.titulo,
+    modulo.titulo,
+    aula.formador,
+    aula.min !== null ? `${aula.min} min` : null,
+    vista ? "✓ Vista" : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  return (
+    <LicaoLinha
+      licao={{ titulo: aula.titulo, url: urlDoVideo(aula.youtube ?? "") }}
+      contexto={contexto}
+      seta="▶"
+    />
   );
 }
 
@@ -316,6 +346,8 @@ export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
       ),
     );
   }, [licoesPesquisaveis, termo]);
+  const resultadosInternos = resultados.filter((r) => r.origem === "Tropa de Elite");
+  const resultadosIcligoVideo = resultados.filter((r) => r.origem === "iCliGo");
   const totalResultados = resultados.length + resultadosAcademy.length;
 
   async function alternarVista(aula: Aula): Promise<void> {
@@ -438,27 +470,28 @@ export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
                 {totalResultados === 0 && (
                   <p className="vqf-mudo">Nada encontrado — experimenta o nome do país ou do continente.</p>
                 )}
-                {resultados.length > 0 && (
+                {resultadosInternos.length > 0 && (
                   <>
-                    <h3 className="vqf-subtitulo">Vídeos</h3>
-                    <div className="vqf-aulas">
-                      {resultados.map(({ aula, curso, origem }) => (
-                        <AulaCartao
-                          key={aula.id}
-                          aula={aula}
-                          vista={vistas.has(aula.id)}
-                          etiqueta={`${origem} · ${curso.titulo}`}
-                          onAlternar={alternarVista}
-                        />
+                    <h3 className="vqf-subtitulo">Formações internas</h3>
+                    <ul className="vqf-licoes vqf-licoes-caixa">
+                      {resultadosInternos.map((item) => (
+                        <VideoLinha key={item.aula.id} item={item} vista={vistas.has(item.aula.id)} />
                       ))}
-                    </div>
+                    </ul>
                   </>
                 )}
-                {resultadosAcademy.length > 0 && (
+                {resultadosIcligoVideo.length + resultadosAcademy.length > 0 && (
                   <>
-                    <h3 className="vqf-subtitulo">Na iCliGo Academy</h3>
-                    <p className="vqf-mudo">Abrem na Academy, onde entras com a tua conta iCliGo.</p>
+                    <h3 className="vqf-subtitulo">iCliGo</h3>
+                    {resultadosAcademy.length > 0 && (
+                      <p className="vqf-mudo">
+                        As lições da Academy abrem lá, onde entras com a tua conta iCliGo.
+                      </p>
+                    )}
                     <ul className="vqf-licoes vqf-licoes-caixa">
+                      {resultadosIcligoVideo.map((item) => (
+                        <VideoLinha key={item.aula.id} item={item} vista={vistas.has(item.aula.id)} />
+                      ))}
                       {resultadosAcademy.map(({ licao, curso, modulo }) => (
                         <LicaoLinha
                           key={licao.id}
