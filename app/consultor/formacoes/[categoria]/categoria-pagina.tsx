@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import type { Aula, Categoria, Curso, CursoExterno, Modulo } from "@/lib/formacoes-gravadas";
+import type {
+  Aula,
+  Categoria,
+  Curso,
+  CursoExterno,
+  LicaoExterna,
+  Modulo,
+  ModuloExterno,
+} from "@/lib/formacoes-gravadas";
 import { lerEmailGuardado } from "../../armazenamento";
 import { ESTILOS_FORMACOES } from "../estilos";
 
@@ -24,8 +32,18 @@ interface AulaComOrigem {
   modulo: Modulo;
 }
 
+interface LicaoComOrigem {
+  licao: LicaoExterna;
+  curso: CursoExterno;
+  /** null quando o resultado é o próprio curso (cursos sem lições listadas). */
+  modulo: ModuloExterno | null;
+}
+
 function semAcentos(texto: string): string {
-  return texto.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  return texto
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
 }
 
 function urlDoVideo(youtube: string): string {
@@ -62,6 +80,65 @@ function CursoExternoCartao({ curso }: { curso: CursoExterno }) {
         </a>
       </div>
     </div>
+  );
+}
+
+function LicaoLinha({ licao, contexto }: { licao: LicaoExterna; contexto?: string }) {
+  return (
+    <li>
+      <a href={licao.url} target="_blank" rel="noopener noreferrer" className="vqf-licao">
+        <span className="vqf-licao-texto">
+          <span className="vqf-licao-titulo">{licao.titulo}</span>
+          {contexto && <span className="vqf-licao-contexto">{contexto}</span>}
+        </span>
+        <span className="vqf-licao-seta" aria-hidden="true">
+          ↗
+        </span>
+      </a>
+    </li>
+  );
+}
+
+function CursoExternoComLicoes({ curso }: { curso: CursoExterno }) {
+  const total = curso.modulos.reduce((t, m) => t + m.licoes.length, 0);
+  return (
+    <details className="vqf-curso">
+      <summary>
+        <img className="vqf-curso-capa" src={curso.capa} alt="" loading="lazy" />
+        <div className="vqf-curso-texto">
+          <p className="vqf-curso-titulo">{curso.titulo}</p>
+          <p className="vqf-progresso-texto">
+            {total} {total === 1 ? "lição" : "lições"} · abrem na iCliGo Academy
+          </p>
+        </div>
+        <span className="vqf-curso-seta" aria-hidden="true">
+          ▶
+        </span>
+      </summary>
+      <div className="vqf-curso-corpo">
+        <a href={curso.url} target="_blank" rel="noopener noreferrer" className="vqf-marcar vqf-link-externo">
+          Abrir o curso na iCliGo Academy ↗
+        </a>
+        {curso.modulos.map((modulo) => (
+          <details className="vqf-modulo" key={modulo.titulo} open={curso.modulos.length === 1}>
+            <summary className="vqf-modulo-summary">
+              <span className="vqf-modulo-titulo">{modulo.titulo}</span>
+              <span className="vqf-modulo-meta">
+                {modulo.licoes.length} {modulo.licoes.length === 1 ? "lição" : "lições"}
+              </span>
+              <span className="vqf-modulo-seta" aria-hidden="true">
+                ▶
+              </span>
+            </summary>
+            <ul className="vqf-licoes">
+              {modulo.licoes.map((licao) => (
+                <LicaoLinha key={licao.id} licao={licao} />
+              ))}
+            </ul>
+          </details>
+        ))}
+      </div>
+    </details>
   );
 }
 
@@ -198,13 +275,48 @@ export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
     [cursos],
   );
 
+  // A pesquisa procura nas duas subdivisões ao mesmo tempo: quem procura um
+  // destino quer ver tudo o que há sobre ele, seja da Tropa de Elite ou da iCliGo.
+  const videosPesquisaveis = useMemo(() => {
+    if (!categoria) return [];
+    const origens: [string, Curso[]][] = [
+      ["Tropa de Elite", categoria.cursos],
+      ["iCliGo", categoria.icligo.cursos],
+    ];
+    return origens.flatMap(([origem, lista]) =>
+      lista.flatMap((curso) =>
+        curso.modulos.flatMap((modulo) =>
+          modulo.aulas.filter((a) => a.youtube !== null).map((aula) => ({ aula, curso, modulo, origem })),
+        ),
+      ),
+    );
+  }, [categoria]);
+  const licoesPesquisaveis: LicaoComOrigem[] = useMemo(
+    () =>
+      (categoria?.icligo.externos ?? []).flatMap((curso): LicaoComOrigem[] =>
+        curso.modulos.length > 0
+          ? curso.modulos.flatMap((modulo) => modulo.licoes.map((licao) => ({ licao, curso, modulo })))
+          : [{ licao: { id: curso.id, titulo: curso.titulo, url: curso.url }, curso, modulo: null }],
+      ),
+    [categoria],
+  );
+
   const termo = semAcentos(pesquisa.trim());
   const resultados = useMemo(() => {
     if (!termo) return [];
-    return comVideo.filter(({ aula, curso, modulo }) =>
+    return videosPesquisaveis.filter(({ aula, curso, modulo }) =>
       semAcentos(`${aula.titulo} ${aula.formador ?? ""} ${curso.titulo} ${modulo.titulo}`).includes(termo),
     );
-  }, [comVideo, termo]);
+  }, [videosPesquisaveis, termo]);
+  const resultadosAcademy = useMemo(() => {
+    if (!termo) return [];
+    return licoesPesquisaveis.filter(({ licao, curso, modulo }) =>
+      semAcentos(`${licao.titulo} ${licao.palavras ?? ""} ${curso.titulo} ${modulo?.titulo ?? ""}`).includes(
+        termo,
+      ),
+    );
+  }, [licoesPesquisaveis, termo]);
+  const totalResultados = resultados.length + resultadosAcademy.length;
 
   async function alternarVista(aula: Aula): Promise<void> {
     if (!email) return;
@@ -271,51 +383,48 @@ export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
               {categoria.descricao}
             </p>
 
-            <div className="vqf-separadores" role="tablist" aria-label="Origem das formações">
-              {SUBDIVISOES.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={subdivisao === s.id}
-                  className={subdivisao === s.id ? "vqf-separador vqf-separador-ativo" : "vqf-separador"}
-                  onClick={() => {
-                    setSubdivisao(s.id);
-                    setPesquisa("");
-                  }}
-                >
-                  {s.titulo}
-                </button>
-              ))}
-            </div>
+            <input
+              type="search"
+              className="vqf-pesquisa"
+              placeholder="Pesquisar por destino, tema, formador ou curso (Tropa de Elite e iCliGo)…"
+              value={pesquisa}
+              onChange={(e) => setPesquisa(e.target.value)}
+              aria-label="Pesquisar formações"
+            />
 
-            {comVideo.length > 0 && (
-              <>
-                <div className="vqf-topo-progresso">
-                  <div
-                    className="vqf-barra"
-                    role="progressbar"
-                    aria-valuenow={percentagem}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-label="Progresso nas formações"
+            {!termo && (
+              <div className="vqf-separadores" role="tablist" aria-label="Origem das formações">
+                {SUBDIVISOES.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={subdivisao === s.id}
+                    className={subdivisao === s.id ? "vqf-separador vqf-separador-ativo" : "vqf-separador"}
+                    onClick={() => setSubdivisao(s.id)}
                   >
-                    <div className="vqf-barra-cheia" style={{ width: `${percentagem}%` }} />
-                  </div>
-                  <p className="vqf-progresso-texto">
-                    {totalVistas} de {comVideo.length} aulas vistas ({percentagem}%)
-                  </p>
-                </div>
+                    {s.titulo}
+                  </button>
+                ))}
+              </div>
+            )}
 
-                <input
-                  type="search"
-                  className="vqf-pesquisa"
-                  placeholder="Pesquisar aulas por título, formador ou curso…"
-                  value={pesquisa}
-                  onChange={(e) => setPesquisa(e.target.value)}
-                  aria-label="Pesquisar aulas"
-                />
-              </>
+            {!termo && comVideo.length > 0 && (
+              <div className="vqf-topo-progresso">
+                <div
+                  className="vqf-barra"
+                  role="progressbar"
+                  aria-valuenow={percentagem}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label="Progresso nas formações"
+                >
+                  <div className="vqf-barra-cheia" style={{ width: `${percentagem}%` }} />
+                </div>
+                <p className="vqf-progresso-texto">
+                  {totalVistas} de {comVideo.length} aulas vistas ({percentagem}%)
+                </p>
+              </div>
             )}
 
             {erroGuardar && <p className="vqf-erro">{erroGuardar}</p>}
@@ -323,22 +432,42 @@ export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
             {termo ? (
               <>
                 <h2>
-                  {resultados.length === 1 ? "1 aula encontrada" : `${resultados.length} aulas encontradas`}
+                  {totalResultados === 1 ? "1 resultado" : `${totalResultados} resultados`} para “
+                  {pesquisa.trim()}”
                 </h2>
-                {resultados.length === 0 ? (
-                  <p className="vqf-mudo">Nenhuma aula corresponde a “{pesquisa.trim()}”.</p>
-                ) : (
-                  <div className="vqf-aulas">
-                    {resultados.map(({ aula, curso }) => (
-                      <AulaCartao
-                        key={aula.id}
-                        aula={aula}
-                        vista={vistas.has(aula.id)}
-                        etiqueta={curso.titulo}
-                        onAlternar={alternarVista}
-                      />
-                    ))}
-                  </div>
+                {totalResultados === 0 && (
+                  <p className="vqf-mudo">Nada encontrado — experimenta o nome do país ou do continente.</p>
+                )}
+                {resultados.length > 0 && (
+                  <>
+                    <h3 className="vqf-subtitulo">Vídeos</h3>
+                    <div className="vqf-aulas">
+                      {resultados.map(({ aula, curso, origem }) => (
+                        <AulaCartao
+                          key={aula.id}
+                          aula={aula}
+                          vista={vistas.has(aula.id)}
+                          etiqueta={`${origem} · ${curso.titulo}`}
+                          onAlternar={alternarVista}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+                {resultadosAcademy.length > 0 && (
+                  <>
+                    <h3 className="vqf-subtitulo">Na iCliGo Academy</h3>
+                    <p className="vqf-mudo">Abrem na Academy, onde entras com a tua conta iCliGo.</p>
+                    <ul className="vqf-licoes vqf-licoes-caixa">
+                      {resultadosAcademy.map(({ licao, curso, modulo }) => (
+                        <LicaoLinha
+                          key={licao.id}
+                          licao={licao}
+                          contexto={modulo ? `${curso.titulo} · ${modulo.titulo}` : "Curso completo"}
+                        />
+                      ))}
+                    </ul>
+                  </>
                 )}
               </>
             ) : (
@@ -439,19 +568,30 @@ export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
                   );
                 })}
 
-                {agruparExternos(externos).map(([grupo, lista]) => (
-                  <section key={grupo}>
-                    <h2>{grupo}</h2>
-                    <p className="vqf-mudo">
-                      Cursos na iCliGo Academy — abrem lá, onde entras com a tua conta iCliGo.
-                    </p>
-                    <div className="vqf-aulas">
-                      {lista.map((curso) => (
-                        <CursoExternoCartao key={curso.id} curso={curso} />
+                {externos.length > 0 && (
+                  <p className="vqf-mudo" style={{ margin: "1.5rem 0 0" }}>
+                    Cursos da iCliGo Academy — abrem lá, onde entras com a tua conta iCliGo.
+                  </p>
+                )}
+                {agruparExternos(externos).map(([grupo, lista]) => {
+                  const comLicoes = lista.filter((c) => c.modulos.length > 0);
+                  const soCartao = lista.filter((c) => c.modulos.length === 0);
+                  return (
+                    <section key={grupo}>
+                      <h2>{grupo}</h2>
+                      {comLicoes.map((curso) => (
+                        <CursoExternoComLicoes key={curso.id} curso={curso} />
                       ))}
-                    </div>
-                  </section>
-                ))}
+                      {soCartao.length > 0 && (
+                        <div className="vqf-aulas" style={{ marginTop: comLicoes.length > 0 ? "1rem" : 0 }}>
+                          {soCartao.map((curso) => (
+                            <CursoExternoCartao key={curso.id} curso={curso} />
+                          ))}
+                        </div>
+                      )}
+                    </section>
+                  );
+                })}
 
                 {cursos.length === 0 && externos.length === 0 && (
                   <p className="vqf-mudo" style={{ marginTop: "1.5rem" }}>

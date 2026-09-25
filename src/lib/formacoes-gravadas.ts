@@ -1,4 +1,5 @@
 import { EMAIL_PAINEL_DEMONSTRACAO } from "./demo";
+import { RESERVAS_ICLIGO, cursoAcademy } from "./formacoes-icligo";
 
 /**
  * Formações gravadas (/consultor/formacoes) — recriação, no painel do
@@ -38,17 +39,34 @@ export interface Curso {
   modulos: Modulo[];
 }
 
+/** Lição de um curso da iCliGo Academy — abre lá (precisa da conta iCliGo). */
+export interface LicaoExterna {
+  id: string;
+  titulo: string;
+  url: string;
+  /** Palavras extra para a pesquisa (país, continente…) que não estão no título. */
+  palavras?: string;
+}
+
+export interface ModuloExterno {
+  titulo: string;
+  licoes: LicaoExterna[];
+}
+
 /**
- * Curso alojado na iCliGo Academy (academy.icligo.com): não temos as aulas,
- * só o cartão que abre o curso lá (onde o consultor entra com a conta iCliGo).
+ * Curso alojado na iCliGo Academy (academy.icligo.com): não temos os vídeos,
+ * só o índice das lições, cada uma com link para lá (onde o consultor entra
+ * com a conta iCliGo). Ver formacoes-icligo.ts.
  */
 export interface CursoExterno {
   id: string;
   titulo: string;
   url: string;
   capa: string;
-  /** Agrupa os cartões na página (ex.: "Campanhas"). */
+  /** Agrupa os cursos na página (ex.: "Campanhas"). */
   grupo: string;
+  /** Vazio = só o cartão do curso (as lições não são públicas ou não interessam). */
+  modulos: ModuloExterno[];
 }
 
 /** Formações da própria iCliGo, separadas das da Tropa de Elite em cada categoria. */
@@ -102,19 +120,6 @@ const EW_PROFISSIONAIS = "eric-worre-profissionais-network-marketing";
 const SESSOES_ESSENCIAIS = "tropa-elite-sessoes-essenciais";
 const SESSOES_RESERVAS = "tropa-elite-sessoes-reservas";
 const ICLIGO_ESSENCIAIS = "icligo-essenciais";
-
-const ACADEMY = "https://academy.icligo.com";
-
-/** A capa é uma cópia local (public/formacoes/icligo) — a Academy não deixa usar as imagens noutros sites. */
-function externo(slug: string, titulo: string, grupo: string): CursoExterno {
-  return {
-    id: slug,
-    titulo,
-    url: `${ACADEMY}/courses/${slug}`,
-    capa: `/formacoes/icligo/${slug}.jpg`,
-    grupo,
-  };
-}
 
 const essenciais: Categoria = {
   id: "essenciais",
@@ -478,14 +483,7 @@ const reservas: Categoria = {
   ],
   icligo: {
     cursos: [],
-    externos: [
-      externo("icligo-expert-formacao-de-produto", "iCliGo Expert: Formação de Produto", "Destinos e Produto"),
-      externo("be-an-expert-3", "Sessões Semanais Be an Expert", "Destinos e Produto"),
-      externo("icligo-summer26", "iCliGo Summer’26", "Campanhas"),
-      externo("blue-monday", "Blue Monday", "Campanhas"),
-      externo("icligo-open-season-26", "Open Season’26", "Campanhas"),
-      externo("black-friday-2025", "Black Friday 2025", "Campanhas"),
-    ],
+    externos: RESERVAS_ICLIGO,
   },
 };
 
@@ -719,9 +717,9 @@ const equipa: Categoria = {
   icligo: {
     cursos: [],
     externos: [
-      externo("be-a-pro", "Sessões Semanais Be a Pro", "Criação de Equipa"),
-      externo("da-duvida-a-decisao", "Da Dúvida à Decisão", "Criação de Equipa"),
-      externo("be-a-pro-5", "Be a Pro", "Criação de Equipa"),
+      cursoAcademy("be-a-pro", "Sessões Semanais Be a Pro", "Criação de Equipa"),
+      cursoAcademy("da-duvida-a-decisao", "Da Dúvida à Decisão", "Criação de Equipa"),
+      cursoAcademy("be-a-pro-5", "Be a Pro", "Criação de Equipa"),
     ],
   },
 };
@@ -743,13 +741,21 @@ export function contarCursos(categoria: Categoria): number {
   return todosOsCursos(categoria).length + categoria.icligo.externos.length;
 }
 
-/** Só conta as aulas com vídeo — as outras ainda não se podem ver nem marcar como vistas. */
+/**
+ * Aulas com vídeo (as outras ainda não se podem ver) mais as lições listadas
+ * da iCliGo Academy.
+ */
 export function contarAulas(categoria: Categoria): number {
-  return todosOsCursos(categoria).reduce(
+  const videos = todosOsCursos(categoria).reduce(
     (total, curso) =>
       total + curso.modulos.reduce((t, m) => t + m.aulas.filter((a) => a.youtube !== null).length, 0),
     0,
   );
+  const licoes = categoria.icligo.externos.reduce(
+    (total, curso) => total + curso.modulos.reduce((t, m) => t + m.licoes.length, 0),
+    0,
+  );
+  return videos + licoes;
 }
 
 /** Todos os ids de aulas existentes — para recusar marcações de aulas inventadas. */

@@ -242,7 +242,37 @@ export const ESTILOS_FORMACOES = `
   .vqf-modulo[open] .vqf-modulo-seta { transform: rotate(90deg); }
   .vqf-modulo .vqf-aulas { padding: 0 1rem 1rem; }
 
+  .vqf-pagina h3.vqf-subtitulo { color: #000000; font-size: 1rem; margin: 1.5rem 0 0.6rem; }
+
+  .vqf-curso-capa {
+    flex: none;
+    width: 6.5rem;
+    aspect-ratio: 2 / 1;
+    object-fit: cover;
+    border-radius: 6px;
+    background: #ece9e0;
+  }
+  .vqf-curso-corpo > .vqf-link-externo { display: inline-block; margin-bottom: 1rem; }
+
+  .vqf-licoes { list-style: none; margin: 0; padding: 0 1rem 0.75rem; }
+  .vqf-licoes-caixa { padding: 0.25rem 1rem; border: 1px solid #d9d9d9; border-radius: 10px; background: #ffffff; }
+  .vqf-licoes li + li { border-top: 1px solid #ece9e0; }
+  .vqf-licao {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0;
+    color: #000000;
+    text-decoration: none;
+  }
+  .vqf-licao:hover .vqf-licao-titulo { text-decoration: underline; }
+  .vqf-licao-texto { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+  .vqf-licao-titulo { font-size: 0.9rem; font-weight: 600; }
+  .vqf-licao-contexto { font-size: 0.78rem; color: #6b6a63; }
+  .vqf-licao-seta { flex: none; color: #4b5320; font-weight: 700; }
+
   @media (max-width: 520px) {
+    .vqf-curso-capa { width: 4.5rem; }
     .vqf-pagina { padding: 1.5rem 0.9rem 3rem; }
     .vqf-aulas { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
     .vqf-curso > summary { padding: 0.9rem; gap: 0.75rem; }
