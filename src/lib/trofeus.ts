@@ -154,12 +154,13 @@ export function contarTrofeus(respostas: RespostaTrofeusAdmin[]): ContagemTrofeu
 export interface InscritoSemRespostaTrofeus {
   nome: string;
   email: string;
+  telemovel: string;
 }
 
 /** Quem está inscrito no evento e ainda não respondeu — para lembrares. */
 export async function listarInscritosSemRespostaTrofeus(): Promise<InscritoSemRespostaTrofeus[]> {
-  const { rows } = await db().query<{ nome: string; email: string }>(
-    `select distinct on (ei.email) ei.nome, ei.email
+  const { rows } = await db().query<{ nome: string; email: string; telemovel: string }>(
+    `select distinct on (ei.email) ei.nome, ei.email, ei.telemovel
      from evento_inscricoes ei
      where not exists (select 1 from respostas_trofeus rt where rt.email = ei.email)
      order by ei.email, ei.criado_em desc`,

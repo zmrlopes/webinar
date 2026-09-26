@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listarInscritosSemResposta, listarRespostasTeambuilding } from "@/lib/teambuilding";
+import { BotaoWhatsApp } from "../botao-whatsapp";
 import { BotaoNotificar } from "./botao-notificar";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +10,7 @@ export default async function TeambuildingRespostasPagina() {
     listarRespostasTeambuilding(),
     listarInscritosSemResposta(),
   ]);
+  const base = process.env.SITE_BASE_URL ?? "https://webinar.viajareviver.net";
 
   return (
     <main className="ad-pagina">
@@ -66,8 +68,12 @@ export default async function TeambuildingRespostasPagina() {
             <BotaoNotificar total={semResposta.length} />
             <div className="ad-pendentes">
               {semResposta.map((p) => (
-                <span key={p.email} className="ad-etiqueta">
+                <span className="ad-etiqueta" key={p.email} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                   {p.nome} — {p.email}
+                  <BotaoWhatsApp
+                    telemovel={p.telemovel}
+                    mensagem={`Olá ${p.nome}, ainda não respondeste ao formulário de preparação do Teambuilding. Entra na tua área de consultor para responderes: ${base}/consultor`}
+                  />
                 </span>
               ))}
             </div>

@@ -8,6 +8,7 @@ import {
   PRECO_SINGLE,
   questionarioHotelPublicado,
 } from "@/lib/hotel";
+import { BotaoWhatsApp } from "../botao-whatsapp";
 import { BotoesAvisar } from "./botoes-avisar";
 import { Exportar } from "./exportar";
 
@@ -36,6 +37,7 @@ export default async function HotelRespostasPagina() {
   const duplos = querem.filter((r) => r.tipoQuarto === "duplo").length;
   const naoQuerem = respostas.length - querem.length;
   const comCriancas = querem.filter((r) => r.temCriancas).length;
+  const base = process.env.SITE_BASE_URL ?? "https://webinar.viajareviver.net";
 
   return (
     <main className="ad-pagina">
@@ -204,8 +206,24 @@ export default async function HotelRespostasPagina() {
         ) : (
           <div className="ad-cartao">
             {semResposta.map((i) => (
-              <div key={i.email} style={{ fontSize: "0.9rem", padding: "0.2rem 0" }}>
-                {i.nome} <span className="ad-legenda">— {i.email}</span>
+              <div
+                key={i.email}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.6rem",
+                  flexWrap: "wrap",
+                  fontSize: "0.9rem",
+                  padding: "0.3rem 0",
+                }}
+              >
+                <span>
+                  {i.nome} <span className="ad-legenda">— {i.email}</span>
+                </span>
+                <BotaoWhatsApp
+                  telemovel={i.telemovel}
+                  mensagem={`Olá ${i.nome}, ainda não respondeste ao questionário do quarto de hotel do Teambuilding. Entra na tua área de consultor para responderes: ${base}/consultor`}
+                />
               </div>
             ))}
           </div>

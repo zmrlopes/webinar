@@ -83,12 +83,13 @@ export async function listarRespostasTeambuilding(): Promise<RespostaTeambuildin
 export interface InscritoSemResposta {
   nome: string;
   email: string;
+  telemovel: string;
 }
 
 /** Quem se inscreveu no evento mas ainda não respondeu — para lembrares. */
 export async function listarInscritosSemResposta(): Promise<InscritoSemResposta[]> {
-  const { rows } = await db().query<{ nome: string; email: string }>(
-    `select distinct on (ei.email) ei.nome, ei.email
+  const { rows } = await db().query<{ nome: string; email: string; telemovel: string }>(
+    `select distinct on (ei.email) ei.nome, ei.email, ei.telemovel
      from evento_inscricoes ei
      where not exists (select 1 from respostas_teambuilding rt where rt.email = ei.email)
      order by ei.email, ei.criado_em desc`,

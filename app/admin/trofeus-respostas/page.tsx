@@ -6,6 +6,7 @@ import {
   listarRespostasTrofeus,
   questionarioTrofeusPublicado,
 } from "@/lib/trofeus";
+import { BotaoWhatsApp } from "../botao-whatsapp";
 import { BotoesAvisar } from "./botoes-avisar";
 import { LinhaResposta } from "./linha";
 
@@ -19,6 +20,7 @@ export default async function TrofeusRespostasPagina() {
   const contagens = contarTrofeus(respostas);
   const totalPedidos = contagens.reduce((soma, c) => soma + c.pedidos, 0);
   const maxPedidos = Math.max(1, ...contagens.map((c) => c.pedidos));
+  const base = process.env.SITE_BASE_URL ?? "https://webinar.viajareviver.net";
 
   return (
     <main className="ad-pagina">
@@ -182,8 +184,24 @@ export default async function TrofeusRespostasPagina() {
         ) : (
           <div className="ad-cartao">
             {semResposta.map((i) => (
-              <div key={i.email} style={{ fontSize: "0.9rem", padding: "0.2rem 0" }}>
-                {i.nome} <span className="ad-legenda">— {i.email}</span>
+              <div
+                key={i.email}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.6rem",
+                  flexWrap: "wrap",
+                  fontSize: "0.9rem",
+                  padding: "0.3rem 0",
+                }}
+              >
+                <span>
+                  {i.nome} <span className="ad-legenda">— {i.email}</span>
+                </span>
+                <BotaoWhatsApp
+                  telemovel={i.telemovel}
+                  mensagem={`Olá ${i.nome}, ainda não respondeste ao questionário dos troféus do Teambuilding. Entra na tua área de consultor para responderes: ${base}/consultor`}
+                />
               </div>
             ))}
           </div>
