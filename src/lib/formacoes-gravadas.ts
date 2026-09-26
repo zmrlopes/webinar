@@ -1,4 +1,5 @@
 import { EMAIL_PAINEL_DEMONSTRACAO } from "./demo";
+import { RESERVAS_ICLIGO, cursoAcademy } from "./formacoes-icligo";
 
 /**
  * Formações gravadas (/consultor/formacoes) — recriação, no painel do
@@ -38,13 +39,52 @@ export interface Curso {
   modulos: Modulo[];
 }
 
+/** Lição de um curso da iCliGo Academy — abre lá (precisa da conta iCliGo). */
+export interface LicaoExterna {
+  id: string;
+  titulo: string;
+  url: string;
+  /** Palavras extra para a pesquisa (país, continente…) que não estão no título. */
+  palavras?: string;
+}
+
+export interface ModuloExterno {
+  titulo: string;
+  licoes: LicaoExterna[];
+}
+
+/**
+ * Curso alojado na iCliGo Academy (academy.icligo.com): não temos os vídeos,
+ * só o índice das lições, cada uma com link para lá (onde o consultor entra
+ * com a conta iCliGo). Ver formacoes-icligo.ts.
+ */
+export interface CursoExterno {
+  id: string;
+  titulo: string;
+  url: string;
+  capa: string;
+  /** Agrupa os cursos na página (ex.: "Campanhas"). */
+  grupo: string;
+  /** Vazio = só o cartão do curso (as lições não são públicas ou não interessam). */
+  modulos: ModuloExterno[];
+}
+
+/** Formações da própria iCliGo, separadas das da Tropa de Elite em cada categoria. */
+export interface FormacoesIcligo {
+  /** Aulas gravadas no YouTube — funcionam como os cursos da Tropa de Elite. */
+  cursos: Curso[];
+  externos: CursoExterno[];
+}
+
 export interface Categoria {
   id: string;
   titulo: string;
   descricao: string;
   /** false = o card aparece com "Em breve" e ainda não abre. */
   disponivel: boolean;
+  /** Formações da Tropa de Elite. */
   cursos: Curso[];
+  icligo: FormacoesIcligo;
 }
 
 /** [título, ID do YouTube (ou null), minutos (ou null), data de publicação, formador?] */
@@ -77,6 +117,9 @@ const EW_ESTRATEGIA = "eric-worre-estrategia-relampago";
 const EW_CONFIANCA = "eric-worre-confianca-inquebravel";
 const EW_COMPETENCIAS = "eric-worre-competencias-essenciais";
 const EW_PROFISSIONAIS = "eric-worre-profissionais-network-marketing";
+const SESSOES_ESSENCIAIS = "tropa-elite-sessoes-essenciais";
+const SESSOES_RESERVAS = "tropa-elite-sessoes-reservas";
+const ICLIGO_ESSENCIAIS = "icligo-essenciais";
 
 const essenciais: Categoria = {
   id: "essenciais",
@@ -234,7 +277,47 @@ const essenciais: Categoria = {
         ]),
       ],
     },
+    {
+      id: SESSOES_ESSENCIAIS,
+      titulo: "Sessões ao Vivo da Equipa",
+      descricao:
+        "Gravações das formações feitas ao vivo pela equipa: as 7 Skills, mentalidade, vendas, redes sociais e IA.",
+      modulos: [
+        modulo(SESSOES_ESSENCIAIS, "7 Skills ao Vivo", [
+          ["Skill 1 – Prospetar Contactos", "vsKyUOJaD-M", 90, "2026-03-24"],
+          ["Skill 2 – Convite", "8rjZHqNdu_8", 34, "2026-04-06"],
+          ["Skill 3 – Apresentação (História)", "ncf5mQNcuvs", 23, "2026-04-27"],
+        ]),
+        modulo(SESSOES_ESSENCIAIS, "Mentalidade e Potencial", [
+          ["Formação Mentalidade", "033dPjGtkVY", 52, "2026-06-15"],
+          ["Mentalidade", "CstXx7QDC5U", 64, "2026-09-16", "Lara"],
+          ["O Sonho", "3LiF9z448GE", 51, "2026-09-16", "Sara"],
+          ["Potencial", "3Jx8LsY9rCE", 107, "2026-09-16", "Zé Miguel"],
+        ]),
+        modulo(SESSOES_ESSENCIAIS, "Vendas, Redes Sociais e IA", [
+          ["Excelência nas Vendas", "ImwRcYsGu_4", 106, "2026-09-16", "Sara"],
+          ["Redes Sociais", "Jv9BZJMuCAo", 59, "2026-09-16", "Inês Melgão"],
+          ["Atração de Leads através das Redes Sociais", "Ov6amQ0eCpA", 61, "2026-07-01", "Jéssica Coelho"],
+          ["Dominar a IA no nosso Negócio", "0Tiu1dpepGQ", 73, "2026-07-08", "Joana Massano"],
+        ]),
+      ],
+    },
   ],
+  icligo: {
+    cursos: [
+      {
+        id: ICLIGO_ESSENCIAIS,
+        titulo: "Devia ser obrigatório assistir!",
+        descricao: "Sessões da iCliGo que todos os consultores devem ver.",
+        modulos: [
+          modulo(ICLIGO_ESSENCIAIS, "Sessões", [
+            ["Como Atuar com Excelência quando Surgem Desafios", "1Eiz_oOuPME", 142, "2026-06-22"],
+          ]),
+        ],
+      },
+    ],
+    externos: [],
+  },
 };
 
 const reservas: Categoria = {
@@ -385,7 +468,23 @@ const reservas: Categoria = {
     ]),
       ],
     },
+    {
+      id: SESSOES_RESERVAS,
+      titulo: "Sessões ao Vivo da Equipa",
+      descricao: "Consultores da equipa partilham como pesquisam, orçamentam e trabalham as reservas.",
+      modulos: [
+        modulo(SESSOES_RESERVAS, "Partilhas", [
+          ["Sal noutro Ângulo de Visão", "LwbgRMnevkc", 128, "2026-02-26", "Marta Mateus"],
+          ["Metodologia de Trabalho", "cnjnSxtbBpA", 25, "2026-07-01", "Cátia Rafael"],
+          ["Sessão com o Tiago Magano", "klrktCG5RdQ", 22, "2026-06-08", "Tiago Magano"],
+        ]),
+      ],
+    },
   ],
+  icligo: {
+    cursos: [],
+    externos: RESERVAS_ICLIGO,
+  },
 };
 
 const equipa: Categoria = {
@@ -615,6 +714,14 @@ const equipa: Categoria = {
       ],
     },
   ],
+  icligo: {
+    cursos: [],
+    externos: [
+      cursoAcademy("be-a-pro", "Sessões Semanais Be a Pro", "Criação de Equipa"),
+      cursoAcademy("da-duvida-a-decisao", "Da Dúvida à Decisão", "Criação de Equipa"),
+      cursoAcademy("be-a-pro-5", "Be a Pro", "Criação de Equipa"),
+    ],
+  },
 };
 
 /** Ordem em que os cards aparecem em /consultor/formacoes. */
@@ -624,20 +731,38 @@ export function procurarCategoria(id: string): Categoria | null {
   return CATEGORIAS_FORMACOES.find((c) => c.id === id) ?? null;
 }
 
-/** Só conta as aulas com vídeo — as outras ainda não se podem ver nem marcar como vistas. */
+/** Cursos com aulas, da Tropa de Elite e da iCliGo. */
+function todosOsCursos(categoria: Categoria): Curso[] {
+  return [...categoria.cursos, ...categoria.icligo.cursos];
+}
+
+/** Cursos com aulas mais os cursos da iCliGo Academy. */
+export function contarCursos(categoria: Categoria): number {
+  return todosOsCursos(categoria).length + categoria.icligo.externos.length;
+}
+
+/**
+ * Aulas com vídeo (as outras ainda não se podem ver) mais as lições listadas
+ * da iCliGo Academy.
+ */
 export function contarAulas(categoria: Categoria): number {
-  return categoria.cursos.reduce(
+  const videos = todosOsCursos(categoria).reduce(
     (total, curso) =>
       total + curso.modulos.reduce((t, m) => t + m.aulas.filter((a) => a.youtube !== null).length, 0),
     0,
   );
+  const licoes = categoria.icligo.externos.reduce(
+    (total, curso) => total + curso.modulos.reduce((t, m) => t + m.licoes.length, 0),
+    0,
+  );
+  return videos + licoes;
 }
 
 /** Todos os ids de aulas existentes — para recusar marcações de aulas inventadas. */
 export function todosOsIdsDeAulas(): Set<string> {
   const ids = new Set<string>();
   for (const categoria of CATEGORIAS_FORMACOES) {
-    for (const curso of categoria.cursos) {
+    for (const curso of todosOsCursos(categoria)) {
       for (const m of curso.modulos) for (const a of m.aulas) ids.add(a.id);
     }
   }

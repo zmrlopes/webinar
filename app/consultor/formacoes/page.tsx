@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import type { Categoria } from "@/lib/formacoes-gravadas";
 import { lerEmailGuardado } from "../armazenamento";
 import { ESTILOS_FORMACOES } from "./estilos";
+import { ResultadosPesquisa } from "./pesquisa";
 
 interface ResumoCategoria {
   id: string;
@@ -20,6 +22,9 @@ export default function FormacoesPagina() {
   const [estado, setEstado] = useState<Estado>("a-carregar");
   const [erro, setErro] = useState("");
   const [categorias, setCategorias] = useState<ResumoCategoria[]>([]);
+  const [completas, setCompletas] = useState<Categoria[]>([]);
+  const [vistas, setVistas] = useState<Set<string>>(new Set());
+  const [pesquisa, setPesquisa] = useState("");
 
   useEffect(() => {
     const email = lerEmailGuardado();
@@ -32,7 +37,7 @@ export default function FormacoesPagina() {
         const resposta = await fetch("/api/consultor/formacoes", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: emailConsultor }),
+          body: JSON.stringify({ email: emailConsultor, completo: true }),
         });
         const corpo = await resposta.json().catch(() => ({}));
         if (resposta.status === 403) {
@@ -45,6 +50,8 @@ export default function FormacoesPagina() {
           return;
         }
         setCategorias(Array.isArray(corpo.categorias) ? corpo.categorias : []);
+        setCompletas(Array.isArray(corpo.completas) ? (corpo.completas as Categoria[]) : []);
+        setVistas(new Set(Array.isArray(corpo.vistas) ? (corpo.vistas as string[]) : []));
         setEstado("pronto");
       } catch {
         setErro("falha de ligação — tenta outra vez");
@@ -79,6 +86,21 @@ export default function FormacoesPagina() {
         {estado === "erro" && <p className="vqf-erro">{erro}</p>}
 
         {estado === "pronto" && (
+          <input
+            type="search"
+            className="vqf-pesquisa"
+            placeholder="Pesquisar em todas as formações: destino, tema, formador ou curso…"
+            value={pesquisa}
+            onChange={(e) => setPesquisa(e.target.value)}
+            aria-label="Pesquisar em todas as formações"
+          />
+        )}
+
+        {estado === "pronto" && pesquisa.trim() !== "" && (
+          <ResultadosPesquisa categorias={completas} pesquisa={pesquisa} vistas={vistas} />
+        )}
+
+        {estado === "pronto" && pesquisa.trim() === "" && (
           <div className="vqf-grade-categorias">
             {categorias.map((c) => (
               <div className="vqf-cartao" key={c.id}>

@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
-import {
-  CATEGORIAS_FORMACOES,
-  contarAulas,
-  procurarCategoria,
-} from "@/lib/formacoes-gravadas";
+import { CATEGORIAS_FORMACOES, contarAulas, contarCursos, procurarCategoria } from "@/lib/formacoes-gravadas";
 import { listarAulasVistas, verificarAcessoFormacoes } from "@/lib/formacoes-vistas";
 
 /**
  * Formações gravadas do painel do consultor. Sem `categoria`, devolve o
- * resumo para os cards de /consultor/formacoes; com `categoria`, devolve os
- * cursos e aulas dessa categoria mais as aulas que este consultor já viu.
+ * resumo para os cards de /consultor/formacoes (com `completo: true`, também
+ * todas as categorias por inteiro e as aulas vistas, para a pesquisa geral);
+ * com `categoria`, devolve os cursos e aulas dessa categoria mais as aulas
+ * que este consultor já viu.
  * Os dados só saem daqui depois de validar o email — por isso não vão no
  * código que o browser descarrega (os ids dos vídeos são de vídeos não listados).
  */
@@ -17,6 +15,7 @@ export async function POST(request: Request): Promise<Response> {
   const corpo = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   const email = corpo?.email;
   const categoriaId = corpo?.categoria;
+  const completo = corpo?.completo === true;
 
   if (typeof email !== "string" || !email.includes("@")) {
     return NextResponse.json({ erro: "email inválido" }, { status: 400 });
@@ -29,7 +28,10 @@ export async function POST(request: Request): Promise<Response> {
   try {
     const acesso = await verificarAcessoFormacoes(emailNormalizado);
     if (acesso === "indisponivel") {
-      return NextResponse.json({ erro: "as formações gravadas ainda não estão disponíveis" }, { status: 403 });
+      return NextResponse.json(
+        { erro: "as formações gravadas ainda não estão disponíveis" },
+        { status: 403 },
+      );
     }
     if (acesso === "desconhecido") {
       return NextResponse.json(
@@ -39,13 +41,24 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     if (categoriaId === undefined) {
+      const disponiveis = CATEGORIAS_FORMACOES.filter((c) => c.disponivel);
+      const extra = completo
+        ? {
+            completas: disponiveis,
+            vistas: await listarAulasVistas(emailNormalizado).catch((erro) => {
+              console.error("falha ao ler as aulas vistas:", erro);
+              return [] as string[];
+            }),
+          }
+        : {};
       return NextResponse.json({
+        ...extra,
         categorias: CATEGORIAS_FORMACOES.map((c) => ({
           id: c.id,
           titulo: c.titulo,
           descricao: c.descricao,
           disponivel: c.disponivel,
-          totalCursos: c.cursos.length,
+          totalCursos: contarCursos(c),
           totalAulas: contarAulas(c),
         })),
       });
