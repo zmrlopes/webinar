@@ -1,5 +1,5 @@
 import { EMAIL_PAINEL_DEMONSTRACAO } from "./demo";
-import { RESERVAS_ICLIGO, cursoAcademy } from "./formacoes-icligo";
+import { EQUIPA_ICLIGO, RESERVAS_ICLIGO } from "./formacoes-icligo";
 
 /**
  * Formações gravadas (/consultor/formacoes) — recriação, no painel do
@@ -716,11 +716,7 @@ const equipa: Categoria = {
   ],
   icligo: {
     cursos: [],
-    externos: [
-      cursoAcademy("be-a-pro", "Sessões Semanais Be a Pro", "Criação de Equipa"),
-      cursoAcademy("da-duvida-a-decisao", "Da Dúvida à Decisão", "Criação de Equipa"),
-      cursoAcademy("be-a-pro-5", "Be a Pro", "Criação de Equipa"),
-    ],
+    externos: EQUIPA_ICLIGO,
   },
 };
 
