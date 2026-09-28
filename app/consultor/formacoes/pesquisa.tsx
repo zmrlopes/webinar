@@ -10,12 +10,15 @@ import type {
   Modulo,
   ModuloExterno,
 } from "@/lib/formacoes-gravadas";
+import { comDestinos } from "@/lib/destinos";
 
 /**
  * Pesquisa das formações gravadas, partilhada pela página inicial das
  * Formações (procura em todas as categorias) e pela página de cada categoria.
  * Procura ao mesmo tempo nas formações internas (Tropa de Elite) e nas da
- * iCliGo (vídeos e lições da iCliGo Academy).
+ * iCliGo (vídeos e lições da iCliGo Academy). Pesquisar um destino também
+ * encontra o que fica lá dentro (ex.: "Cabo Verde" encontra o Sal) — ver
+ * src/lib/destinos.ts.
  */
 
 export function semAcentos(texto: string): string {
@@ -60,6 +63,8 @@ interface VideoComOrigem {
   modulo: Modulo;
   categoria: Categoria;
   interna: boolean;
+  /** Onde se procura: título, curso, módulo… + os destinos "de cima". */
+  texto: string;
 }
 
 interface LicaoComOrigem {
@@ -68,6 +73,11 @@ interface LicaoComOrigem {
   /** null quando o resultado é o próprio curso (cursos sem lições listadas). */
   modulo: ModuloExterno | null;
   categoria: Categoria;
+  texto: string;
+}
+
+function textoPesquisavel(partes: (string | null | undefined)[]): string {
+  return comDestinos(semAcentos(partes.filter(Boolean).join(" ")));
 }
 
 function juntar(partes: (string | null | undefined | false)[]): string {
@@ -97,7 +107,14 @@ export function ResultadosPesquisa({
           curso.modulos.flatMap((modulo) =>
             modulo.aulas
               .filter((a) => a.youtube !== null)
-              .map((aula) => ({ aula, curso, modulo, categoria, interna })),
+              .map((aula) => ({
+                aula,
+                curso,
+                modulo,
+                categoria,
+                interna,
+                texto: textoPesquisavel([aula.titulo, aula.formador, curso.titulo, modulo.titulo]),
+              })),
           ),
         ),
       ),
@@ -110,7 +127,13 @@ export function ResultadosPesquisa({
         categoria.icligo.externos.flatMap((curso): LicaoComOrigem[] =>
           curso.modulos.length > 0
             ? curso.modulos.flatMap((modulo) =>
-                modulo.licoes.map((licao) => ({ licao, curso, modulo, categoria })),
+                modulo.licoes.map((licao) => ({
+                  licao,
+                  curso,
+                  modulo,
+                  categoria,
+                  texto: textoPesquisavel([licao.titulo, licao.palavras, curso.titulo, modulo.titulo]),
+                })),
               )
             : [
                 {
@@ -118,6 +141,7 @@ export function ResultadosPesquisa({
                   curso,
                   modulo: null,
                   categoria,
+                  texto: textoPesquisavel([curso.titulo]),
                 },
               ],
         ),
@@ -128,18 +152,12 @@ export function ResultadosPesquisa({
   const termo = semAcentos(pesquisa.trim());
   const videosEncontrados = useMemo(
     () =>
-      videos.filter(({ aula, curso, modulo }) =>
-        semAcentos(`${aula.titulo} ${aula.formador ?? ""} ${curso.titulo} ${modulo.titulo}`).includes(termo),
-      ),
+      videos.filter((v) => v.texto.includes(termo)),
     [videos, termo],
   );
   const licoesEncontradas = useMemo(
     () =>
-      licoes.filter(({ licao, curso, modulo }) =>
-        semAcentos(
-          `${licao.titulo} ${licao.palavras ?? ""} ${curso.titulo} ${modulo?.titulo ?? ""}`,
-        ).includes(termo),
-      ),
+      licoes.filter((l) => l.texto.includes(termo)),
     [licoes, termo],
   );
 
