@@ -8,7 +8,12 @@ import { EQUIPA_ICLIGO, RESERVAS_ICLIGO } from "./formacoes-icligo";
  * painel de demonstração (zmrlopes@gmail.com). Passar a `false` publica-as
  * para toda a equipa — é o único sítio a mexer para as pôr no ar.
  */
-const SO_PAINEL_DEMONSTRACAO = true;
+const SO_PAINEL_DEMONSTRACAO = false;
+
+/** As formações já estão no ar para a equipa, ou ainda só na demonstração? */
+export function formacoesGravadasPublicadas(): boolean {
+  return !SO_PAINEL_DEMONSTRACAO;
+}
 
 export function formacoesGravadasVisiveis(email: string): boolean {
   if (email === EMAIL_PAINEL_DEMONSTRACAO) return true;
