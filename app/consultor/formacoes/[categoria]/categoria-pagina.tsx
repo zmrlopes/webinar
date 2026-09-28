@@ -79,7 +79,7 @@ function CursoExternoComLicoes({ curso }: { curso: CursoExterno }) {
           Abrir o curso na iCliGo Academy ↗
         </a>
         {curso.modulos.map((modulo) => (
-          <details className="vqf-modulo" key={modulo.titulo} open={curso.modulos.length === 1}>
+          <details className="vqf-modulo" key={modulo.titulo}>
             <summary className="vqf-modulo-summary">
               <span className="vqf-modulo-titulo">{modulo.titulo}</span>
               <span className="vqf-modulo-meta">
@@ -227,11 +227,6 @@ export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
   const maisRecentes = useMemo(
     () => [...comVideo].sort((a, b) => b.aula.data.localeCompare(a.aula.data)).slice(0, MAIS_RECENTES),
     [comVideo],
-  );
-
-  const primeiroCursoComVideo = useMemo(
-    () => cursos.find((curso) => curso.modulos.some((m) => m.aulas.some((a) => a.youtube !== null))),
-    [cursos],
   );
 
   const termo = pesquisa.trim();
@@ -383,10 +378,8 @@ export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
                   const aulasCurso = curso.modulos.flatMap((m) => m.aulas).filter((a) => a.youtube !== null);
                   const vistasCurso = aulasCurso.filter((a) => vistas.has(a.id)).length;
                   const pct = aulasCurso.length > 0 ? Math.round((vistasCurso / aulasCurso.length) * 100) : 0;
-                  // Abre por defeito o primeiro curso que já tem vídeos para ver.
-                  const abreAoEntrar = curso.id === primeiroCursoComVideo?.id;
                   return (
-                    <details className="vqf-curso" key={curso.id} open={abreAoEntrar}>
+                    <details className="vqf-curso" key={curso.id}>
                       <summary>
                         <span className="vqf-curso-numero">{indice + 1}</span>
                         <div className="vqf-curso-texto">
@@ -413,11 +406,8 @@ export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
                         {curso.modulos.map((modulo) => {
                           const aulasModulo = modulo.aulas.filter((a) => a.youtube !== null);
                           const vistasModulo = aulasModulo.filter((a) => vistas.has(a.id)).length;
-                          // Um só módulo: abre logo. Vários (ex.: um por continente): fecham
-                          // todos, para abrires só o que queres ver.
-                          const abreModulo = curso.modulos.length === 1;
                           return (
-                            <details className="vqf-modulo" key={modulo.titulo} open={abreModulo}>
+                            <details className="vqf-modulo" key={modulo.titulo}>
                               <summary className="vqf-modulo-summary">
                                 <span className="vqf-modulo-titulo">{modulo.titulo}</span>
                                 <span className="vqf-modulo-meta">
