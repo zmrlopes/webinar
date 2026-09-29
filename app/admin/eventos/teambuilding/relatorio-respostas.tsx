@@ -49,14 +49,14 @@ const FITA_DO_TEMPO = [
   { hora: "09:30", bloco: "Receção e café", oQue: "Check-in, crachás, café", respondeA: "Convívio" },
   { hora: "10:00", bloco: "Abertura: rumo aos 30 milhões", oQue: "Apresentar o objetivo de 30 milhões e o que as 4 semanas de Black Friday valem para lá chegar; apresentar a árvore genealógica da equipa (em mural na sala); explicar os desafios do dia", respondeA: "Pertencer à equipa, motivação" },
   { hora: "10:20", bloco: "Quebra-gelo", oQue: "Atividade em grupos mistos (novos + experientes, de uplines diferentes)", respondeA: "Conhecer quem ainda não conhecem" },
-  { hora: "10:50", bloco: "Captar clientes para a Black Friday", oQue: "Abordar conhecidos sem vender, criar uma lista de interessados antes das promoções, converter orçamentos em reservas, valor e não só preço, porquê nós e não o Booking", respondeA: "Formação n.º 1 (21)", destaque: "Sofia Pinheiro, pelos números que está a ter na captação de leads" },
+  { hora: "10:50", bloco: "Captar clientes para a Black Friday", oQue: "Abordar conhecidos sem vender, criar uma lista de interessados antes das promoções, converter orçamentos em reservas, valor e não só preço, porquê nós e não o Booking", respondeA: "Formação n.º 1 (21)", destaque: "Jéssica Rosa: entrou há ano e meio e já é das que mais vendem na equipa" },
   { hora: "11:40", bloco: "20 contactos, já", oQue: "Em pares upline/downline, com modelos de mensagem, cada um avisa 20 contactos que vêm aí os melhores preços do ano e pergunta que viagem sonham fazer", respondeA: "Sair com ação iniciada" },
   { hora: "12:00", bloco: "Redes sociais nas 4 semanas", oQue: "Calendário de publicações da Black Friday, exemplos reais de conteúdos e stories que trouxeram reservas", respondeA: "Redes sociais (11)", destaque: "a escolher: quem mais reservas tem vindo das redes sociais" },
   { hora: "12:45", bloco: "Almoço", oQue: "Mesas misturadas", respondeA: "Convívio" },
-  { hora: "14:15", bloco: "Operadores e plataforma: encontrar as promoções", oQue: "Onde estão as campanhas de cada operador, como pesquisar depressa os melhores preços, reservas sem erros; perguntas recolhidas antes", respondeA: "Operadores e plataforma (12)", destaque: "a escolher: quem mais reservas faz com operadores e cruzeiros" },
-  { hora: "15:05", bloco: "Fazer as contas", oQue: "Pontos e patamares com casos: quanto preciso de faturar nas 4 semanas para o próximo patamar e para os incentivos; onde ver tudo no backoffice", respondeA: "Pontos e progressão", destaque: "a escolher: quem subiu de patamar mais depressa este ano" },
+  { hora: "14:15", bloco: "Operadores e plataforma: encontrar as promoções", oQue: "Onde estão as campanhas de cada operador, como pesquisar depressa os melhores preços, reservas sem erros; perguntas recolhidas antes", respondeA: "Operadores e plataforma (12)", destaque: "Paulo Oliveira: chegou a Master só com vendas próprias, sem equipa, e trabalha muito com operadores e cruzeiros" },
+  { hora: "15:05", bloco: "Fazer as contas", oQue: "Pontos e patamares com casos: quanto preciso de faturar nas 4 semanas para o próximo patamar e para os incentivos; onde ver tudo no backoffice", respondeA: "Pontos e progressão", destaque: "Marisa Araújo: entrou em 2024 e em menos de dois anos chegou a Coordenadora" },
   { hora: "15:45", bloco: "Pausa", oQue: "Café", respondeA: "Convívio" },
-  { hora: "16:15", bloco: "Construir equipa", oQue: "A Black Friday como momento para apresentar a oportunidade, a objeção do investimento, quando o interessado deixa de responder", respondeA: "Formação n.º 2 (16)", destaque: "a escolher: quem mais pessoas novas trouxe para a equipa" },
+  { hora: "16:15", bloco: "Construir equipa", oQue: "A Black Friday como momento para apresentar a oportunidade, a objeção do investimento, quando o interessado deixa de responder", respondeA: "Formação n.º 2 (16)", destaque: "Sofia Pinheiro: entrou há menos de um ano, já trouxe várias pessoas novas para a equipa e já chegou a Master" },
   { hora: "16:55", bloco: "O que aprendi na Black Friday passada", oQue: "Mesa redonda: o que resultou, o que correu mal, como lidar com o “não” e com semanas sem vendas", respondeA: "Mindset (11)" },
   { hora: "17:30", bloco: "O meu plano para as 4 semanas", oQue: "Cada um escreve a meta de faturação, as horas por semana e a lista de clientes a contactar, e partilha com o upline", respondeA: "Tempo e organização (9)" },
   { hora: "18:00", bloco: "Troféus e incentivos", oQue: "Entrega de troféus, prémios dos desafios do dia, lançamento dos incentivos da Black Friday e da Convenção Nacional", respondeA: "Reconhecimento" },
@@ -419,8 +419,9 @@ export function RelatorioRespostas({
         </div>
         <p>
           <strong>Destaques em palco.</strong> Cada formação reserva 10 minutos, dentro do próprio bloco, para chamar ao
-          palco alguém que se esteja a destacar nesse tema e que conta, com os números, o que está a fazer. Na captação
-          de clientes é a Sofia Pinheiro; para as outras formações fica o critério de escolha, falta pôr os nomes.
+          palco alguém que se esteja a destacar nesse tema e que conta, com os números, o que está a fazer. Os
+          nomes saem dos dados da equipa de 29 de setembro, deixando de fora os líderes, que já dão as formações. Nas redes
+          sociais o MyOffice não mostra de onde vêm as reservas, por isso esse nome ainda está por escolher.
         </p>
         <p>
           Ao longo do dia correm desafios simples com prémio (por exemplo, mais respostas aos 20 contactos, melhor

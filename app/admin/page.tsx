@@ -63,6 +63,17 @@ function IconTicket(): React.JSX.Element {
   );
 }
 
+function IconDashboard(): React.JSX.Element {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="3" y="3" width="8" height="10" rx="1" />
+      <rect x="3" y="17" width="8" height="4" rx="1" />
+      <rect x="13" y="3" width="8" height="4" rx="1" />
+      <rect x="13" y="11" width="8" height="10" rx="1" />
+    </svg>
+  );
+}
+
 function IconEnvelope(): React.JSX.Element {
   return (
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -348,6 +359,13 @@ export default async function AdminDashboard() {
             <div>
               <div className="ad-acao-titulo">{inscricoesEvento.length} em eventos</div>
               <div className="ad-acao-sub">Ver eventos →</div>
+            </div>
+          </Link>
+          <Link href="/admin/dashboard-negocio" className="ad-cartao ad-acao">
+            <div className="ad-icone-badge"><IconDashboard /></div>
+            <div>
+              <div className="ad-acao-titulo">Dashboard Negócio</div>
+              <div className="ad-acao-sub">Eventos, faturação, equipa →</div>
             </div>
           </Link>
           <Link href="/admin/formacoes-externas" className="ad-cartao ad-acao">

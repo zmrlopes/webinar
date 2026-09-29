@@ -1,63 +1,143 @@
-import { redirect } from "next/navigation";
+import Link from "next/link";
+import { EventosPainel } from "./eventos-painel";
 
 export const dynamic = "force-dynamic";
 
 /**
- * O menu lateral já abre o link diretamente numa aba nova (ver
- * app/admin/layout.tsx) — os links do claude.ai (Cowork incluído) recusam-se
- * a ser mostrados dentro de um iframe (frame-ancestors 'self', confirmado a
- * testar), por isso não há uma versão embutida possível. Esta página só
- * existe para quem chegar aqui por outra via (link direto, favorito antigo):
- * redireciona logo para o dashboard se já estiver configurado, ou explica
- * como configurar se ainda não estiver.
+ * Dashboard de negócio, dentro do próprio painel admin (deixou de abrir o
+ * artefacto externo do Claude). Está a ser construído por separadores; o
+ * primeiro é o de Eventos, que cruza as presenças nos congressos da equipa
+ * com a faturação e a construção de equipa. Os restantes ficam "em breve".
  */
-export default function DashboardNegocio() {
-  const url = process.env.NEXT_PUBLIC_DASHBOARD_NEGOCIO_URL;
-  if (url) redirect(url);
-
+export default function DashboardNegocio(): React.JSX.Element {
   return (
-    <main className="ad-pagina">
+    <main className="dn-pagina">
       <style>{`
-        .ad-pagina {
-          max-width: none;
-          background: #ffffff;
-          color: #000000;
-          margin: 0;
-          padding: 2.5rem 1.25rem 4rem;
-          min-height: calc(100vh - 4rem);
+        .dn-pagina {
+          max-width: 960px;
+          margin: 0 auto;
+          padding: 2rem 1.25rem 4rem;
+          color: #111111;
         }
-        .ad-caixa { max-width: 640px; margin: 0 auto; }
-        .ad-pagina h1 { color: #000000; font-size: 1.5rem; margin: 0 0 1.25rem; }
-        .ad-vazio {
-          background: #f7f6f3;
-          border: 1px solid #ececE6;
-          border-radius: 16px;
-          padding: 1.5rem;
+        .dn-voltar {
+          display: inline-block;
+          font-size: 0.85rem;
+          color: #4b5320;
+          text-decoration: none;
+          margin-bottom: 1rem;
+        }
+        .dn-voltar:hover { text-decoration: underline; }
+        .dn-pagina h1 { font-size: 1.6rem; margin: 0 0 0.25rem; }
+        .dn-cabecalho-sub { color: #6b6a63; font-size: 0.9rem; margin: 0 0 1.5rem; }
+        .dn-abas {
+          display: flex;
+          gap: 1.25rem;
+          border-bottom: 1px solid rgba(75, 83, 32, 0.22);
+          margin-bottom: 1.5rem;
+          flex-wrap: wrap;
+        }
+        .dn-aba {
+          font-size: 0.9rem;
+          color: #8a8d80;
+          padding-bottom: 0.6rem;
+          margin-bottom: -1px;
+        }
+        .dn-aba.ativa {
+          color: #111111;
+          font-weight: 700;
+          border-bottom: 2px solid #4b5320;
+        }
+        .dn-aba.desligada { opacity: 0.7; }
+
+        .dn-stats { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+        .dn-stat {
+          background: #ffffff;
+          border: 1px solid rgba(75, 83, 32, 0.22);
+          border-radius: 12px;
+          padding: 0.85rem 1.1rem;
+          box-shadow: 0 1px 3px rgba(11, 11, 11, 0.06);
+          flex: 1;
+          min-width: 180px;
+        }
+        .dn-stat-v { font-size: 1.6rem; font-weight: 700; }
+        .dn-stat-l { font-size: 0.78rem; color: #6b6a63; margin-top: 0.15rem; }
+
+        .dn-nota { font-size: 0.82rem; color: #6b6a63; line-height: 1.6; margin: 0 0 1.25rem; }
+
+        .dn-destaque {
+          background: #eef1e4;
+          border: 1px solid rgba(75, 83, 32, 0.22);
+          border-radius: 12px;
+          padding: 1rem 1.2rem;
+          font-size: 1rem;
+          line-height: 1.55;
+          color: #2f3416;
+          margin-bottom: 2rem;
+        }
+
+        .dn-h2 { font-size: 1.15rem; margin: 1.75rem 0 0.25rem; }
+        .dn-sub { font-size: 0.82rem; color: #6b6a63; margin: 0 0 0.85rem; line-height: 1.5; }
+
+        .dn-cartao {
+          background: #ffffff;
+          border: 1px solid rgba(75, 83, 32, 0.22);
+          border-radius: 14px;
+          padding: 0.5rem 1rem;
+          box-shadow: 0 1px 3px rgba(11, 11, 11, 0.06);
+          margin-bottom: 0.5rem;
+          overflow-x: auto;
+        }
+        .dn-tabela { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        .dn-tabela th {
+          text-align: left;
+          font-size: 0.72rem;
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
+          color: #6b6a63;
+          font-weight: 700;
+          padding: 0.7rem 0.6rem;
+          border-bottom: 1px solid rgba(75, 83, 32, 0.18);
+        }
+        .dn-tabela td { padding: 0.65rem 0.6rem; border-bottom: 1px solid #eeeeee; }
+        .dn-tabela tr:last-child td { border-bottom: none; }
+        .dn-num { text-align: right; }
+        .dn-tabela td.dn-num { text-align: right; font-variant-numeric: tabular-nums; }
+        .dn-quando { color: #6b6a63; white-space: nowrap; }
+
+        .dn-celula-barra { display: flex; align-items: center; gap: 0.7rem; }
+        .dn-valor { min-width: 78px; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .dn-barra { flex: 1; height: 8px; border-radius: 4px; background: #eeeeee; overflow: hidden; min-width: 60px; }
+        .dn-barra span { display: block; height: 100%; border-radius: 4px; background: #4b5320; }
+
+        .dn-rodape { font-size: 0.8rem; color: #8a8d80; margin-top: 2rem; line-height: 1.6; }
+
+        .dn-embreve {
+          background: #f7f8f2;
+          border: 1px dashed rgba(75, 83, 32, 0.3);
+          border-radius: 12px;
+          padding: 2rem;
+          text-align: center;
           color: #6b6a63;
           font-size: 0.9rem;
-          line-height: 1.6;
-        }
-        .ad-vazio code {
-          background: #eef1e4;
-          color: #4b5320;
-          padding: 0.1rem 0.4rem;
-          border-radius: 4px;
-          font-size: 0.85rem;
         }
       `}</style>
 
-      <div className="ad-caixa">
-        <h1>Dashboard Negócio</h1>
-        <div className="ad-vazio">
-          <p style={{ marginTop: 0 }}>Ainda não está nenhum dashboard ligado aqui.</p>
-          <p style={{ marginBottom: 0 }}>
-            Assim que publicares o dashboard no Cowork, define a variável de ambiente{" "}
-            <code>NEXT_PUBLIC_DASHBOARD_NEGOCIO_URL</code> nas definições do projeto na Vercel,
-            com o link completo do dashboard publicado. Não é preciso mexer em código — o menu
-            lateral passa a abri-lo diretamente numa aba nova.
-          </p>
-        </div>
+      <Link href="/admin" className="dn-voltar">
+        ← Início
+      </Link>
+      <h1>Dashboard Negócio</h1>
+      <p className="dn-cabecalho-sub">
+        A tua equipa, em números. Construído por separadores — a começar pelos eventos.
+      </p>
+
+      <div className="dn-abas">
+        <span className="dn-aba ativa">Eventos</span>
+        <span className="dn-aba desligada">Faturação (em breve)</span>
+        <span className="dn-aba desligada">Pontos e patamares (em breve)</span>
+        <span className="dn-aba desligada">Linha direta (em breve)</span>
       </div>
+
+      <EventosPainel />
     </main>
   );
 }
