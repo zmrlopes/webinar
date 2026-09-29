@@ -12,6 +12,7 @@ import {
 import { BotaoEstadoInscricoes } from "../botao-estado";
 import { DocumentosEvento } from "../documentos-evento";
 import { TabelaInscricoesEvento } from "../tabela-inscricoes-evento";
+import { RelatorioRespostas } from "./relatorio-respostas";
 
 export const dynamic = "force-dynamic";
 
@@ -267,6 +268,9 @@ export default async function AdminEventos() {
             <div className="ad-legenda">Crianças não pagantes (-10)</div>
           </div>
         </div>
+
+        <h2>O que pediram os consultores</h2>
+        <RelatorioRespostas />
 
         {totalConsultoresPorLider > 0 && (
           <>
