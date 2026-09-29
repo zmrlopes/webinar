@@ -9,6 +9,7 @@ import {
   listarDocumentosEvento,
   listarInscricoesEvento,
 } from "@/lib/eventos";
+import { listarInscritosComFaturacao, listarRespostasTeambuilding } from "@/lib/teambuilding";
 import { BotaoEstadoInscricoes } from "../botao-estado";
 import { DocumentosEvento } from "../documentos-evento";
 import { TabelaInscricoesEvento } from "../tabela-inscricoes-evento";
@@ -17,12 +18,16 @@ import { RelatorioRespostas } from "./relatorio-respostas";
 export const dynamic = "force-dynamic";
 
 export default async function AdminEventos() {
-  const [inscricoes, consultoresPorLider, inscricoesAbertas, documentos] = await Promise.all([
-    listarInscricoesEvento(),
-    listarConsultoresInscritosEventoPorLider(),
-    estaoInscricoesAbertas(),
-    listarDocumentosEvento(),
-  ]);
+  const [inscricoes, consultoresPorLider, inscricoesAbertas, documentos, inscritosFaturacao, respostas] =
+    await Promise.all([
+      listarInscricoesEvento(),
+      listarConsultoresInscritosEventoPorLider(),
+      estaoInscricoesAbertas(),
+      listarDocumentosEvento(),
+      listarInscritosComFaturacao(),
+      listarRespostasTeambuilding(),
+    ]);
+  const emailsResponderam = new Set(respostas.map((r) => r.email));
   const totalAdultos = inscricoes.reduce((soma, i) => soma + i.adultos, 0);
   const totalCriancasMais10 = inscricoes.reduce((soma, i) => soma + i.criancasMais10, 0);
   const totalCriancasMenos10 = inscricoes.reduce((soma, i) => soma + i.criancasMenos10, 0);
@@ -270,7 +275,7 @@ export default async function AdminEventos() {
         </div>
 
         <h2>O que pediram os consultores</h2>
-        <RelatorioRespostas />
+        <RelatorioRespostas inscritos={inscritosFaturacao} emailsResponderam={emailsResponderam} />
 
         {totalConsultoresPorLider > 0 && (
           <>

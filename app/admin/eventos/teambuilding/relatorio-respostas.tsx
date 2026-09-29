@@ -1,8 +1,14 @@
 /**
  * Relatório das respostas ao formulário de preparação do Teambuilding, lido a
- * 29 de setembro de 2026 (58 respostas de 77 inscritos). É uma fotografia
- * desse dia, não se atualiza sozinho — a versão viva está no doc do Claude.
+ * 29 de setembro de 2026 (58 respostas de 77 inscritos). O texto é uma
+ * fotografia desse dia — a versão viva está no doc do Claude. Só o retrato de
+ * quem vai (patamares, faturação, acompanhantes) é calculado a cada visita.
+ * Junta também o que fazia sentido do relatório anterior, de 12 de setembro
+ * (35 respostas), que estava nos documentos do evento.
  */
+
+import type { InscritoFaturacao } from "@/lib/teambuilding";
+import { RetratoInscritos } from "./retrato-inscritos";
 
 const LINK_DOC = "https://claude.ai/code/artifact/6789b4b6-cae0-4394-a4cc-c5619329be86";
 
@@ -29,12 +35,22 @@ const FORMACOES = [
   { tema: "IA como apoio ao trabalho", respostas: 3 },
 ];
 
+const DIVERGENCIAS = [
+  { tema: "Construção de equipa e duplicação", junior: 0, experientes: 6 },
+  { tema: "Liderança, progressão e motivação da equipa", junior: 0, experientes: 3 },
+  { tema: "Faturação, patamares e comissões", junior: 0, experientes: 2 },
+  { tema: "Onboarding e fundamentos para quem começa", junior: 5, experientes: 0 },
+  { tema: "Captação, prospeção e abordagem", junior: 5, experientes: 5 },
+  { tema: "Mindset e crenças limitantes", junior: 5, experientes: 1 },
+  { tema: "Operadores turísticos e plataforma", junior: 4, experientes: 3 },
+];
+
 const FITA_DO_TEMPO = [
   { hora: "09:30", bloco: "Receção e café", oQue: "Check-in, crachás, café", respondeA: "Convívio" },
-  { hora: "10:00", bloco: "Abertura: rumo aos 30 milhões", oQue: "Apresentar o objetivo de 30 milhões e o que as 4 semanas de Black Friday valem para lá chegar; árvore genealógica da equipa; explicar os desafios do dia", respondeA: "Pertencer à equipa, motivação" },
+  { hora: "10:00", bloco: "Abertura: rumo aos 30 milhões", oQue: "Apresentar o objetivo de 30 milhões e o que as 4 semanas de Black Friday valem para lá chegar; apresentar a árvore genealógica da equipa (em mural na sala); explicar os desafios do dia", respondeA: "Pertencer à equipa, motivação" },
   { hora: "10:20", bloco: "Quebra-gelo", oQue: "Atividade em grupos mistos (novos + experientes, de uplines diferentes)", respondeA: "Conhecer quem ainda não conhecem" },
   { hora: "10:50", bloco: "Captar clientes para a Black Friday", oQue: "Abordar conhecidos sem vender, criar uma lista de interessados antes das promoções, converter orçamentos em reservas, valor e não só preço, porquê nós e não o Booking", respondeA: "Formação n.º 1 (21)", destaque: "Sofia Pinheiro, pelos números que está a ter na captação de leads" },
-  { hora: "11:40", bloco: "20 contactos, já", oQue: "Com modelos de mensagem, cada um avisa 20 contactos que vêm aí os melhores preços do ano e pergunta que viagem sonham fazer", respondeA: "Sair com ação iniciada" },
+  { hora: "11:40", bloco: "20 contactos, já", oQue: "Em pares upline/downline, com modelos de mensagem, cada um avisa 20 contactos que vêm aí os melhores preços do ano e pergunta que viagem sonham fazer", respondeA: "Sair com ação iniciada" },
   { hora: "12:00", bloco: "Redes sociais nas 4 semanas", oQue: "Calendário de publicações da Black Friday, exemplos reais de conteúdos e stories que trouxeram reservas", respondeA: "Redes sociais (11)", destaque: "a escolher: quem mais reservas tem vindo das redes sociais" },
   { hora: "12:45", bloco: "Almoço", oQue: "Mesas misturadas", respondeA: "Convívio" },
   { hora: "14:15", bloco: "Operadores e plataforma: encontrar as promoções", oQue: "Onde estão as campanhas de cada operador, como pesquisar depressa os melhores preços, reservas sem erros; perguntas recolhidas antes", respondeA: "Operadores e plataforma (12)", destaque: "a escolher: quem mais reservas faz com operadores e cruzeiros" },
@@ -46,7 +62,15 @@ const FITA_DO_TEMPO = [
   { hora: "18:00", bloco: "Troféus e incentivos", oQue: "Entrega de troféus, prémios dos desafios do dia, lançamento dos incentivos da Black Friday e da Convenção Nacional", respondeA: "Reconhecimento" },
 ];
 
-export function RelatorioRespostas() {
+export function RelatorioRespostas({
+  inscritos,
+  emailsResponderam,
+}: {
+  inscritos: InscritoFaturacao[];
+  emailsResponderam: Set<string>;
+}) {
+  const responderam = inscritos.filter((i) => emailsResponderam.has(i.email)).length;
+
   const maxFormacoes = Math.max(...FORMACOES.map((f) => f.respostas));
 
   return (
@@ -96,12 +120,15 @@ export function RelatorioRespostas() {
       `}</style>
       <summary>
         Relatório das respostas ao formulário de preparação
-        <span>58 de 77 responderam · lido a 29 set 2026</span>
+        <span>
+          {responderam} de {inscritos.length} responderam
+        </span>
       </summary>
 
       <div className="rr-corpo">
         <p className="rr-nota">
-          Fotografia das respostas a 29 de setembro; não se atualiza com respostas novas.{" "}
+          O texto e as contagens por tema são das 58 respostas lidas a 29 de setembro; só o retrato de quem vai se atualiza
+          sozinho.{" "}
           <a href={LINK_DOC} target="_blank" rel="noreferrer">
             Abrir o documento completo
           </a>
@@ -109,7 +136,7 @@ export function RelatorioRespostas() {
 
         <h3>Resumo</h3>
         <p>
-          Responderam 58 dos 77 inscritos (75%). A mensagem é clara: querem sobretudo <strong>estar juntos ao vivo</strong>{" "}
+          A 29 de setembro tinham respondido 58 dos 77 inscritos (75%). A mensagem é clara: querem sobretudo <strong>estar juntos ao vivo</strong>{" "}
           e <strong>aprender com quem já tem resultados</strong>, com formações práticas de onde saiam com ferramentas
           para usar no dia seguinte.
         </p>
@@ -135,6 +162,8 @@ export function RelatorioRespostas() {
           com a apresentação do objetivo de 30 milhões de faturação. Por isso a fita do tempo pega nos temas pedidos e
           aplica-os todos à preparação dessas 4 semanas.
         </p>
+
+        <RetratoInscritos inscritos={inscritos} emailsResponderam={emailsResponderam} />
 
         <h3>O que esperam do dia</h3>
         <p>
@@ -194,6 +223,40 @@ export function RelatorioRespostas() {
           fazer quando alguém interessado deixa de responder.
         </p>
 
+        <h3>Onde os novos e os experientes divergem</h3>
+        <p className="rr-nota">Do relatório anterior, com as 35 respostas de 12 de setembro cruzadas com o patamar de quem respondeu.</p>
+        <div className="rr-tabela-wrap">
+          <table className="rr-tabela">
+            <thead>
+              <tr>
+                <th>Tema</th>
+                <th className="rr-num">JUNIOR</th>
+                <th className="rr-num">SENIOR e acima</th>
+              </tr>
+            </thead>
+            <tbody>
+              {DIVERGENCIAS.map((d) => (
+                <tr key={d.tema}>
+                  <td>{d.tema}</td>
+                  <td className="rr-num">{d.junior}</td>
+                  <td className="rr-num">{d.experientes}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Os JUNIOR pedem fundamentos e perder o medo de abordar: “como fazer” e “o que a plataforma tem”. Os patamares
+          acima já resolveram isso e pedem o passo seguinte: como ensinar o que sabem à sua equipa, perceber e explicar
+          patamares e comissões, e manter a consistência. Por isso os exercícios práticos do dia fazem-se em{" "}
+          <strong>pares upline/downline</strong>: cada líder ajuda o seu downline nos básicos e treina, ao mesmo tempo,
+          a forma de ensinar.
+        </p>
+        <p>
+          Captar clientes é o único tema pedido por igual pelos dois lados, o que confirma a escolha de abrir as
+          formações com ele.
+        </p>
+
         <h3>Dúvidas recorrentes e outras sugestões</h3>
         <p>
           As dúvidas são quase todas operacionais e repetem-se; dá para responder a muitas numa só sessão de perguntas e
@@ -221,7 +284,10 @@ export function RelatorioRespostas() {
           <li>
             <strong>Objeções</strong>: “faço tudo sozinho online” (clientes) e o investimento inicial (recrutamento).
           </li>
-          <li>Casos pontuais: como declarar os rendimentos, seguros que cobrem ou não, instalação do Mattermost.</li>
+          <li>
+            Casos pontuais: como declarar os rendimentos, seguros que cobrem ou não, instalação do Mattermost. Não
+            justificam tempo de palco: resolvem-se num <strong>balcão de apoio</strong> durante os intervalos.
+          </li>
         </ul>
         <p>
           <strong>Sugestões para o dia</strong>
@@ -238,7 +304,8 @@ export function RelatorioRespostas() {
             <strong>Troca de prendas diferente do amigo secreto</strong>, já que é o jantar de Natal da equipa.
           </li>
           <li>
-            <strong>Árvore genealógica da equipa</strong>, incluindo o topo.
+            <strong>Árvore genealógica da equipa</strong>, incluindo o topo: melhor como mural exposto na sala o dia
+            todo, apresentado na abertura.
           </li>
           <li>
             <strong>Algo para as crianças</strong> que vão.
@@ -296,8 +363,18 @@ export function RelatorioRespostas() {
           </li>
         </ol>
         <p>
-          Ainda faltam 19 inscritos por responder; as tendências dificilmente mudam, mas vale a pena reenviar o lembrete
-          antes de fechar o programa.
+          Os bloqueios que aparecem são de dois tipos: falta de conhecimento técnico (plataforma, operadores, produto) e
+          falta de confiança (medo de falhar, frustração, consistência). O segundo não desaparece com a experiência, só
+          muda de forma: nos JUNIOR é o medo de começar, em dois COORDENADORES é manter o ritmo e organizar o tempo.
+        </p>
+        <p>
+          <strong>O que fica fora do palco:</strong> dúvidas técnicas de uma só pessoa (balcão de apoio nos
+          intervalos), a troca de prendas (decide-se com quem organiza o jantar) e a gestão financeira pessoal
+          aprofundada (melhor num vídeo ou PDF depois do dia).
+        </p>
+        <p>
+          Ainda há inscritos por responder; as tendências dificilmente mudam, mas vale a pena reenviar o lembrete antes
+          de fechar o programa.
         </p>
 
         <h3>Proposta de fita do tempo</h3>
