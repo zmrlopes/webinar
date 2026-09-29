@@ -186,6 +186,22 @@ export interface LinhaPatamar {
 }
 
 /**
+ * Contas que são do próprio Zé (a Gabriela e a Sara), a deixar de fora das
+ * listas de consultores — senão apareciam como se fossem gente da equipa.
+ * Comparado por nome sem acentos nem maiúsculas.
+ */
+const CONTAS_PROPRIAS = ["gabriela miranda", "sara miranda"];
+
+function ehContaPropria(nome: string): boolean {
+  const n = nome
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim()
+    .toLowerCase();
+  return CONTAS_PROPRIAS.includes(n);
+}
+
+/**
  * Os consultores ativos com mais pontos e quanto falta a cada um para o
  * patamar seguinte, pela escada oficial. Os pontos são acumulados de sempre.
  */
@@ -196,10 +212,13 @@ export async function obterProximoPatamar(limite = 10): Promise<{ linhas: LinhaP
       where estado = 'ACTIVE' and pontos is not null
       order by pontos desc
       limit $1`,
-    [limite],
+    [limite + CONTAS_PROPRIAS.length],
   );
 
-  const linhas: LinhaPatamar[] = rows.map((r) => {
+  const linhas: LinhaPatamar[] = rows
+    .filter((r) => !ehContaPropria(r.nome))
+    .slice(0, limite)
+    .map((r) => {
     const pontos = Number(r.pontos) || 0;
     let idx = 0;
     for (let i = 0; i < ESCADA_PATAMARES.length; i++) {
@@ -241,26 +260,28 @@ export async function obterTrofeus(): Promise<Trofeus> {
       order by coalesce(vendas, 0) desc, nome asc`,
   );
 
+  const linhas: LinhaTrofeus[] = rows.map((r) => {
+    const nivel = normalizarNivel(r.nivel);
+    const vendas = Math.round(Number(r.vendas) || 0);
+    const patamares = nivel ? ORDEM_NIVEIS.slice(0, ORDEM_NIVEIS.indexOf(nivel) + 1) : [];
+    const faturacao = FATURACAO_TROFEUS.filter((m) => vendas >= m).map((m) => m / 1000);
+    return { nome: r.nome, nivel, vendas, patamares, faturacao };
+  });
+
+  // Só quem tem pelo menos um troféu (e sem as contas próprias do Zé).
+  const comTrofeu = linhas.filter(
+    (l) => (l.patamares.length > 0 || l.faturacao.length > 0) && !ehContaPropria(l.nome),
+  );
+
+  // Contagem para saber quantos encomendar, já sem as contas próprias.
   const contagem: Record<string, number> = {};
   const inc = (chave: string) => {
     contagem[chave] = (contagem[chave] ?? 0) + 1;
   };
-
-  const linhas: LinhaTrofeus[] = rows.map((r) => {
-    const nivel = normalizarNivel(r.nivel);
-    const vendas = Math.round(Number(r.vendas) || 0);
-
-    const patamares = nivel ? ORDEM_NIVEIS.slice(0, ORDEM_NIVEIS.indexOf(nivel) + 1) : [];
-    patamares.forEach((p) => inc(`nivel:${p}`));
-
-    const faturacao = FATURACAO_TROFEUS.filter((m) => vendas >= m).map((m) => m / 1000);
-    faturacao.forEach((f) => inc(`fat:${f}`));
-
-    return { nome: r.nome, nivel, vendas, patamares, faturacao };
-  });
-
-  // Só quem tem pelo menos um troféu; a lista fica útil e curta.
-  const comTrofeu = linhas.filter((l) => l.patamares.length > 0 || l.faturacao.length > 0);
+  for (const l of comTrofeu) {
+    l.patamares.forEach((p) => inc(`nivel:${p}`));
+    l.faturacao.forEach((f) => inc(`fat:${f}`));
+  }
 
   return {
     atualizadoEm: rows[0]?.atualizado_em ?? null,
