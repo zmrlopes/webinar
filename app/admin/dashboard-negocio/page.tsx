@@ -1,7 +1,17 @@
 import Link from "next/link";
 import { EventosPainel } from "./eventos-painel";
+import { MapasPainel } from "./mapas-painel";
+import { TrofeusPainel } from "./trofeus-painel";
 
 export const dynamic = "force-dynamic";
+
+const ABAS = [
+  { id: "mapas", label: "Mapas" },
+  { id: "eventos", label: "Eventos" },
+  { id: "trofeus", label: "Troféus" },
+] as const;
+
+const EM_BREVE = ["Objetivos", "Linha direta", "Incentivos"];
 
 /**
  * Dashboard de negócio, dentro do próprio painel admin (deixou de abrir o
@@ -9,7 +19,14 @@ export const dynamic = "force-dynamic";
  * primeiro é o de Eventos, que cruza as presenças nos congressos da equipa
  * com a faturação e a construção de equipa. Os restantes ficam "em breve".
  */
-export default function DashboardNegocio(): React.JSX.Element {
+export default async function DashboardNegocio({
+  searchParams,
+}: {
+  searchParams: Promise<{ aba?: string }>;
+}): Promise<React.JSX.Element> {
+  const { aba } = await searchParams;
+  const ativa = ABAS.some((a) => a.id === aba) ? aba : "mapas";
+
   return (
     <main className="dn-pagina">
       <style>{`
@@ -41,13 +58,22 @@ export default function DashboardNegocio(): React.JSX.Element {
           color: #8a8d80;
           padding-bottom: 0.6rem;
           margin-bottom: -1px;
+          text-decoration: none;
         }
+        a.dn-aba:hover { color: #111111; }
         .dn-aba.ativa {
           color: #111111;
           font-weight: 700;
           border-bottom: 2px solid #4b5320;
         }
-        .dn-aba.desligada { opacity: 0.7; }
+        .dn-aba.desligada { opacity: 0.7; cursor: default; }
+
+        .dn-c { text-align: center; }
+        .dn-tabela th.dn-c, .dn-tabela td.dn-c { text-align: center; }
+        .dn-sim { color: #0ca30c; font-weight: 700; }
+        .dn-nao { color: #cccccc; }
+        .dn-nivel { color: #6b6a63; font-weight: 400; font-size: 0.82rem; }
+        .dn-trofeus tfoot td { border-top: 2px solid rgba(75, 83, 32, 0.22); border-bottom: none; padding-top: 0.7rem; }
 
         .dn-stats { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
         .dn-stat {
@@ -61,6 +87,18 @@ export default function DashboardNegocio(): React.JSX.Element {
         }
         .dn-stat-v { font-size: 1.6rem; font-weight: 700; }
         .dn-stat-l { font-size: 0.78rem; color: #6b6a63; margin-top: 0.15rem; }
+        .dn-stat-delta { font-size: 0.78rem; color: #6b6a63; margin-top: 0.3rem; }
+        .dn-stat-delta.sobe { color: #0ca30c; font-weight: 600; }
+
+        .dn-legenda-anos { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.82rem; margin: 0 0 1rem; }
+        .dn-legenda-item { display: flex; align-items: center; gap: 0.35rem; color: #333; }
+        .dn-swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; box-shadow: inset 0 0 0 1px rgba(75,83,32,0.35); }
+
+        .dn-cartao-chart { padding: 0.9rem 1rem 0.6rem; }
+        .dn-chart-titulo { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em; color: #6b6a63; font-weight: 700; margin-bottom: 0.3rem; }
+        .dn-chart { display: block; width: 100%; height: auto; }
+        .dn-eixo { font-size: 8px; fill: #8a8d80; }
+        .dn-linha-corte { stroke: #dcded4; stroke-width: 1; stroke-dasharray: 2 2; }
 
         .dn-nota { font-size: 0.82rem; color: #6b6a63; line-height: 1.6; margin: 0 0 1.25rem; }
 
@@ -131,13 +169,23 @@ export default function DashboardNegocio(): React.JSX.Element {
       </p>
 
       <div className="dn-abas">
-        <span className="dn-aba ativa">Eventos</span>
-        <span className="dn-aba desligada">Faturação (em breve)</span>
-        <span className="dn-aba desligada">Pontos e patamares (em breve)</span>
-        <span className="dn-aba desligada">Linha direta (em breve)</span>
+        {ABAS.map((a) => (
+          <Link
+            key={a.id}
+            href={a.id === "mapas" ? "/admin/dashboard-negocio" : `/admin/dashboard-negocio?aba=${a.id}`}
+            className={`dn-aba${ativa === a.id ? " ativa" : ""}`}
+          >
+            {a.label}
+          </Link>
+        ))}
+        {EM_BREVE.map((l) => (
+          <span key={l} className="dn-aba desligada">
+            {l} (em breve)
+          </span>
+        ))}
       </div>
 
-      <EventosPainel />
+      {ativa === "trofeus" ? <TrofeusPainel /> : ativa === "eventos" ? <EventosPainel /> : <MapasPainel />}
     </main>
   );
 }
