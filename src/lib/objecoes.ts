@@ -37,10 +37,11 @@ export async function listarConhecimentoObjecoes(): Promise<
  * existente. Devolve sempre o texto — quem chama é que interpreta (texto
  * livre ou JSON, conforme o que pediu no `system`).
  */
-async function chamarClaude(
+export async function chamarClaude(
   system: string,
   mensagem: string,
   maxTokens = 1024,
+  timeoutMs = 40_000,
 ): Promise<string> {
   const chave = process.env.ANTHROPIC_API_KEY;
   if (!chave) {
@@ -60,7 +61,7 @@ async function chamarClaude(
       system,
       messages: [{ role: "user", content: mensagem }],
     }),
-    signal: AbortSignal.timeout(40_000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
 
   const texto = await resposta.text();
