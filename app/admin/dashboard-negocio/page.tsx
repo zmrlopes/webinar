@@ -1,17 +1,46 @@
 import Link from "next/link";
+import { lerConfig } from "@/lib/dashboard-negocio";
 import { EventosPainel } from "./eventos-painel";
+import { IncentivosPainel } from "./incentivos-painel";
+import { LinhaDiretaPainel } from "./linha-direta-painel";
 import { MapasPainel } from "./mapas-painel";
+import { type DadosMapas } from "./mapas-cliente";
+import { ObjetivosCliente } from "./objetivos-cliente";
 import { TrofeusPainel } from "./trofeus-painel";
 
 export const dynamic = "force-dynamic";
 
 const ABAS = [
   { id: "mapas", label: "Mapas" },
+  { id: "objetivos", label: "Objetivos" },
   { id: "eventos", label: "Eventos" },
+  { id: "linha-direta", label: "Linha direta" },
+  { id: "incentivos", label: "Incentivos" },
   { id: "trofeus", label: "Troféus" },
 ] as const;
 
-const EM_BREVE = ["Objetivos", "Linha direta", "Incentivos"];
+const EM_BREVE: string[] = [];
+
+async function ObjetivosPainel(): Promise<React.JSX.Element> {
+  const dados = await lerConfig<DadosMapas>("mapas");
+  if (!dados)
+    return (
+      <div
+        style={{
+          background: "#f7f8f2",
+          border: "1px dashed rgba(75,83,32,0.3)",
+          borderRadius: 12,
+          padding: "2rem",
+          textAlign: "center",
+          color: "#6b6a63",
+          fontSize: "0.9rem",
+        }}
+      >
+        Ainda não há snapshot carregado. Os objetivos usam os mesmos dados dos Mapas.
+      </div>
+    );
+  return <ObjetivosCliente dados={dados} />;
+}
 
 /**
  * Dashboard de negócio, dentro do próprio painel admin (deixou de abrir o
@@ -185,7 +214,19 @@ export default async function DashboardNegocio({
         ))}
       </div>
 
-      {ativa === "trofeus" ? <TrofeusPainel /> : ativa === "eventos" ? <EventosPainel /> : <MapasPainel />}
+      {ativa === "trofeus" ? (
+        <TrofeusPainel />
+      ) : ativa === "eventos" ? (
+        <EventosPainel />
+      ) : ativa === "objetivos" ? (
+        <ObjetivosPainel />
+      ) : ativa === "linha-direta" ? (
+        <LinhaDiretaPainel />
+      ) : ativa === "incentivos" ? (
+        <IncentivosPainel />
+      ) : (
+        <MapasPainel />
+      )}
     </main>
   );
 }
