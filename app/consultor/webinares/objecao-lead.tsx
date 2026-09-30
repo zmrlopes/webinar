@@ -70,7 +70,7 @@ export function ObjecaoLead({ email, leadEmail, objecaoInicial, respostasIniciai
       {erro && <p className="vqw-objecao-erro">{erro}</p>}
       {abertas &&
         respostas.map((r, i) => (
-          <p className="vqw-objecao-resposta" key={i}>
+          <p className="vqw-objecao-resposta" key={i} style={{ whiteSpace: "pre-line" }}>
             <strong>{i + 1}.</strong> {r}
           </p>
         ))}

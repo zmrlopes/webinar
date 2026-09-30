@@ -395,7 +395,7 @@ export async function gerarRespostasObjecao(
       `possa usar diretamente na conversa com a lead — 2 a 3 hipóteses, nunca mais do que 3. ` +
       `Segue o método ensinado nas formações (por exemplo: ouvir, fazer perguntas, relacionar com a tua ` +
       `experiência, responder). Quando uma hipótese se apoiar numa ideia concreta de uma formação ou de um ` +
-      `formador de referência, termina-a com uma linha curta "Base: <formação ou formador>" — só se vier ` +
+      `formador de referência, termina essa MESMA string com uma última linha "Base: <formação ou formador>" (não a ponhas como hipótese à parte) — só se vier ` +
       `mesmo do conhecimento acima, nunca inventada.`,
     objecao,
     1500,
@@ -404,7 +404,13 @@ export async function gerarRespostasObjecao(
   try {
     const dados = JSON.parse(textoResposta) as { respostas: string[] };
     if (Array.isArray(dados.respostas) && dados.respostas.length > 0) {
-      return dados.respostas;
+      // Se o modelo puser a linha "Base: …" como hipótese à parte, cola-a à anterior.
+      const juntas: string[] = [];
+      for (const r of dados.respostas) {
+        if (/^\s*Base:/i.test(r) && juntas.length > 0) juntas[juntas.length - 1] += `\n${r.trim()}`;
+        else juntas.push(r);
+      }
+      return juntas;
     }
   } catch {
     // segue para o fallback abaixo
