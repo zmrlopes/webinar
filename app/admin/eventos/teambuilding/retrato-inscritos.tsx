@@ -66,11 +66,12 @@ export function RetratoInscritos({
       responderam: 0,
     });
 
-  const porAno = new Map<string, { inscritos: number; responderam: number; vendas: number[] }>();
+  const porAno = new Map<string, { inscritos: number; responderam: number; vendas: number[]; nomes: string[] }>();
   for (const i of inscritos) {
     const ano = i.dataRegisto ? String(new Date(i.dataRegisto).getFullYear()) : "Sem data";
-    const linha = porAno.get(ano) ?? { inscritos: 0, responderam: 0, vendas: [] };
+    const linha = porAno.get(ano) ?? { inscritos: 0, responderam: 0, vendas: [], nomes: [] };
     linha.inscritos += 1;
+    linha.nomes.push(i.nome);
     if (emailsResponderam.has(i.email)) linha.responderam += 1;
     if (i.vendas !== null) linha.vendas.push(i.vendas);
     porAno.set(ano, linha);
@@ -174,6 +175,27 @@ export function RetratoInscritos({
               <td className="rr-num">{pct(responderam, total)}</td>
               <td className="rr-num">{medianaVendas === null ? "—" : euros(medianaVendas)}</td>
             </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div className="rr-tabela-wrap">
+        <table className="rr-tabela">
+          <thead>
+            <tr>
+              <th>Ano de início</th>
+              <th>Inscritos que começaram nesse ano</th>
+            </tr>
+          </thead>
+          <tbody>
+            {anos.map(([ano, l]) => (
+              <tr key={ano}>
+                <td style={{ whiteSpace: "nowrap", verticalAlign: "top" }}>
+                  <strong>{ano}</strong> <span className="rr-nota">({l.inscritos})</span>
+                </td>
+                <td>{[...l.nomes].sort((a, b) => a.localeCompare(b, "pt")).join(", ")}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
