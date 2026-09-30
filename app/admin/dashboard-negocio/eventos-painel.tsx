@@ -24,7 +24,7 @@ function Barra({ valor, max }: { valor: number; max: number }): React.JSX.Elemen
 }
 
 /**
- * Quem nunca foi a nenhum congresso: a equipa inteira (ao vivo, da base de
+ * Quem nunca foi a nenhum congresso: os consultores ativos com mais de um ano (ao vivo, da base de
  * dados) menos quem já foi (os escalões agregados). null se as contas não
  * baterem — p.ex. a exportação da equipa ainda não ter sido importada.
  */
@@ -67,7 +67,7 @@ export function EventosPainel({ totais }: { totais: TotaisEquipa }): React.JSX.E
         {semEventos && (
           <div className="dn-stat">
             <div className="dn-stat-v">{semEventos.pessoas}</div>
-            <div className="dn-stat-l">pessoas da equipa que nunca foram a nenhum</div>
+            <div className="dn-stat-l">consultores ativos que nunca foram a nenhum</div>
           </div>
         )}
         <div className="dn-stat">
@@ -80,8 +80,9 @@ export function EventosPainel({ totais }: { totais: TotaisEquipa }): React.JSX.E
         Presença = estar inscrito no congresso. Contam só os congressos grandes (Congresso de Janeiro, Convenção, Be a
         Pro, Be a Leader e Bootcamp); ficam de fora as sessões semanais online, festas, jantares e visitas. Dados do
         MyOffice a {ATUALIZADO_EM}, cruzados com a faturação própria e os recrutas diretos de cada pessoa. Tu ficas de
-        fora das contas. A linha «Nenhum» é toda a gente da exportação da equipa (ativos ou não) que não aparece em
-        nenhum congresso, calculada ao vivo a partir da última importação da equipa.
+        fora das contas. A linha «Nenhum» são os consultores com subscrição ativa e mais de um ano de casa que não
+        aparecem em nenhum congresso (suspensos, cancelados e entradas recentes ficam de fora), calculada ao vivo a
+        partir da última importação da equipa.
       </p>
 
       <div className="dn-destaque">

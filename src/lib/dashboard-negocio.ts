@@ -313,29 +313,47 @@ export async function obterTrofeus(): Promise<Trofeus> {
 }
 
 export interface TotaisEquipa {
-  /** Consultores na exportação da equipa (ativos ou não), sem as contas próprias. */
+  /** Consultores comparáveis: subscrição ativa e com mais de um ano de casa, sem as contas próprias. */
   pessoas: number;
-  /** Soma da faturação própria de todos. */
+  /** Soma da faturação própria desses consultores. */
   somaVendas: number;
-  /** Soma dos recrutas diretos de todos (quantos têm como upline alguém da equipa). */
+  /** Soma dos recrutas diretos desses consultores (qualquer estado). */
   somaDiretos: number;
 }
 
 /**
- * Totais da equipa inteira, para o separador Eventos tirar deles quem já foi
- * a congressos (que só existe em números agregados em eventos-dados.ts) e
- * ficar com a média de quem nunca foi a nenhum. O Zé não está em
- * equipa_afiliados (é a raiz da exportação), por isso já fica de fora.
+ * Totais da equipa para o separador Eventos tirar deles quem já foi a
+ * congressos (que só existe em números agregados em eventos-dados.ts) e
+ * ficar com a média de quem nunca foi a nenhum.
+ *
+ * Só entram consultores com subscrição ATIVA (a conta suspende se não fizer
+ * 1.000€ de vendas até à renovação anual; cancelados e suspensos não contam)
+ * e com mais de um ano desde o registo — quem entrou há pouco ainda não teve
+ * tempo de ir a congressos nem de faturar. Os recrutas diretos contam-se em
+ * toda a equipa, porque um recruta que entretanto cancelou continua a ter
+ * sido trazido por quem o recrutou. O Zé não está em equipa_afiliados (é a
+ * raiz da exportação), por isso já fica de fora.
  */
 export async function obterTotaisEquipa(): Promise<TotaisEquipa> {
-  const { rows } = await db().query<{ nome: string; email: string; upline_email: string | null; vendas: string | null }>(
-    `select nome, email, upline_email, vendas from equipa_afiliados`,
+  const { rows } = await db().query<{
+    nome: string;
+    email: string;
+    upline_email: string | null;
+    vendas: string | null;
+    estado: string;
+    data_registo: Date | null;
+  }>(`select nome, email, upline_email, vendas, estado, data_registo from equipa_afiliados`);
+  const limite = new Date();
+  limite.setFullYear(limite.getFullYear() - 1);
+  const todos = rows.filter((r) => !ehContaPropria(r.nome));
+  // Sem data de registo não dá para saber: fica dentro, em vez de sumir da conta.
+  const comparaveis = todos.filter(
+    (r) => r.estado === "ACTIVE" && (!r.data_registo || new Date(r.data_registo) <= limite),
   );
-  const equipa = rows.filter((r) => !ehContaPropria(r.nome));
-  const emails = new Set(equipa.map((r) => r.email));
+  const emails = new Set(comparaveis.map((r) => r.email));
   return {
-    pessoas: equipa.length,
-    somaVendas: equipa.reduce((s, r) => s + (Number(r.vendas) || 0), 0),
-    somaDiretos: equipa.filter((r) => r.upline_email && emails.has(r.upline_email)).length,
+    pessoas: comparaveis.length,
+    somaVendas: comparaveis.reduce((s, r) => s + (Number(r.vendas) || 0), 0),
+    somaDiretos: todos.filter((r) => r.upline_email && emails.has(r.upline_email)).length,
   };
 }
