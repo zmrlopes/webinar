@@ -66,6 +66,20 @@ export function RetratoInscritos({
       responderam: 0,
     });
 
+  const porAno = new Map<string, { inscritos: number; responderam: number; vendas: number[] }>();
+  for (const i of inscritos) {
+    const ano = i.dataRegisto ? String(new Date(i.dataRegisto).getFullYear()) : "Sem data";
+    const linha = porAno.get(ano) ?? { inscritos: 0, responderam: 0, vendas: [] };
+    linha.inscritos += 1;
+    if (emailsResponderam.has(i.email)) linha.responderam += 1;
+    if (i.vendas !== null) linha.vendas.push(i.vendas);
+    porAno.set(ano, linha);
+  }
+  // Anos por ordem cronológica; "Sem data" no fim.
+  const anos = [...porAno.entries()].sort((a, b) =>
+    a[0] === "Sem data" ? 1 : b[0] === "Sem data" ? -1 : Number(a[0]) - Number(b[0]),
+  );
+
   const vendas = inscritos.map((i) => i.vendas).filter((v): v is number => v !== null);
   const semDadosFaturacao = total - vendas.length;
   const medianaVendas = mediana(vendas);
@@ -120,6 +134,45 @@ export function RetratoInscritos({
               <td className="rr-num">{total}</td>
               <td className="rr-num">{responderam}</td>
               <td className="rr-num">{pct(responderam, total)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div className="rr-tabela-wrap">
+        <table className="rr-tabela">
+          <thead>
+            <tr>
+              <th>Ano de início</th>
+              <th className="rr-num">Inscritos</th>
+              <th className="rr-num">Responderam</th>
+              <th className="rr-num">Taxa de resposta</th>
+              <th className="rr-num">Faturação mediana</th>
+            </tr>
+          </thead>
+          <tbody>
+            {anos.map(([ano, l]) => {
+              const med = mediana(l.vendas);
+              return (
+                <tr key={ano}>
+                  <td>{ano}</td>
+                  <td className="rr-num">
+                    {l.inscritos} <span className="rr-nota">({pct(l.inscritos, total)})</span>
+                  </td>
+                  <td className="rr-num">{l.responderam}</td>
+                  <td className="rr-num">{pct(l.responderam, l.inscritos)}</td>
+                  <td className="rr-num">{med === null ? "—" : euros(med)}</td>
+                </tr>
+              );
+            })}
+            <tr>
+              <td>
+                <strong>Total</strong>
+              </td>
+              <td className="rr-num">{total}</td>
+              <td className="rr-num">{responderam}</td>
+              <td className="rr-num">{pct(responderam, total)}</td>
+              <td className="rr-num">{medianaVendas === null ? "—" : euros(medianaVendas)}</td>
             </tr>
           </tbody>
         </table>
