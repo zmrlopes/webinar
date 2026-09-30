@@ -1,4 +1,8 @@
 import { db } from "./db";
+import {
+  conhecimentoParaTemas,
+  TEMAS_CONHECIMENTO,
+} from "./formacoes-conhecimento";
 
 export interface ConhecimentoObjecao {
   id: string;
@@ -7,14 +11,23 @@ export interface ConhecimentoObjecao {
   criadoEm: Date;
 }
 
-export async function listarConhecimentoObjecoes(): Promise<ConhecimentoObjecao[]> {
+export async function listarConhecimentoObjecoes(): Promise<
+  ConhecimentoObjecao[]
+> {
   const { rows } = await db().query<{
     id: string;
     titulo: string;
     conteudo: string;
     criado_em: Date;
-  }>(`select id, titulo, conteudo, criado_em from conhecimento_objecoes order by criado_em asc`);
-  return rows.map((r) => ({ id: r.id, titulo: r.titulo, conteudo: r.conteudo, criadoEm: r.criado_em }));
+  }>(
+    `select id, titulo, conteudo, criado_em from conhecimento_objecoes order by criado_em asc`,
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    titulo: r.titulo,
+    conteudo: r.conteudo,
+    criadoEm: r.criado_em,
+  }));
 }
 
 /**
@@ -24,7 +37,11 @@ export async function listarConhecimentoObjecoes(): Promise<ConhecimentoObjecao[
  * existente. Devolve sempre o texto — quem chama é que interpreta (texto
  * livre ou JSON, conforme o que pediu no `system`).
  */
-async function chamarClaude(system: string, mensagem: string): Promise<string> {
+async function chamarClaude(
+  system: string,
+  mensagem: string,
+  maxTokens = 1024,
+): Promise<string> {
   const chave = process.env.ANTHROPIC_API_KEY;
   if (!chave) {
     throw new Error("variável de ambiente em falta: ANTHROPIC_API_KEY");
@@ -39,11 +56,11 @@ async function chamarClaude(system: string, mensagem: string): Promise<string> {
     },
     body: JSON.stringify({
       model: "claude-sonnet-5",
-      max_tokens: 1024,
+      max_tokens: maxTokens,
       system,
       messages: [{ role: "user", content: mensagem }],
     }),
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(40_000),
   });
 
   const texto = await resposta.text();
@@ -51,7 +68,9 @@ async function chamarClaude(system: string, mensagem: string): Promise<string> {
     throw new Error(`Claude API devolveu ${resposta.status}: ${texto}`);
   }
 
-  const corpo = JSON.parse(texto) as { content: { type: string; text?: string }[] };
+  const corpo = JSON.parse(texto) as {
+    content: { type: string; text?: string }[];
+  };
   return corpo.content.find((c) => c.type === "text")?.text ?? "";
 }
 
@@ -87,7 +106,9 @@ async function encontrarTemaExistente(
     // Confirma que é mesmo um dos títulos existentes (o modelo às vezes
     // parafraseia) — só junta se bater certo, senão cria tema novo.
     const encontrado = existentes.find(
-      (e) => e.titulo.trim().toLowerCase() === dados.temaExistente!.trim().toLowerCase(),
+      (e) =>
+        e.titulo.trim().toLowerCase() ===
+        dados.temaExistente!.trim().toLowerCase(),
     );
     return encontrado?.titulo ?? null;
   } catch {
@@ -113,7 +134,11 @@ export async function adicionarConhecimentoObjecao(
   conteudo: string,
 ): Promise<ResultadoAdicionarConhecimento> {
   const existentes = await listarConhecimentoObjecoes();
-  const temaExistente = await encontrarTemaExistente(existentes, titulo, conteudo);
+  const temaExistente = await encontrarTemaExistente(
+    existentes,
+    titulo,
+    conteudo,
+  );
 
   if (temaExistente) {
     await db().query(
@@ -125,10 +150,10 @@ export async function adicionarConhecimentoObjecao(
     return { titulo: temaExistente, juntou: true };
   }
 
-  await db().query(`insert into conhecimento_objecoes (titulo, conteudo) values ($1, $2)`, [
-    titulo,
-    conteudo,
-  ]);
+  await db().query(
+    `insert into conhecimento_objecoes (titulo, conteudo) values ($1, $2)`,
+    [titulo, conteudo],
+  );
   return { titulo, juntou: false };
 }
 
@@ -158,7 +183,9 @@ export async function guardarObjecaoLead(
     [leadEmail, consultorEmail],
   );
   if (!rows[0]?.existe) {
-    throw new Error("não podes guardar a objeção de uma lead que não trouxeste");
+    throw new Error(
+      "não podes guardar a objeção de uma lead que não trouxeste",
+    );
   }
 
   await db().query(
@@ -198,7 +225,9 @@ export async function obterDiretrizesGeraisObjecoes(): Promise<string> {
   return rows[0]?.conteudo ?? "";
 }
 
-export async function guardarDiretrizesGeraisObjecoes(conteudo: string): Promise<void> {
+export async function guardarDiretrizesGeraisObjecoes(
+  conteudo: string,
+): Promise<void> {
   await db().query(
     `insert into objecoes_diretrizes_gerais (id, conteudo) values (1, $1)
      on conflict (id) do update set conteudo = excluded.conteudo`,
@@ -213,8 +242,14 @@ export interface PdfDiretrizesGerais {
 }
 
 /** Sem o texto/bytes — só o essencial para listar em admin/objecoes/conhecimento. */
-export async function listarPdfsDiretrizesGerais(): Promise<PdfDiretrizesGerais[]> {
-  const { rows } = await db().query<{ id: string; nome: string; criado_em: Date }>(
+export async function listarPdfsDiretrizesGerais(): Promise<
+  PdfDiretrizesGerais[]
+> {
+  const { rows } = await db().query<{
+    id: string;
+    nome: string;
+    criado_em: Date;
+  }>(
     `select id, nome, criado_em from objecoes_diretrizes_pdfs order by criado_em asc`,
   );
   return rows.map((r) => ({ id: r.id, nome: r.nome, criadoEm: r.criado_em }));
@@ -226,16 +261,20 @@ export async function listarPdfsDiretrizesGerais(): Promise<PdfDiretrizesGerais[
  * isso não passa pela lógica de "juntar a um tema existente", cada PDF fica
  * na sua própria linha, sempre incluído.
  */
-export async function adicionarPdfDiretrizesGerais(nome: string, bytes: Buffer): Promise<void> {
+export async function adicionarPdfDiretrizesGerais(
+  nome: string,
+  bytes: Buffer,
+): Promise<void> {
   const texto = (await extrairTextoPdf(bytes)).trim();
   if (!texto) {
-    throw new Error("não foi possível ler texto deste PDF — pode ser só imagens ou estar protegido");
+    throw new Error(
+      "não foi possível ler texto deste PDF — pode ser só imagens ou estar protegido",
+    );
   }
-  await db().query(`insert into objecoes_diretrizes_pdfs (nome, texto, bytes) values ($1, $2, $3)`, [
-    nome,
-    texto,
-    bytes,
-  ]);
+  await db().query(
+    `insert into objecoes_diretrizes_pdfs (nome, texto, bytes) values ($1, $2, $3)`,
+    [nome, texto, bytes],
+  );
 }
 
 export async function apagarPdfDiretrizesGerais(id: string): Promise<void> {
@@ -252,11 +291,44 @@ export async function buscarPdfDiretrizesGerais(
   return rows[0];
 }
 
-async function listarTextosPdfsDiretrizesGerais(): Promise<{ nome: string; texto: string }[]> {
+async function listarTextosPdfsDiretrizesGerais(): Promise<
+  { nome: string; texto: string }[]
+> {
   const { rows } = await db().query<{ nome: string; texto: string }>(
     `select nome, texto from objecoes_diretrizes_pdfs`,
   );
   return rows;
+}
+
+/**
+ * Escolhe os temas da base de conhecimento das formações que interessam para
+ * esta dúvida (ver src/lib/formacoes-conhecimento.ts). O método geral de
+ * objeções entra sempre. Se a chamada falhar, segue só com esse.
+ */
+async function escolherTemasObjecao(objecao: string): Promise<string[]> {
+  const base = ["objecoes-metodo"];
+  try {
+    const texto = await chamarClaude(
+      `Recebes a dúvida de uma pessoa que viu a apresentação do negócio de consultor(a) de viagens e está ` +
+        `indecisa em começar. Escolhe de 1 a 4 temas desta lista que ajudem a responder-lhe. Responde SÓ ` +
+        `com JSON: {"temas": ["id", ...]}\n\n` +
+        TEMAS_CONHECIMENTO.map((t) => `${t.id}: ${t.nome}`).join("\n"),
+      objecao,
+      200,
+    );
+    const dados = JSON.parse(
+      texto.slice(texto.indexOf("{"), texto.lastIndexOf("}") + 1),
+    ) as { temas?: unknown };
+    const validos = new Set(TEMAS_CONHECIMENTO.map((t) => t.id));
+    const temas = Array.isArray(dados.temas)
+      ? dados.temas.filter(
+          (t): t is string => typeof t === "string" && validos.has(t),
+        )
+      : [];
+    return [...new Set([...base, ...temas])];
+  } catch {
+    return base;
+  }
 }
 
 /**
@@ -271,12 +343,27 @@ async function listarTextosPdfsDiretrizesGerais(): Promise<{ nome: string; texto
  * tempo, medo de não conseguir vender). Quem usa isto é o consultor que fez
  * a apresentação, a tentar ajudar essa pessoa a avançar.
  */
-export async function gerarRespostasObjecao(objecao: string): Promise<string[]> {
-  const [diretrizesGerais, pdfsDiretrizesGerais, conhecimento] = await Promise.all([
+export async function gerarRespostasObjecao(
+  objecao: string,
+): Promise<string[]> {
+  const [
+    diretrizesGerais,
+    pdfsDiretrizesGerais,
+    conhecimento,
+    conhecimentoFormacoes,
+  ] = await Promise.all([
     obterDiretrizesGeraisObjecoes(),
     listarTextosPdfsDiretrizesGerais(),
     listarConhecimentoObjecoes(),
+    escolherTemasObjecao(objecao)
+      .then(conhecimentoParaTemas)
+      .catch(() => ""),
   ]);
+  const blocoFormacoes = conhecimentoFormacoes
+    ? `O que é ensinado nas formações da equipa sobre este assunto (Tropa de Elite, iCliGo Academy e ` +
+      `formadores de referência mundial como Eric Worre) — é a BASE das respostas: segue o método e as ` +
+      `frases ensinadas aqui. Cada bloco indica a formação de onde vem:\n\n${conhecimentoFormacoes}\n\n`
+    : "";
   const partesDiretrizesGerais = [
     diretrizesGerais.trim(),
     ...pdfsDiretrizesGerais.map((p) => `## ${p.nome}\n${p.texto}`),
@@ -297,14 +384,20 @@ export async function gerarRespostasObjecao(objecao: string): Promise<string[]> 
       `investir agora", "não tenho tempo", "não sei se consigo vender", "tenho medo de não dar certo") — ` +
       `não são objeções de venda de pacotes de viagem a clientes, são dúvidas sobre entrar no negócio.\n\n` +
       `${blocoDiretrizesGerais}` +
+      `${blocoFormacoes}` +
       `Usa só o conhecimento abaixo, fornecido pela equipa — não inventes valores, políticas ou ` +
       `promessas que não estejam aqui:\n\n${blocoConhecimento}\n\n` +
       `Quando o consultor descrever a dúvida da lead, responde SÓ com um JSON neste formato exato, ` +
       `sem mais nenhum texto à volta:\n` +
       `{"respostas": ["primeira hipótese de resposta", "segunda hipótese", "terceira hipótese (opcional)"]}\n` +
       `Cada resposta deve ser um texto curto, natural, em português de Portugal, que o consultor ` +
-      `possa usar diretamente na conversa com a lead — 2 a 3 hipóteses, nunca mais do que 3.`,
+      `possa usar diretamente na conversa com a lead — 2 a 3 hipóteses, nunca mais do que 3. ` +
+      `Segue o método ensinado nas formações (por exemplo: ouvir, fazer perguntas, relacionar com a tua ` +
+      `experiência, responder). Quando uma hipótese se apoiar numa ideia concreta de uma formação ou de um ` +
+      `formador de referência, termina-a com uma linha curta "Base: <formação ou formador>" — só se vier ` +
+      `mesmo do conhecimento acima, nunca inventada.`,
     objecao,
+    1500,
   );
 
   try {

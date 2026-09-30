@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { buscarMembroEquipa } from "@/lib/equipa";
 import { gerarRespostasObjecao, guardarObjecaoLead } from "@/lib/objecoes";
 
+// Duas chamadas ao modelo (escolher temas + gerar respostas) com um contexto maior.
+export const maxDuration = 60;
+
 export async function POST(request: Request): Promise<Response> {
   const corpo = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   const email = corpo?.email;
