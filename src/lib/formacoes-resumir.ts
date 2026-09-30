@@ -44,17 +44,24 @@ export async function resumirAula(id: string): Promise<{ id: string; temas: stri
       `Sê denso e prático: no máximo ~350 palavras (até ~700 se a aula for longa e rica).\n\n` +
       `Escolhe também 1 a 5 temas desta lista (ids):\n` +
       TEMAS_CONHECIMENTO.map((t) => `${t.id}: ${t.nome}`).join("\n") +
-      `\n\nResponde SÓ com JSON: {"resumo": "<markdown>", "temas": ["id", ...]}`,
+      `\n\nResponde exatamente neste formato, sem mais nada à volta:\n` +
+      `TEMAS: id1, id2\n---\n<o markdown do conhecimento>`,
     `Curso: ${aula.curso}\nMódulo: ${aula.modulo ?? "-"}\nAula: ${aula.titulo}${aula.formador ? `\nFormador: ${aula.formador}` : ""}\n\n` +
       `Transcrição:\n${aula.transcricao.slice(0, MAX_CARACTERES_TRANSCRICAO)}`,
     2500,
     55_000,
   );
 
-  const json = texto.slice(texto.indexOf("{"), texto.lastIndexOf("}") + 1);
-  const dados = JSON.parse(json) as { resumo?: unknown; temas?: unknown };
-  if (typeof dados.resumo !== "string" || dados.resumo.trim() === "") throw new Error(`resposta sem resumo: ${id}`);
-  const temas = Array.isArray(dados.temas) ? dados.temas.filter((t): t is string => typeof t === "string") : [];
-  await gravarConhecimento({ id, resumo: dados.resumo.trim(), temas });
+  // "TEMAS: a, b" + linha "---" + markdown — texto livre em vez de JSON,
+  // porque o markdown com quebras de linha partia o JSON.parse.
+  const separador = texto.indexOf("\n---");
+  const cabecalho = separador === -1 ? "" : texto.slice(0, separador);
+  const resumo = (separador === -1 ? texto : texto.slice(separador + 4)).trim();
+  if (resumo === "") throw new Error(`resposta sem resumo: ${id}`);
+  const temas = (cabecalho.match(/TEMAS:\s*(.*)/)?.[1] ?? "")
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+  await gravarConhecimento({ id, resumo, temas });
   return { id, temas };
 }
