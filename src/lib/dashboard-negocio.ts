@@ -164,6 +164,28 @@ export async function gravarNegocioMensal(
   return gravadas;
 }
 
+/**
+ * Configuração/snapshot do dashboard (jsonb por chave), em dashboard_config.
+ * Guarda os totais próprios do Zé para o separador Mapas — fora do código,
+ * porque o repositório é público.
+ */
+export async function lerConfig<T = unknown>(chave: string): Promise<T | null> {
+  const { rows } = await db().query<{ valor: T }>(
+    `select valor from dashboard_config where chave = $1`,
+    [chave],
+  );
+  return rows[0]?.valor ?? null;
+}
+
+export async function gravarConfig(chave: string, valor: unknown): Promise<void> {
+  await db().query(
+    `insert into dashboard_config (chave, valor, atualizado_em)
+     values ($1, $2, now())
+     on conflict (chave) do update set valor = excluded.valor, atualizado_em = now()`,
+    [chave, JSON.stringify(valor)],
+  );
+}
+
 /** Escada oficial do plano de carreira (patamar -> pontos mínimos). */
 export const ESCADA_PATAMARES: { nome: string; pontos: number }[] = [
   { nome: "Júnior", pontos: 0 },
