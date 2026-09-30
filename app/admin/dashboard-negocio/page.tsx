@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { lerConfig } from "@/lib/dashboard-negocio";
+import { lerConfig, obterTotaisEquipa } from "@/lib/dashboard-negocio";
 import { EventosPainel } from "./eventos-painel";
 import { IncentivosPainel } from "./incentivos-painel";
 import { LinhaDiretaPainel } from "./linha-direta-painel";
@@ -217,7 +217,7 @@ export default async function DashboardNegocio({
       {ativa === "trofeus" ? (
         <TrofeusPainel />
       ) : ativa === "eventos" ? (
-        <EventosPainel />
+        <EventosPainel totais={await obterTotaisEquipa()} />
       ) : ativa === "objetivos" ? (
         <ObjetivosPainel />
       ) : ativa === "linha-direta" ? (

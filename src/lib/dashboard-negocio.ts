@@ -311,3 +311,31 @@ export async function obterTrofeus(): Promise<Trofeus> {
     contagem,
   };
 }
+
+export interface TotaisEquipa {
+  /** Consultores na exportação da equipa (ativos ou não), sem as contas próprias. */
+  pessoas: number;
+  /** Soma da faturação própria de todos. */
+  somaVendas: number;
+  /** Soma dos recrutas diretos de todos (quantos têm como upline alguém da equipa). */
+  somaDiretos: number;
+}
+
+/**
+ * Totais da equipa inteira, para o separador Eventos tirar deles quem já foi
+ * a congressos (que só existe em números agregados em eventos-dados.ts) e
+ * ficar com a média de quem nunca foi a nenhum. O Zé não está em
+ * equipa_afiliados (é a raiz da exportação), por isso já fica de fora.
+ */
+export async function obterTotaisEquipa(): Promise<TotaisEquipa> {
+  const { rows } = await db().query<{ nome: string; email: string; upline_email: string | null; vendas: string | null }>(
+    `select nome, email, upline_email, vendas from equipa_afiliados`,
+  );
+  const equipa = rows.filter((r) => !ehContaPropria(r.nome));
+  const emails = new Set(equipa.map((r) => r.email));
+  return {
+    pessoas: equipa.length,
+    somaVendas: equipa.reduce((s, r) => s + (Number(r.vendas) || 0), 0),
+    somaDiretos: equipa.filter((r) => r.upline_email && emails.has(r.upline_email)).length,
+  };
+}

@@ -6,6 +6,8 @@ import {
   ESCALOES,
   TOTAL_PESSOAS,
 } from "./eventos-dados";
+import type { EscalaoEventos } from "./eventos-dados";
+import type { TotaisEquipa } from "@/lib/dashboard-negocio";
 
 function euros(v: number): string {
   return `${Math.round(v).toLocaleString("pt-PT")} €`;
@@ -21,10 +23,30 @@ function Barra({ valor, max }: { valor: number; max: number }): React.JSX.Elemen
   );
 }
 
-export function EventosPainel(): React.JSX.Element {
+/**
+ * Quem nunca foi a nenhum congresso: a equipa inteira (ao vivo, da base de
+ * dados) menos quem já foi (os escalões agregados). null se as contas não
+ * baterem — p.ex. a exportação da equipa ainda não ter sido importada.
+ */
+function calcularSemEventos(totais: TotaisEquipa): EscalaoEventos | null {
+  const pessoas = totais.pessoas - TOTAL_PESSOAS;
+  if (pessoas <= 0) return null;
+  const vendasForam = ESCALOES.reduce((s, e) => s + e.pessoas * e.faturacaoMedia, 0);
+  const diretosForam = ESCALOES.reduce((s, e) => s + e.pessoas * e.diretosMedia, 0);
+  const faturacaoMedia = Math.max(0, (totais.somaVendas - vendasForam) / pessoas);
+  const diretosMedia = Math.max(0, Math.round(((totais.somaDiretos - diretosForam) / pessoas) * 10) / 10);
+  return { escalao: "Nenhum", pessoas, faturacaoMedia, diretosMedia };
+}
+
+export function EventosPainel({ totais }: { totais: TotaisEquipa }): React.JSX.Element {
+  const semEventos = calcularSemEventos(totais);
+  const linhas = semEventos ? [semEventos, ...ESCALOES] : ESCALOES;
   const totalInscritos = CONGRESSOS.reduce((s, c) => s + c.inscritos, 0);
-  const maxFat = Math.max(...ESCALOES.map((e) => e.faturacaoMedia));
-  const maxDir = Math.max(...ESCALOES.map((e) => e.diretosMedia));
+  const maxFat = Math.max(...linhas.map((e) => e.faturacaoMedia));
+  const maxDir = Math.max(...linhas.map((e) => e.diretosMedia));
+  const foram = ESCALOES.reduce((s, e) => s + e.pessoas, 0);
+  const mediaForam = foram > 0 ? ESCALOES.reduce((s, e) => s + e.pessoas * e.faturacaoMedia, 0) / foram : 0;
+  const diretosForam = foram > 0 ? ESCALOES.reduce((s, e) => s + e.pessoas * e.diretosMedia, 0) / foram : 0;
   const maxCong = Math.max(...CONGRESSOS.map((c) => c.inscritos));
   const topo = ESCALOES[ESCALOES.length - 1] ?? { faturacaoMedia: 0, diretosMedia: 0 };
   const base = ESCALOES[0] ?? { faturacaoMedia: 0, diretosMedia: 0 };
@@ -42,6 +64,12 @@ export function EventosPainel(): React.JSX.Element {
           <div className="dn-stat-v">{TOTAL_PESSOAS}</div>
           <div className="dn-stat-l">pessoas da equipa que já foram a pelo menos um</div>
         </div>
+        {semEventos && (
+          <div className="dn-stat">
+            <div className="dn-stat-v">{semEventos.pessoas}</div>
+            <div className="dn-stat-l">pessoas da equipa que nunca foram a nenhum</div>
+          </div>
+        )}
         <div className="dn-stat">
           <div className="dn-stat-v">{totalInscritos}</div>
           <div className="dn-stat-l">inscrições da equipa, somando todos os congressos</div>
@@ -52,13 +80,30 @@ export function EventosPainel(): React.JSX.Element {
         Presença = estar inscrito no congresso. Contam só os congressos grandes (Congresso de Janeiro, Convenção, Be a
         Pro, Be a Leader e Bootcamp); ficam de fora as sessões semanais online, festas, jantares e visitas. Dados do
         MyOffice a {ATUALIZADO_EM}, cruzados com a faturação própria e os recrutas diretos de cada pessoa. Tu ficas de
-        fora das contas.
+        fora das contas. A linha «Nenhum» é toda a gente da exportação da equipa (ativos ou não) que não aparece em
+        nenhum congresso, calculada ao vivo a partir da última importação da equipa.
       </p>
 
       <div className="dn-destaque">
         Quem vai a <strong>7 ou mais</strong> congressos fatura, em média, <strong>{vezesFat}×</strong> mais e traz{" "}
         <strong>{vezesDir}×</strong> mais pessoas novas para a equipa do que quem só foi a um.
       </div>
+
+      {semEventos && (
+        <div className="dn-destaque">
+          Quem já foi a pelo menos um congresso fatura, em média, <strong>{euros(mediaForam)}</strong> e traz{" "}
+          <strong>{diretosForam.toFixed(1).replace(".", ",")}</strong> recrutas diretos. Quem nunca foi a nenhum fatura{" "}
+          <strong>{euros(semEventos.faturacaoMedia)}</strong> e traz{" "}
+          <strong>{semEventos.diretosMedia.toString().replace(".", ",")}</strong>
+          {semEventos.faturacaoMedia > 0 && (
+            <>
+              {" "}
+              — ou seja, quem vai fatura <strong>{Math.round(mediaForam / semEventos.faturacaoMedia)}×</strong> mais
+            </>
+          )}
+          .
+        </div>
+      )}
 
       <h2 className="dn-h2">Quem vai a mais congressos fatura mais</h2>
       <p className="dn-sub">
@@ -75,8 +120,8 @@ export function EventosPainel(): React.JSX.Element {
             </tr>
           </thead>
           <tbody>
-            {ESCALOES.map((e) => (
-              <tr key={e.escalao}>
+            {linhas.map((e) => (
+              <tr key={e.escalao} style={e === semEventos ? { background: "#f3f1ea" } : undefined}>
                 <td>
                   <strong>{e.escalao}</strong>
                 </td>
@@ -108,8 +153,8 @@ export function EventosPainel(): React.JSX.Element {
             </tr>
           </thead>
           <tbody>
-            {ESCALOES.map((e) => (
-              <tr key={e.escalao}>
+            {linhas.map((e) => (
+              <tr key={e.escalao} style={e === semEventos ? { background: "#f3f1ea" } : undefined}>
                 <td>
                   <strong>{e.escalao}</strong>
                 </td>
