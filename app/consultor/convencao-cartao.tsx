@@ -140,7 +140,10 @@ export function ConvencaoCartao({ email, pedido }: { email: string; pedido: Pedi
       <h3 className="vqb-destaque-titulo">Convenção Nacional iCligo</h3>
       <p className="vqb-destaque-data">13 de março de 2027 · TGV, pack da Sara Izza</p>
       <p className="vqb-destaque-texto">
-        O teu pedido: {pedido.bilhetes} {pedido.bilhetes === 1 ? "bilhete" : "bilhetes"} · {pagamento}.
+        O teu pedido: {pedido.bilhetes} {pedido.bilhetes === 1 ? "bilhete" : "bilhetes"} · {pagamento}.{" "}
+        <a href="/bilhetes-convencao" className="vqb-convencao-link">
+          Acrescentar bilhetes
+        </a>
       </p>
 
       {pagaEmDuasVezes ? (

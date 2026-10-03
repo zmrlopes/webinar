@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { gravarPedidoBilhete, validarPedidoBilhete } from "@/lib/bilhetes-convencao";
+import {
+  gravarPedidoBilhete,
+  MAXIMO_BILHETES_POR_PEDIDO,
+  validarPedidoBilhete,
+} from "@/lib/bilhetes-convencao";
 
 export async function POST(request: Request): Promise<Response> {
   const corpo = (await request.json().catch(() => null)) as Record<string, unknown> | null;
@@ -9,13 +13,28 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
-    if (!(await gravarPedidoBilhete(pedido))) {
+    const resultado = await gravarPedidoBilhete(pedido);
+    if (resultado.tipo === "sem-acompanhantes") {
       return NextResponse.json(
-        { erro: "Já existe um pedido com este email. Se precisas de mudar alguma coisa, fala connosco por WhatsApp." },
-        { status: 409 },
+        {
+          erro: "Já tens um pedido com este email. Para acrescentar bilhetes, escreve o nome de quem vai usar os bilhetes novos.",
+        },
+        { status: 400 },
       );
     }
-    return NextResponse.json({ ok: true });
+    if (resultado.tipo === "excede") {
+      return NextResponse.json(
+        {
+          erro: `Já tens ${resultado.atual} bilhetes neste pedido. O máximo por pedido é ${MAXIMO_BILHETES_POR_PEDIDO}.`,
+        },
+        { status: 400 },
+      );
+    }
+    return NextResponse.json(
+      resultado.tipo === "novo"
+        ? { ok: true }
+        : { ok: true, acrescentados: resultado.acrescentados, total: resultado.total },
+    );
   } catch (erro) {
     console.error("falha ao gravar pedido de bilhete:", erro);
     return NextResponse.json(
