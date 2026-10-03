@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { guardarEmail, lerEmailGuardado, limparEmailGuardado } from "./armazenamento";
+import { ConvencaoCartao, type PedidoConvencao } from "./convencao-cartao";
 import { EventoForm } from "./evento-form";
 import { NotificacoesPush } from "./notificacoes-push";
 
@@ -19,6 +20,7 @@ interface DadosIdentificacao {
   precisaResponderTrofeus: boolean;
   precisaResponderHotel: boolean;
   inscricoesEventoAbertas: boolean;
+  pedidoConvencao: PedidoConvencao | null;
   formacoesExternas: { id: string; titulo: string; sessaoExternaEm: string; link: string }[];
   welcomeAboard: { sessao1Concluida: boolean; sessao2Concluida: boolean } | null;
   proximaSessaoWelcomeAboard: { id: string; sessaoExternaEm: string } | null;
@@ -309,6 +311,16 @@ export function BackofficeHome() {
           padding: 1.25rem 1.5rem;
         }
         .vqb-cartao + .vqb-cartao { margin-top: 0.9rem; }
+        .vqb-convencao { margin-top: 1rem; }
+        .vqb-pagina .vqb-convencao p.vqb-convencao-ok {
+          color: #1e7a34;
+          font-weight: 600;
+          margin: 0 0 1rem;
+        }
+        .vqb-convencao-form { display: grid; gap: 0.6rem; margin-top: 1rem; }
+        .vqb-convencao-form label { margin: 0; }
+        .vqb-pagina .vqb-convencao-form input { min-width: 0; width: 100%; background: #ffffff; }
+        .vqb-convencao-form button { justify-self: start; }
         .vqb-cartao h3 { margin: 0 0 0.25rem; font-size: 1.1rem; }
         .vqb-cartao p { margin: 0; color: #6b6a63; font-size: 0.9rem; }
         .vqb-destaque-etiqueta {
@@ -888,6 +900,9 @@ export function BackofficeHome() {
 
             {seccaoAtiva === "eventos" && (
               <div className="vqb-seccao">
+                {dados.pedidoConvencao && (
+                  <ConvencaoCartao email={email} pedido={dados.pedidoConvencao} />
+                )}
                 <h2>Teambuilding Tropa de Elite</h2>
                 {dados.inscricoesEventoAbertas ? (
                   <EventoForm email={email} nome={dados.nome} />

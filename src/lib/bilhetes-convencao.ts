@@ -28,7 +28,17 @@ export type PedidoBilhete = {
   observacoes: string;
 };
 
-export type PedidoBilheteGravado = PedidoBilhete & { id: number; criadoEm: Date };
+export type PedidoBilheteGravado = PedidoBilhete & {
+  id: number;
+  criadoEm: Date;
+  comprovativoNome: string | null;
+  comprovativoEm: Date | null;
+};
+
+/** Tipos aceites para o comprovativo de pagamento: fotografia ou PDF. */
+export const TIPOS_COMPROVATIVO = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "application/pdf"];
+// A Vercel rejeita pedidos acima de ~4.5MB antes de chegarem aqui.
+export const TAMANHO_MAXIMO_COMPROVATIVO = 4 * 1024 * 1024;
 
 const MAX_BILHETES = 20;
 const FORMATO_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -92,6 +102,14 @@ async function criarTabela(): Promise<void> {
     `create unique index if not exists pedidos_bilhete_convencao_email_unico
        on pedidos_bilhete_convencao (lower(email)) where email <> ''`,
   );
+  // Comprovativo de pagamento, enviado pelo consultor no painel dele.
+  await db().query(
+    `alter table pedidos_bilhete_convencao
+       add column if not exists comprovativo_nome text,
+       add column if not exists comprovativo_tipo text,
+       add column if not exists comprovativo_bytes bytea,
+       add column if not exists comprovativo_em timestamptz`,
+  );
 }
 
 function garantirTabela(): Promise<unknown> {
@@ -130,20 +148,26 @@ export async function apagarPedidoBilhete(id: number): Promise<boolean> {
   return rowCount === 1;
 }
 
-export async function listarPedidosBilhete(): Promise<PedidoBilheteGravado[]> {
-  await garantirTabela();
-  const { rows } = await db().query<{
-    id: string;
-    criado_em: Date;
-    nome: string;
-    telemovel: string;
-    email: string;
-    bilhetes: number;
-    acompanhantes: string;
-    pagamento: OpcaoPagamento;
-    observacoes: string;
-  }>(`select * from pedidos_bilhete_convencao order by criado_em`);
-  return rows.map((r) => ({
+type LinhaPedido = {
+  id: string;
+  criado_em: Date;
+  nome: string;
+  telemovel: string;
+  email: string;
+  bilhetes: number;
+  acompanhantes: string;
+  pagamento: OpcaoPagamento;
+  observacoes: string;
+  comprovativo_nome: string | null;
+  comprovativo_em: Date | null;
+};
+
+// Sem comprovativo_bytes: os ficheiros só se leem um a um, em buscarComprovativo.
+const COLUNAS_PEDIDO = `id, criado_em, nome, telemovel, email, bilhetes, acompanhantes, pagamento,
+  observacoes, comprovativo_nome, comprovativo_em`;
+
+function paraPedido(r: LinhaPedido): PedidoBilheteGravado {
+  return {
     id: Number(r.id),
     criadoEm: r.criado_em,
     nome: r.nome,
@@ -153,10 +177,60 @@ export async function listarPedidosBilhete(): Promise<PedidoBilheteGravado[]> {
     acompanhantes: r.acompanhantes,
     pagamento: r.pagamento,
     observacoes: r.observacoes,
-  }));
+    comprovativoNome: r.comprovativo_nome,
+    comprovativoEm: r.comprovativo_em,
+  };
+}
+
+export async function listarPedidosBilhete(): Promise<PedidoBilheteGravado[]> {
+  await garantirTabela();
+  const { rows } = await db().query<LinhaPedido>(
+    `select ${COLUNAS_PEDIDO} from pedidos_bilhete_convencao order by criado_em`,
+  );
+  return rows.map(paraPedido);
+}
+
+/** O pedido feito com este email, para o cartão da Convenção no painel do consultor. */
+export async function buscarPedidoBilhetePorEmail(email: string): Promise<PedidoBilheteGravado | null> {
+  await garantirTabela();
+  const { rows } = await db().query<LinhaPedido>(
+    `select ${COLUNAS_PEDIDO} from pedidos_bilhete_convencao
+      where email <> '' and lower(email) = lower($1)`,
+    [email.trim()],
+  );
+  return rows[0] ? paraPedido(rows[0]) : null;
+}
+
+/** Guarda (ou substitui) o comprovativo do pedido deste email. Devolve false se não há pedido. */
+export async function guardarComprovativo(
+  email: string,
+  ficheiro: { nome: string; tipo: string; bytes: Buffer },
+): Promise<boolean> {
+  await garantirTabela();
+  const { rowCount } = await db().query(
+    `update pedidos_bilhete_convencao
+        set comprovativo_nome = $2, comprovativo_tipo = $3, comprovativo_bytes = $4, comprovativo_em = now()
+      where email <> '' and lower(email) = lower($1)`,
+    [email.trim(), ficheiro.nome, ficheiro.tipo, ficheiro.bytes],
+  );
+  return rowCount === 1;
+}
+
+export async function buscarComprovativo(
+  id: number,
+): Promise<{ nome: string; tipo: string; bytes: Buffer } | null> {
+  await garantirTabela();
+  const { rows } = await db().query<{ nome: string; tipo: string; bytes: Buffer }>(
+    `select comprovativo_nome as nome, comprovativo_tipo as tipo, comprovativo_bytes as bytes
+       from pedidos_bilhete_convencao
+      where id = $1 and comprovativo_bytes is not null`,
+    [id],
+  );
+  return rows[0] ?? null;
 }
 
 export type TotaisBilhetes = {
+  comprovativos: number;
   pedidos: number;
   bilhetes: number;
   total: { pedidos: number; bilhetes: number };
@@ -169,6 +243,7 @@ export function totaisBilhetes(pedidos: PedidoBilheteGravado[]): TotaisBilhetes 
     return { pedidos: lista.length, bilhetes: lista.reduce((s, p) => s + p.bilhetes, 0) };
   };
   return {
+    comprovativos: pedidos.filter((p) => p.comprovativoEm).length,
     pedidos: pedidos.length,
     bilhetes: pedidos.reduce((s, p) => s + p.bilhetes, 0),
     total: de("O valor total"),
@@ -191,6 +266,7 @@ export function csvPedidosBilhete(pedidos: PedidoBilheteGravado[]): string {
     "Acompanhantes",
     "Pagamento",
     "Observações",
+    "Comprovativo de pagamento",
   ];
   const linhas = pedidos.map((p) => [
     p.criadoEm.toLocaleString("pt-PT", { timeZone: "Europe/Lisbon" }),
@@ -201,6 +277,7 @@ export function csvPedidosBilhete(pedidos: PedidoBilheteGravado[]): string {
     p.acompanhantes,
     p.pagamento,
     p.observacoes,
+    p.comprovativoEm ? `Enviado a ${p.comprovativoEm.toLocaleString("pt-PT", { timeZone: "Europe/Lisbon" })}` : "",
   ]);
   return [cabecalho, ...linhas].map((l) => l.map(celulaCsv).join(",")).join("\n");
 }

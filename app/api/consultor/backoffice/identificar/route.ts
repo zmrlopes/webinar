@@ -9,6 +9,7 @@ import {
   buscarWebinarFormacao,
   listarFormacoesEquipa,
 } from "@/lib/webinars";
+import { buscarPedidoBilhetePorEmail } from "@/lib/bilhetes-convencao";
 import { estaoInscricoesAbertas } from "@/lib/eventos";
 import { formacoesGravadasVisiveis } from "@/lib/formacoes-gravadas";
 import { precisaResponderHotel } from "@/lib/hotel";
@@ -64,6 +65,7 @@ export async function POST(request: Request): Promise<Response> {
       welcomeAboard,
       precisaResponderTrofeusBool,
       precisaResponderHotelBool,
+      pedidoConvencao,
     ] = await Promise.all([
       buscarWebinarFormacao(),
       buscarProximoWebinarPublico(),
@@ -74,6 +76,11 @@ export async function POST(request: Request): Promise<Response> {
       obterElegibilidadeWelcomeAboard(emailNormalizado),
       precisaResponderTrofeus(emailNormalizado),
       precisaResponderHotel(emailNormalizado),
+      // Um problema na tabela da Convenção não deve impedir o consultor de entrar no painel.
+      buscarPedidoBilhetePorEmail(emailNormalizado).catch((erro) => {
+        console.error("falha ao buscar pedido da Convenção:", erro);
+        return null;
+      }),
     ]);
 
     // Só vale a pena ir buscar a próxima sessão a quem realmente vai ver o
@@ -124,6 +131,14 @@ export async function POST(request: Request): Promise<Response> {
       precisaResponderTrofeus: precisaResponderTrofeusBool,
       precisaResponderHotel: precisaResponderHotelBool,
       inscricoesEventoAbertas,
+      pedidoConvencao: pedidoConvencao
+        ? {
+            bilhetes: pedidoConvencao.bilhetes,
+            pagamento: pedidoConvencao.pagamento,
+            comprovativoNome: pedidoConvencao.comprovativoNome,
+            comprovativoEm: pedidoConvencao.comprovativoEm,
+          }
+        : null,
       formacoesExternas: formacoesExternas.map((f) => ({
         id: f.id,
         titulo: f.titulo,

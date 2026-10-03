@@ -53,9 +53,11 @@ export default async function BilhetesConvencaoAdmin() {
         .bc-total b { display: block; font-size: 1.9rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
         .bc-total span { color: #6b6a63; font-size: 0.85rem; }
         .bc-tabela { overflow-x: auto; }
-        .bc-tabela table { min-width: 760px; }
+        .bc-tabela table { min-width: 880px; }
         .bc-tabela th, .bc-tabela td { text-align: left; padding: 0.55rem 0.5rem; border-bottom: 1px solid #e4e2dc; vertical-align: top; }
         .bc-tabela th { font-size: 0.8rem; color: #6b6a63; }
+        .bc-comprovativo { color: #1e7a34; font-weight: 700; white-space: nowrap; }
+        .bc-sem-comprovativo { color: #a33; font-size: 0.85rem; font-weight: 600; white-space: nowrap; }
         .bc-num { text-align: right; font-variant-numeric: tabular-nums; }
         .bc-formula { display: grid; gap: 0.5rem; }
         .bc-formula code {
@@ -89,6 +91,10 @@ export default async function BilhetesConvencaoAdmin() {
             <b>{totais.parte.bilhetes}</b>
             <span>bilhetes a pagar só uma parte ({pedidosTexto(totais.parte.pedidos)})</span>
           </div>
+          <div className="bc-total">
+            <b>{totais.comprovativos}</b>
+            <span>comprovativos de pagamento recebidos (de {pedidosTexto(totais.pedidos)})</span>
+          </div>
         </div>
 
         <h2>Pedidos</h2>
@@ -105,6 +111,7 @@ export default async function BilhetesConvencaoAdmin() {
                   <th className="bc-num">Bilhetes</th>
                   <th>Acompanhantes</th>
                   <th>Pagamento</th>
+                  <th>Comprovativo</th>
                   <th>Observações</th>
                   <th></th>
                 </tr>
@@ -127,6 +134,25 @@ export default async function BilhetesConvencaoAdmin() {
                     <td className="bc-num">{p.bilhetes}</td>
                     <td>{p.acompanhantes || "—"}</td>
                     <td>{p.pagamento === "O valor total" ? "Valor total" : "Só uma parte"}</td>
+                    <td>
+                      {p.comprovativoEm ? (
+                        <>
+                          <a
+                            href={`/api/admin/bilhetes-convencao/comprovativo/${p.id}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="bc-comprovativo"
+                          >
+                            Ver comprovativo
+                          </a>
+                          <div className="bc-subtitulo" style={{ margin: 0 }}>
+                            {formatarData(p.comprovativoEm)}
+                          </div>
+                        </>
+                      ) : (
+                        <span className="bc-sem-comprovativo">Por enviar</span>
+                      )}
+                    </td>
                     <td>{p.observacoes || "—"}</td>
                     <td>
                       <BotaoRemover id={p.id} nome={p.nome} email={p.email} />
