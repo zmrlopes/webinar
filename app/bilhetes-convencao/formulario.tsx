@@ -19,6 +19,7 @@ export default function Formulario({ opcoesPagamento }: { opcoesPagamento: strin
     const falta: string[] = [];
     if (!valor("nome")) falta.push("nome");
     if (!valor("telemovel")) falta.push("telemóvel");
+    if (!valor("email")) falta.push("email");
     if (!valor("pagamento")) falta.push("forma de pagamento");
     if (dados.get("confirmado") !== "on") falta.push("confirmação");
     if (falta.length) {
@@ -85,7 +86,7 @@ export default function Formulario({ opcoesPagamento }: { opcoesPagamento: strin
         </div>
         <div className={estilos.campo}>
           <label htmlFor="email">Email</label>
-          <input id="email" name="email" type="email" autoComplete="email" />
+          <input id="email" name="email" type="email" autoComplete="email" required />
         </div>
       </div>
       <div className={`${estilos.linha} ${estilos.linhaBilhetes}`}>
