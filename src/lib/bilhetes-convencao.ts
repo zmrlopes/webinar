@@ -55,7 +55,8 @@ export const TIPOS_COMPROVATIVO = ["image/jpeg", "image/png", "image/webp", "ima
 export const TAMANHO_MAXIMO_COMPROVATIVO = 4 * 1024 * 1024;
 
 const MAX_BILHETES = 20;
-const FORMATO_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// A terminação tem de ter pelo menos 2 letras (.pt, .com) — apanha enganos como "outlook.y".
+const FORMATO_EMAIL = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 
 function texto(valor: unknown, limite: number): string {
   return typeof valor === "string" ? valor.trim().slice(0, limite) : "";
@@ -272,7 +273,8 @@ function mesmoNome(a: string, b: string): boolean {
 
 /**
  * O pedido de bilhete deste consultor, para o cartão da Convenção no painel.
- * Primeiro pelo email com que entra no painel; se não houver, pelo nome —
+ * Primeiro pelo email com que entra no painel; depois pela parte do email
+ * antes do @ (enganos no domínio); por fim pelo nome —
  * há pedidos feitos com outro email (ou sem email, antes de ser
  * obrigatório). Pelo nome só conta se houver exatamente um pedido com esse
  * nome que ainda não pertença a outro membro da equipa pelo email.
@@ -288,7 +290,6 @@ export async function buscarPedidoDoConsultor(
     [email.trim()],
   );
   if (rows[0]) return paraPedido(rows[0]);
-  if (!nome) return null;
 
   const { rows: semDono } = await db().query<LinhaPedido>(
     `select ${COLUNAS_PEDIDO.replace(/(\w+)/g, "p.$1")} from pedidos_bilhete_convencao p
@@ -296,6 +297,13 @@ export async function buscarPedidoDoConsultor(
         select 1 from equipa_afiliados e where p.email <> '' and lower(e.email) = lower(p.email)
       )`,
   );
+
+  // Engano só depois do @ ("gowithmarisa@outlook.y" em vez de "...outlook.pt"): mesma parte antes do @.
+  const local = email.trim().toLowerCase().split("@")[0] ?? "";
+  const mesmoLocal = semDono.filter((r) => local && r.email.toLowerCase().split("@")[0] === local);
+  if (mesmoLocal.length === 1 && mesmoLocal[0]) return paraPedido(mesmoLocal[0]);
+
+  if (!nome) return null;
   const candidatos = semDono.filter((r) => mesmoNome(r.nome, nome));
   return candidatos.length === 1 && candidatos[0] ? paraPedido(candidatos[0]) : null;
 }
