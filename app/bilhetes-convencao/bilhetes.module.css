@@ -130,6 +130,16 @@
   display: block;
 }
 
+.dica {
+  margin: 0 0 1.25rem;
+  font-size: 0.95rem;
+  color: var(--grey);
+}
+
+.dica strong {
+  color: var(--ink);
+}
+
 .seccao {
   font: 700 1.6rem var(--fonte-titulo), sans-serif;
   color: var(--titulo-seccao);

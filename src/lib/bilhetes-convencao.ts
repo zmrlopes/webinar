@@ -160,8 +160,20 @@ function garantirTabela(): Promise<unknown> {
   return tabelaPronta;
 }
 
-/** Devolve false se já havia um pedido com este email (e não grava nada). */
-export async function gravarPedidoBilhete(pedido: PedidoBilhete): Promise<boolean> {
+export type ResultadoGravacao =
+  | { tipo: "novo" }
+  | { tipo: "acrescentado"; acrescentados: number; total: number }
+  | { tipo: "excede"; atual: number }
+  | { tipo: "sem-acompanhantes" };
+
+/**
+ * Um pedido por email. Se já existe um pedido com este email, o novo pedido
+ * acrescenta bilhetes ao que existe (em vez de criar outro): soma os
+ * bilhetes, junta os acompanhantes e deixa nota nas observações. Se algum
+ * dos dois for "só uma parte", o pedido fica a pagar em duas vezes (fica com
+ * os dois espaços de comprovativo no painel).
+ */
+export async function gravarPedidoBilhete(pedido: PedidoBilhete): Promise<ResultadoGravacao> {
   await garantirTabela();
   const { rowCount } = await db().query(
     `insert into pedidos_bilhete_convencao
@@ -178,8 +190,38 @@ export async function gravarPedidoBilhete(pedido: PedidoBilhete): Promise<boolea
       pedido.observacoes,
     ],
   );
-  return rowCount === 1;
+  if (rowCount === 1) return { tipo: "novo" };
+
+  // Os bilhetes acrescentados são para outras pessoas: é preciso saber para quem.
+  if (!pedido.acompanhantes) return { tipo: "sem-acompanhantes" };
+
+  const data = new Date().toLocaleDateString("pt-PT", { timeZone: "Europe/Lisbon" });
+  const nota = [
+    `+${pedido.bilhetes} ${pedido.bilhetes === 1 ? "bilhete" : "bilhetes"} a ${data} (${pedido.acompanhantes})`,
+    pedido.observacoes,
+  ]
+    .filter(Boolean)
+    .join(": ");
+  const { rows } = await db().query<{ bilhetes: number }>(
+    `update pedidos_bilhete_convencao
+        set bilhetes = bilhetes + $2,
+            acompanhantes = case when acompanhantes = '' then $3 else acompanhantes || ', ' || $3 end,
+            pagamento = case when $4 = 'O valor total' then pagamento else $4 end,
+            observacoes = case when observacoes = '' then $5 else observacoes || E'\n' || $5 end
+      where email <> '' and lower(email) = lower($1) and bilhetes + $2 <= $6
+      returning bilhetes`,
+    [pedido.email, pedido.bilhetes, pedido.acompanhantes, pedido.pagamento, nota, MAX_BILHETES],
+  );
+  if (rows[0]) return { tipo: "acrescentado", acrescentados: pedido.bilhetes, total: rows[0].bilhetes };
+
+  const { rows: atual } = await db().query<{ bilhetes: number }>(
+    `select bilhetes from pedidos_bilhete_convencao where email <> '' and lower(email) = lower($1)`,
+    [pedido.email],
+  );
+  return { tipo: "excede", atual: atual[0]?.bilhetes ?? 0 };
 }
+
+export const MAXIMO_BILHETES_POR_PEDIDO = MAX_BILHETES;
 
 export async function apagarPedidoBilhete(id: number): Promise<boolean> {
   await garantirTabela();

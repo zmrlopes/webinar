@@ -9,6 +9,7 @@ export default function Formulario({ opcoesPagamento }: { opcoesPagamento: strin
   const [estado, setEstado] = useState<Estado>("pronto");
   const [erro, setErro] = useState("");
   const [nomeGravado, setNomeGravado] = useState("");
+  const [acrescento, setAcrescento] = useState<{ acrescentados: number; total: number } | null>(null);
 
   async function gravar(evento: React.FormEvent<HTMLFormElement>): Promise<void> {
     evento.preventDefault();
@@ -44,13 +45,20 @@ export default function Formulario({ opcoesPagamento }: { opcoesPagamento: strin
           observacoes: valor("observacoes"),
         }),
       });
-      const corpo = (await resposta.json().catch(() => null)) as { erro?: string } | null;
+      const corpo = (await resposta.json().catch(() => null)) as {
+        erro?: string;
+        acrescentados?: number;
+        total?: number;
+      } | null;
       if (!resposta.ok) {
         setErro(corpo?.erro ?? "Não foi possível gravar o pedido. Tenta outra vez.");
         setEstado("pronto");
         return;
       }
       setNomeGravado(valor("nome").split(/\s+/)[0] ?? "");
+      setAcrescento(
+        corpo?.acrescentados && corpo.total ? { acrescentados: corpo.acrescentados, total: corpo.total } : null,
+      );
       setEstado("gravado");
       formulario.reset();
     } catch {
@@ -63,11 +71,22 @@ export default function Formulario({ opcoesPagamento }: { opcoesPagamento: strin
     return (
       <div className={estilos.sucesso} role="status">
         <p>
-          <strong>Pedido gravado. Obrigado, {nomeGravado}!</strong>
+          <strong>
+            {acrescento
+              ? `Bilhetes acrescentados. Obrigado, ${nomeGravado}!`
+              : `Pedido gravado. Obrigado, ${nomeGravado}!`}
+          </strong>
         </p>
+        {acrescento && (
+          <p>
+            Acrescentámos {acrescento.acrescentados}{" "}
+            {acrescento.acrescentados === 1 ? "bilhete" : "bilhetes"} ao teu pedido. Agora tens{" "}
+            <strong>{acrescento.total} bilhetes</strong>.
+          </p>
+        )}
         <p>Às 16h30 de 3 de outubro enviamos-te o preço e os dados para pagares.</p>
         <button type="button" className={estilos.botaoSecundario} onClick={() => setEstado("pronto")}>
-          Fazer outro pedido
+          Acrescentar mais bilhetes
         </button>
       </div>
     );
@@ -95,7 +114,7 @@ export default function Formulario({ opcoesPagamento }: { opcoesPagamento: strin
           <input id="bilhetes" name="bilhetes" type="number" min={1} max={20} defaultValue={1} required />
         </div>
         <div className={estilos.campo}>
-          <label htmlFor="acompanhantes">Nome de cada acompanhante (se pedes mais de 1)</label>
+          <label htmlFor="acompanhantes">Nome de cada acompanhante (se pedes mais de 1 ou acrescentas bilhetes)</label>
           <input id="acompanhantes" name="acompanhantes" type="text" />
         </div>
       </div>

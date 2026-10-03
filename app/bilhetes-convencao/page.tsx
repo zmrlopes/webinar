@@ -56,6 +56,11 @@ export default function BilhetesConvencaoPagina() {
         </div>
 
         <h2 className={estilos.seccao}>Os teus dados</h2>
+        <p className={estilos.dica}>
+          <strong>Já fizeste o pedido e queres mais bilhetes?</strong> Preenche outra vez com o mesmo email. Em
+          “Nº de bilhetes” põe só os que queres acrescentar e escreve o nome de quem os vai usar. Os bilhetes
+          somam-se ao teu pedido.
+        </p>
         <Formulario opcoesPagamento={[...OPCOES_PAGAMENTO]} />
       </main>
 

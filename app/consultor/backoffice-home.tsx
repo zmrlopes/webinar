@@ -316,6 +316,7 @@ export function BackofficeHome() {
         .vqb-pagina .vqb-convencao p.vqb-convencao-ok { color: #1e7a34; font-weight: 600; }
         .vqb-pagina .vqb-convencao p.vqb-convencao-falta { color: #a33; font-weight: 600; }
         .vqb-convencao-pagamentos { display: grid; gap: 0.5rem; }
+        .vqb-convencao-link { color: #4b5320; font-weight: 700; white-space: nowrap; }
         .vqb-convencao-pagamentos .vqb-convencao-form + .vqb-convencao-form {
           border-top: 1px solid #d9d7d0;
           padding-top: 1rem;
