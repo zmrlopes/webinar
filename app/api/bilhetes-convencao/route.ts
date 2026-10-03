@@ -9,7 +9,12 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
-    await gravarPedidoBilhete(pedido);
+    if (!(await gravarPedidoBilhete(pedido))) {
+      return NextResponse.json(
+        { erro: "Já existe um pedido com este email. Se precisas de mudar alguma coisa, fala connosco por WhatsApp." },
+        { status: 409 },
+      );
+    }
     return NextResponse.json({ ok: true });
   } catch (erro) {
     console.error("falha ao gravar pedido de bilhete:", erro);

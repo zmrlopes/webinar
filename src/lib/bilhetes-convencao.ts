@@ -9,6 +9,10 @@ import { db } from "./db";
  *
  * A tabela é criada no primeiro uso, para a página funcionar logo após o
  * deploy sem ter de correr as migrations à mão.
+ *
+ * Um pedido por email: um email repetido não conta. Os repetidos que já
+ * estavam gravados são apagados (fica o primeiro) e um índice único impede
+ * novos.
  */
 
 export const OPCOES_PAGAMENTO = ["Só uma parte, para bloquear o lugar", "O valor total"] as const;
@@ -46,6 +50,7 @@ export function validarPedidoBilhete(corpo: Record<string, unknown> | null): Ped
   const falta: string[] = [];
   if (!nome) falta.push("nome");
   if (!telemovel) falta.push("telemóvel");
+  if (!email) falta.push("email");
   if (!OPCOES_PAGAMENTO.includes(pagamento as OpcaoPagamento)) falta.push("forma de pagamento");
   if (corpo?.confirmado !== true) falta.push("confirmação");
   if (falta.length) return `Falta preencher: ${falta.join(", ")}.`;
@@ -53,7 +58,7 @@ export function validarPedidoBilhete(corpo: Record<string, unknown> | null): Ped
   if (!Number.isInteger(bilhetes) || bilhetes < 1 || bilhetes > MAX_BILHETES) {
     return `O número de bilhetes tem de ser entre 1 e ${MAX_BILHETES}.`;
   }
-  if (email && !FORMATO_EMAIL.test(email)) return "O email não parece válido.";
+  if (!FORMATO_EMAIL.test(email)) return "O email não parece válido.";
   if (bilhetes > 1 && !acompanhantes) return "Escreve o nome de cada acompanhante.";
 
   return { nome, telemovel, email, bilhetes, acompanhantes, pagamento: pagamento as OpcaoPagamento, observacoes };
@@ -61,21 +66,36 @@ export function validarPedidoBilhete(corpo: Record<string, unknown> | null): Ped
 
 let tabelaPronta: Promise<unknown> | undefined;
 
+async function criarTabela(): Promise<void> {
+  await db().query(
+    `create table if not exists pedidos_bilhete_convencao (
+       id bigserial primary key,
+       criado_em timestamptz not null default now(),
+       nome text not null,
+       telemovel text not null,
+       email text not null default '',
+       bilhetes integer not null,
+       acompanhantes text not null default '',
+       pagamento text not null,
+       observacoes text not null default ''
+     )`,
+  );
+  // Fica o primeiro pedido de cada email; os seguintes são repetidos.
+  await db().query(
+    `delete from pedidos_bilhete_convencao p
+      using pedidos_bilhete_convencao anterior
+      where p.email <> ''
+        and lower(p.email) = lower(anterior.email)
+        and anterior.id < p.id`,
+  );
+  await db().query(
+    `create unique index if not exists pedidos_bilhete_convencao_email_unico
+       on pedidos_bilhete_convencao (lower(email)) where email <> ''`,
+  );
+}
+
 function garantirTabela(): Promise<unknown> {
-  tabelaPronta ??= db()
-    .query(
-      `create table if not exists pedidos_bilhete_convencao (
-         id bigserial primary key,
-         criado_em timestamptz not null default now(),
-         nome text not null,
-         telemovel text not null,
-         email text not null default '',
-         bilhetes integer not null,
-         acompanhantes text not null default '',
-         pagamento text not null,
-         observacoes text not null default ''
-       )`,
-    )
+  tabelaPronta ??= criarTabela()
     .catch((erro) => {
       tabelaPronta = undefined;
       throw erro;
@@ -83,12 +103,14 @@ function garantirTabela(): Promise<unknown> {
   return tabelaPronta;
 }
 
-export async function gravarPedidoBilhete(pedido: PedidoBilhete): Promise<void> {
+/** Devolve false se já havia um pedido com este email (e não grava nada). */
+export async function gravarPedidoBilhete(pedido: PedidoBilhete): Promise<boolean> {
   await garantirTabela();
-  await db().query(
+  const { rowCount } = await db().query(
     `insert into pedidos_bilhete_convencao
        (nome, telemovel, email, bilhetes, acompanhantes, pagamento, observacoes)
-     values ($1, $2, $3, $4, $5, $6, $7)`,
+     values ($1, $2, $3, $4, $5, $6, $7)
+     on conflict (lower(email)) where email <> '' do nothing`,
     [
       pedido.nome,
       pedido.telemovel,
@@ -99,6 +121,7 @@ export async function gravarPedidoBilhete(pedido: PedidoBilhete): Promise<void> 
       pedido.observacoes,
     ],
   );
+  return rowCount === 1;
 }
 
 export async function listarPedidosBilhete(): Promise<PedidoBilheteGravado[]> {
