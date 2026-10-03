@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import {
+  buscarPedidoDoConsultor,
   guardarComprovativo,
   TAMANHO_MAXIMO_COMPROVATIVO,
   TIPOS_COMPROVATIVO,
 } from "@/lib/bilhetes-convencao";
 import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
+import { buscarMembroEquipa } from "@/lib/equipa";
 
 /**
  * O consultor envia o comprovativo de pagamento do bilhete da Convenção a
@@ -32,21 +34,25 @@ export async function POST(request: Request): Promise<Response> {
       return NextResponse.json({ erro: "o ficheiro não pode passar 4MB" }, { status: 400 });
     }
 
-    const gravado = await guardarComprovativo(email, numero, {
-      nome: ficheiro.name || "comprovativo",
-      tipo: ficheiro.type,
-      bytes: Buffer.from(await ficheiro.arrayBuffer()),
-    });
+    // O mesmo pedido que o cartão mostra: pelo email, ou pelo nome do membro da equipa.
+    const emailNormalizado = email.trim().toLowerCase();
+    const membro = await buscarMembroEquipa(emailNormalizado);
+    const pedido = await buscarPedidoDoConsultor(emailNormalizado, membro?.nome ?? null);
     // O painel de demonstração tem um pedido de exemplo: aceita o envio sem gravar nada.
-    if (!gravado && email.trim().toLowerCase() === EMAIL_PAINEL_DEMONSTRACAO) {
+    if (!pedido && emailNormalizado === EMAIL_PAINEL_DEMONSTRACAO) {
       return NextResponse.json({ ok: true });
     }
-    if (!gravado) {
+    if (!pedido) {
       return NextResponse.json(
         { erro: "não encontrámos um pedido de bilhete com este email" },
         { status: 404 },
       );
     }
+    await guardarComprovativo(pedido.id, numero, {
+      nome: ficheiro.name || "comprovativo",
+      tipo: ficheiro.type,
+      bytes: Buffer.from(await ficheiro.arrayBuffer()),
+    });
     return NextResponse.json({ ok: true });
   } catch (erro) {
     console.error("falha ao guardar comprovativo da Convenção:", erro);

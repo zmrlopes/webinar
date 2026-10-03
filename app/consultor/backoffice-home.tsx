@@ -21,6 +21,7 @@ interface DadosIdentificacao {
   precisaResponderHotel: boolean;
   inscricoesEventoAbertas: boolean;
   pedidoConvencao: PedidoConvencao | null;
+  erroConvencao?: boolean;
   formacoesExternas: { id: string; titulo: string; sessaoExternaEm: string; link: string }[];
   welcomeAboard: { sessao1Concluida: boolean; sessao2Concluida: boolean } | null;
   proximaSessaoWelcomeAboard: { id: string; sessaoExternaEm: string } | null;
@@ -904,6 +905,15 @@ export function BackofficeHome() {
               <div className="vqb-seccao">
                 {dados.pedidoConvencao && (
                   <ConvencaoCartao email={email} pedido={dados.pedidoConvencao} />
+                )}
+                {dados.erroConvencao && (
+                  <div className="vqb-cartao vqb-convencao">
+                    <span className="vqb-destaque-etiqueta">Convenção</span>
+                    <p className="vqb-erro">
+                      Não conseguimos carregar o teu pedido da Convenção agora. Fecha e volta a abrir o
+                      painel daqui a um minuto.
+                    </p>
+                  </div>
                 )}
                 <h2>Teambuilding Tropa de Elite</h2>
                 {dados.inscricoesEventoAbertas ? (

@@ -9,7 +9,7 @@ import {
   buscarWebinarFormacao,
   listarFormacoesEquipa,
 } from "@/lib/webinars";
-import { buscarPedidoBilhetePorEmail } from "@/lib/bilhetes-convencao";
+import { buscarPedidoDoConsultor } from "@/lib/bilhetes-convencao";
 import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
 import { estaoInscricoesAbertas } from "@/lib/eventos";
 import { formacoesGravadasVisiveis } from "@/lib/formacoes-gravadas";
@@ -77,10 +77,11 @@ export async function POST(request: Request): Promise<Response> {
       obterElegibilidadeWelcomeAboard(emailNormalizado),
       precisaResponderTrofeus(emailNormalizado),
       precisaResponderHotel(emailNormalizado),
-      // Um problema na tabela da Convenção não deve impedir o consultor de entrar no painel.
-      buscarPedidoBilhetePorEmail(emailNormalizado).catch((erro) => {
+      // Um problema na tabela da Convenção não deve impedir o consultor de
+      // entrar no painel — o cartão mostra um aviso em vez do pedido.
+      buscarPedidoDoConsultor(emailNormalizado, membro.nome).catch((erro) => {
         console.error("falha ao buscar pedido da Convenção:", erro);
-        return null;
+        return "erro" as const;
       }),
     ]);
 
@@ -132,7 +133,10 @@ export async function POST(request: Request): Promise<Response> {
       precisaResponderTrofeus: precisaResponderTrofeusBool,
       precisaResponderHotel: precisaResponderHotelBool,
       inscricoesEventoAbertas,
-      pedidoConvencao: pedidoConvencao
+      erroConvencao: pedidoConvencao === "erro",
+      pedidoConvencao: pedidoConvencao === "erro"
+        ? null
+        : pedidoConvencao
         ? {
             bilhetes: pedidoConvencao.bilhetes,
             pagamento: pedidoConvencao.pagamento,

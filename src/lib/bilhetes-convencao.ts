@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import type { PoolClient } from "pg";
 import { db } from "./db";
 
 /**
@@ -89,8 +90,28 @@ export function validarPedidoBilhete(corpo: Record<string, unknown> | null): Ped
 
 let tabelaPronta: Promise<unknown> | undefined;
 
+/**
+ * Várias instâncias do servidor podem arrancar ao mesmo tempo (muitos
+ * consultores a abrir o painel): o advisory lock põe-nas em fila, para os
+ * alter table / delete não se atropelarem.
+ */
 async function criarTabela(): Promise<void> {
-  await db().query(
+  const cliente = await db().connect();
+  try {
+    await cliente.query("begin");
+    await cliente.query("select pg_advisory_xact_lock(hashtext('pedidos_bilhete_convencao'))");
+    await criarTabelaCom(cliente);
+    await cliente.query("commit");
+  } catch (erro) {
+    await cliente.query("rollback").catch(() => undefined);
+    throw erro;
+  } finally {
+    cliente.release();
+  }
+}
+
+async function criarTabelaCom(cliente: PoolClient): Promise<void> {
+  await cliente.query(
     `create table if not exists pedidos_bilhete_convencao (
        id bigserial primary key,
        criado_em timestamptz not null default now(),
@@ -104,19 +125,19 @@ async function criarTabela(): Promise<void> {
      )`,
   );
   // Fica o primeiro pedido de cada email; os seguintes são repetidos.
-  await db().query(
+  await cliente.query(
     `delete from pedidos_bilhete_convencao p
       using pedidos_bilhete_convencao anterior
       where p.email <> ''
         and lower(p.email) = lower(anterior.email)
         and anterior.id < p.id`,
   );
-  await db().query(
+  await cliente.query(
     `create unique index if not exists pedidos_bilhete_convencao_email_unico
        on pedidos_bilhete_convencao (lower(email)) where email <> ''`,
   );
   // Comprovativo de pagamento, enviado pelo consultor no painel dele.
-  await db().query(
+  await cliente.query(
     `alter table pedidos_bilhete_convencao
        add column if not exists comprovativo_nome text,
        add column if not exists comprovativo_tipo text,
@@ -211,23 +232,61 @@ export async function listarPedidosBilhete(): Promise<PedidoBilheteGravado[]> {
   return rows.map(paraPedido);
 }
 
-/** O pedido feito com este email, para o cartão da Convenção no painel do consultor. */
-export async function buscarPedidoBilhetePorEmail(email: string): Promise<PedidoBilheteGravado | null> {
+function normalizarNome(nome: string): string[] {
+  return nome
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+/** Mesmo primeiro e último nome ("Ana Maria Silva" = "Ana Silva"), sem acentos nem maiúsculas. */
+function mesmoNome(a: string, b: string): boolean {
+  const x = normalizarNome(a);
+  const y = normalizarNome(b);
+  if (x.length === 0 || y.length === 0) return false;
+  if (x.join(" ") === y.join(" ")) return true;
+  return x.length > 1 && y.length > 1 && x[0] === y[0] && x[x.length - 1] === y[y.length - 1];
+}
+
+/**
+ * O pedido de bilhete deste consultor, para o cartão da Convenção no painel.
+ * Primeiro pelo email com que entra no painel; se não houver, pelo nome —
+ * há pedidos feitos com outro email (ou sem email, antes de ser
+ * obrigatório). Pelo nome só conta se houver exatamente um pedido com esse
+ * nome que ainda não pertença a outro membro da equipa pelo email.
+ */
+export async function buscarPedidoDoConsultor(
+  email: string,
+  nome: string | null,
+): Promise<PedidoBilheteGravado | null> {
   await garantirTabela();
   const { rows } = await db().query<LinhaPedido>(
     `select ${COLUNAS_PEDIDO} from pedidos_bilhete_convencao
       where email <> '' and lower(email) = lower($1)`,
     [email.trim()],
   );
-  return rows[0] ? paraPedido(rows[0]) : null;
+  if (rows[0]) return paraPedido(rows[0]);
+  if (!nome) return null;
+
+  const { rows: semDono } = await db().query<LinhaPedido>(
+    `select ${COLUNAS_PEDIDO.replace(/(\w+)/g, "p.$1")} from pedidos_bilhete_convencao p
+      where not exists (
+        select 1 from equipa_afiliados e where p.email <> '' and lower(e.email) = lower(p.email)
+      )`,
+  );
+  const candidatos = semDono.filter((r) => mesmoNome(r.nome, nome));
+  return candidatos.length === 1 && candidatos[0] ? paraPedido(candidatos[0]) : null;
 }
 
 // Prefixo das colunas de cada pagamento (valores fixos, nunca vindos do pedido).
 const COLUNA: Record<NumeroPagamento, string> = { 1: "comprovativo", 2: "comprovativo2" };
 
-/** Guarda (ou substitui) o comprovativo de um dos pagamentos do pedido deste email. Devolve false se não há pedido. */
+/** Guarda (ou substitui) o comprovativo de um dos pagamentos deste pedido. */
 export async function guardarComprovativo(
-  email: string,
+  id: number,
   numero: NumeroPagamento,
   ficheiro: { nome: string; tipo: string; bytes: Buffer },
 ): Promise<boolean> {
@@ -236,8 +295,8 @@ export async function guardarComprovativo(
   const { rowCount } = await db().query(
     `update pedidos_bilhete_convencao
         set ${c}_nome = $2, ${c}_tipo = $3, ${c}_bytes = $4, ${c}_em = now()
-      where email <> '' and lower(email) = lower($1)`,
-    [email.trim(), ficheiro.nome, ficheiro.tipo, ficheiro.bytes],
+      where id = $1`,
+    [id, ficheiro.nome, ficheiro.tipo, ficheiro.bytes],
   );
   return rowCount === 1;
 }
