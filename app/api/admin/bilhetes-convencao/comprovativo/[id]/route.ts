@@ -1,12 +1,16 @@
 import { buscarComprovativo } from "@/lib/bilhetes-convencao";
 
-/** Abre o comprovativo de pagamento de um pedido — protegido pela Basic Auth de /api/admin/:path* (ver proxy.ts). */
+/**
+ * Abre o comprovativo de pagamento de um pedido — protegido pela Basic Auth
+ * de /api/admin/:path* (ver proxy.ts). ?pagamento=2 abre o do 2º pagamento.
+ */
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ): Promise<Response> {
   const { id } = await params;
-  const comprovativo = Number.isInteger(Number(id)) ? await buscarComprovativo(Number(id)) : null;
+  const numero = new URL(request.url).searchParams.get("pagamento") === "2" ? 2 : 1;
+  const comprovativo = Number.isInteger(Number(id)) ? await buscarComprovativo(Number(id), numero) : null;
   if (!comprovativo) {
     return new Response("não encontrado", { status: 404 });
   }

@@ -312,10 +312,12 @@ export function BackofficeHome() {
         }
         .vqb-cartao + .vqb-cartao { margin-top: 0.9rem; }
         .vqb-convencao { margin-top: 1rem; }
-        .vqb-pagina .vqb-convencao p.vqb-convencao-ok {
-          color: #1e7a34;
-          font-weight: 600;
-          margin: 0 0 1rem;
+        .vqb-pagina .vqb-convencao p.vqb-convencao-ok { color: #1e7a34; font-weight: 600; }
+        .vqb-pagina .vqb-convencao p.vqb-convencao-falta { color: #a33; font-weight: 600; }
+        .vqb-convencao-pagamentos { display: grid; gap: 0.5rem; }
+        .vqb-convencao-pagamentos .vqb-convencao-form + .vqb-convencao-form {
+          border-top: 1px solid #d9d7d0;
+          padding-top: 1rem;
         }
         .vqb-convencao-form { display: grid; gap: 0.6rem; margin-top: 1rem; }
         .vqb-convencao-form label { margin: 0; }

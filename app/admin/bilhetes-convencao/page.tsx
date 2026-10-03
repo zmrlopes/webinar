@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { listarPedidosBilhete, totaisBilhetes, urlCsvParaSheets } from "@/lib/bilhetes-convencao";
+import {
+  listarPedidosBilhete,
+  pagamentosPrevistos,
+  totaisBilhetes,
+  urlCsvParaSheets,
+} from "@/lib/bilhetes-convencao";
 import { BotaoWhatsApp } from "../botao-whatsapp";
 import { BotaoRemover } from "./botao-remover";
 import { CopiarFormula } from "./copiar-formula";
@@ -8,6 +13,25 @@ export const dynamic = "force-dynamic";
 
 function pedidosTexto(n: number): string {
   return n === 1 ? "1 pedido" : `${n} pedidos`;
+}
+
+function Comprovativo({ id, numero, em }: { id: number; numero: 1 | 2; em: Date | null }) {
+  if (!em) return <span className="bc-sem-comprovativo">Por enviar</span>;
+  return (
+    <>
+      <a
+        href={`/api/admin/bilhetes-convencao/comprovativo/${id}${numero === 2 ? "?pagamento=2" : ""}`}
+        target="_blank"
+        rel="noreferrer"
+        className="bc-comprovativo"
+      >
+        Ver comprovativo
+      </a>
+      <div className="bc-subtitulo" style={{ margin: 0 }}>
+        {formatarData(em)}
+      </div>
+    </>
+  );
 }
 
 function formatarData(data: Date): string {
@@ -53,7 +77,7 @@ export default async function BilhetesConvencaoAdmin() {
         .bc-total b { display: block; font-size: 1.9rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
         .bc-total span { color: #6b6a63; font-size: 0.85rem; }
         .bc-tabela { overflow-x: auto; }
-        .bc-tabela table { min-width: 880px; }
+        .bc-tabela table { min-width: 1000px; }
         .bc-tabela th, .bc-tabela td { text-align: left; padding: 0.55rem 0.5rem; border-bottom: 1px solid #e4e2dc; vertical-align: top; }
         .bc-tabela th { font-size: 0.8rem; color: #6b6a63; }
         .bc-comprovativo { color: #1e7a34; font-weight: 700; white-space: nowrap; }
@@ -92,8 +116,12 @@ export default async function BilhetesConvencaoAdmin() {
             <span>bilhetes a pagar só uma parte ({pedidosTexto(totais.parte.pedidos)})</span>
           </div>
           <div className="bc-total">
-            <b>{totais.comprovativos}</b>
-            <span>comprovativos de pagamento recebidos (de {pedidosTexto(totais.pedidos)})</span>
+            <b>{totais.comPrimeiroPagamento}</b>
+            <span>com o 1º pagamento comprovado (de {pedidosTexto(totais.pedidos)})</span>
+          </div>
+          <div className="bc-total">
+            <b>{totais.pagos}</b>
+            <span>pagos por completo (de {pedidosTexto(totais.pedidos)})</span>
           </div>
         </div>
 
@@ -111,7 +139,8 @@ export default async function BilhetesConvencaoAdmin() {
                   <th className="bc-num">Bilhetes</th>
                   <th>Acompanhantes</th>
                   <th>Pagamento</th>
-                  <th>Comprovativo</th>
+                  <th>1º pagamento</th>
+                  <th>2º pagamento</th>
                   <th>Observações</th>
                   <th></th>
                 </tr>
@@ -135,22 +164,13 @@ export default async function BilhetesConvencaoAdmin() {
                     <td>{p.acompanhantes || "—"}</td>
                     <td>{p.pagamento === "O valor total" ? "Valor total" : "Só uma parte"}</td>
                     <td>
-                      {p.comprovativoEm ? (
-                        <>
-                          <a
-                            href={`/api/admin/bilhetes-convencao/comprovativo/${p.id}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="bc-comprovativo"
-                          >
-                            Ver comprovativo
-                          </a>
-                          <div className="bc-subtitulo" style={{ margin: 0 }}>
-                            {formatarData(p.comprovativoEm)}
-                          </div>
-                        </>
+                      <Comprovativo id={p.id} numero={1} em={p.comprovativoEm} />
+                    </td>
+                    <td>
+                      {pagamentosPrevistos(p.pagamento) === 2 ? (
+                        <Comprovativo id={p.id} numero={2} em={p.comprovativo2Em} />
                       ) : (
-                        <span className="bc-sem-comprovativo">Por enviar</span>
+                        <span className="bc-subtitulo">Não se aplica</span>
                       )}
                     </td>
                     <td>{p.observacoes || "—"}</td>
