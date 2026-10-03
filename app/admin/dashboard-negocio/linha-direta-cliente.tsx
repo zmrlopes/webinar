@@ -209,7 +209,7 @@ export function LinhaDiretaCliente({ dados }: { dados: DadosLinhaDireta }): Reac
             <div key={a.ano} className="v2-ano">
               <div className="v2-ano-top">
                 <b>{a.ano}</b>
-                {a.parcial && <span className="v2-ano-parcial">até Set</span>}
+                {a.parcial && <span className="v2-ano-parcial">até {dados.meses[dados.meses.length - 1]}</span>}
               </div>
               <div className="v2-ano-barra">
                 <span style={{ width: `${((a.geral / maxG) * 100).toFixed(1)}%` }} />

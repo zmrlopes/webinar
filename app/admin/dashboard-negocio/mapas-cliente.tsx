@@ -128,13 +128,15 @@ export function MapasCliente({ dados }: { dados: DadosMapas }): React.JSX.Elemen
     c.monthly_recent = { ...base.monthly_recent, "2025": adj("2025"), "2026": adj("2026") };
     const r26 = c.monthly_recent["2026"]!;
     const r25 = c.monthly_recent["2025"]!;
-    const parcial25 = r2(base.last_month_2025 + comValor("2025", 8));
-    const ytd26 = r2(r26.slice(0, 9).reduce((a, b) => a + b, 0));
-    const ytd25 = r2(r25.slice(0, 8).reduce((a, b) => a + b, 0) + parcial25);
+    // Outras contas de 2025 no mês em curso: só a parte dos dias já decorridos.
+    const fracMes = dados.ytd_partial_day ? Math.min(1, dados.ytd_partial_day / new Date(2025, through + 1, 0).getDate()) : 1;
+    const parcial25 = r2(base.last_month_2025 + comValor("2025", through) * fracMes);
+    const ytd26 = r2(r26.slice(0, through + 1).reduce((a, b) => a + b, 0));
+    const ytd25 = r2(r25.slice(0, through).reduce((a, b) => a + b, 0) + parcial25);
     c.ytd_2026 = ytd26;
     c.ytd_2025 = ytd25;
     c.delta_pct = ytd25 ? Math.round((ytd26 / ytd25 - 1) * 10000) / 100 : null;
-    c.last_month_2026 = r26[8] ?? 0;
+    c.last_month_2026 = r26[through] ?? 0;
     c.last_month_2025 = parcial25;
     c.projection_values = [...base.projection_values];
     c.projection_values[0] = ytd26;
@@ -686,8 +688,9 @@ function MapaComissoes({
 
   const a26 = anos.find((a) => a.a === 2026)!;
   const a25 = anos.find((a) => a.a === 2025)!;
-  const feitos = a26.m.slice(0, 9).reduce<number>((s, v) => s + (v || 0), 0);
-  const mesmo25 = a25.m.slice(0, 8).reduce<number>((s, v) => s + (v || 0), 0) + metricas.comissoes!.last_month_2025;
+  const through = dados.ytd_through_idx;
+  const feitos = a26.m.slice(0, through + 1).reduce<number>((s, v) => s + (v || 0), 0);
+  const mesmo25 = a25.m.slice(0, through).reduce<number>((s, v) => s + (v || 0), 0) + metricas.comissoes!.last_month_2025;
 
   const linhaTot = (nome: string, fn: (a: Ano) => number | null, forte?: boolean) => (
     <tr key={nome} className={forte ? "cm-forte" : undefined}>
@@ -707,7 +710,7 @@ function MapaComissoes({
       <div className="events-summary">
         <div className="es-stat">
           <div className="es-value">{nf(feitos)}</div>
-          <div className="es-label">bruto em 2026, até {dados.ytd_partial_day} de Setembro</div>
+          <div className="es-label">bruto em 2026, até {dados.ytd_partial_day} de {MES_LONGO[through]}</div>
         </div>
         <div className="es-stat">
           <div className="es-value">{nf(liq(feitos))}</div>

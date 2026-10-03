@@ -110,7 +110,7 @@ export function IncentivosCliente({ dados }: { dados: DadosIncentivos }): React.
       <div className="events-summary">
         <div className="es-stat">
           <div className="es-value">{totalPremios}</div>
-          <div className="es-label">prémios atribuídos este ano, de Janeiro a Setembro</div>
+          <div className="es-label">prémios atribuídos este ano, de Janeiro a {dados.meses[Math.max(...dados.linhas.map((l) => l.m))]}</div>
         </div>
         <div className="es-stat">
           <div className="es-value" style={{ color: "var(--brand-700)" }}>
