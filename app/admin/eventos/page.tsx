@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { listarPedidosBilhete, totaisBilhetes } from "@/lib/bilhetes-convencao";
 import {
   estaoInscricoesAbertas,
   EVENTO_DATA_TEXTO,
@@ -15,10 +16,12 @@ export const dynamic = "force-dynamic";
  * organizada como lista para receber os próximos sem mudar de forma.
  */
 export default async function AdminEventos() {
-  const [inscricoes, inscricoesAbertas] = await Promise.all([
+  const [inscricoes, inscricoesAbertas, pedidosBilhete] = await Promise.all([
     listarInscricoesEvento(),
     estaoInscricoesAbertas(),
+    listarPedidosBilhete(),
   ]);
+  const bilhetesPedidos = totaisBilhetes(pedidosBilhete).bilhetes;
   const pessoas = inscricoes.reduce(
     (soma, i) => soma + i.adultos + i.criancasMais10 + i.criancasMenos10,
     0,
@@ -85,6 +88,14 @@ export default async function AdminEventos() {
               <span className={inscricoesAbertas ? "ad-estado ad-estado-abertas" : "ad-estado ad-estado-fechadas"}>
                 {inscricoesAbertas ? "inscrições abertas" : "inscrições encerradas"}
               </span>
+              <span className="ad-evento-seta">Abrir →</span>
+            </div>
+          </Link>
+          <Link href="/admin/bilhetes-convencao" className="ad-evento-cartao">
+            <p className="ad-evento-titulo">Convenção Nacional iCligo 2027</p>
+            <p className="ad-evento-meta">13 de março de 2027 · TGV, packs da Sara Izza</p>
+            <div className="ad-evento-rodape">
+              <span className="ad-evento-numero">{bilhetesPedidos} bilhetes pedidos</span>
               <span className="ad-evento-seta">Abrir →</span>
             </div>
           </Link>
