@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listarPedidosBilhete, totaisBilhetes, urlCsvParaSheets } from "@/lib/bilhetes-convencao";
 import { BotaoWhatsApp } from "../botao-whatsapp";
+import { BotaoRemover } from "./botao-remover";
 import { CopiarFormula } from "./copiar-formula";
 
 export const dynamic = "force-dynamic";
@@ -105,6 +106,7 @@ export default async function BilhetesConvencaoAdmin() {
                   <th>Acompanhantes</th>
                   <th>Pagamento</th>
                   <th>Observações</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -126,6 +128,9 @@ export default async function BilhetesConvencaoAdmin() {
                     <td>{p.acompanhantes || "—"}</td>
                     <td>{p.pagamento === "O valor total" ? "Valor total" : "Só uma parte"}</td>
                     <td>{p.observacoes || "—"}</td>
+                    <td>
+                      <BotaoRemover id={p.id} nome={p.nome} email={p.email} />
+                    </td>
                   </tr>
                 ))}
               </tbody>

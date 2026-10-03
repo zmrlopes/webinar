@@ -124,6 +124,12 @@ export async function gravarPedidoBilhete(pedido: PedidoBilhete): Promise<boolea
   return rowCount === 1;
 }
 
+export async function apagarPedidoBilhete(id: number): Promise<boolean> {
+  await garantirTabela();
+  const { rowCount } = await db().query(`delete from pedidos_bilhete_convencao where id = $1`, [id]);
+  return rowCount === 1;
+}
+
 export async function listarPedidosBilhete(): Promise<PedidoBilheteGravado[]> {
   await garantirTabela();
   const { rows } = await db().query<{
