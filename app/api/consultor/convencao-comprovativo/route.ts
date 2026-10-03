@@ -9,12 +9,14 @@ import {
  * O consultor envia o comprovativo de pagamento do bilhete da Convenção a
  * partir do separador Eventos do painel. Fica junto do pedido feito com o
  * mesmo email em /bilhetes-convencao (e um envio novo substitui o anterior).
+ * `pagamento` = "2" é o comprovativo do restante, para quem paga em duas vezes.
  */
 export async function POST(request: Request): Promise<Response> {
   try {
     const dados = await request.formData();
     const email = dados.get("email");
     const ficheiro = dados.get("ficheiro");
+    const numero = dados.get("pagamento") === "2" ? 2 : 1;
 
     if (typeof email !== "string" || !email.includes("@")) {
       return NextResponse.json({ erro: "email inválido" }, { status: 400 });
@@ -29,7 +31,7 @@ export async function POST(request: Request): Promise<Response> {
       return NextResponse.json({ erro: "o ficheiro não pode passar 4MB" }, { status: 400 });
     }
 
-    const gravado = await guardarComprovativo(email, {
+    const gravado = await guardarComprovativo(email, numero, {
       nome: ficheiro.name || "comprovativo",
       tipo: ficheiro.type,
       bytes: Buffer.from(await ficheiro.arrayBuffer()),

@@ -7,6 +7,8 @@ export interface PedidoConvencao {
   pagamento: string;
   comprovativoNome: string | null;
   comprovativoEm: string | null;
+  comprovativo2Nome: string | null;
+  comprovativo2Em: string | null;
 }
 
 // Abaixo do limite de 4MB do servidor, com folga para o resto do pedido.
@@ -43,12 +45,24 @@ async function prepararFicheiro(ficheiro: File): Promise<File> {
   }
 }
 
-export function ConvencaoCartao({ email, pedido }: { email: string; pedido: PedidoConvencao }) {
+/** Um espaço de envio: um comprovativo (o 1º pagamento, o restante, ou o valor total). */
+function EnvioComprovativo({
+  email,
+  numero,
+  titulo,
+  enviadoEmInicial,
+}: {
+  email: string;
+  numero: 1 | 2;
+  titulo: string;
+  enviadoEmInicial: string | null;
+}) {
   const [ficheiro, setFicheiro] = useState<File | null>(null);
   const [aGravar, setAGravar] = useState(false);
   const [erro, setErro] = useState("");
-  const [enviadoEm, setEnviadoEm] = useState(pedido.comprovativoEm);
+  const [enviadoEm, setEnviadoEm] = useState(enviadoEmInicial);
   const [acabouDeGravar, setAcabouDeGravar] = useState(false);
+  const idCampo = `comprovativo-convencao-${numero}`;
 
   async function gravar(evento: React.FormEvent<HTMLFormElement>): Promise<void> {
     evento.preventDefault();
@@ -68,6 +82,7 @@ export function ConvencaoCartao({ email, pedido }: { email: string; pedido: Pedi
       }
       const dados = new FormData();
       dados.set("email", email);
+      dados.set("pagamento", String(numero));
       dados.set("ficheiro", preparado);
       const resposta = await fetch("/api/consultor/convencao-comprovativo", { method: "POST", body: dados });
       const corpo = (await resposta.json().catch(() => null)) as { erro?: string } | null;
@@ -86,7 +101,38 @@ export function ConvencaoCartao({ email, pedido }: { email: string; pedido: Pedi
     setAGravar(false);
   }
 
-  const pagamento = pedido.pagamento === "O valor total" ? "Pagas o valor total" : "Pagas só uma parte para já";
+  return (
+    <form onSubmit={gravar} className="vqb-convencao-form">
+      <label htmlFor={idCampo}>{titulo}</label>
+      {enviadoEm ? (
+        <p className="vqb-convencao-ok">
+          {acabouDeGravar ? "Comprovativo gravado. Obrigado!" : `Enviado a ${formatarData(enviadoEm)}.`} Se
+          precisares, podes enviar outro para o substituir.
+        </p>
+      ) : (
+        <p className="vqb-convencao-falta">Ainda não enviaste este comprovativo.</p>
+      )}
+      <input
+        id={idCampo}
+        type="file"
+        accept="image/*,application/pdf"
+        onChange={(e) => {
+          setFicheiro(e.target.files?.[0] ?? null);
+          setErro("");
+          setAcabouDeGravar(false);
+        }}
+      />
+      <button type="submit" disabled={aGravar}>
+        {aGravar ? "A gravar…" : "Gravar"}
+      </button>
+      {erro && <p className="vqb-erro">{erro}</p>}
+    </form>
+  );
+}
+
+export function ConvencaoCartao({ email, pedido }: { email: string; pedido: PedidoConvencao }) {
+  const pagaEmDuasVezes = pedido.pagamento !== "O valor total";
+  const pagamento = pagaEmDuasVezes ? "Pagas em duas vezes" : "Pagas o valor total";
 
   return (
     <div className="vqb-cartao vqb-convencao">
@@ -97,30 +143,29 @@ export function ConvencaoCartao({ email, pedido }: { email: string; pedido: Pedi
         O teu pedido: {pedido.bilhetes} {pedido.bilhetes === 1 ? "bilhete" : "bilhetes"} · {pagamento}.
       </p>
 
-      {enviadoEm && (
-        <p className="vqb-convencao-ok">
-          {acabouDeGravar ? "Comprovativo gravado. Obrigado!" : `Comprovativo enviado a ${formatarData(enviadoEm)}.`}{" "}
-          Se precisares, podes enviar outro para o substituir.
-        </p>
-      )}
-
-      <form onSubmit={gravar} className="vqb-convencao-form">
-        <label htmlFor="comprovativo-convencao">Comprovativo de pagamento</label>
-        <input
-          id="comprovativo-convencao"
-          type="file"
-          accept="image/*,application/pdf"
-          onChange={(e) => {
-            setFicheiro(e.target.files?.[0] ?? null);
-            setErro("");
-            setAcabouDeGravar(false);
-          }}
+      {pagaEmDuasVezes ? (
+        <div className="vqb-convencao-pagamentos">
+          <EnvioComprovativo
+            email={email}
+            numero={1}
+            titulo="1º pagamento (para bloquear o lugar)"
+            enviadoEmInicial={pedido.comprovativoEm}
+          />
+          <EnvioComprovativo
+            email={email}
+            numero={2}
+            titulo="2º pagamento (o restante)"
+            enviadoEmInicial={pedido.comprovativo2Em}
+          />
+        </div>
+      ) : (
+        <EnvioComprovativo
+          email={email}
+          numero={1}
+          titulo="Comprovativo de pagamento"
+          enviadoEmInicial={pedido.comprovativoEm}
         />
-        <button type="submit" disabled={aGravar}>
-          {aGravar ? "A gravar…" : "Gravar"}
-        </button>
-      </form>
-      {erro && <p className="vqb-erro">{erro}</p>}
+      )}
     </div>
   );
 }

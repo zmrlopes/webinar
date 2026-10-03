@@ -33,7 +33,20 @@ export type PedidoBilheteGravado = PedidoBilhete & {
   criadoEm: Date;
   comprovativoNome: string | null;
   comprovativoEm: Date | null;
+  comprovativo2Nome: string | null;
+  comprovativo2Em: Date | null;
 };
+
+/**
+ * Quem paga só uma parte paga em duas vezes: 1 é o pagamento de agora (ou o
+ * valor total), 2 é o restante.
+ */
+export type NumeroPagamento = 1 | 2;
+
+/** Quantos comprovativos este pedido precisa para ficar pago. */
+export function pagamentosPrevistos(pagamento: string): NumeroPagamento {
+  return pagamento === "O valor total" ? 1 : 2;
+}
 
 /** Tipos aceites para o comprovativo de pagamento: fotografia ou PDF. */
 export const TIPOS_COMPROVATIVO = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "application/pdf"];
@@ -108,7 +121,11 @@ async function criarTabela(): Promise<void> {
        add column if not exists comprovativo_nome text,
        add column if not exists comprovativo_tipo text,
        add column if not exists comprovativo_bytes bytea,
-       add column if not exists comprovativo_em timestamptz`,
+       add column if not exists comprovativo_em timestamptz,
+       add column if not exists comprovativo2_nome text,
+       add column if not exists comprovativo2_tipo text,
+       add column if not exists comprovativo2_bytes bytea,
+       add column if not exists comprovativo2_em timestamptz`,
   );
 }
 
@@ -160,11 +177,13 @@ type LinhaPedido = {
   observacoes: string;
   comprovativo_nome: string | null;
   comprovativo_em: Date | null;
+  comprovativo2_nome: string | null;
+  comprovativo2_em: Date | null;
 };
 
-// Sem comprovativo_bytes: os ficheiros só se leem um a um, em buscarComprovativo.
+// Sem os bytes dos comprovativos: os ficheiros só se leem um a um, em buscarComprovativo.
 const COLUNAS_PEDIDO = `id, criado_em, nome, telemovel, email, bilhetes, acompanhantes, pagamento,
-  observacoes, comprovativo_nome, comprovativo_em`;
+  observacoes, comprovativo_nome, comprovativo_em, comprovativo2_nome, comprovativo2_em`;
 
 function paraPedido(r: LinhaPedido): PedidoBilheteGravado {
   return {
@@ -179,6 +198,8 @@ function paraPedido(r: LinhaPedido): PedidoBilheteGravado {
     observacoes: r.observacoes,
     comprovativoNome: r.comprovativo_nome,
     comprovativoEm: r.comprovativo_em,
+    comprovativo2Nome: r.comprovativo2_nome,
+    comprovativo2Em: r.comprovativo2_em,
   };
 }
 
@@ -201,15 +222,20 @@ export async function buscarPedidoBilhetePorEmail(email: string): Promise<Pedido
   return rows[0] ? paraPedido(rows[0]) : null;
 }
 
-/** Guarda (ou substitui) o comprovativo do pedido deste email. Devolve false se não há pedido. */
+// Prefixo das colunas de cada pagamento (valores fixos, nunca vindos do pedido).
+const COLUNA: Record<NumeroPagamento, string> = { 1: "comprovativo", 2: "comprovativo2" };
+
+/** Guarda (ou substitui) o comprovativo de um dos pagamentos do pedido deste email. Devolve false se não há pedido. */
 export async function guardarComprovativo(
   email: string,
+  numero: NumeroPagamento,
   ficheiro: { nome: string; tipo: string; bytes: Buffer },
 ): Promise<boolean> {
   await garantirTabela();
+  const c = COLUNA[numero];
   const { rowCount } = await db().query(
     `update pedidos_bilhete_convencao
-        set comprovativo_nome = $2, comprovativo_tipo = $3, comprovativo_bytes = $4, comprovativo_em = now()
+        set ${c}_nome = $2, ${c}_tipo = $3, ${c}_bytes = $4, ${c}_em = now()
       where email <> '' and lower(email) = lower($1)`,
     [email.trim(), ficheiro.nome, ficheiro.tipo, ficheiro.bytes],
   );
@@ -218,19 +244,24 @@ export async function guardarComprovativo(
 
 export async function buscarComprovativo(
   id: number,
+  numero: NumeroPagamento,
 ): Promise<{ nome: string; tipo: string; bytes: Buffer } | null> {
   await garantirTabela();
+  const c = COLUNA[numero];
   const { rows } = await db().query<{ nome: string; tipo: string; bytes: Buffer }>(
-    `select comprovativo_nome as nome, comprovativo_tipo as tipo, comprovativo_bytes as bytes
+    `select ${c}_nome as nome, ${c}_tipo as tipo, ${c}_bytes as bytes
        from pedidos_bilhete_convencao
-      where id = $1 and comprovativo_bytes is not null`,
+      where id = $1 and ${c}_bytes is not null`,
     [id],
   );
   return rows[0] ?? null;
 }
 
 export type TotaisBilhetes = {
-  comprovativos: number;
+  /** Pedidos com o 1º comprovativo (ou o do valor total) enviado. */
+  comPrimeiroPagamento: number;
+  /** Pedidos com todos os comprovativos previstos enviados. */
+  pagos: number;
   pedidos: number;
   bilhetes: number;
   total: { pedidos: number; bilhetes: number };
@@ -243,7 +274,10 @@ export function totaisBilhetes(pedidos: PedidoBilheteGravado[]): TotaisBilhetes 
     return { pedidos: lista.length, bilhetes: lista.reduce((s, p) => s + p.bilhetes, 0) };
   };
   return {
-    comprovativos: pedidos.filter((p) => p.comprovativoEm).length,
+    comPrimeiroPagamento: pedidos.filter((p) => p.comprovativoEm).length,
+    pagos: pedidos.filter((p) =>
+      pagamentosPrevistos(p.pagamento) === 1 ? p.comprovativoEm : p.comprovativoEm && p.comprovativo2Em,
+    ).length,
     pedidos: pedidos.length,
     bilhetes: pedidos.reduce((s, p) => s + p.bilhetes, 0),
     total: de("O valor total"),
@@ -266,7 +300,8 @@ export function csvPedidosBilhete(pedidos: PedidoBilheteGravado[]): string {
     "Acompanhantes",
     "Pagamento",
     "Observações",
-    "Comprovativo de pagamento",
+    "Comprovativo 1º pagamento",
+    "Comprovativo 2º pagamento",
   ];
   const linhas = pedidos.map((p) => [
     p.criadoEm.toLocaleString("pt-PT", { timeZone: "Europe/Lisbon" }),
@@ -278,6 +313,11 @@ export function csvPedidosBilhete(pedidos: PedidoBilheteGravado[]): string {
     p.pagamento,
     p.observacoes,
     p.comprovativoEm ? `Enviado a ${p.comprovativoEm.toLocaleString("pt-PT", { timeZone: "Europe/Lisbon" })}` : "",
+    pagamentosPrevistos(p.pagamento) === 1
+      ? "Não se aplica"
+      : p.comprovativo2Em
+        ? `Enviado a ${p.comprovativo2Em.toLocaleString("pt-PT", { timeZone: "Europe/Lisbon" })}`
+        : "",
   ]);
   return [cabecalho, ...linhas].map((l) => l.map(celulaCsv).join(",")).join("\n");
 }

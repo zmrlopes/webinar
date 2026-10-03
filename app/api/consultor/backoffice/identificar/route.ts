@@ -137,6 +137,8 @@ export async function POST(request: Request): Promise<Response> {
             pagamento: pedidoConvencao.pagamento,
             comprovativoNome: pedidoConvencao.comprovativoNome,
             comprovativoEm: pedidoConvencao.comprovativoEm,
+            comprovativo2Nome: pedidoConvencao.comprovativo2Nome,
+            comprovativo2Em: pedidoConvencao.comprovativo2Em,
           }
         : null,
       formacoesExternas: formacoesExternas.map((f) => ({
