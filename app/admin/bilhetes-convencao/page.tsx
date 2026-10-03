@@ -1,11 +1,14 @@
 import Link from "next/link";
 import {
+  diagnosticarConsultor,
+  type DiagnosticoConsultor,
   listarPedidosBilhete,
   pagamentosPrevistos,
   totaisBilhetes,
   urlCsvParaSheets,
 } from "@/lib/bilhetes-convencao";
 import { BotaoWhatsApp } from "../botao-whatsapp";
+import { BotaoLigar } from "./botao-ligar";
 import { BotaoRemover } from "./botao-remover";
 import { CopiarFormula } from "./copiar-formula";
 
@@ -42,8 +45,62 @@ function formatarData(data: Date): string {
   });
 }
 
-export default async function BilhetesConvencaoAdmin() {
+function resumoPedido(p: { nome: string; email: string; bilhetes: number }): string {
+  return `${p.nome} · ${p.email || "sem email"} · ${p.bilhetes} ${p.bilhetes === 1 ? "bilhete" : "bilhetes"}`;
+}
+
+function Diagnostico({ d }: { d: DiagnosticoConsultor }) {
+  return (
+    <div className="bc-diagnostico">
+      {d.membro ? (
+        <p>
+          ✓ <strong>{d.membro.nome}</strong> está na equipa com o email {d.membro.email}.
+        </p>
+      ) : (
+        <p className="bc-mau">
+          ✗ Este email não está na equipa, por isso não consegue entrar no painel. Confirma o email com que a
+          pessoa entra.
+        </p>
+      )}
+      {d.pedido ? (
+        <p>
+          ✓ O painel encontra o pedido: <strong>{resumoPedido(d.pedido)}</strong>. O cartão da Convenção deve
+          aparecer em Eventos (a pessoa tem de fechar e voltar a abrir o painel).
+        </p>
+      ) : (
+        <p className="bc-mau">✗ O painel não encontra nenhum pedido para este consultor.</p>
+      )}
+      {!d.pedido && d.parecidos.length > 0 && (
+        <>
+          <p>Pedidos com nome ou email parecido — liga o certo a este consultor:</p>
+          <ul className="bc-parecidos">
+            {d.parecidos.map((p) => (
+              <li key={p.id}>
+                <span>{resumoPedido(p)}</span>
+                <BotaoLigar id={p.id} nome={p.nome} email={d.email} />
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {!d.pedido && d.parecidos.length === 0 && (
+        <p>
+          Não há pedidos com nome ou email parecido. Procura o pedido na lista acima: se estiver lá com outro
+          nome, pede à pessoa que confirme; se não estiver, ela ainda não fez o pedido em /bilhetes-convencao.
+        </p>
+      )}
+    </div>
+  );
+}
+
+export default async function BilhetesConvencaoAdmin({
+  searchParams,
+}: {
+  searchParams: Promise<{ verificar?: string }>;
+}) {
+  const { verificar } = await searchParams;
   const pedidos = await listarPedidosBilhete();
+  const diagnostico = verificar?.includes("@") ? await diagnosticarConsultor(verificar) : null;
   const totais = totaisBilhetes(pedidos);
   const base = process.env.SITE_BASE_URL ?? "https://webinar.viajareviver.net";
   const urlCsv = urlCsvParaSheets(base);
@@ -82,6 +139,14 @@ export default async function BilhetesConvencaoAdmin() {
         .bc-tabela th { font-size: 0.8rem; color: #6b6a63; }
         .bc-comprovativo { color: #1e7a34; font-weight: 700; white-space: nowrap; }
         .bc-sem-comprovativo { color: #a33; font-size: 0.85rem; font-weight: 600; white-space: nowrap; }
+        .bc-verificar { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+        .bc-verificar input { flex: 1 1 220px; margin: 0; min-width: 0; }
+        .bc-verificar .bc-botao, .bc-parecidos .bc-botao { margin: 0; }
+        .bc-diagnostico { margin-top: 1rem; border: 1px solid #000; border-radius: 12px; padding: 1rem 1.25rem; background: #f7f6f3; }
+        .bc-diagnostico p { margin: 0 0 0.6rem; }
+        .bc-mau { color: #a33; }
+        .bc-parecidos { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.6rem; }
+        .bc-parecidos li { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; justify-content: space-between; }
         .bc-num { text-align: right; font-variant-numeric: tabular-nums; }
         .bc-formula { display: grid; gap: 0.5rem; }
         .bc-formula code {
@@ -183,6 +248,18 @@ export default async function BilhetesConvencaoAdmin() {
             </table>
           </div>
         )}
+
+        <h2 id="verificar">Um consultor não vê o cartão da Convenção?</h2>
+        <p className="bc-subtitulo" style={{ marginBottom: "0.75rem" }}>
+          Escreve o email com que a pessoa entra no painel de consultor.
+        </p>
+        <form method="get" action="#verificar" className="bc-verificar">
+          <input type="email" name="verificar" defaultValue={verificar ?? ""} placeholder="email@exemplo.pt" required />
+          <button type="submit" className="bc-botao">
+            Verificar
+          </button>
+        </form>
+        {diagnostico && <Diagnostico d={diagnostico} />}
 
         <h2>Ver no Google Sheets</h2>
         {urlCsv ? (

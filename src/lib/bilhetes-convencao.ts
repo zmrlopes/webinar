@@ -186,6 +186,25 @@ export async function apagarPedidoBilhete(id: number): Promise<boolean> {
   return rowCount === 1;
 }
 
+/**
+ * Passa o pedido para o email com que o consultor entra no painel (para o
+ * cartão da Convenção o encontrar). Devolve false se outro pedido já usa
+ * esse email.
+ */
+export async function mudarEmailPedido(id: number, email: string): Promise<"ok" | "nao-existe" | "email-ocupado"> {
+  await garantirTabela();
+  try {
+    const { rowCount } = await db().query(`update pedidos_bilhete_convencao set email = $2 where id = $1`, [
+      id,
+      email.trim().toLowerCase(),
+    ]);
+    return rowCount === 1 ? "ok" : "nao-existe";
+  } catch (erro) {
+    if ((erro as { code?: string }).code === "23505") return "email-ocupado";
+    throw erro;
+  }
+}
+
 type LinhaPedido = {
   id: string;
   criado_em: Date;
@@ -402,4 +421,40 @@ export function chaveCsvValida(chave: string | null): boolean {
 export function urlCsvParaSheets(base: string): string | null {
   const chave = chaveCsv();
   return chave ? `${base}/api/bilhetes-convencao/csv?chave=${chave}` : null;
+}
+
+export type DiagnosticoConsultor = {
+  email: string;
+  membro: { email: string; nome: string } | null;
+  pedido: PedidoBilheteGravado | null;
+  parecidos: PedidoBilheteGravado[];
+};
+
+/**
+ * Para o admin perceber porque é que um consultor não vê o cartão da
+ * Convenção: se está na equipa, que pedido o painel lhe encontra, e que
+ * pedidos têm um nome ou email parecido (para os ligar à mão).
+ */
+export async function diagnosticarConsultor(email: string): Promise<DiagnosticoConsultor> {
+  const emailLimpo = email.trim().toLowerCase();
+  const { rows } = await db().query<{ email: string; nome: string }>(
+    `select email, nome from equipa_afiliados where lower(email) = $1`,
+    [emailLimpo],
+  );
+  const membro = rows[0] ?? null;
+  const pedido = await buscarPedidoDoConsultor(emailLimpo, membro?.nome ?? null);
+
+  const todos = await listarPedidosBilhete();
+  const nomes = new Set(normalizarNome(membro?.nome ?? ""));
+  const local = emailLimpo.split("@")[0]?.replace(/[^a-z0-9]/g, "") ?? "";
+  const parecidos = todos.filter((p) => {
+    if (pedido && p.id === pedido.id) return false;
+    const partilhaNome = normalizarNome(p.nome).some((n) => n.length > 2 && nomes.has(n));
+    const localPedido = p.email.toLowerCase().split("@")[0]?.replace(/[^a-z0-9]/g, "") ?? "";
+    const emailParecido =
+      local.length > 3 && localPedido.length > 3 && (localPedido.includes(local) || local.includes(localPedido));
+    return partilhaNome || emailParecido;
+  });
+
+  return { email: emailLimpo, membro, pedido, parecidos };
 }
