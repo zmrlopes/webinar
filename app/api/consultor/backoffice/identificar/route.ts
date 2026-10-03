@@ -10,6 +10,7 @@ import {
   listarFormacoesEquipa,
 } from "@/lib/webinars";
 import { buscarPedidoBilhetePorEmail } from "@/lib/bilhetes-convencao";
+import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
 import { estaoInscricoesAbertas } from "@/lib/eventos";
 import { formacoesGravadasVisiveis } from "@/lib/formacoes-gravadas";
 import { precisaResponderHotel } from "@/lib/hotel";
@@ -140,7 +141,17 @@ export async function POST(request: Request): Promise<Response> {
             comprovativo2Nome: pedidoConvencao.comprovativo2Nome,
             comprovativo2Em: pedidoConvencao.comprovativo2Em,
           }
-        : null,
+        : emailNormalizado === EMAIL_PAINEL_DEMONSTRACAO
+          ? // Sem pedido próprio, o painel de demonstração mostra um de exemplo.
+            {
+              bilhetes: 2,
+              pagamento: "Só uma parte, para bloquear o lugar",
+              comprovativoNome: null,
+              comprovativoEm: null,
+              comprovativo2Nome: null,
+              comprovativo2Em: null,
+            }
+          : null,
       formacoesExternas: formacoesExternas.map((f) => ({
         id: f.id,
         titulo: f.titulo,
