@@ -61,7 +61,10 @@ export default function BilhetesConvencaoPagina() {
 
       <footer className={estilos.rodape}>
         <div className={estilos.wrap}>
-          Grava o teu pedido. Às 16h30 de 3 de outubro enviamos-te o preço e os dados para pagares.
+          <p className={estilos.rodapeLinha}>O pack de bilhetes é comprado pela Sara Izza.</p>
+          <p className={estilos.rodapeLinha}>
+            Grava o teu pedido. Às 16h30 de 3 de outubro enviamos-te o preço e os dados para pagares.
+          </p>
         </div>
       </footer>
     </div>

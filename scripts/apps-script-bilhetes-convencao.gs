@@ -11,6 +11,9 @@
  *  4. Autoriza, copia o URL que termina em /exec e põe-no em
  *     BILHETES_SHEETS_URL no Vercel.
  *
+ * O separador "Totais" é criado sozinho no primeiro pedido. Para o criar já,
+ * escolhe criarTotais no menu de funções do editor e carrega em Executar.
+ *
  * Se mais tarde alterares este código, faz Implementar > Gerir implementações >
  * editar > Nova versão, para o URL continuar o mesmo.
  */
@@ -32,6 +35,7 @@ function doPost(e) {
   lock.waitLock(10000);
   try {
     const folha = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+    criarTotais();
     folha.appendRow([
       new Date(),
       celula(dados.nome),
@@ -46,6 +50,26 @@ function doPost(e) {
     lock.releaseLock();
   }
   return responder({ ok: true });
+}
+
+/** Cria o separador "Totais" (se ainda não existir), com fórmulas sobre a folha dos pedidos. */
+function criarTotais() {
+  const livro = SpreadsheetApp.getActiveSpreadsheet();
+  if (livro.getSheetByName("Totais")) return;
+  const pedidos = "'" + livro.getSheets()[0].getName().replace(/'/g, "''") + "'!";
+  const totais = livro.insertSheet("Totais", livro.getSheets().length);
+  const parte = '"Só uma parte, para bloquear o lugar"';
+  const total = '"O valor total"';
+  totais.getRange("A1:C1").setValues([["", "Pedidos", "Bilhetes"]]);
+  totais.getRange("A2:A4").setValues([["Total"], ["Pagam o valor total"], ["Pagam só uma parte"]]);
+  totais.getRange("B2:C4").setFormulas([
+    ["=COUNTA(" + pedidos + "B2:B)", "=SUM(" + pedidos + "E2:E)"],
+    ["=COUNTIF(" + pedidos + "G2:G," + total + ")", "=SUMIF(" + pedidos + "G2:G," + total + "," + pedidos + "E2:E)"],
+    ["=COUNTIF(" + pedidos + "G2:G," + parte + ")", "=SUMIF(" + pedidos + "G2:G," + parte + "," + pedidos + "E2:E)"],
+  ]);
+  totais.getRange("A1:C1").setFontWeight("bold");
+  totais.getRange("A2:A4").setFontWeight("bold");
+  totais.autoResizeColumn(1);
 }
 
 // Telemóveis como "+351..." seriam lidos como fórmula; o apóstrofo guarda-os como texto.

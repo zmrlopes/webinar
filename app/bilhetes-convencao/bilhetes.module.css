@@ -283,6 +283,15 @@
   font-size: 0.95rem;
 }
 
+.rodapeLinha {
+  margin: 0;
+}
+
+.rodapeLinha + .rodapeLinha {
+  margin-top: 0.35rem;
+  font-weight: 400;
+}
+
 @media (max-width: 560px) {
   .hero {
     flex-direction: column;
