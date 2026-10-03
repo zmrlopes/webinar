@@ -15,7 +15,7 @@ export async function POST(request: Request): Promise<Response> {
     console.error("falha ao gravar pedido de bilhete:", erro);
     return NextResponse.json(
       { erro: "Não foi possível gravar o pedido agora. Tenta outra vez daqui a um minuto." },
-      { status: 502 },
+      { status: 500 },
     );
   }
 }
