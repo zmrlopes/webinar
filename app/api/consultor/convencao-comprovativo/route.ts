@@ -4,6 +4,7 @@ import {
   TAMANHO_MAXIMO_COMPROVATIVO,
   TIPOS_COMPROVATIVO,
 } from "@/lib/bilhetes-convencao";
+import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
 
 /**
  * O consultor envia o comprovativo de pagamento do bilhete da Convenção a
@@ -36,6 +37,10 @@ export async function POST(request: Request): Promise<Response> {
       tipo: ficheiro.type,
       bytes: Buffer.from(await ficheiro.arrayBuffer()),
     });
+    // O painel de demonstração tem um pedido de exemplo: aceita o envio sem gravar nada.
+    if (!gravado && email.trim().toLowerCase() === EMAIL_PAINEL_DEMONSTRACAO) {
+      return NextResponse.json({ ok: true });
+    }
     if (!gravado) {
       return NextResponse.json(
         { erro: "não encontrámos um pedido de bilhete com este email" },
