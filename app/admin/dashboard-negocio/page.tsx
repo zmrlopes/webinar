@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { lerConfig, obterTotaisEquipa } from "@/lib/dashboard-negocio";
+import { CongressosNomes } from "./congressos-nomes";
 import { CoreRankPainel } from "./core-rank-painel";
 import { EventosPainel } from "./eventos-painel";
 import { IncentivosPainel } from "./incentivos-painel";
@@ -219,7 +220,10 @@ export default async function DashboardNegocio({
       {ativa === "trofeus" ? (
         <TrofeusPainel />
       ) : ativa === "eventos" ? (
-        <EventosPainel totais={await obterTotaisEquipa()} />
+        <>
+          <EventosPainel totais={await obterTotaisEquipa()} />
+          <CongressosNomes />
+        </>
       ) : ativa === "objetivos" ? (
         <ObjetivosPainel />
       ) : ativa === "linha-direta" ? (

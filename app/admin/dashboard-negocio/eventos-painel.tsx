@@ -206,11 +206,6 @@ export function EventosPainel({ totais }: { totais: TotaisEquipa }): React.JSX.E
         </table>
       </div>
 
-      <p className="dn-rodape">
-        Isto é a primeira parte do dashboard. A tabela pessoa a pessoa (quem foi a que congressos, com a sua faturação)
-        fica para o passo seguinte, a ler da base de dados em tempo real — assim os nomes e os valores nunca ficam
-        escritos no código.
-      </p>
     </div>
   );
 }
