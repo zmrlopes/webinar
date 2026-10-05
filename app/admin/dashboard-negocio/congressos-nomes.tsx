@@ -15,7 +15,10 @@ interface DadosCongressosNomes {
     bilhetes: number;
     compra: string;
     usaCheckin: boolean;
+    /** Consultores com bilhete, pelo nome de quem foi (não de quem comprou). */
     pessoas: { u: string; n: string; ci: boolean }[];
+    /** Clientes (não consultores) com bilhete comprado pela equipa. */
+    clientes?: string[];
   }[];
 }
 
@@ -57,8 +60,8 @@ export async function CongressosNomes(): Promise<React.JSX.Element | null> {
       <h2 className="dn-h2">Quem foi a cada congresso</h2>
       <p className="dn-sub">
         Pelo nome, do mais recente para o mais antigo. A Convenção fica de fora. Presença = ter bilhete no MyOffice;{" "}
-        <span style={{ color: "#0ca30c", fontWeight: 700 }}>✓</span> = fez check-in (nos congressos em que houve
-        check-in). Tu ficas de fora. Dados a {dados.atualizadoEm}. Clica num congresso para ver os nomes.
+        <span style={{ color: "#0ca30c", fontWeight: 700 }}>✓</span> = o MyOffice tem o check-in registado (às vezes
+        falta mesmo a quem esteve lá, por isso não contes com ele para saber quem faltou). Tu ficas de fora. Dados a {dados.atualizadoEm}. Clica num congresso para ver os nomes.
       </p>
       <div className="dn-cartao">
         {recentes.map((c) => (
@@ -86,6 +89,12 @@ export async function CongressosNomes(): Promise<React.JSX.Element | null> {
                 </span>
               ))}
             </div>
+            {c.clientes && c.clientes.length > 0 && (
+              <div className="cn-foi" style={{ padding: "0 0.2rem 0.9rem 1.2rem" }}>
+                Também foram {c.clientes.length} cliente{c.clientes.length > 1 ? "s" : ""} com bilhete da equipa:{" "}
+                {c.clientes.join(", ")}.
+              </div>
+            )}
           </details>
         ))}
       </div>
