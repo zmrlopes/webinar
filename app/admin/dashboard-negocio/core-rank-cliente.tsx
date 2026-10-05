@@ -4,11 +4,11 @@ import React, { useState } from "react";
 import { DashboardEstilos } from "./estilos";
 
 /**
- * Core Rank da iCliGo, tal como é ensinado na formação: num mês, 3.000€ em
- * reservas próprias e 3 novos Travel Partners diretos (entrados nesse mês)
- * que chegam aos 1.000€ em reservas cada um. Os números chegam do
- * dashboard_config ("core_rank"), nunca do código, porque o repositório é
- * público.
+ * Core Rank da iCliGo, contado por trimestre (90 dias — até 4 por ano): no
+ * trimestre, 3.000€ em reservas próprias e 3 novos Travel Partners diretos
+ * (entrados nesse trimestre) que chegam aos 1.000€ em reservas cada um. Os
+ * números chegam mês a mês do dashboard_config ("core_rank") e são juntados
+ * aqui em trimestres; nunca vivem no código, porque o repositório é público.
  */
 export interface DadosCoreRank {
   ate: string;
@@ -19,28 +19,17 @@ export interface DadosCoreRank {
   consultores: {
     u: string;
     n: string;
-    /** Reservas próprias por mês, alinhadas com `meses`. */
+    /** Reservas próprias por mês, alinhadas com `meses` (Jan = 0). */
     v: number[];
     /** Diretos que entraram no ano: mês de entrada (índice de `meses`) e reservas acumuladas desde então. */
     novos: { u: string; n: string; mes: number; s: number }[];
   }[];
 }
 
+type Consultor = DadosCoreRank["consultores"][number];
+
+const MESES_CURTOS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 const eur = (v: number) => "€" + String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-const MES_LONGO: Record<string, string> = {
-  Jan: "Janeiro",
-  Fev: "Fevereiro",
-  Mar: "Março",
-  Abr: "Abril",
-  Mai: "Maio",
-  Jun: "Junho",
-  Jul: "Julho",
-  Ago: "Agosto",
-  Set: "Setembro",
-  Out: "Outubro",
-  Nov: "Novembro",
-  Dez: "Dezembro",
-};
 
 function Expansivel({ linhas, colSpan, visiveis = 12 }: { linhas: React.ReactNode[]; colSpan: number; visiveis?: number }): React.JSX.Element {
   const [aberto, setAberto] = useState(false);
@@ -71,13 +60,21 @@ function MiniBarra({ valor, meta }: { valor: number; meta: number }): React.JSX.
 }
 
 export function CoreRankCliente({ dados }: { dados: DadosCoreRank }): React.JSX.Element {
-  const ultimo = dados.meses.length - 1;
-  const [mes, setMes] = useState(ultimo);
   const { vendas: metaV, novos: metaN, novoMin } = dados.meta;
 
-  const estado = (c: DadosCoreRank["consultores"][number], i: number) => {
-    const v = c.v[i] ?? 0;
-    const entraram = c.novos.filter((x) => x.mes === i);
+  // Trimestres com pelo menos um mês de dados: T1 = Jan–Mar, T2 = Abr–Jun, …
+  const nTri = Math.ceil(dados.meses.length / 3);
+  const trimestres = Array.from({ length: nTri }, (_, t) => {
+    const meses = [3 * t, 3 * t + 1, 3 * t + 2].filter((i) => i < dados.meses.length);
+    const completo = meses.length === 3 && !(dados.parcial && meses.includes(dados.meses.length - 1));
+    return { t, meses, nome: `${t + 1}.º trimestre`, intervalo: `${MESES_CURTOS[3 * t]}–${MESES_CURTOS[3 * t + 2]}`, completo };
+  });
+  const [tri, setTri] = useState(nTri - 1);
+
+  const estado = (c: Consultor, t: number) => {
+    const ms = trimestres[t]!.meses;
+    const v = ms.reduce((s, i) => s + (c.v[i] ?? 0), 0);
+    const entraram = c.novos.filter((x) => ms.includes(x.mes));
     const ativados = entraram.filter((x) => x.s >= novoMin);
     const okV = v >= metaV;
     const okN = ativados.length >= metaN;
@@ -88,25 +85,31 @@ export function CoreRankCliente({ dados }: { dados: DadosCoreRank }): React.JSX.
   let totalCore = 0;
   const pessoasCore = new Set<string>();
   for (const c of dados.consultores)
-    dados.meses.forEach((_, i) => {
-      if (estado(c, i).core) {
+    trimestres.forEach((_, t) => {
+      if (estado(c, t).core) {
         totalCore++;
         pessoasCore.add(c.u);
       }
     });
 
-  const doMes = dados.consultores
-    .map((c) => ({ c, e: estado(c, mes) }))
-    .filter(({ e }) => e.v > 0 || e.entraram.length > 0)
-    .map((x) => ({ ...x, prog: Math.min(1, x.e.v / metaV) + Math.min(1, x.e.ativados.length / metaN) }))
-    .sort((a, b) => b.prog - a.prog || b.e.v - a.e.v);
-  const nCore = doMes.filter((x) => x.e.core).length;
-  const nV = doMes.filter((x) => x.e.okV).length;
-  const nN = doMes.filter((x) => x.e.okN).length;
-  const emCurso = dados.parcial && mes === ultimo;
-  const nomeMes = MES_LONGO[dados.meses[mes] ?? ""] ?? dados.meses[mes];
+  const atual = trimestres[tri]!;
+  const emCurso = !atual.completo;
 
-  const linhasMes = doMes.map(({ c, e }) => {
+  const doTri = dados.consultores
+    .map((c) => ({ c, e: estado(c, tri) }))
+    .filter(({ e }) => e.v > 0 || e.entraram.length > 0)
+    .map((x) => ({
+      ...x,
+      // Quem já trouxe gente nova sobe na lista, mesmo antes de essa gente chegar aos 1.000€.
+      prog: Math.min(1, x.e.v / metaV) + Math.min(1, x.e.ativados.length / metaN) + Math.min(1, x.e.entraram.length / metaN) * 0.5,
+    }))
+    .sort((a, b) => b.prog - a.prog || b.e.v - a.e.v);
+  const nCore = doTri.filter((x) => x.e.core).length;
+  const nV = doTri.filter((x) => x.e.okV).length;
+  const novosTri = doTri.flatMap(({ c, e }) => e.entraram.map((x) => ({ ...x, up: c })));
+  novosTri.sort((a, b) => b.mes - a.mes || b.s - a.s);
+
+  const linhasTri = doTri.map(({ c, e }) => {
     const faltaV = Math.max(0, metaV - e.v);
     const faltaN = Math.max(0, metaN - e.ativados.length);
     const falta = e.core
@@ -139,11 +142,37 @@ export function CoreRankCliente({ dados }: { dados: DadosCoreRank }): React.JSX.
     );
   });
 
+  const linhasNovos = novosTri.map((x) => (
+    <tr>
+      <td style={{ whiteSpace: "nowrap" }}>
+        <span className="ev-name">{x.n}</span>
+        <span className="ev-user">@{x.u}</span>
+      </td>
+      <td style={{ whiteSpace: "nowrap" }}>
+        <span className="ev-name">{x.up.n}</span>
+        <span className="ev-user">@{x.up.u}</span>
+      </td>
+      <td>{dados.meses[x.mes]}</td>
+      <td>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <MiniBarra valor={x.s} meta={novoMin} />
+          <span className="ev-num" style={{ minWidth: 60, color: x.s >= novoMin ? "var(--good)" : undefined }}>
+            {eur(x.s)}
+          </span>
+        </div>
+      </td>
+    </tr>
+  ));
+
   // Grelha do ano: só quem tocou num dos dois critérios pelo menos uma vez
   const grelha = dados.consultores
-    .map((c) => ({ c, es: dados.meses.map((_, i) => estado(c, i)) }))
+    .map((c) => ({ c, es: trimestres.map((_, t) => estado(c, t)) }))
     .filter(({ es }) => es.some((e) => e.okV || e.okN))
-    .sort((a, b) => b.es.filter((e) => e.core).length - a.es.filter((e) => e.core).length || b.es.filter((e) => e.okV).length - a.es.filter((e) => e.okV).length);
+    .sort(
+      (a, b) =>
+        b.es.filter((e) => e.core).length - a.es.filter((e) => e.core).length ||
+        b.es.filter((e) => e.okV).length - a.es.filter((e) => e.okV).length,
+    );
 
   const linhasGrelha = grelha.map(({ c, es }) => (
     <tr>
@@ -157,7 +186,7 @@ export function CoreRankCliente({ dados }: { dados: DadosCoreRank }): React.JSX.
         </td>
       ))}
       <td className="ev-num" style={{ color: "var(--brand-700)" }}>
-        {es.filter((e) => e.core).length}
+        {es.filter((e) => e.core).length}/4
       </td>
     </tr>
   ));
@@ -165,21 +194,22 @@ export function CoreRankCliente({ dados }: { dados: DadosCoreRank }): React.JSX.
   return (
     <div className="viz-root">
       <DashboardEstilos />
-      <div className="section-label">Core Rank</div>
+      <div className="section-label">Core Rank — 4 por ano</div>
       <div className="section-note">
-        O primeiro marco de um Travel Partner: <b>num mês, {eur(metaV)} em reservas próprias</b> e <b>{metaN} novos Travel Partners diretos</b>,
-        entrados nesse mês, que chegam aos <b>{eur(novoMin)} em reservas</b> cada um (contadas desde que entraram até hoje). Dados até {dados.ate}.
+        Conta-se por <b>trimestre (90 dias)</b>, por isso cada consultor pode fazer até <b>4 Core Ranks no ano</b>. Em cada trimestre:{" "}
+        <b>{eur(metaV)} em reservas próprias</b> e <b>{metaN} novos Travel Partners diretos</b>, entrados nesse trimestre, que chegam aos{" "}
+        <b>{eur(novoMin)} em reservas</b> cada um (contadas desde que entraram até hoje). Dados até {dados.ate}.
       </div>
 
       <div className="proj-sim" style={{ flexWrap: "wrap" }}>
-        {dados.meses.map((m, i) => (
+        {trimestres.map((q) => (
           <button
-            key={m}
+            key={q.t}
             type="button"
-            onClick={() => setMes(i)}
-            style={i === mes ? { background: "var(--brand-700)", color: "#fff", borderColor: "var(--brand-700)" } : undefined}
+            onClick={() => setTri(q.t)}
+            style={q.t === tri ? { background: "var(--brand-700)", color: "#fff", borderColor: "var(--brand-700)" } : undefined}
           >
-            {m}
+            T{q.t + 1} · {q.intervalo}
           </button>
         ))}
       </div>
@@ -190,17 +220,19 @@ export function CoreRankCliente({ dados }: { dados: DadosCoreRank }): React.JSX.
             {nCore}
           </div>
           <div className="es-label">
-            atingiram o Core Rank em {nomeMes}
-            {emCurso ? " (mês a decorrer)" : ""}
+            atingiram o Core Rank no {atual.nome}
+            {emCurso ? " (a decorrer)" : ""}
           </div>
         </div>
         <div className="es-stat">
           <div className="es-value">{nV}</div>
-          <div className="es-label">fizeram os {eur(metaV)} em reservas</div>
+          <div className="es-label">já fizeram os {eur(metaV)} em reservas</div>
         </div>
         <div className="es-stat">
-          <div className="es-value">{nN}</div>
-          <div className="es-label">têm {metaN} novos TP ativados</div>
+          <div className="es-value">{novosTri.length}</div>
+          <div className="es-label">
+            novos Travel Partners entraram ({novosTri.filter((x) => x.s >= novoMin).length} já com {eur(novoMin)})
+          </div>
         </div>
         <div className="es-stat">
           <div className="es-value">{totalCore}</div>
@@ -212,9 +244,10 @@ export function CoreRankCliente({ dados }: { dados: DadosCoreRank }): React.JSX.
 
       <div className="events-card">
         <h3>
-          A corrida em {nomeMes}{" "}
+          A corrida no {atual.nome}{" "}
           <span className="events-card-date">
-            {emCurso ? `até ${dados.ate} · ` : ""}passa o rato nos novos TP para ver quem são
+            {atual.intervalo}
+            {emCurso ? ` · até ${dados.ate}` : ""} · passa o rato nos novos TP para ver quem são
           </span>
         </h3>
         <div className="events-table-wrap">
@@ -222,18 +255,47 @@ export function CoreRankCliente({ dados }: { dados: DadosCoreRank }): React.JSX.
             <thead>
               <tr>
                 <th>Consultor</th>
-                <th>Reservas do mês</th>
+                <th>Reservas no trimestre</th>
                 <th style={{ textAlign: "right" }}>Novos TP ativados</th>
                 <th>Estado</th>
               </tr>
             </thead>
             <tbody>
-              {linhasMes.length ? (
-                <Expansivel linhas={linhasMes} colSpan={4} />
+              {linhasTri.length ? (
+                <Expansivel linhas={linhasTri} colSpan={4} />
               ) : (
                 <tr>
                   <td colSpan={4} style={{ color: "var(--text-muted)" }}>
-                    Ninguém com reservas ou novos TP neste mês.
+                    Ninguém com reservas ou novos TP neste trimestre.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="events-card">
+        <h3>
+          Novos Travel Partners no {atual.nome} <span className="events-card-date">quem entrou, quem o trouxe e quanto já reservou</span>
+        </h3>
+        <div className="events-table-wrap">
+          <table className="events-table">
+            <thead>
+              <tr>
+                <th>Novo TP</th>
+                <th>Trazido por</th>
+                <th>Entrou</th>
+                <th>Reservas até hoje (meta {eur(novoMin)})</th>
+              </tr>
+            </thead>
+            <tbody>
+              {linhasNovos.length ? (
+                <Expansivel linhas={linhasNovos} colSpan={4} />
+              ) : (
+                <tr>
+                  <td colSpan={4} style={{ color: "var(--text-muted)" }}>
+                    Ainda não entrou ninguém neste trimestre.
                   </td>
                 </tr>
               )}
@@ -243,7 +305,7 @@ export function CoreRankCliente({ dados }: { dados: DadosCoreRank }): React.JSX.
       </div>
 
       <div className="section-label" style={{ marginTop: 22 }}>
-        O ano, mês a mês
+        O ano, trimestre a trimestre
       </div>
       <div className="events-card">
         <h3>
@@ -254,16 +316,16 @@ export function CoreRankCliente({ dados }: { dados: DadosCoreRank }): React.JSX.
             <thead>
               <tr>
                 <th>Consultor</th>
-                {dados.meses.map((m) => (
-                  <th key={m} style={{ textAlign: "center" }}>
-                    {m}
+                {trimestres.map((q) => (
+                  <th key={q.t} style={{ textAlign: "center" }} title={q.intervalo}>
+                    T{q.t + 1}
                   </th>
                 ))}
-                <th style={{ textAlign: "right" }}>★</th>
+                <th style={{ textAlign: "right" }}>★ no ano</th>
               </tr>
             </thead>
             <tbody>
-              <Expansivel linhas={linhasGrelha} colSpan={dados.meses.length + 2} />
+              <Expansivel linhas={linhasGrelha} colSpan={trimestres.length + 2} />
             </tbody>
           </table>
         </div>
