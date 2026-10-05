@@ -58,7 +58,9 @@ export function EventosPainel({ totais }: { totais: TotaisEquipa }): React.JSX.E
       <div className="dn-stats">
         <div className="dn-stat">
           <div className="dn-stat-v">{CONGRESSOS.length}</div>
-          <div className="dn-stat-l">congressos grandes, Out/2023 a Mai/2026</div>
+          <div className="dn-stat-l">
+            congressos grandes, {CONGRESSOS[0]?.data.replace(" ", "/")} a {CONGRESSOS[CONGRESSOS.length - 1]?.data.replace(" ", "/")}
+          </div>
         </div>
         <div className="dn-stat">
           <div className="dn-stat-v">{TOTAL_PESSOAS}</div>
