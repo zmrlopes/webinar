@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { lerConfig, obterTotaisEquipa } from "@/lib/dashboard-negocio";
+import { CoreRankPainel } from "./core-rank-painel";
 import { EventosPainel } from "./eventos-painel";
 import { IncentivosPainel } from "./incentivos-painel";
 import { LinhaDiretaPainel } from "./linha-direta-painel";
@@ -17,6 +18,7 @@ const ABAS = [
   { id: "linha-direta", label: "Linha direta" },
   { id: "incentivos", label: "Incentivos" },
   { id: "trofeus", label: "Troféus" },
+  { id: "core-rank", label: "Core-rank" },
 ] as const;
 
 const EM_BREVE: string[] = [];
@@ -224,6 +226,8 @@ export default async function DashboardNegocio({
         <LinhaDiretaPainel />
       ) : ativa === "incentivos" ? (
         <IncentivosPainel />
+      ) : ativa === "core-rank" ? (
+        <CoreRankPainel />
       ) : (
         <MapasPainel />
       )}
