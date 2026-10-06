@@ -84,7 +84,7 @@ export interface ResumoQuestionario {
   questionario: Questionario;
   estado: EstadoQuestionario;
   respostas: Record<string, string | number>[];
-  /** Consultores que podem responder (todos os da equipa, sem o Zé). */
+  /** Consultores ativos da equipa (sem o Zé) — a referência para a taxa de resposta. */
   equipa: number;
 }
 
@@ -95,7 +95,10 @@ export async function listarQuestionariosAdmin(): Promise<ResumoQuestionario[]> 
     db().query<{ slug: string; respostas: Record<string, string | number> }>(
       `select slug, respostas from questionario_respostas order by random()`,
     ),
-    db().query<{ n: string }>(`select count(*) as n from equipa_afiliados where email <> $1`, [EMAIL_PAINEL_DEMONSTRACAO]),
+    db().query<{ n: string }>(
+      `select count(*) as n from equipa_afiliados where estado = 'ACTIVE' and email <> $1`,
+      [EMAIL_PAINEL_DEMONSTRACAO],
+    ),
   ]);
   return QUESTIONARIOS.filter((q) => mapa.has(q.slug)).map((q) => ({
     questionario: q,

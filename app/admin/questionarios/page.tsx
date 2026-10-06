@@ -155,7 +155,7 @@ export default async function QuestionariosPagina(): Promise<React.JSX.Element> 
               </div>
               <div>
                 <div className="aq-contagem">{r.respostas.length}</div>
-                <div className="aq-mudo">respostas de {r.equipa} consultores</div>
+                <div className="aq-mudo">respostas · {r.equipa} consultores ativos</div>
               </div>
             </div>
             <BotoesQuestionario slug={r.questionario.slug} aberto={r.estado.aberto} pushEnviadoEm={r.estado.pushEnviadoEm} />
