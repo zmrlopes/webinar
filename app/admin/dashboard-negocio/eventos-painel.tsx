@@ -1,211 +1,32 @@
-import {
-  ATUALIZADO_EM,
-  CONGRESSOS,
-  CORRELACAO_DIRETOS,
-  CORRELACAO_FATURACAO,
-  ESCALOES,
-  TOTAL_PESSOAS,
-} from "./eventos-dados";
-import type { EscalaoEventos } from "./eventos-dados";
-import type { TotaisEquipa } from "@/lib/dashboard-negocio";
+import { dataEvento, resumirEventos, type DadosEventos, type MembroEventos } from "@/lib/eventos-dashboard";
 
-function euros(v: number): string {
-  return `${Math.round(v).toLocaleString("pt-PT")} €`;
-}
-
-/** Barra proporcional ao maior valor da coluna, para se ler a subida de relance. */
-function Barra({ valor, max }: { valor: number; max: number }): React.JSX.Element {
-  const pct = max > 0 ? Math.max(4, Math.round((valor / max) * 100)) : 0;
-  return (
-    <div className="dn-barra">
-      <span style={{ width: `${pct}%` }} />
+export function EventosPainel({ dados, equipa }: { dados: DadosEventos; equipa: MembroEventos[] }): React.JSX.Element {
+  const resumo = resumirEventos(dados, equipa);
+  const pessoais = dados.eventos.filter(e => e.reservas > 0).sort((a, b) => a.inicio.localeCompare(b.inicio));
+  const hoje = new Date().toISOString().slice(0, 10);
+  return <div>
+    <div className="dn-stats">
+      <div className="dn-stat"><div className="dn-stat-v">{resumo.eventos.length}</div><div className="dn-stat-l">eventos principais com lista de inscritos recuperada</div></div>
+      <div className="dn-stat"><div className="dn-stat-v">{resumo.pessoas}</div><div className="dn-stat-l">consultores da equipa com inscrição localizada</div></div>
+      <div className="dn-stat"><div className="dn-stat-v">{resumo.inscricoes}</div><div className="dn-stat-l">inscrições únicas por consultor e evento</div></div>
     </div>
-  );
-}
-
-/**
- * Quem nunca foi a nenhum congresso: os consultores ativos com mais de um ano (ao vivo, da base de
- * dados) menos quem já foi (os escalões agregados). null se as contas não
- * baterem — p.ex. a exportação da equipa ainda não ter sido importada.
- */
-function calcularSemEventos(totais: TotaisEquipa): EscalaoEventos | null {
-  const pessoas = totais.pessoas - TOTAL_PESSOAS;
-  if (pessoas <= 0) return null;
-  const vendasForam = ESCALOES.reduce((s, e) => s + e.pessoas * e.faturacaoMedia, 0);
-  const diretosForam = ESCALOES.reduce((s, e) => s + e.pessoas * e.diretosMedia, 0);
-  const faturacaoMedia = Math.max(0, (totais.somaVendas - vendasForam) / pessoas);
-  const diretosMedia = Math.max(0, Math.round(((totais.somaDiretos - diretosForam) / pessoas) * 10) / 10);
-  return { escalao: "Nenhum", pessoas, faturacaoMedia, diretosMedia };
-}
-
-export function EventosPainel({ totais }: { totais: TotaisEquipa }): React.JSX.Element {
-  const semEventos = calcularSemEventos(totais);
-  const linhas = semEventos ? [semEventos, ...ESCALOES] : ESCALOES;
-  const totalInscritos = CONGRESSOS.reduce((s, c) => s + c.inscritos, 0);
-  const maxFat = Math.max(...linhas.map((e) => e.faturacaoMedia));
-  const maxDir = Math.max(...linhas.map((e) => e.diretosMedia));
-  const foram = ESCALOES.reduce((s, e) => s + e.pessoas, 0);
-  const mediaForam = foram > 0 ? ESCALOES.reduce((s, e) => s + e.pessoas * e.faturacaoMedia, 0) / foram : 0;
-  const diretosForam = foram > 0 ? ESCALOES.reduce((s, e) => s + e.pessoas * e.diretosMedia, 0) / foram : 0;
-  const maxCong = Math.max(...CONGRESSOS.map((c) => c.inscritos));
-  const topo = ESCALOES[ESCALOES.length - 1] ?? { faturacaoMedia: 0, diretosMedia: 0 };
-  const base = ESCALOES[0] ?? { faturacaoMedia: 0, diretosMedia: 0 };
-  const vezesFat = base.faturacaoMedia > 0 ? Math.round(topo.faturacaoMedia / base.faturacaoMedia) : 0;
-  const vezesDir = base.diretosMedia > 0 ? Math.round(topo.diretosMedia / base.diretosMedia) : 0;
-
-  return (
-    <div>
-      <div className="dn-stats">
-        <div className="dn-stat">
-          <div className="dn-stat-v">{CONGRESSOS.length}</div>
-          <div className="dn-stat-l">
-            congressos grandes, {CONGRESSOS[0]?.data.replace(" ", "/")} a {CONGRESSOS[CONGRESSOS.length - 1]?.data.replace(" ", "/")}
-          </div>
-        </div>
-        <div className="dn-stat">
-          <div className="dn-stat-v">{TOTAL_PESSOAS}</div>
-          <div className="dn-stat-l">pessoas da equipa que já foram a pelo menos um</div>
-        </div>
-        {semEventos && (
-          <div className="dn-stat">
-            <div className="dn-stat-v">{semEventos.pessoas}</div>
-            <div className="dn-stat-l">consultores ativos que nunca foram a nenhum</div>
-          </div>
-        )}
-        <div className="dn-stat">
-          <div className="dn-stat-v">{totalInscritos}</div>
-          <div className="dn-stat-l">inscrições da equipa, somando todos os congressos</div>
-        </div>
-      </div>
-
-      <p className="dn-nota">
-        Presença = estar inscrito no congresso. Contam só os congressos grandes (Congresso de Janeiro, Convenção, Be a
-        Pro, Be a Leader e Bootcamp); ficam de fora as sessões semanais online, festas, jantares e visitas. Dados do
-        MyOffice a {ATUALIZADO_EM}, cruzados com a faturação própria e os recrutas diretos de cada pessoa. Tu ficas de
-        fora das contas. A linha «Nenhum» são os consultores com subscrição ativa e mais de um ano de casa que não
-        aparecem em nenhum congresso (suspensos, cancelados e entradas recentes ficam de fora), calculada ao vivo a
-        partir da última importação da equipa.
-      </p>
-
-      <div className="dn-destaque">
-        Quem vai a <strong>7 ou mais</strong> congressos fatura, em média, <strong>{vezesFat}×</strong> mais e traz{" "}
-        <strong>{vezesDir}×</strong> mais pessoas novas para a equipa do que quem só foi a um.
-      </div>
-
-      {semEventos && (
-        <div className="dn-destaque">
-          Quem já foi a pelo menos um congresso fatura, em média, <strong>{euros(mediaForam)}</strong> e traz{" "}
-          <strong>{diretosForam.toFixed(1).replace(".", ",")}</strong> recrutas diretos. Quem nunca foi a nenhum fatura{" "}
-          <strong>{euros(semEventos.faturacaoMedia)}</strong> e traz{" "}
-          <strong>{semEventos.diretosMedia.toString().replace(".", ",")}</strong>
-          {semEventos.faturacaoMedia > 0 && (
-            <>
-              {" "}
-              — ou seja, quem vai fatura <strong>{Math.round(mediaForam / semEventos.faturacaoMedia)}×</strong> mais
-            </>
-          )}
-          .
-        </div>
-      )}
-
-      <h2 className="dn-h2">Quem vai a mais congressos fatura mais</h2>
-      <p className="dn-sub">
-        Faturação própria média por escalão de presenças. Correlação de {CORRELACAO_FATURACAO.toString().replace(".", ",")}{" "}
-        (0 = sem relação, 1 = relação perfeita).
-      </p>
-      <div className="dn-cartao">
-        <table className="dn-tabela">
-          <thead>
-            <tr>
-              <th>Congressos</th>
-              <th className="dn-num">Pessoas</th>
-              <th>Faturação própria média</th>
-            </tr>
-          </thead>
-          <tbody>
-            {linhas.map((e) => (
-              <tr key={e.escalao} style={e === semEventos ? { background: "#f3f1ea" } : undefined}>
-                <td>
-                  <strong>{e.escalao}</strong>
-                </td>
-                <td className="dn-num">{e.pessoas}</td>
-                <td>
-                  <div className="dn-celula-barra">
-                    <span className="dn-valor">{euros(e.faturacaoMedia)}</span>
-                    <Barra valor={e.faturacaoMedia} max={maxFat} />
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <h2 className="dn-h2">E constrói mais equipa</h2>
-      <p className="dn-sub">
-        Recrutas diretos médios por escalão de presenças. Correlação de{" "}
-        {CORRELACAO_DIRETOS.toString().replace(".", ",")}.
-      </p>
-      <div className="dn-cartao">
-        <table className="dn-tabela">
-          <thead>
-            <tr>
-              <th>Congressos</th>
-              <th className="dn-num">Pessoas</th>
-              <th>Recrutas diretos (média)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {linhas.map((e) => (
-              <tr key={e.escalao} style={e === semEventos ? { background: "#f3f1ea" } : undefined}>
-                <td>
-                  <strong>{e.escalao}</strong>
-                </td>
-                <td className="dn-num">{e.pessoas}</td>
-                <td>
-                  <div className="dn-celula-barra">
-                    <span className="dn-valor">
-                      {e.diretosMedia.toString().replace(".", ",")}
-                    </span>
-                    <Barra valor={e.diretosMedia} max={maxDir} />
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <h2 className="dn-h2">Os congressos que entraram na conta</h2>
-      <p className="dn-sub">Inscrições da nossa equipa em cada um. O MyOffice só guarda registo de bilhete desde outubro de 2023.</p>
-      <div className="dn-cartao">
-        <table className="dn-tabela">
-          <thead>
-            <tr>
-              <th>Congresso</th>
-              <th>Quando</th>
-              <th>Inscritos da equipa</th>
-            </tr>
-          </thead>
-          <tbody>
-            {CONGRESSOS.map((c, i) => (
-              <tr key={`${c.cat}-${i}`}>
-                <td>
-                  <strong>{c.cat}</strong>
-                </td>
-                <td className="dn-quando">{c.data}</td>
-                <td>
-                  <div className="dn-celula-barra">
-                    <span className="dn-valor">{c.inscritos}</span>
-                    <Barra valor={c.inscritos} max={maxCong} />
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-    </div>
-  );
+    <p className="dn-nota">MyOffice consultado em {new Date(dados.atualizadoEm).toLocaleDateString("pt-PT")}. Há reservas desde 2020. Uma inscrição ou reserva não comprova presença; o check-in é indicado à parte. As contagens abrangem apenas os nomes recuperados, incluindo listas parciais assinaladas abaixo. As listas antigas indisponíveis não são contadas como zero.</p>
+    <h2 className="dn-h2">O teu histórico de reservas de eventos</h2>
+    <p className="dn-sub">Reservas da tua conta, agrupadas por evento. Packs e compras para outras pessoas não confirmam a tua presença. As datas são as do evento, não as da compra.</p>
+    <div className="dn-cartao"><table className="dn-tabela">
+      <thead><tr><th>Evento</th><th>Quando</th><th>Comprovativo encontrado</th></tr></thead>
+      <tbody>{pessoais.map(e => <tr key={e.id}>
+        <td><strong>{e.nome}</strong><div className="dn-sub">{e.local}</div></td>
+        <td className="dn-quando">{dataEvento(e)}{e.inicio.slice(0, 10) > hoje && <div>Futuro · reserva antecipada</div>}</td>
+        <td>{e.evidenciaPessoal}<div className="dn-sub">{e.reservas} reserva{e.reservas === 1 ? "" : "s"} · {e.pessoas === null ? "lista da equipa indisponível" : e.nota ? "lista da equipa parcial" : "lista da equipa recuperada"}</div></td>
+      </tr>)}</tbody>
+    </table></div>
+    <h2 className="dn-h2">Inscrições e resultados da equipa</h2>
+    <p className="dn-sub">A comparação usa os mesmos {resumo.comparaveis} consultores ativos com pelo menos um ano e data de registo conhecida em todos os escalões. Exclui as tuas contas. Inclui congressos, convenções e bootcamps já iniciados; exclui Take Off, seminários, sessões semanais, jantares e extras.</p>
+    <div className="dn-cartao"><table className="dn-tabela">
+      <thead><tr><th>Inscrições localizadas</th><th className="dn-num">Pessoas</th><th className="dn-num">Faturação própria média</th><th className="dn-num">Recrutas diretos médios</th></tr></thead>
+      <tbody>{resumo.linhas.map(l => <tr key={l.escalao}><td>{l.escalao}</td><td className="dn-num">{l.pessoas}</td><td className="dn-num">{l.pessoas ? l.faturacaoMedia.toLocaleString("pt-PT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }) : "—"}</td><td className="dn-num">{l.pessoas ? l.diretosMedia.toLocaleString("pt-PT", { maximumFractionDigits: 1 }) : "—"}</td></tr>)}</tbody>
+    </table></div>
+    <p className="dn-nota">«Sem inscrição localizada» refere-se apenas às listas recuperadas: não significa que a pessoa nunca tenha ido a eventos. Os valores descrevem uma associação, não demonstram que frequentar eventos cause maior faturação. Faturação e recrutas vêm da última importação da equipa.</p>
+  </div>;
 }

@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { lerConfig, obterTotaisEquipa } from "@/lib/dashboard-negocio";
+import { lerConfig } from "@/lib/dashboard-negocio";
+import { db } from "@/lib/db";
+import type { DadosEventos, MembroEventos } from "@/lib/eventos-dashboard";
 import { CongressosNomes } from "./congressos-nomes";
 import { CoreRankPainel } from "./core-rank-painel";
 import { EventosPainel } from "./eventos-painel";
@@ -24,6 +26,13 @@ const ABAS = [
 
 const EM_BREVE: string[] = [];
 
+async function EventosAuditados(): Promise<React.JSX.Element> {
+  const dados = await lerConfig<DadosEventos>("eventos_auditados");
+  if (!dados) return <p className="dn-nota">Ainda não há dados de eventos verificados.</p>;
+  const { rows } = await db().query<MembroEventos>("select email, upline_email, vendas, estado, data_registo from equipa_afiliados");
+  return <><EventosPainel dados={dados} equipa={rows} /><CongressosNomes dados={dados} /></>;
+}
+
 async function ObjetivosPainel(): Promise<React.JSX.Element> {
   const dados = await lerConfig<DadosMapas>("mapas");
   if (!dados)
@@ -46,10 +55,8 @@ async function ObjetivosPainel(): Promise<React.JSX.Element> {
 }
 
 /**
- * Dashboard de negócio, dentro do próprio painel admin (deixou de abrir o
- * artefacto externo do Claude). Está a ser construído por separadores; o
- * primeiro é o de Eventos, que cruza as presenças nos congressos da equipa
- * com a faturação e a construção de equipa. Os restantes ficam "em breve".
+ * Dashboard de negócio dentro do painel admin. O separador Eventos cruza
+ * inscrições verificadas no MyOffice com a última importação da equipa.
  */
 export default async function DashboardNegocio({
   searchParams,
@@ -220,10 +227,7 @@ export default async function DashboardNegocio({
       {ativa === "trofeus" ? (
         <TrofeusPainel />
       ) : ativa === "eventos" ? (
-        <>
-          <EventosPainel totais={await obterTotaisEquipa()} />
-          <CongressosNomes />
-        </>
+        <EventosAuditados />
       ) : ativa === "objetivos" ? (
         <ObjetivosPainel />
       ) : ativa === "linha-direta" ? (
