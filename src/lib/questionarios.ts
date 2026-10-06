@@ -9,8 +9,9 @@ export * from "./questionarios-lista";
  * Questionários anónimos à equipa. A resposta é gravada sem email nem hora
  * (só o dia); quem já respondeu fica registado à parte, sem ligação à
  * resposta, só para o cartão desaparecer e não haver respostas a dobrar.
- * O próprio Zé (email do painel de demonstração) não recebe o cartão — vê o
- * formulário em pré-visualização a partir do admin.
+ * A conta de teste (email do painel de demonstração, que é o do próprio Zé)
+ * vê sempre o cartão, mas o que envia não é gravado — para não misturar as
+ * respostas dele com as da equipa.
  */
 
 export interface EstadoQuestionario {
@@ -28,12 +29,14 @@ async function estados(): Promise<Map<string, EstadoQuestionario>> {
 
 /** Os questionários abertos que este consultor ainda não respondeu (para o cartão nos avisos). */
 export async function questionariosPendentes(email: string): Promise<{ slug: string; titulo: string; chamada: string }[]> {
-  if (email === EMAIL_PAINEL_DEMONSTRACAO) return [];
+  // A conta de teste vê sempre o cartão dos questionários abertos (e o que
+  // envia nunca é gravado — ver a rota /api/consultor/questionario).
+  const demo = email === EMAIL_PAINEL_DEMONSTRACAO;
   const { rows } = await db().query<{ slug: string }>(
     `select e.slug from questionarios_estado e
       where e.aberto
-        and not exists (select 1 from questionario_participacoes p where p.slug = e.slug and p.email = $1)`,
-    [email],
+        and ($2 or not exists (select 1 from questionario_participacoes p where p.slug = e.slug and p.email = $1))`,
+    [email, demo],
   );
   return rows
     .map((r) => buscarQuestionario(r.slug))

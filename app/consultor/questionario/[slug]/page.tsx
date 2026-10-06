@@ -24,6 +24,7 @@ function QuestionarioFormulario() {
   const [estado, setEstado] = useState<Estado>("a-carregar");
   const [erro, setErro] = useState("");
   const [respostas, setRespostas] = useState<Record<string, string | number>>({});
+  const [contaTeste, setContaTeste] = useState(false);
 
   useEffect(() => {
     if (emPreview) {
@@ -72,6 +73,7 @@ function QuestionarioFormulario() {
         setEstado("pronto");
         return;
       }
+      setContaTeste(corpo.teste === true);
       setEstado("enviado");
     } catch {
       setErro("falha de ligação — tenta outra vez");
@@ -134,8 +136,8 @@ function QuestionarioFormulario() {
 
             {estado === "enviado" && (
               <p className="vqq-mudo">
-                {emPreview
-                  ? "✅ (Pré-visualização) É isto que o consultor vê depois de enviar."
+                {emPreview || contaTeste
+                  ? "✅ (Conta de teste) É isto que o consultor vê depois de enviar — a tua resposta não ficou gravada."
                   : "✅ Obrigado pela tua sinceridade! A tua resposta ficou registada, de forma anónima."}
               </p>
             )}

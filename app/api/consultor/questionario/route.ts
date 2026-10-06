@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
 import { buscarMembroEquipa } from "@/lib/equipa";
 import { buscarQuestionario, gravarRespostaQuestionario, validarRespostas } from "@/lib/questionarios";
 
@@ -18,6 +19,9 @@ export async function POST(request: Request): Promise<Response> {
   }
   const validas = validarRespostas(q, corpo?.respostas);
   if (!validas.ok) return NextResponse.json({ erro: validas.erro }, { status: 400 });
+
+  // Conta de teste: percorre o formulário todo, mas não grava nada.
+  if (email === EMAIL_PAINEL_DEMONSTRACAO) return NextResponse.json({ ok: true, teste: true });
 
   try {
     if (!(await buscarMembroEquipa(email))) {
