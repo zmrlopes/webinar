@@ -16,6 +16,7 @@ import { formacoesGravadasVisiveis } from "@/lib/formacoes-gravadas";
 import { precisaResponderHotel } from "@/lib/hotel";
 import { precisaResponderTeambuilding } from "@/lib/teambuilding";
 import { precisaResponderTrofeus } from "@/lib/trofeus";
+import { questionariosPendentes } from "@/lib/questionarios";
 import { listarFormacoesExternasFuturas } from "@/lib/formacoes-externas";
 import { listarWelcomeAboardDaEquipa, obterElegibilidadeWelcomeAboard } from "@/lib/welcome-aboard";
 
@@ -92,6 +93,12 @@ export async function POST(request: Request): Promise<Response> {
 
     const equipaWelcomeAboard = await listarWelcomeAboardDaEquipa(emailNormalizado);
 
+    // Um problema nas tabelas dos questionários não pode impedir a entrada no painel.
+    const questionarios = await questionariosPendentes(emailNormalizado).catch((erro) => {
+      console.error("falha ao ver questionários pendentes:", erro);
+      return [];
+    });
+
     async function jaInscrito(webinarId: string): Promise<boolean> {
       const { rows } = await db().query<{ existe: boolean }>(
         `select exists(
@@ -132,6 +139,7 @@ export async function POST(request: Request): Promise<Response> {
       precisaResponderTeambuilding: precisaResponderTeambuildingBool,
       precisaResponderTrofeus: precisaResponderTrofeusBool,
       precisaResponderHotel: precisaResponderHotelBool,
+      questionarios,
       inscricoesEventoAbertas,
       erroConvencao: pedidoConvencao === "erro",
       pedidoConvencao: pedidoConvencao === "erro"

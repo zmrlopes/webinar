@@ -19,6 +19,8 @@ interface DadosIdentificacao {
   precisaResponderTeambuilding: boolean;
   precisaResponderTrofeus: boolean;
   precisaResponderHotel: boolean;
+  /** Questionários anónimos à equipa ainda por responder. */
+  questionarios?: { slug: string; titulo: string; chamada: string }[];
   inscricoesEventoAbertas: boolean;
   pedidoConvencao: PedidoConvencao | null;
   erroConvencao?: boolean;
@@ -622,6 +624,18 @@ export function BackofficeHome() {
             <div className="vqb-avisos">
               <h2>Avisos</h2>
               <div className="vqb-avisos-lista">
+              {(dados.questionarios ?? []).map((q) => (
+                <div className="vqb-aviso-destaque" key={q.slug}>
+                  <span className="vqb-destaque-etiqueta">🔒 Questionário anónimo</span>
+                  <p className="vqb-wa-linha">
+                    <strong>{q.titulo}</strong>
+                  </p>
+                  <p className="vqb-destaque-texto">{q.chamada}</p>
+                  <Link href={`/consultor/questionario/${q.slug}`} className="vqb-destaque-botao">
+                    Responder
+                  </Link>
+                </div>
+              ))}
               <NotificacoesPush email={email} />
               {dados.welcomeAboard && (
                   <div className="vqb-aviso-destaque">
