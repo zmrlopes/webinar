@@ -25,7 +25,7 @@ export const QUESTIONARIOS: Questionario[] = [
     titulo: "Como estás? — questionário à equipa",
     chamada: "9 perguntas sobre como te sentes, o que te trava e o que precisas de mim. É anónimo.",
     intro:
-      "Este questionário é anónimo: o Zé vê as respostas, mas não sabe quem respondeu. Sê sincero — é a única forma de isto servir para alguma coisa.",
+      "Este questionário é anónimo: a Sara e o Zé veem as respostas, mas não sabem quem respondeu. Sê sincero — é a única forma de isto servir para alguma coisa.",
     perguntas: [
       {
         id: "estado",
