@@ -5,8 +5,8 @@ export function podeVerNovaArea(email: string): boolean {
   return email.trim().toLowerCase() === EMAIL_PAINEL_DEMONSTRACAO;
 }
 
-/** Aguardar o convite real; nunca substituir por um grupo de outra equipa. */
-export const LINK_GRUPO_WELCOME_ABOARD: string | null = null;
+/** Convite do grupo Welcome Aboard fornecido pelo utilizador. */
+export const LINK_GRUPO_WELCOME_ABOARD = "https://chat.whatsapp.com/ECXPKjkgn0X3xW1eYlUSAy";
 export const LINK_CURSO_TRAVEL_PARTNER = "https://academy.icligo.com/courses/be-a-travel-consultant-2";
 
 export interface DadosNovaArea {
