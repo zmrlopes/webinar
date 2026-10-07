@@ -11,6 +11,7 @@ import {
 import { AlternarArea } from "../alternar-area";
 import { lerEmailGuardado, limparEmailGuardado } from "../armazenamento";
 import estilos from "./nova-area.module.css";
+import { ProximoWebinar, TarefasIniciaisEquipa } from "./organizacao";
 
 const CHAVE_PROGRESSO = "consultor-nova-area:primeiros-passos:v1";
 const TITULOS = [
@@ -64,6 +65,7 @@ export default function NovaAreaConsultor() {
   const [aInscrever, setAInscrever] = useState(false);
   const [erroSessao, setErroSessao] = useState("");
   const [inscrito, setInscrito] = useState(false);
+  const [seccao, setSeccao] = useState<"comeca-aqui" | "tarefas-equipa" | "proximo-webinar">("comeca-aqui");
 
   useEffect(() => {
     const conta = lerEmailGuardado()?.trim().toLowerCase() ?? "";
@@ -163,10 +165,18 @@ export default function NovaAreaConsultor() {
         <div className={estilos.layout}>
           <aside className={estilos.lateral}>
             <nav aria-label="Secções da nova área">
-              <span className={estilos.etiqueta}>PRIMEIROS PASSOS</span>
-              <a className={estilos.navAtivo} href="#comeca-aqui" aria-current="page">Começa aqui <span>{5 - totalFeitos}</span></a>
+              <div className={estilos.grupoMenu}>
+                <span className={estilos.etiqueta}>PRIMEIROS PASSOS</span>
+                <button type="button" className={seccao === "comeca-aqui" ? estilos.navAtivo : estilos.navItem} onClick={() => setSeccao("comeca-aqui")} aria-current={seccao === "comeca-aqui" ? "page" : undefined} aria-controls="conteudo-nova-area">Começa aqui <span>{5 - totalFeitos}</span></button>
+              </div>
+              <div className={estilos.grupoMenu}>
+                <span className={estilos.etiqueta}>A MINHA ORGANIZAÇÃO</span>
+                <Link href="/consultor/webinares" className={estilos.navItem}>Leads <Seta /></Link>
+                <button type="button" className={seccao === "tarefas-equipa" ? estilos.navAtivo : estilos.navItem} onClick={() => setSeccao("tarefas-equipa")} aria-current={seccao === "tarefas-equipa" ? "page" : undefined} aria-controls="conteudo-nova-area">Tarefas iniciais da equipa</button>
+                <button type="button" className={seccao === "proximo-webinar" ? estilos.navAtivo : estilos.navItem} onClick={() => setSeccao("proximo-webinar")} aria-current={seccao === "proximo-webinar" ? "page" : undefined} aria-controls="conteudo-nova-area">Próximo webinar</button>
+              </div>
             </nav>
-            <div className={estilos.resumo}>
+            {seccao === "comeca-aqui" && <div className={estilos.resumo}>
               <span className={estilos.etiqueta}>O TEU ARRANQUE</span>
               <p>{totalFeitos === 5 ? "Primeiros passos concluídos!" : "Um passo de cada vez."}</p>
               <div className={estilos.barra} role="progressbar" aria-label="Primeiros passos concluídos" aria-valuemin={0} aria-valuemax={5} aria-valuenow={totalFeitos}><span style={{ width: `${totalFeitos * 20}%` }} /></div>
@@ -174,11 +184,12 @@ export default function NovaAreaConsultor() {
               <ol className={estilos.listaPassos}>
                 {TITULOS.map((titulo, i) => <li key={titulo}><a href={`#passo-${i + 1}`}><span className={feitos.includes(i + 1) ? estilos.miniFeito : estilos.miniNumero}>{feitos.includes(i + 1) ? "✓" : i + 1}</span>{titulo}</a></li>)}
               </ol>
-            </div>
+            </div>}
             <Link className={estilos.voltar} href="/consultor">Consultar a área atual <Seta /></Link>
           </aside>
 
-          <main id="comeca-aqui" className={estilos.conteudo}>
+          <main id="conteudo-nova-area" className={estilos.conteudo}>
+            {seccao === "comeca-aqui" && <section id="comeca-aqui" aria-label="Começa aqui">
             <div className={estilos.intro}>
               <span className={estilos.etiqueta}>BEM-VINDO À EQUIPA</span>
               <h1>Começa aqui<span>.</span></h1>
@@ -229,6 +240,9 @@ export default function NovaAreaConsultor() {
                 <p className={estilos.nota}>Escolhe o contacto do teu upline e combina a segunda chamada.</p>
               </Passo>
             </div>
+            </section>}
+            {seccao === "tarefas-equipa" && <TarefasIniciaisEquipa membros={dados.equipaPrimeirosPassos} />}
+            {seccao === "proximo-webinar" && <ProximoWebinar webinar={dados.proximoWebinar} email={email} aoInscrever={() => setDados(atual => atual?.proximoWebinar ? { ...atual, proximoWebinar: { ...atual.proximoWebinar, inscrito: true } } : atual)} />}
             <footer className={estilos.rodape}><span className={estilos.ponto} />Nova área em construção <span>·</span> Visível apenas na conta de teste</footer>
           </main>
         </div>

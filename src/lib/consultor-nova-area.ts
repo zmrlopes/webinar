@@ -9,10 +9,28 @@ export function podeVerNovaArea(email: string): boolean {
 export const LINK_GRUPO_WELCOME_ABOARD = "https://chat.whatsapp.com/ECXPKjkgn0X3xW1eYlUSAy";
 export const LINK_CURSO_TRAVEL_PARTNER = "https://academy.icligo.com/courses/be-a-travel-consultant-2";
 
+export interface MembroPrimeirosPassos {
+  nome: string;
+  email: string;
+  dataRegisto: string | null;
+  sessao1Concluida: boolean;
+  sessao2Concluida: boolean;
+}
+
+export interface ProximoWebinarNovaArea {
+  id: string;
+  titulo: string;
+  comecaEm: string;
+  duracaoMinutos: number;
+  inscrito: boolean;
+}
+
 export interface DadosNovaArea {
   nome: string;
   upline: { nome: string | null; email: string } | null;
   welcomeAboard: { sessao1Concluida: boolean; sessao2Concluida: boolean } | null;
   proximaSessao: { id: string; comecaEm: string } | null;
   inscritoWelcomeAboard: boolean;
+  equipaPrimeirosPassos: MembroPrimeirosPassos[];
+  proximoWebinar: ProximoWebinarNovaArea | null;
 }

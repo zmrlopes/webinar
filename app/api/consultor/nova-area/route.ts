@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { podeVerNovaArea, type DadosNovaArea } from "@/lib/consultor-nova-area";
-import { obterElegibilidadeWelcomeAboard } from "@/lib/welcome-aboard";
-import { buscarProximaSessaoWelcomeAboard } from "@/lib/webinars";
+import { listarWelcomeAboardDaEquipa, obterElegibilidadeWelcomeAboard } from "@/lib/welcome-aboard";
+import { buscarProximaSessaoWelcomeAboard, buscarProximoWebinarPublico } from "@/lib/webinars";
 
 export async function POST(request: Request): Promise<Response> {
   const corpo = await request.json().catch(() => null);
@@ -23,24 +23,40 @@ export async function POST(request: Request): Promise<Response> {
     if (!membro) {
       return NextResponse.json({ erro: "Não encontrámos esta conta na equipa." }, { status: 403 });
     }
-    const [welcomeAboard, sessao] = await Promise.all([
+    const [welcomeAboard, sessao, proximoWebinar, equipa] = await Promise.all([
       obterElegibilidadeWelcomeAboard(email),
       buscarProximaSessaoWelcomeAboard(),
+      buscarProximoWebinarPublico(),
+      listarWelcomeAboardDaEquipa(email),
     ]);
-    const inscricao = sessao
-      ? await db().query<{ inscrito: boolean }>(
-          `select exists(select 1 from registrations
-           where webinar_id = $1 and email = $2 and cancelada_em is null
-             and link_pessoal is not null) as inscrito`,
-          [sessao.id, email],
-        )
-      : null;
+    async function jaInscrito(webinarId: string | undefined): Promise<boolean> {
+      if (!webinarId) return false;
+      const { rows } = await db().query<{ inscrito: boolean }>(
+        `select exists(select 1 from registrations
+         where webinar_id = $1 and email = $2 and cancelada_em is null
+           and link_pessoal is not null) as inscrito`,
+        [webinarId, email],
+      );
+      return rows[0]?.inscrito ?? false;
+    }
+    const [inscritoWelcomeAboard, inscritoWebinar] = await Promise.all([
+      jaInscrito(sessao?.id), jaInscrito(proximoWebinar?.id),
+    ]);
     const dados: DadosNovaArea = {
       nome: membro.nome,
       upline: membro.upline_email ? { nome: membro.upline_nome, email: membro.upline_email } : null,
       welcomeAboard,
       proximaSessao: sessao ? { id: sessao.id, comecaEm: sessao.sessaoExternaEm.toISOString() } : null,
-      inscritoWelcomeAboard: inscricao?.rows[0]?.inscrito ?? false,
+      inscritoWelcomeAboard,
+      equipaPrimeirosPassos: equipa.map(m => ({
+        nome: m.nome, email: m.email, dataRegisto: m.dataRegisto?.toISOString() ?? null,
+        sessao1Concluida: m.sessao1Concluida, sessao2Concluida: m.sessao2Concluida,
+      })),
+      proximoWebinar: proximoWebinar ? {
+        id: proximoWebinar.id, titulo: proximoWebinar.titulo,
+        comecaEm: proximoWebinar.sessaoExternaEm.toISOString(),
+        duracaoMinutos: proximoWebinar.duracaoMinutos, inscrito: inscritoWebinar,
+      } : null,
     };
     return NextResponse.json(dados, { headers: { "Cache-Control": "private, no-store" } });
   } catch (erro) {
