@@ -14,3 +14,11 @@ As novas alterações de visual e organização devem ficar visíveis apenas na
 conta de teste `zmrlopes@gmail.com`. Publicar estas alterações para todos os
 consultores requer uma instrução explícita do utilizador. Reutilizar o email
 definido em `src/lib/demo.ts` para limitar a visibilidade à conta de teste.
+
+A nova área está em `/consultor/nova-area`; a área atual permanece em
+`/consultor` para comparação. As próximas mudanças do novo visual devem ser
+feitas na nova área, sem alterar a versão que os consultores veem. O seletor
+entre as duas versões só aparece na conta de teste.
+
+Manter as cores da marca existente (branco, preto e verde-oliva `#4b5320`),
+mesmo quando a organização se inspira numa referência com outras cores.

@@ -7,6 +7,7 @@ import { ConvencaoCartao, type PedidoConvencao } from "./convencao-cartao";
 import { EventoForm } from "./evento-form";
 import { NotificacoesPush } from "./notificacoes-push";
 import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
+import { AlternarArea } from "./alternar-area";
 
 interface DadosIdentificacao {
   nome: string | null;
@@ -535,6 +536,7 @@ export function BackofficeHome() {
 
         {estado === "pronto" && dados && (
           <>
+            {emTesteVisual && <AlternarArea ativa="atual" />}
             <div className="vqb-topo">
               <h1>Olá{dados.nome ? `, ${dados.nome}` : ""}</h1>
               <button type="button" className="vqb-trocar" onClick={trocarConta}>
@@ -713,7 +715,7 @@ export function BackofficeHome() {
               </div>
             </div>
 
-            <h2>{emTesteVisual ? "Informações essenciais" : "Página da Equipa"}</h2>
+            <h2>Página da Equipa</h2>
             <div className="vqb-cartao">
               <p className="vqb-destaque-texto" style={{ marginBottom: "1.1rem" }}>
                 Informações importantes, agenda semanal, incentivos, formações gravadas e muito mais.
@@ -735,7 +737,6 @@ export function BackofficeHome() {
               </div>
             </div>
 
-            {emTesteVisual && <h2>Próximos acontecimentos</h2>}
             <div className="vqb-menu">
               <button
                 type="button"

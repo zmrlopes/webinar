@@ -1,0 +1,27 @@
+.seletor {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 20px;
+  margin: 0 0 28px;
+  color: #000000;
+  background: #fff;
+  border: 1px solid #eae7de;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.contexto { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+.contexto small { display: block; margin-top: 3px; color: #6b6a63; font-size: 12px; font-weight: 400; }
+.ponto { width: 8px; height: 8px; border-radius: 50%; background: #4b5320; flex-shrink: 0; }
+.opcoes { display: flex; gap: 6px; padding: 4px; background: #f3f2ed; border-radius: 12px; }
+.opcao, .ativo { display: block; padding: 10px 15px; border-radius: 9px; color: #6b6a63; font-weight: 650; text-decoration: none; }
+.opcao small, .ativo small { display: block; font-size: 11px; font-weight: 400; margin-top: 2px; }
+.ativo { background: #4b5320; color: #fff; box-shadow: 0 2px 5px #4b532018; }
+.opcao:hover { background: #eae7de; }
+.opcao:focus-visible, .ativo:focus-visible { outline: 3px solid #4b5320; outline-offset: 3px; }
+@media (max-width: 640px) {
+  .seletor { flex-direction: column; align-items: stretch; gap: 12px; padding: 14px; }
+  .opcoes > a { flex: 1; padding: 10px; }
+}
