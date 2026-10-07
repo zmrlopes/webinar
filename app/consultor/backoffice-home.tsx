@@ -6,6 +6,7 @@ import { guardarEmail, lerEmailGuardado, limparEmailGuardado } from "./armazenam
 import { ConvencaoCartao, type PedidoConvencao } from "./convencao-cartao";
 import { EventoForm } from "./evento-form";
 import { NotificacoesPush } from "./notificacoes-push";
+import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
 
 interface DadosIdentificacao {
   nome: string | null;
@@ -77,6 +78,7 @@ export function BackofficeHome() {
   const [webinarInscrito, setWebinarInscrito] = useState(false);
   const [webinarAcabadoDeInscrever, setWebinarAcabadoDeInscrever] = useState(false);
   const [seccaoAtiva, setSeccaoAtiva] = useState<Seccao>(null);
+  const emTesteVisual = email.trim().toLowerCase() === EMAIL_PAINEL_DEMONSTRACAO;
   function alternarSeccao(seccao: Seccao): void {
     setSeccaoAtiva((atual) => (atual === seccao ? null : seccao));
   }
@@ -711,7 +713,7 @@ export function BackofficeHome() {
               </div>
             </div>
 
-            <h2>Página da Equipa</h2>
+            <h2>{emTesteVisual ? "Informações essenciais" : "Página da Equipa"}</h2>
             <div className="vqb-cartao">
               <p className="vqb-destaque-texto" style={{ marginBottom: "1.1rem" }}>
                 Informações importantes, agenda semanal, incentivos, formações gravadas e muito mais.
@@ -733,6 +735,7 @@ export function BackofficeHome() {
               </div>
             </div>
 
+            {emTesteVisual && <h2>Próximos acontecimentos</h2>}
             <div className="vqb-menu">
               <button
                 type="button"
