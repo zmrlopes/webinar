@@ -14,6 +14,7 @@ import estilos from "./nova-area.module.css";
 import { ProximoWebinar, TarefasIniciaisEquipa } from "./organizacao";
 import { LeadsNovaArea } from "./leads";
 import { ProximasFormacoes, FormacoesGravadas, DocumentosNovaArea } from "./formacao";
+import { CalendarioConsultor } from "./calendario";
 
 const CHAVE_PROGRESSO = "consultor-nova-area:primeiros-passos:v1";
 const TITULOS = [
@@ -67,7 +68,7 @@ export default function NovaAreaConsultor() {
   const [aInscrever, setAInscrever] = useState(false);
   const [erroSessao, setErroSessao] = useState("");
   const [inscrito, setInscrito] = useState(false);
-  const [seccao, setSeccao] = useState<"comeca-aqui" | "leads" | "tarefas-equipa" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "documentos">("comeca-aqui");
+  const [seccao, setSeccao] = useState<"comeca-aqui" | "calendario" | "leads" | "tarefas-equipa" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "documentos">("comeca-aqui");
 
   useEffect(() => {
     const conta = lerEmailGuardado()?.trim().toLowerCase() ?? "";
@@ -172,6 +173,9 @@ export default function NovaAreaConsultor() {
                 <button type="button" className={seccao === "comeca-aqui" ? estilos.navAtivo : estilos.navItem} onClick={() => setSeccao("comeca-aqui")} aria-current={seccao === "comeca-aqui" ? "page" : undefined} aria-controls="conteudo-nova-area">Começa aqui <span>{5 - totalFeitos}</span></button>
               </div>
               <div className={estilos.grupoMenu}>
+                <button type="button" className={seccao === "calendario" ? estilos.navAtivo : estilos.navItem} onClick={() => setSeccao("calendario")} aria-current={seccao === "calendario" ? "page" : undefined} aria-controls="conteudo-nova-area">Calendário <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" strokeWidth="1.6" /><path d="M7 3v4m10-4v4M3 11h18" stroke="currentColor" strokeWidth="1.6" /></svg></button>
+              </div>
+              <div className={estilos.grupoMenu}>
                 <span className={estilos.etiqueta}>A MINHA ORGANIZAÇÃO</span>
                 <button type="button" className={seccao === "leads" ? estilos.navAtivo : estilos.navItem} onClick={() => setSeccao("leads")} aria-current={seccao === "leads" ? "page" : undefined} aria-controls="conteudo-nova-area">Leads</button>
                 <button type="button" className={seccao === "tarefas-equipa" ? estilos.navAtivo : estilos.navItem} onClick={() => setSeccao("tarefas-equipa")} aria-current={seccao === "tarefas-equipa" ? "page" : undefined} aria-controls="conteudo-nova-area">Tarefas iniciais da equipa</button>
@@ -250,6 +254,7 @@ export default function NovaAreaConsultor() {
             </div>
             </section>}
             {seccao === "leads" && <LeadsNovaArea linkPartilha={dados.linkPartilha} />}
+            {seccao === "calendario" && <CalendarioConsultor email={email} />}
             {seccao === "tarefas-equipa" && <TarefasIniciaisEquipa membros={dados.equipaPrimeirosPassos} />}
             {seccao === "proximo-webinar" && <ProximoWebinar webinar={dados.proximoWebinar} email={email} aoInscrever={() => setDados(atual => atual?.proximoWebinar ? { ...atual, proximoWebinar: { ...atual.proximoWebinar, inscrito: true } } : atual)} />}
             {seccao === "proximas-formacoes" && <ProximasFormacoes formacoes={dados.proximasFormacoes} email={email} aoInscrever={id => setDados(atual => atual ? {

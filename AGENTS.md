@@ -23,6 +23,8 @@ entre as duas versões só aparece na conta de teste.
 Na nova área, as secções (incluindo Leads) abrem no painel da direita,
 mantendo o menu lateral. O link pessoal de partilha aparece no topo das
 Leads. A página original de Leads continua disponível na área atual.
+O botão Calendário fica entre Primeiros passos e A minha organização e
+abre uma vista mensal dos acontecimentos da plataforma no painel direito.
 
 Manter as cores da marca existente (branco, preto e verde-oliva `#4b5320`),
 mesmo quando a organização se inspira numa referência com outras cores.
