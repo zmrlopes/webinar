@@ -160,7 +160,9 @@ function AulaCartao({
   );
 }
 
-export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
+export function CategoriaPagina({ categoriaId, embutida = false, aoVoltar }: {
+  categoriaId: string; embutida?: boolean; aoVoltar?: () => void;
+}) {
   const [email, setEmail] = useState<string | null>(null);
   const [estado, setEstado] = useState<Estado>("a-carregar");
   const [erro, setErro] = useState("");
@@ -261,12 +263,12 @@ export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
   const percentagem = comVideo.length > 0 ? Math.round((totalVistas / comVideo.length) * 100) : 0;
 
   return (
-    <div className="vqf-pagina">
+    <div className={embutida ? "vqf-pagina vqf-embutida" : "vqf-pagina"}>
       <style>{ESTILOS_FORMACOES}</style>
       <div className="vqf-caixa">
-        <Link href="/consultor/formacoes" className="vqf-voltar">
+        {aoVoltar ? <button type="button" className="vqf-voltar" onClick={aoVoltar}>← Todas as formações gravadas</button> : <Link href="/consultor/formacoes" className="vqf-voltar">
           ← Formações
-        </Link>
+        </Link>}
 
         {estado === "a-carregar" && <p className="vqf-mudo">A carregar…</p>}
 
@@ -283,7 +285,7 @@ export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
         {estado === "nao-encontrada" && (
           <p className="vqf-mudo">
             Esta categoria não existe ou ainda não está disponível.{" "}
-            <Link href="/consultor/formacoes">Ver todas as formações</Link>.
+            {aoVoltar ? <button type="button" className="vqf-voltar" onClick={aoVoltar}>Ver todas as formações</button> : <Link href="/consultor/formacoes">Ver todas as formações</Link>}.
           </p>
         )}
 
@@ -291,7 +293,7 @@ export function CategoriaPagina({ categoriaId }: { categoriaId: string }) {
 
         {estado === "pronto" && categoria && (
           <>
-            <h1>{categoria.titulo}</h1>
+            {embutida ? <h2 className="vqf-titulo-categoria">{categoria.titulo}</h2> : <h1>{categoria.titulo}</h1>}
             <p className="vqf-mudo" style={{ marginBottom: 0 }}>
               {categoria.descricao}
             </p>

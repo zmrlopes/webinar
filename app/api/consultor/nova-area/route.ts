@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { podeVerNovaArea, type DadosNovaArea } from "@/lib/consultor-nova-area";
 import { listarWelcomeAboardDaEquipa, obterElegibilidadeWelcomeAboard } from "@/lib/welcome-aboard";
-import { buscarProximaSessaoWelcomeAboard, buscarProximoWebinarPublico } from "@/lib/webinars";
+import { buscarProximaSessaoWelcomeAboard, buscarProximoWebinarPublico, buscarWebinarFormacao, listarFormacoesEquipa } from "@/lib/webinars";
+import { listarFormacoesExternasFuturas } from "@/lib/formacoes-externas";
 
 export async function POST(request: Request): Promise<Response> {
   const corpo = await request.json().catch(() => null);
@@ -23,7 +24,7 @@ export async function POST(request: Request): Promise<Response> {
     if (!membro) {
       return NextResponse.json({ erro: "Não encontrámos esta conta na equipa." }, { status: 403 });
     }
-    const [welcomeAboard, sessao, proximoWebinar, equipa, links] = await Promise.all([
+    const [welcomeAboard, sessao, proximoWebinar, equipa, links, formacao, formacoesEquipa, formacoesExternas] = await Promise.all([
       obterElegibilidadeWelcomeAboard(email),
       buscarProximaSessaoWelcomeAboard(),
       buscarProximoWebinarPublico(),
@@ -33,6 +34,9 @@ export async function POST(request: Request): Promise<Response> {
          order by atualizado_em desc limit 1`,
         [email],
       ),
+      buscarWebinarFormacao(),
+      listarFormacoesEquipa(),
+      listarFormacoesExternasFuturas(),
     ]);
     async function jaInscrito(webinarId: string | undefined): Promise<boolean> {
       if (!webinarId) return false;
@@ -44,8 +48,10 @@ export async function POST(request: Request): Promise<Response> {
       );
       return rows[0]?.inscrito ?? false;
     }
-    const [inscritoWelcomeAboard, inscritoWebinar] = await Promise.all([
+    const internas = [...(formacao ? [formacao] : []), ...formacoesEquipa];
+    const [inscritoWelcomeAboard, inscritoWebinar, inscricoesFormacoes] = await Promise.all([
       jaInscrito(sessao?.id), jaInscrito(proximoWebinar?.id),
+      Promise.all(internas.map(f => jaInscrito(f.id))),
     ]);
     const dados: DadosNovaArea = {
       nome: membro.nome,
@@ -63,6 +69,15 @@ export async function POST(request: Request): Promise<Response> {
         comecaEm: proximoWebinar.sessaoExternaEm.toISOString(),
         duracaoMinutos: proximoWebinar.duracaoMinutos, inscrito: inscritoWebinar,
       } : null,
+      proximasFormacoes: [
+        ...internas.map((f, i) => ({
+          id: f.id, titulo: f.titulo, comecaEm: f.sessaoExternaEm.toISOString(),
+          tipo: "interna" as const, duracaoMinutos: f.duracaoMinutos, inscrito: inscricoesFormacoes[i] ?? false,
+        })),
+        ...formacoesExternas.map(f => ({
+          id: f.id, titulo: f.titulo, comecaEm: f.sessaoExternaEm.toISOString(), tipo: "externa" as const, link: f.link,
+        })),
+      ].sort((a, b) => new Date(a.comecaEm).getTime() - new Date(b.comecaEm).getTime()),
     };
     return NextResponse.json(dados, { headers: { "Cache-Control": "private, no-store" } });
   } catch (erro) {

@@ -8,6 +8,13 @@ export const ESTILOS_FORMACOES = `
     min-height: calc(100vh - 4rem);
   }
   .vqf-caixa { max-width: 1100px; margin: 0 auto; }
+  .vqf-pagina.vqf-embutida { padding: 0; min-height: 0; }
+  .vqf-embutida .vqf-caixa { max-width: none; min-width: 0; }
+  .vqf-embutida .vqf-grade-categorias { grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
+  .vqf-embutida .vqf-aulas { grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); }
+  .vqf-embutida .vqf-separadores { flex-wrap: wrap; }
+  .vqf-embutida button.vqf-voltar { border: none; padding: 0; background: transparent; cursor: pointer; font-family: inherit; }
+  .vqf-embutida h2.vqf-titulo-categoria { color: #000; font-size: 1.6rem; margin: 1.25rem 0 .4rem; }
   .vqf-pagina h1 { color: #000000; font-size: 1.6rem; margin: 0.6rem 0 0.4rem; }
   .vqf-pagina h2 { color: #4b5320; font-size: 1.15rem; margin: 2rem 0 0.6rem; }
   .vqf-voltar { color: #4b5320; font-size: 0.85rem; text-decoration: none; }

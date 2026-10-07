@@ -34,4 +34,9 @@ export interface DadosNovaArea {
   inscritoWelcomeAboard: boolean;
   equipaPrimeirosPassos: MembroPrimeirosPassos[];
   proximoWebinar: ProximoWebinarNovaArea | null;
+  proximasFormacoes: FormacaoNovaArea[];
 }
+
+export type FormacaoNovaArea = {
+  id: string; titulo: string; comecaEm: string;
+} & ({ tipo: "interna"; duracaoMinutos: number; inscrito: boolean } | { tipo: "externa"; link: string });

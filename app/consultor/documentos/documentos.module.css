@@ -1,5 +1,9 @@
 .pagina { min-height:100vh; background:#f7f6f3; color:#1c2115; padding:2.5rem clamp(1rem,5vw,3rem); }
 .caixa { max-width:1060px; margin:0 auto; }
+.pagina.embutida { min-height:0; padding:0; background:#fff; color:#000; }
+.embutida .caixa { max-width:none; min-width:0; }
+.embutida .grade { grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr)); }
+.embutida .filtros > * { max-width:100%; }
 .voltar { color:#4b5320; font-size:.9rem; text-decoration:none; }
 .pagina h1 { font-size:2rem; margin:1.25rem 0 .5rem; }
 .subtitulo { color:#696c61; margin:0 0 1.5rem; line-height:1.6; }

@@ -1,0 +1,133 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import type { Categoria } from "@/lib/formacoes-gravadas";
+import { lerEmailGuardado } from "../armazenamento";
+import { ESTILOS_FORMACOES } from "./estilos";
+import { ResultadosPesquisa } from "./pesquisa";
+
+interface ResumoCategoria {
+  id: string;
+  titulo: string;
+  descricao: string;
+  disponivel: boolean;
+  totalCursos: number;
+  totalAulas: number;
+}
+
+type Estado = "a-carregar" | "sem-conta" | "indisponivel" | "erro" | "pronto";
+
+export function FormacoesPagina({ embutida = false, aoAbrirCategoria }: {
+  embutida?: boolean; aoAbrirCategoria?: (id: string) => void;
+} = {}) {
+  const [estado, setEstado] = useState<Estado>("a-carregar");
+  const [erro, setErro] = useState("");
+  const [categorias, setCategorias] = useState<ResumoCategoria[]>([]);
+  const [completas, setCompletas] = useState<Categoria[]>([]);
+  const [vistas, setVistas] = useState<Set<string>>(new Set());
+  const [pesquisa, setPesquisa] = useState("");
+
+  useEffect(() => {
+    const email = lerEmailGuardado();
+    if (!email) {
+      setEstado("sem-conta");
+      return;
+    }
+    async function carregar(emailConsultor: string): Promise<void> {
+      try {
+        const resposta = await fetch("/api/consultor/formacoes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: emailConsultor, completo: true }),
+        });
+        const corpo = await resposta.json().catch(() => ({}));
+        if (resposta.status === 403) {
+          setEstado("indisponivel");
+          return;
+        }
+        if (!resposta.ok) {
+          setErro(typeof corpo.erro === "string" ? corpo.erro : "não foi possível carregar");
+          setEstado("erro");
+          return;
+        }
+        setCategorias(Array.isArray(corpo.categorias) ? corpo.categorias : []);
+        setCompletas(Array.isArray(corpo.completas) ? (corpo.completas as Categoria[]) : []);
+        setVistas(new Set(Array.isArray(corpo.vistas) ? (corpo.vistas as string[]) : []));
+        setEstado("pronto");
+      } catch {
+        setErro("falha de ligação — tenta outra vez");
+        setEstado("erro");
+      }
+    }
+    void carregar(email);
+  }, []);
+
+  return (
+    <div className={embutida ? "vqf-pagina vqf-embutida" : "vqf-pagina"}>
+      <style>{ESTILOS_FORMACOES}</style>
+      <div className="vqf-caixa">
+        {!embutida && <><Link href="/consultor" className="vqf-voltar">
+          ← Voltar ao painel
+        </Link>
+        <h1>Formações</h1>
+        <p className="vqf-mudo">Formações gravadas para veres quando quiseres, ao teu ritmo.</p></>}
+
+        {estado === "a-carregar" && <p className="vqf-mudo">A carregar…</p>}
+
+        {estado === "sem-conta" && (
+          <p className="vqf-mudo">
+            Primeiro identifica-te no <Link href="/consultor">painel do consultor</Link>.
+          </p>
+        )}
+
+        {estado === "indisponivel" && (
+          <p className="vqf-mudo">As formações gravadas ainda não estão disponíveis.</p>
+        )}
+
+        {estado === "erro" && <p className="vqf-erro">{erro}</p>}
+
+        {estado === "pronto" && (
+          <input
+            type="search"
+            className="vqf-pesquisa"
+            placeholder="Pesquisar em todas as formações: destino, tema, formador ou curso…"
+            value={pesquisa}
+            onChange={(e) => setPesquisa(e.target.value)}
+            aria-label="Pesquisar em todas as formações"
+          />
+        )}
+
+        {estado === "pronto" && pesquisa.trim() !== "" && (
+          <ResultadosPesquisa categorias={completas} pesquisa={pesquisa} vistas={vistas} />
+        )}
+
+        {estado === "pronto" && pesquisa.trim() === "" && (
+          <div className="vqf-grade-categorias">
+            {categorias.map((c) => (
+              <div className="vqf-cartao" key={c.id}>
+                <h2>{c.titulo}</h2>
+                <p>{c.descricao}</p>
+                {c.disponivel && (
+                  <p className="vqf-cartao-meta">
+                    {c.totalCursos} {c.totalCursos === 1 ? "curso" : "cursos"} · {c.totalAulas}{" "}
+                    {c.totalAulas === 1 ? "aula" : "aulas"}
+                  </p>
+                )}
+                {c.disponivel ? (
+                  aoAbrirCategoria ? <button type="button" className="vqf-botao" onClick={() => aoAbrirCategoria(c.id)}>Entrar</button> : <Link href={`/consultor/formacoes/${c.id}`} className="vqf-botao">
+                    Entrar
+                  </Link>
+                ) : (
+                  <span className="vqf-botao vqf-botao-desativado" aria-disabled="true">
+                    Em breve
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
