@@ -23,11 +23,16 @@ export async function POST(request: Request): Promise<Response> {
     if (!membro) {
       return NextResponse.json({ erro: "Não encontrámos esta conta na equipa." }, { status: 403 });
     }
-    const [welcomeAboard, sessao, proximoWebinar, equipa] = await Promise.all([
+    const [welcomeAboard, sessao, proximoWebinar, equipa, links] = await Promise.all([
       obterElegibilidadeWelcomeAboard(email),
       buscarProximaSessaoWelcomeAboard(),
       buscarProximoWebinarPublico(),
       listarWelcomeAboardDaEquipa(email),
+      db().query<{ referencia: string }>(
+        `select referencia from links_consultor where referencia_email = $1
+         order by atualizado_em desc limit 1`,
+        [email],
+      ),
     ]);
     async function jaInscrito(webinarId: string | undefined): Promise<boolean> {
       if (!webinarId) return false;
@@ -44,6 +49,7 @@ export async function POST(request: Request): Promise<Response> {
     ]);
     const dados: DadosNovaArea = {
       nome: membro.nome,
+      linkPartilha: links.rows[0] ? new URL(`/${encodeURIComponent(links.rows[0].referencia)}`, request.url).href : null,
       upline: membro.upline_email ? { nome: membro.upline_nome, email: membro.upline_email } : null,
       welcomeAboard,
       proximaSessao: sessao ? { id: sessao.id, comecaEm: sessao.sessaoExternaEm.toISOString() } : null,

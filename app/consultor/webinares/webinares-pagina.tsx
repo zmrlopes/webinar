@@ -68,7 +68,7 @@ const ROTULOS_ESTADO: Record<EstadoLead, string> = {
 
 type Aba = "pessoais" | "equipa";
 
-export function WebinaresPagina() {
+export function WebinaresPagina({ embutida = false }: { embutida?: boolean } = {}) {
   const [email, setEmail] = useState<string | null>(null);
   const [dados, setDados] = useState<ResumoLeads | null>(null);
   const [erro, setErro] = useState("");
@@ -141,7 +141,7 @@ export function WebinaresPagina() {
   const leadsVisiveis = aba === "pessoais" ? leadsPessoais : leadsEquipa;
 
   return (
-    <div className="vqw-pagina">
+    <div className={embutida ? "vqw-pagina vqw-embutida" : "vqw-pagina"}>
       <style>{`
         .vqw-pagina {
           background: #ffffff;
@@ -151,6 +151,9 @@ export function WebinaresPagina() {
           min-height: calc(100vh - 4rem);
         }
         .vqw-caixa { max-width: 1100px; margin: 0 auto; }
+        .vqw-pagina.vqw-embutida { padding: 0; min-height: 0; }
+        .vqw-embutida .vqw-caixa { max-width: none; min-width: 0; }
+        .vqw-embutida .vqw-abas { flex-wrap: wrap; }
         .vqw-voltar { color: #4b5320; font-size: 0.85rem; text-decoration: none; }
         .vqw-voltar:hover { text-decoration: underline; }
         .vqw-pagina h1 { color: #000000; font-size: 1.5rem; margin: 0.75rem 0 1.25rem; }
@@ -275,10 +278,12 @@ export function WebinaresPagina() {
       `}</style>
 
       <div className="vqw-caixa">
-        <Link href="/consultor" className="vqw-voltar">
-          ← Backoffice
-        </Link>
-        <h1>Webinares</h1>
+        {!embutida && <>
+          <Link href="/consultor" className="vqw-voltar">
+            ← Backoffice
+          </Link>
+          <h1>Webinares</h1>
+        </>}
 
         {!email && (
           <p className="vqw-mudo">
@@ -286,6 +291,7 @@ export function WebinaresPagina() {
           </p>
         )}
         {erro && <p className="vqw-erro">{erro}</p>}
+        {embutida && email && !dados && !erro && <p className="vqw-mudo" role="status">A carregar as leads…</p>}
 
         {dados && (
           <>

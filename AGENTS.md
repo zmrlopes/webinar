@@ -20,5 +20,9 @@ A nova área está em `/consultor/nova-area`; a área atual permanece em
 feitas na nova área, sem alterar a versão que os consultores veem. O seletor
 entre as duas versões só aparece na conta de teste.
 
+Na nova área, as secções (incluindo Leads) abrem no painel da direita,
+mantendo o menu lateral. O link pessoal de partilha aparece no topo das
+Leads. A página original de Leads continua disponível na área atual.
+
 Manter as cores da marca existente (branco, preto e verde-oliva `#4b5320`),
 mesmo quando a organização se inspira numa referência com outras cores.

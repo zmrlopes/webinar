@@ -12,6 +12,7 @@ import { AlternarArea } from "../alternar-area";
 import { lerEmailGuardado, limparEmailGuardado } from "../armazenamento";
 import estilos from "./nova-area.module.css";
 import { ProximoWebinar, TarefasIniciaisEquipa } from "./organizacao";
+import { LeadsNovaArea } from "./leads";
 
 const CHAVE_PROGRESSO = "consultor-nova-area:primeiros-passos:v1";
 const TITULOS = [
@@ -65,7 +66,7 @@ export default function NovaAreaConsultor() {
   const [aInscrever, setAInscrever] = useState(false);
   const [erroSessao, setErroSessao] = useState("");
   const [inscrito, setInscrito] = useState(false);
-  const [seccao, setSeccao] = useState<"comeca-aqui" | "tarefas-equipa" | "proximo-webinar">("comeca-aqui");
+  const [seccao, setSeccao] = useState<"comeca-aqui" | "leads" | "tarefas-equipa" | "proximo-webinar">("comeca-aqui");
 
   useEffect(() => {
     const conta = lerEmailGuardado()?.trim().toLowerCase() ?? "";
@@ -171,7 +172,7 @@ export default function NovaAreaConsultor() {
               </div>
               <div className={estilos.grupoMenu}>
                 <span className={estilos.etiqueta}>A MINHA ORGANIZAÇÃO</span>
-                <Link href="/consultor/webinares" className={estilos.navItem}>Leads <Seta /></Link>
+                <button type="button" className={seccao === "leads" ? estilos.navAtivo : estilos.navItem} onClick={() => setSeccao("leads")} aria-current={seccao === "leads" ? "page" : undefined} aria-controls="conteudo-nova-area">Leads</button>
                 <button type="button" className={seccao === "tarefas-equipa" ? estilos.navAtivo : estilos.navItem} onClick={() => setSeccao("tarefas-equipa")} aria-current={seccao === "tarefas-equipa" ? "page" : undefined} aria-controls="conteudo-nova-area">Tarefas iniciais da equipa</button>
                 <button type="button" className={seccao === "proximo-webinar" ? estilos.navAtivo : estilos.navItem} onClick={() => setSeccao("proximo-webinar")} aria-current={seccao === "proximo-webinar" ? "page" : undefined} aria-controls="conteudo-nova-area">Próximo webinar</button>
               </div>
@@ -241,6 +242,7 @@ export default function NovaAreaConsultor() {
               </Passo>
             </div>
             </section>}
+            {seccao === "leads" && <LeadsNovaArea linkPartilha={dados.linkPartilha} />}
             {seccao === "tarefas-equipa" && <TarefasIniciaisEquipa membros={dados.equipaPrimeirosPassos} />}
             {seccao === "proximo-webinar" && <ProximoWebinar webinar={dados.proximoWebinar} email={email} aoInscrever={() => setDados(atual => atual?.proximoWebinar ? { ...atual, proximoWebinar: { ...atual.proximoWebinar, inscrito: true } } : atual)} />}
             <footer className={estilos.rodape}><span className={estilos.ponto} />Nova área em construção <span>·</span> Visível apenas na conta de teste</footer>
