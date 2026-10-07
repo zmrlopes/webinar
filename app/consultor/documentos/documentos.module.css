@@ -1,0 +1,25 @@
+.pagina { min-height:100vh; background:#f7f6f3; color:#1c2115; padding:2.5rem clamp(1rem,5vw,3rem); }
+.caixa { max-width:1060px; margin:0 auto; }
+.voltar { color:#4b5320; font-size:.9rem; text-decoration:none; }
+.pagina h1 { font-size:2rem; margin:1.25rem 0 .5rem; }
+.subtitulo { color:#696c61; margin:0 0 1.5rem; line-height:1.6; }
+.filtros { display:flex; gap:.75rem; margin:1.5rem 0; flex-wrap:wrap; }
+.filtros input { flex:1; min-width:180px; }
+.pagina input,.pagina select,.pagina textarea { padding:.75rem; border:1px solid #d6d8ce; border-radius:8px; font:inherit; background:white; color:#1c2115; box-sizing:border-box; }
+.grade { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1rem; }
+.cartao { background:white; border:1px solid #dfe1d6; border-radius:14px; padding:1.35rem; display:flex; flex-direction:column; gap:.8rem; overflow-wrap:anywhere; }
+.cartao h2 { margin:0; font-size:1.1rem; line-height:1.4; }
+.cartao p { margin:0; line-height:1.5; }
+.etiqueta { font-size:.75rem; font-weight:700; color:#4b5320; text-transform:uppercase; }
+.meta { color:#727568; font-size:.85rem; }
+.acoes { display:flex; gap:.65rem; flex-wrap:wrap; margin-top:auto; }
+.botao { display:inline-block; padding:.7rem 1rem; border-radius:8px; border:1px solid #4b5320; background:#4b5320; color:white; text-decoration:none; font:inherit; font-weight:600; cursor:pointer; text-align:center; }
+.secundario { background:white; color:#4b5320; }
+.botao:disabled { opacity:.55; cursor:wait; }
+.erro { color:#9e2929; background:#fff0ee; padding:1rem; border-radius:8px; }
+.sucesso { color:#354016; background:#eaf0db; padding:1rem; border-radius:8px; }
+.formulario { background:white; padding:1.5rem; border:1px solid #dfe1d6; border-radius:14px; margin:1.5rem 0 2rem; display:grid; gap:1rem; }
+.formulario label { display:grid; gap:.45rem; font-size:.9rem; font-weight:600; }
+.formulario small { color:#727568; font-weight:400; line-height:1.5; }
+.formulario textarea { min-height:90px; resize:vertical; }
+.formulario progress { width:100%; accent-color:#4b5320; }

@@ -188,6 +188,7 @@ export default async function ConhecimentoObjecoesPagina({
           tuas diretrizes e temas.
         </p>
         <nav className="ob-abas">
+          <Link href="/admin/documentos">Documentos da equipa</Link>
           <Link
             href="?aba=formacoes"
             className={abaAtiva === "formacoes" ? "ativo" : ""}

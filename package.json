@@ -24,16 +24,21 @@
     "corrigir-leads-sofia": "tsx scripts/corrigir-leads-sofia.ts",
     "enviar-relatorio-consultores": "tsx scripts/enviar-relatorio-consultores.ts",
     "verificar-presencas-agora": "tsx scripts/verificar-presencas-agora.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "importar-documentos": "tsx scripts/importar-documentos.ts"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
     "@types/qrcode": "^1.5.6",
     "exceljs": "^4.4.0",
+    "jszip": "^3.10.2",
     "next": "^16.3.1",
+    "pdf-lib": "^1.17.1",
     "pg": "^8.13.1",
     "qrcode": "^1.5.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "sharp": "^0.35.5",
     "unpdf": "^1.8.1",
     "web-push": "^3.6.7"
   },

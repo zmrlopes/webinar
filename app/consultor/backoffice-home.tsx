@@ -746,6 +746,9 @@ export function BackofficeHome() {
               <Link href="/consultor/webinares" className="vqb-menu-item">
                 Leads
               </Link>
+              <Link href="/consultor/documentos" className="vqb-menu-item">
+                Documentos
+              </Link>
               <button
                 type="button"
                 className={

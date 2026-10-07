@@ -10,4 +10,6 @@ dist/
 out/
 next-env.d.ts
 *.tsbuildinfo
+.documentos-importacao/
+/docs/be a leader madrid/*.pdf
 .vercel
