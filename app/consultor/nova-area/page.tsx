@@ -163,7 +163,7 @@ export default function NovaAreaConsultor() {
         <div className={estilos.layout}>
           <aside className={estilos.lateral}>
             <nav aria-label="Secções da nova área">
-              <span className={estilos.etiqueta}>COMEÇAR</span>
+              <span className={estilos.etiqueta}>PRIMEIROS PASSOS</span>
               <a className={estilos.navAtivo} href="#comeca-aqui" aria-current="page">Começa aqui <span>{5 - totalFeitos}</span></a>
             </nav>
             <div className={estilos.resumo}>
