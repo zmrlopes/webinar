@@ -2,7 +2,6 @@ import Link from "next/link";
 import { lerConfig } from "@/lib/dashboard-negocio";
 import { db } from "@/lib/db";
 import type { DadosEventos, MembroEventos } from "@/lib/eventos-dashboard";
-import { CongressosNomes } from "./congressos-nomes";
 import { CoreRankPainel } from "./core-rank-painel";
 import { EventosPainel } from "./eventos-painel";
 import { IncentivosPainel } from "./incentivos-painel";
@@ -29,8 +28,8 @@ const EM_BREVE: string[] = [];
 async function EventosAuditados(): Promise<React.JSX.Element> {
   const dados = await lerConfig<DadosEventos>("eventos_auditados");
   if (!dados) return <p className="dn-nota">Ainda não há dados de eventos verificados.</p>;
-  const { rows } = await db().query<MembroEventos>("select email, upline_email, vendas, estado, data_registo from equipa_afiliados");
-  return <><EventosPainel dados={dados} equipa={rows} /><CongressosNomes dados={dados} /></>;
+  const { rows } = await db().query<MembroEventos>("select nome, email, upline_email, vendas, estado, data_registo from equipa_afiliados");
+  return <EventosPainel dados={dados} equipa={rows} />;
 }
 
 async function ObjetivosPainel(): Promise<React.JSX.Element> {

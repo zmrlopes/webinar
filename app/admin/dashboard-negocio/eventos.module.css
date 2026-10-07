@@ -1,0 +1,78 @@
+.panel { display: grid; gap: 16px; }
+.header { margin-bottom: 4px; }
+.eyebrow { color: #596329; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 8px; }
+.header h2 { font-size: 24px; line-height: 1.25; margin: 0 0 10px; letter-spacing: -.025em; }
+.header > p:not(.eyebrow) { color: #64685c; font-size: 14px; line-height: 1.6; margin: 0; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-top: 16px; font-size: 13px; color: #64685c; }
+.meta strong { color: #28321b; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.card { background: #fff; border: 1px solid #e1e4d9; border-radius: 16px; padding: 24px; }
+.card h3 { font-size: 18px; margin: 0 0 8px; }
+.description { color: #64685c; font-size: 13px; line-height: 1.6; margin: 0 0 18px; }
+.chartToolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.chartToolbar > span { font-size: 13px; font-weight: 600; color: #64685c; }
+.chartModes { display: flex; gap: 4px; padding: 4px; border: 1px solid #e1e4d9; border-radius: 10px; background: #f3f5ed; }
+.chartModes button { border: 0; background: transparent; padding: 9px 12px; border-radius: 7px; color: #64685c; font: inherit; font-size: 12px; cursor: pointer; }
+.chartModes button[aria-pressed="true"] { background: #fff; color: #283a16; box-shadow: 0 1px 4px #0000000d; font-weight: 600; }
+.chartModes button:focus-visible { outline: 2px solid #657b3c; outline-offset: 2px; }
+.multiplier { font-size: clamp(40px, 5vw, 56px); font-weight: 700; line-height: 1.05; color: #334c1b; letter-spacing: -.04em; margin-top: 16px; font-variant-numeric: tabular-nums; }
+.multiplierContext { font-size: 12px; color: #64685c; margin: 14px 0 0; }
+.multiplierLabel { font-size: 13px; line-height: 1.6; color: #555d47; min-height: 42px; margin: 10px 0 6px; }
+.delta { font-size: 12px; color: #64685c; min-height: 38px; line-height: 1.6; margin: 0; }
+.figure { margin: 12px 0 0; }
+.columnChart { display: block; width: 100%; height: auto; overflow: visible; }
+.gridline { stroke: #e8ebe2; stroke-width: 1; }
+.axis { fill: #747c6b; font-size: 11px; font-variant-numeric: tabular-nums; }
+.referenceColumn { fill: #a8afa0; }
+.participantColumn { fill: #657b3c; }
+.chartValue { fill: #283a16; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.chartLabel { fill: #434c37; font-size: 12px; }
+.chartFactor { fill: #334c1b; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.chartColumn { outline: none; }
+.chartColumn:hover .participantColumn, .chartColumn:focus-visible .participantColumn { fill: #405523; }
+.chartColumn:hover .referenceColumn, .chartColumn:focus-visible .referenceColumn { fill: #7e8972; }
+.chartColumn:focus-visible > rect:first-of-type { stroke: #657b3c; stroke-width: 1; }
+.chartCaption { font-size: 11px; color: #64685c; line-height: 1.6; min-height: 36px; margin-top: 4px; }
+.graphNote { margin: 12px 0 0; font-size: 12px; color: #64685c; line-height: 1.6; }
+.readingNote { margin: 0 0 8px; color: #64685c; line-height: 1.6; font-size: 12px; }
+.details { border: 1px solid #e1e4d9; background: #fff; border-radius: 12px; }
+.details > summary { cursor: pointer; padding: 18px 20px; font-weight: 600; font-size: 14px; }
+.details > summary span { color: #727866; font-size: 12px; font-weight: 400; margin-left: 8px; }
+.details > summary:focus-visible, .event > summary:focus-visible { outline: 2px solid #657b3c; outline-offset: 3px; border-radius: 8px; }
+.detailsBody, .method { padding: 0 20px 20px; }
+.method { color: #64685c; font-size: 13px; line-height: 1.7; }
+.method p { margin: 0 0 12px; }
+.method p:last-child { margin-bottom: 0; }
+.event { border-top: 1px solid #eef0e8; padding: 14px 0; }
+.event > summary { cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 13px; }
+.event > summary::before { content: "+"; color: #657b3c; font-size: 18px; }
+.event[open] > summary::before { content: "−"; }
+.event > summary div { flex: 1; }
+.event small { display: block; font-size: 12px; color: #727866; margin-top: 5px; line-height: 1.5; }
+.event > summary > span { font-size: 12px; color: #64685c; white-space: nowrap; }
+.event .description { margin: 12px 0 0; }
+.names { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 16px; }
+.name, .checked { font-size: 12px; background: #f5f6f2; border-radius: 6px; padding: 6px 8px; }
+.checked { background: #edf2e3; color: #405523; }
+.controls { display: flex; gap: 12px; margin: 0 0 16px; flex-wrap: wrap; }
+.controls label { display: grid; gap: 6px; color: #64685c; font-size: 12px; flex: 1; min-width: 160px; }
+.controls input, .controls select { width: 100%; min-width: 0; box-sizing: border-box; background: #fff; border: 1px solid #dce1d2; border-radius: 8px; padding: 10px; font: inherit; font-size: 14px; color: #253019; }
+.controls input:focus-visible, .controls select:focus-visible { outline: 2px solid #657b3c; outline-offset: 2px; }
+.tableWrap { overflow-x: auto; }
+.table { border-collapse: collapse; width: 100%; font-size: 13px; }
+.table caption { text-align: left; color: #64685c; font-size: 12px; padding-bottom: 12px; }
+.table th, .table td { padding: 12px 8px; border-bottom: 1px solid #eef0e8; text-align: right; font-variant-numeric: tabular-nums; }
+.table th { font-size: 11px; font-weight: 600; color: #64685c; }
+.table th:first-child, .table td:first-child { text-align: left; }
+.table td:nth-child(3), .table td:nth-child(4) { white-space: nowrap; }
+.table tr:last-child td { border-bottom: 0; }
+.empty { padding: 16px; background: #f5f6f2; border-radius: 10px; font-size: 13px; color: #64685c; line-height: 1.6; margin: 0; }
+@media (max-width: 720px) {
+  .grid { grid-template-columns: 1fr; }
+  .card { padding: 20px; }
+  .header h2 { font-size: 22px; }
+  .chartModes { width: 100%; }
+  .chartModes button { flex: 1; padding: 9px 6px; }
+  .details > summary { padding: 16px; }
+  .detailsBody, .method { padding: 0 16px 16px; }
+}
