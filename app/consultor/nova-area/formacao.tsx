@@ -51,7 +51,7 @@ function CartaoFormacao({ formacao, email, aoInscrever }: {
     } finally { setAPedir(false); }
   }
 
-  return <article className={cartoes.cartao}>
+  return <article className={`${cartoes.cartao}${formacao.tipo === "externa" ? ` ${cartoes.icligo}` : ""}`}>
     <span className={cartoes.etiqueta}>{formacao.tipo === "externa" && <img src="/icligo-logo.png" alt="" />} {formacao.tipo === "externa" ? "Formação iCliGo" : "Formação interna"}</span>
     <h2 className={cartoes.titulo}>{formacao.titulo}</h2>
     <p className={cartoes.data}><time dateTime={formacao.comecaEm}>{new Date(formacao.comecaEm).toLocaleString("pt-PT", {

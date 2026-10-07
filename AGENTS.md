@@ -26,3 +26,5 @@ Leads. A página original de Leads continua disponível na área atual.
 
 Manter as cores da marca existente (branco, preto e verde-oliva `#4b5320`),
 mesmo quando a organização se inspira numa referência com outras cores.
+Por indicação do utilizador, os cards das próximas formações iCliGo
+mantêm o destaque laranja da área atual (fundo, contorno, etiqueta e botão).

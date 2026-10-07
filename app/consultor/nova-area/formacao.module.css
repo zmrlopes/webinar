@@ -48,3 +48,6 @@
 .botao:disabled { opacity: .6; cursor: default; }
 .confirmado { margin: .75rem 0 0; color: #4b5320; font-size: .9rem; }
 .erro { margin: .75rem 0 0; color: #b3261e; font-size: .9rem; }
+.cartao.icligo { background: #fff2ee; border-color: #f0603f; }
+.icligo .etiqueta { color: #e0532f; }
+.icligo .botao { background: linear-gradient(135deg, #f5895f, #f0603f); }
