@@ -16,14 +16,15 @@ function Icone({ tipo }: { tipo: AvisoInicio["icone"] | "comunicado" }) {
 
 function CartaoQuestionario({ aviso }: { aviso: AvisoInicio }) {
   return <article className={estilos.cartao} data-aviso={aviso.id}>
-    <div className={estilos.cartaoTopo}>
-      <span className={estilos.icone}><Icone tipo={aviso.icone} /></span>
-      <span className={estilos.etiqueta}>{aviso.anonimo ? "Anónimo" : "Por responder"}</span>
-    </div>
-    <h3>{aviso.titulo}</h3>
-    <p>{aviso.texto}</p>
-    <Link className={estilos.responder} href={`${aviso.href}?origem=nova-area`}>
-      Responder ao questionário <span aria-hidden="true">→</span>
+    <Link className={estilos.cartaoLink} href={`${aviso.href}?origem=nova-area`}>
+      <div className={estilos.cartaoTopo}>
+        <span className={estilos.icone}><Icone tipo={aviso.icone} /></span>
+        <span className={estilos.etiqueta}>{aviso.anonimo ? "Anónimo" : "Por responder"}</span>
+      </div>
+      <div className={estilos.cartaoTexto}><h3>{aviso.titulo}</h3><p>{aviso.texto}</p></div>
+      <span className={estilos.responder}>
+        <span className={estilos.responderTexto}>Responder ao questionário</span> <span aria-hidden="true">→</span>
+      </span>
     </Link>
   </article>;
 }

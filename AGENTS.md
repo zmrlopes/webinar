@@ -32,3 +32,5 @@ Por indicação do utilizador, os cards das próximas formações iCliGo
 mantêm o destaque laranja da área atual (fundo, contorno, etiqueta e botão).
 Os avisos importantes da página Início mantêm o destaque dourado da área
 atual, com fundo claro e contorno `#c9971c`, por indicação do utilizador.
+No telemóvel, estes destaques usam linhas compactas clicáveis, com ícone,
+título, descrição curta e seta, como na versão atual.
