@@ -34,3 +34,5 @@ Os avisos importantes da página Início mantêm o destaque dourado da área
 atual, com fundo claro e contorno `#c9971c`, por indicação do utilizador.
 No telemóvel, estes destaques usam linhas compactas clicáveis, com ícone,
 título, descrição curta e seta, como na versão atual.
+Os grupos do menu começam recolhidos no computador e no telemóvel; clicar
+no nome do separador mostra ou esconde as opções desse grupo.
