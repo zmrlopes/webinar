@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { buscarFormacaoParaEditar } from "@/lib/webinars";
+import { obterDestinatariosFormacao } from "@/lib/formacoes-destinatarios";
 import { FormacaoForm } from "../../nova/formacao-form";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +14,10 @@ export default async function EditarFormacaoPagina({
   const { id } = await params;
   const formacao = await buscarFormacaoParaEditar(id);
   if (!formacao) notFound();
+  const pessoas = formacao.destinatariosEmails ? await obterDestinatariosFormacao(formacao.destinatariosEmails) : null;
+  const destinatarios = formacao.destinatariosEmails?.map(email =>
+    pessoas?.find(p => p.email === email) ?? { email, nome: email, telemovel: null },
+  ) ?? null;
 
   return (
     <main className="ad-pagina">
@@ -36,7 +41,7 @@ export default async function EditarFormacaoPagina({
           ← {formacao.titulo}
         </Link>
         <h1>Editar formação</h1>
-        <p className="ad-subtitulo">Corrige o que for preciso — data, duração, link ou modo.</p>
+        <p className="ad-subtitulo">Corrige o que for preciso — data, duração, link, modo ou pessoas que podem ver a formação.</p>
         <FormacaoForm
           formacaoId={id}
           inicial={{
@@ -45,6 +50,7 @@ export default async function EditarFormacaoPagina({
             duracaoMinutos: formacao.duracaoMinutos,
             linkZoom: formacao.linkZoom ?? "",
             publicoParaLeads: formacao.publicoParaLeads,
+            destinatarios,
           }}
         />
       </div>

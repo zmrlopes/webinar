@@ -25,6 +25,7 @@ export async function POST(request: Request): Promise<Response> {
            exists(select 1 from registrations r where r.webinar_id = w.id
              and r.email = $3 and r.cancelada_em is null and r.link_pessoal is not null) as inscrito
          from webinars w where w.cancelada_em is null
+           and (w.destinatarios_emails is null or $3 = any(w.destinatarios_emails))
            and sessao_externa_em >= ($1::date::timestamp at time zone 'Europe/Lisbon')
            and sessao_externa_em < ($2::date::timestamp at time zone 'Europe/Lisbon')
          order by sessao_externa_em`, [inicio, fim, email],

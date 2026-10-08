@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { atualizarFormacao } from "@/lib/webinars";
+import { DestinatariosInvalidos, validarDestinatariosFormacao } from "@/lib/formacoes-destinatarios";
 
 export async function PATCH(
   request: Request,
@@ -34,18 +35,21 @@ export async function PATCH(
   }
 
   try {
+    const destinatariosEmails = await validarDestinatariosFormacao(corpo?.destinatariosEmails, publicoParaLeads);
     const atualizada = await atualizarFormacao(id, {
       titulo: titulo.trim(),
       comecaEm: data,
       duracaoMinutos: Math.round(duracaoMinutos),
       linkZoom: linkZoom.trim(),
       publicoParaLeads,
+      destinatariosEmails,
     });
     if (!atualizada) {
       return NextResponse.json({ erro: "formação não encontrada" }, { status: 404 });
     }
     return NextResponse.json({ ok: true });
   } catch (erro) {
+    if (erro instanceof DestinatariosInvalidos) return NextResponse.json({ erro: erro.message }, { status: 400 });
     console.error("falha ao atualizar formação:", erro);
     return NextResponse.json({ erro: "não foi possível atualizar a formação" }, { status: 500 });
   }

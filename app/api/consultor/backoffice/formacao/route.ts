@@ -56,8 +56,9 @@ export async function POST(request: Request): Promise<Response> {
            and tipo in ('formacao', 'sincronizado')
            and not publico_para_leads
            and titulo <> $2
+           and (destinatarios_emails is null or $3 = any(destinatarios_emails))
            and cancelada_em is null`,
-        [webinarId, TITULO_WEBINAR_PUBLICO],
+        [webinarId, TITULO_WEBINAR_PUBLICO, emailNormalizado],
       );
       if (!rows[0]) {
         return NextResponse.json({ erro: "formação não encontrada" }, { status: 404 });

@@ -195,7 +195,8 @@ async function buscarRegistro(registrationId: string): Promise<RegistroParaEmail
     `select r.email, r.nome, r.link_pessoal, w.titulo, w.sessao_externa_em
      from registrations r
      join webinars w on w.id = r.webinar_id
-     where r.id = $1`,
+     where r.id = $1
+       and (w.destinatarios_emails is null or lower(trim(r.email)) = any(w.destinatarios_emails))`,
     [registrationId],
   );
   return rows[0];
@@ -395,6 +396,9 @@ export async function notificarEquipaNovaSessao(
   const { rows } = await db().query<{ email: string; nome: string }>(
     `select email, nome from equipa_afiliados
      where ${CONDICAO_CONSULTOR_COM_PAINEL}
+       and exists (select 1 from webinars w where w.id = $1
+         and w.cancelada_em is null
+         and (w.destinatarios_emails is null or lower(trim(equipa_afiliados.email)) = any(w.destinatarios_emails)))
        and not exists (
          select 1 from notificacoes_equipa ne
          where ne.webinar_id = $1 and ne.destinatario = equipa_afiliados.email
@@ -459,6 +463,9 @@ export async function notificarEquipaNovaSessao(
   const { rows: porNotificar } = await db().query<{ restantes: string }>(
     `select count(*) as restantes from equipa_afiliados
      where ${CONDICAO_CONSULTOR_COM_PAINEL}
+       and exists (select 1 from webinars w where w.id = $1
+         and w.cancelada_em is null
+         and (w.destinatarios_emails is null or lower(trim(equipa_afiliados.email)) = any(w.destinatarios_emails)))
        and not exists (
          select 1 from notificacoes_equipa ne
          where ne.webinar_id = $1 and ne.destinatario = equipa_afiliados.email

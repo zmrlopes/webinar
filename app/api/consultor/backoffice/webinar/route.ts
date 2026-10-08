@@ -42,6 +42,7 @@ export async function POST(request: Request): Promise<Response> {
     const proximo = typeof webinarId === "string"
       ? (await db().query<{ id: string }>(
           `select id from webinars where id::text = $1 and cancelada_em is null
+           and destinatarios_emails is null
            and (publico_para_leads or titulo = $2)`, [webinarId, TITULO_WEBINAR_PUBLICO],
         )).rows[0]
       : await buscarProximoWebinarPublico();

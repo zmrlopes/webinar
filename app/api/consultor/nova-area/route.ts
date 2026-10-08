@@ -35,7 +35,7 @@ export async function POST(request: Request): Promise<Response> {
         [email],
       ),
       buscarWebinarFormacao(),
-      listarFormacoesEquipa(),
+      listarFormacoesEquipa(email),
       listarFormacoesExternasFuturas(),
     ]);
     async function jaInscrito(webinarId: string | undefined): Promise<boolean> {

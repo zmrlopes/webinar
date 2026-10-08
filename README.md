@@ -212,6 +212,19 @@ consultor a partir da resposta de `/api/consultor/estatisticas`.
 
 ### Painel de administração
 
+Ao criar ou editar uma formação interna em `/admin/formacoes/nova`, o campo
+**Quem pode ver esta formação?** permite escolher toda a equipa ou apenas
+pessoas selecionadas. A lista inclui consultores que já têm painel, com pesquisa
+por nome (com ou sem acentos), email ou telemóvel guardado nas inscrições de
+webinars/eventos. As escolhas são conservadas ao mudar a pesquisa e podem ser removidas.
+Formações restritas só aparecem às pessoas escolhidas no painel e no calendário;
+a mesma seleção é aplicada aos avisos, lembretes e links de entrada. As formações
+existentes mantêm a visibilidade anterior (migration `048`). O modo Equipa + leads
+continua público e não permite seleção individual.
+
+Verificação das restrições, com tabelas temporárias e sem envios:
+`node --import tsx scripts/testes-formacoes-destinatarios.ts` (requer `DATABASE_URL`).
+
 Protegido por Basic Auth (`ADMIN_USER` / `ADMIN_PASSWORD` em `.env`), via
 `proxy.ts`. **Sem `ADMIN_PASSWORD` definida, o painel fica inacessível** —
 falha fechado, não há password por omissão. O `link_pessoal` nunca é lido

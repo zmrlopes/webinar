@@ -32,6 +32,7 @@ async function buscarLote(tamanho: number): Promise<LinhaFila[]> {
      where r.link_estado = 'pendente'
        and r.cancelada_em is null
        and w.cancelada_em is null
+       and (w.destinatarios_emails is null or lower(trim(r.email)) = any(w.destinatarios_emails))
        and w.sessao_externa_id is not null
        and (r.link_proxima_em is null or r.link_proxima_em <= now())
      order by r.criado_em

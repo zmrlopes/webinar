@@ -8,7 +8,10 @@ import { db } from "./db";
  */
 export async function registarCliqueEntrada(registrationId: string): Promise<string | null> {
   const { rows } = await db().query<{ link_pessoal: string | null }>(
-    `select link_pessoal from registrations where id = $1`,
+    `select r.link_pessoal from registrations r
+     join webinars w on w.id = r.webinar_id
+     where r.id = $1 and r.cancelada_em is null and w.cancelada_em is null
+       and (w.destinatarios_emails is null or lower(trim(r.email)) = any(w.destinatarios_emails))`,
     [registrationId],
   );
   const linkPessoal = rows[0]?.link_pessoal;

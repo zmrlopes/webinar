@@ -22,9 +22,9 @@ export async function POST(request: Request): Promise<Response> {
       );
     }
 
-    const sessoesDisponiveis = await listarWebinarsParaPainel();
+    const sessoesDisponiveis = await listarWebinarsParaPainel(emailNormalizado);
     const proximo =
-      typeof webinarId === "string" ? await buscarWebinar(webinarId) : await buscarWebinarRelevante();
+      typeof webinarId === "string" ? await buscarWebinar(webinarId, emailNormalizado) : await buscarWebinarRelevante(emailNormalizado);
     if (!proximo) {
       return NextResponse.json({ erro: "não há sessões agendadas de momento" }, { status: 404 });
     }

@@ -21,6 +21,7 @@ export async function processarLembretes(opts?: {
      where r.link_pessoal is not null
        and r.cancelada_em is null
        and w.cancelada_em is null
+       and (w.destinatarios_emails is null or lower(trim(r.email)) = any(w.destinatarios_emails))
        and w.sessao_externa_em between now() and now() + ($1 || ' hours')::interval
        and not exists (
          select 1 from emails e

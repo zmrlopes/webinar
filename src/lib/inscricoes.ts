@@ -50,7 +50,8 @@ export async function inscrever(dados: DadosInscricao): Promise<{ registrationId
     titulo: string;
     tipo: string;
     publico_para_leads: boolean;
-  }>(`select titulo, tipo, publico_para_leads from webinars where id = $1`, [dados.webinarId]);
+  }>(`select titulo, tipo, publico_para_leads from webinars where id = $1
+      and (destinatarios_emails is null or $2 = any(destinatarios_emails))`, [dados.webinarId, email]);
   const webinar = webinarRows[0];
   if (!webinar) throw new DadosInvalidos("sessão não encontrada");
 

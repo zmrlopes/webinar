@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { criarEmailSender, notificarEquipaNovaSessao } from "@/lib/email";
 import { criarFormacao } from "@/lib/webinars";
+import { DestinatariosInvalidos, validarDestinatariosFormacao } from "@/lib/formacoes-destinatarios";
 
 export async function POST(request: Request): Promise<Response> {
   const corpo = (await request.json().catch(() => null)) as Record<string, unknown> | null;
@@ -31,12 +32,14 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
+    const destinatariosEmails = await validarDestinatariosFormacao(corpo?.destinatariosEmails, publicoParaLeads);
     const { id } = await criarFormacao({
       titulo: titulo.trim(),
       comecaEm: data,
       duracaoMinutos: Math.round(duracaoMinutos),
       linkZoom: linkZoom.trim(),
       publicoParaLeads,
+      destinatariosEmails,
     });
 
     try {
@@ -52,6 +55,7 @@ export async function POST(request: Request): Promise<Response> {
 
     return NextResponse.json({ id });
   } catch (erro) {
+    if (erro instanceof DestinatariosInvalidos) return NextResponse.json({ erro: erro.message }, { status: 400 });
     console.error("falha ao criar formação:", erro);
     return NextResponse.json({ erro: "não foi possível criar a formação" }, { status: 500 });
   }

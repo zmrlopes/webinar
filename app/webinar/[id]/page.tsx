@@ -22,7 +22,7 @@ export default async function PaginaWebinar({
 }) {
   const { id } = await params;
   const { ref } = await searchParams;
-  const webinar = await buscarWebinar(id);
+  const webinar = await buscarWebinar(id, "");
   if (!webinar) notFound();
 
   const link = ref ? await procurarLinkConsultor(ref) : null;

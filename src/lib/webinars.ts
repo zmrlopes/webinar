@@ -30,6 +30,7 @@ export async function listarWebinarsFuturos(): Promise<WebinarResumo[]> {
        and sessao_externa_id is not null
        and sessao_externa_em > now()
        and (titulo = $1 or (tipo = 'formacao' and publico_para_leads))
+       and destinatarios_emails is null
      order by sessao_externa_em asc`,
     [TITULO_WEBINAR_PUBLICO],
   );
@@ -55,7 +56,7 @@ export async function listarWebinarsFuturos(): Promise<WebinarResumo[]> {
  * `listarWebinarsFuturos` — nunca deve inscrever alguém numa sessão já
  * passada.
  */
-export async function buscarWebinarRelevante(): Promise<WebinarResumo | undefined> {
+export async function buscarWebinarRelevante(email?: string): Promise<WebinarResumo | undefined> {
   const { rows } = await db().query<{
     id: string;
     titulo: string;
@@ -67,8 +68,10 @@ export async function buscarWebinarRelevante(): Promise<WebinarResumo | undefine
      from webinars
      where cancelada_em is null
        and sessao_externa_id is not null
+       and (destinatarios_emails is null or lower(trim($1)) = any(destinatarios_emails))
      order by abs(extract(epoch from (sessao_externa_em - now())))
      limit 1`,
+    [email ?? ""],
   );
   const r = rows[0];
   if (!r) return undefined;
@@ -88,7 +91,7 @@ export async function buscarWebinarRelevante(): Promise<WebinarResumo | undefine
  * ficar preso à sessão "mais próxima" escolhida por `buscarWebinarRelevante`.
  * Ordem cronológica (mais antiga primeiro).
  */
-export async function listarWebinarsParaPainel(): Promise<WebinarResumo[]> {
+export async function listarWebinarsParaPainel(email: string): Promise<WebinarResumo[]> {
   const { rows } = await db().query<{
     id: string;
     titulo: string;
@@ -101,7 +104,9 @@ export async function listarWebinarsParaPainel(): Promise<WebinarResumo[]> {
      where cancelada_em is null
        and sessao_externa_id is not null
        and sessao_externa_em > now() - interval '60 days'
+       and (destinatarios_emails is null or lower(trim($1)) = any(destinatarios_emails))
      order by sessao_externa_em asc`,
+    [email],
   );
   return rows.map((r) => ({
     id: r.id,
@@ -158,6 +163,7 @@ export async function buscarProximoWebinarPublico(): Promise<WebinarResumo | und
        and sessao_externa_id is not null
        and (titulo = $1 or (tipo = 'formacao' and publico_para_leads))
        and sessao_externa_em + (coalesce(duracao_minutos, 90) * interval '1 minute') > now()
+       and destinatarios_emails is null
      order by sessao_externa_em asc
      limit 1`,
     [TITULO_WEBINAR_PUBLICO],
@@ -193,6 +199,7 @@ export async function listarSessoesPublicasParaPainel(): Promise<WebinarResumo[]
        and sessao_externa_id is not null
        and (titulo = $1 or (tipo = 'formacao' and publico_para_leads))
        and sessao_externa_em > now() - interval '60 days'
+       and destinatarios_emails is null
      order by sessao_externa_em asc`,
     [TITULO_WEBINAR_PUBLICO],
   );
@@ -254,7 +261,7 @@ export async function buscarWebinarFormacao(): Promise<WebinarResumo | undefined
  * (que só devolve uma), pode haver várias criadas em simultâneo e todas
  * devem aparecer no painel do consultor.
  */
-export async function listarFormacoesEquipa(): Promise<WebinarResumo[]> {
+export async function listarFormacoesEquipa(email: string): Promise<WebinarResumo[]> {
   const { rows } = await db().query<{
     id: string;
     titulo: string;
@@ -268,8 +275,10 @@ export async function listarFormacoesEquipa(): Promise<WebinarResumo[]> {
        and sessao_externa_id is not null
        and tipo = 'formacao'
        and not publico_para_leads
+       and (destinatarios_emails is null or lower(trim($1)) = any(destinatarios_emails))
        and sessao_externa_em + (coalesce(duracao_minutos, 90) * interval '1 minute') > now()
      order by sessao_externa_em asc`,
+    [email],
   );
   return rows.map((r) => ({
     id: r.id,
@@ -324,6 +333,7 @@ export interface DadosNovaFormacao {
   duracaoMinutos: number;
   linkZoom: string;
   publicoParaLeads: boolean;
+  destinatariosEmails?: string[] | null;
 }
 
 /**
@@ -338,10 +348,10 @@ export interface DadosNovaFormacao {
 export async function criarFormacao(dados: DadosNovaFormacao): Promise<{ id: string }> {
   const { rows } = await db().query<{ id: string }>(
     `insert into webinars
-       (titulo, sessao_externa_id, sessao_externa_em, duracao_minutos, tipo, link_zoom, publico_para_leads)
-     values ($1, 'formacao-' || gen_random_uuid(), $2, $3, 'formacao', $4, $5)
+       (titulo, sessao_externa_id, sessao_externa_em, duracao_minutos, tipo, link_zoom, publico_para_leads, destinatarios_emails)
+     values ($1, 'formacao-' || gen_random_uuid(), $2, $3, 'formacao', $4, $5, $6)
      returning id`,
-    [dados.titulo, dados.comecaEm, dados.duracaoMinutos, dados.linkZoom, dados.publicoParaLeads],
+    [dados.titulo, dados.comecaEm, dados.duracaoMinutos, dados.linkZoom, dados.publicoParaLeads, dados.destinatariosEmails ?? null],
   );
   return { id: rows[0]!.id };
 }
@@ -352,6 +362,7 @@ export interface FormacaoParaEditar {
   duracaoMinutos: number;
   linkZoom: string | null;
   publicoParaLeads: boolean;
+  destinatariosEmails: string[] | null;
 }
 
 /** Só devolve `tipo = 'formacao'` — nunca uma sessão sincronizada do Patrick. */
@@ -362,8 +373,9 @@ export async function buscarFormacaoParaEditar(id: string): Promise<FormacaoPara
     duracao_minutos: number;
     link_zoom: string | null;
     publico_para_leads: boolean;
+    destinatarios_emails: string[] | null;
   }>(
-    `select titulo, sessao_externa_em, duracao_minutos, link_zoom, publico_para_leads
+    `select titulo, sessao_externa_em, duracao_minutos, link_zoom, publico_para_leads, destinatarios_emails
      from webinars
      where id = $1 and tipo = 'formacao' and cancelada_em is null`,
     [id],
@@ -376,6 +388,7 @@ export async function buscarFormacaoParaEditar(id: string): Promise<FormacaoPara
     duracaoMinutos: r.duracao_minutos,
     linkZoom: r.link_zoom,
     publicoParaLeads: r.publico_para_leads,
+    destinatariosEmails: r.destinatarios_emails,
   };
 }
 
@@ -387,9 +400,11 @@ export async function buscarFormacaoParaEditar(id: string): Promise<FormacaoPara
 export async function atualizarFormacao(id: string, dados: DadosNovaFormacao): Promise<boolean> {
   const { rowCount } = await db().query(
     `update webinars
-     set titulo = $1, sessao_externa_em = $2, duracao_minutos = $3, link_zoom = $4, publico_para_leads = $5
+     set titulo = $1, sessao_externa_em = $2, duracao_minutos = $3, link_zoom = $4, publico_para_leads = $5,
+       destinatarios_emails = case when $8 then $7::text[] else destinatarios_emails end
      where id = $6 and tipo = 'formacao' and cancelada_em is null`,
-    [dados.titulo, dados.comecaEm, dados.duracaoMinutos, dados.linkZoom, dados.publicoParaLeads, id],
+    [dados.titulo, dados.comecaEm, dados.duracaoMinutos, dados.linkZoom, dados.publicoParaLeads, id,
+      dados.destinatariosEmails ?? null, dados.destinatariosEmails !== undefined],
   );
   return (rowCount ?? 0) > 0;
 }
@@ -408,7 +423,7 @@ export async function cancelarFormacao(id: string): Promise<boolean> {
   return (rowCount ?? 0) > 0;
 }
 
-export async function buscarWebinar(id: string): Promise<WebinarResumo | undefined> {
+export async function buscarWebinar(id: string, email?: string): Promise<WebinarResumo | undefined> {
   const { rows } = await db().query<{
     id: string;
     titulo: string;
@@ -418,8 +433,9 @@ export async function buscarWebinar(id: string): Promise<WebinarResumo | undefin
   }>(
     `select id, titulo, tipo, sessao_externa_em, duracao_minutos
      from webinars
-     where id = $1 and cancelada_em is null and sessao_externa_id is not null`,
-    [id],
+     where id = $1 and cancelada_em is null and sessao_externa_id is not null
+       and ($2::text is null or destinatarios_emails is null or lower(trim($2)) = any(destinatarios_emails))`,
+    [id, email ?? null],
   );
   const r = rows[0];
   if (!r) return undefined;

@@ -71,7 +71,7 @@ export async function POST(request: Request): Promise<Response> {
     ] = await Promise.all([
       buscarWebinarFormacao(),
       buscarProximoWebinarPublico(),
-      listarFormacoesEquipa(),
+      listarFormacoesEquipa(emailNormalizado),
       precisaResponderTeambuilding(emailNormalizado),
       estaoInscricoesAbertas(),
       listarFormacoesExternasFuturas(),
