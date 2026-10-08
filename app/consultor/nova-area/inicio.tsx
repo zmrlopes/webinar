@@ -63,7 +63,13 @@ export function InicioNovaArea({ avisos, erroAvisos, feitos, aoComecar, acabadoA
         {!erroAvisos && avisos.length > 0 && <span className={estilos.contador}>{avisos.length} {avisos.length === 1 ? "pendente" : "pendentes"}</span>}
       </div>
       {erroAvisos && <p role="alert" className={comuns.erroOrganizacao}>Não foi possível carregar todos os avisos. Atualiza a página para tentar novamente.</p>}
-      {evento.length > 0 && <div className={estilos.grupo}>
+      {evento.length > 0 && <div className={`${estilos.grupo} ${estilos.importantes}`}>
+        <div className={estilos.importantesCabecalho}>
+          <span className={estilos.importantesIcone} aria-hidden="true">!</span>
+          <div><span className={estilos.importantesEtiqueta}>Avisos importantes</span>
+            <h3>{evento.length === 1 ? "Tens 1 questionário do evento por responder" : `Tens ${evento.length} questionários do evento por responder`}</h3>
+          </div>
+        </div>
         <div className={estilos.evento}><span aria-hidden="true">●</span><strong>Teambuilding Tropa de Elite</strong><span>14 de novembro de 2026</span></div>
         <div className={estilos.grelha}>{evento.map(aviso => <CartaoQuestionario key={aviso.id} aviso={aviso} />)}</div>
       </div>}
