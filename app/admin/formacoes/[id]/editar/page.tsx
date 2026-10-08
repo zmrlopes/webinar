@@ -30,7 +30,7 @@ export default async function EditarFormacaoPagina({
           padding: 2.5rem 1.25rem 4rem;
           min-height: calc(100vh - 4rem);
         }
-        .ad-caixa { max-width: 640px; margin: 0 auto; }
+        .ad-caixa { width: 100%; min-width: 0; margin: 0 auto; }
         .ad-pagina h1 { color: #000000; font-size: 1.5rem; margin: 0 0 0.35rem; }
         .ad-voltar { color: #4b5320; font-size: 0.85rem; text-decoration: none; }
         .ad-voltar:hover { text-decoration: underline; }
