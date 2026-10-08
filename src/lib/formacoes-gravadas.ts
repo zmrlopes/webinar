@@ -124,6 +124,7 @@ const EW_COMPETENCIAS = "eric-worre-competencias-essenciais";
 const EW_PROFISSIONAIS = "eric-worre-profissionais-network-marketing";
 const SESSOES_ESSENCIAIS = "tropa-elite-sessoes-essenciais";
 const SESSOES_RESERVAS = "tropa-elite-sessoes-reservas";
+const SESSOES_EQUIPA = "tropa-elite-sessoes-equipa";
 const ICLIGO_ESSENCIAIS = "icligo-essenciais";
 
 const essenciais: Categoria = {
@@ -288,10 +289,14 @@ const essenciais: Categoria = {
       descricao:
         "Gravações das formações feitas ao vivo pela equipa: as 7 Skills, mentalidade, vendas, redes sociais e IA.",
       modulos: [
+        modulo(SESSOES_ESSENCIAIS, "Fundamentos do Negócio", [
+          ["Como fazer o básico bem feito", "vl9tKgIg21k", 60, "2026-08-28", "Mariana Figueira"],
+        ]),
         modulo(SESSOES_ESSENCIAIS, "7 Skills ao Vivo", [
           ["Skill 1 – Prospetar Contactos", "vsKyUOJaD-M", 90, "2026-03-24"],
           ["Skill 2 – Convite", "8rjZHqNdu_8", 34, "2026-04-06"],
           ["Skill 3 – Apresentação (História)", "ncf5mQNcuvs", 23, "2026-04-27"],
+          ["História: a tua melhor ferramenta", "aF5IX6Bqf2I", 27, "2026-08-28", "Mariana Pires"],
         ]),
         modulo(SESSOES_ESSENCIAIS, "Mentalidade e Potencial", [
           ["Formação Mentalidade", "033dPjGtkVY", 52, "2026-06-15"],
@@ -300,6 +305,7 @@ const essenciais: Categoria = {
           ["Potencial", "3Jx8LsY9rCE", 107, "2026-09-16", "Zé Miguel"],
         ]),
         modulo(SESSOES_ESSENCIAIS, "Vendas, Redes Sociais e IA", [
+          ["Funil de Vendas", "eIcimWiJPpw", 53, "2026-08-28", "Maria João Miranda"],
           ["Excelência nas Vendas", "ImwRcYsGu_4", 106, "2026-09-16", "Sara"],
           ["Redes Sociais", "Jv9BZJMuCAo", 59, "2026-09-16", "Inês Melgão"],
           ["Atração de Leads através das Redes Sociais", "Ov6amQ0eCpA", 61, "2026-07-01", "Jéssica Coelho"],
@@ -499,6 +505,16 @@ const equipa: Categoria = {
     "Masterclasses, formações intensivas e o curriculum internacional do Eric Worre: para desenvolver o negócio e a equipa a longo prazo.",
   disponivel: true,
   cursos: [
+    {
+      id: SESSOES_EQUIPA,
+      titulo: "Sessões ao Vivo da Equipa",
+      descricao: "Gravações sobre integração, acompanhamento e desenvolvimento dos consultores da equipa.",
+      modulos: [
+        modulo(SESSOES_EQUIPA, "Integração e Acompanhamento", [
+          ["Como acompanhar um novo travel partner", "69I4Xgq7go4", 41, "2026-08-27", "Christelle Fernandes"],
+        ]),
+      ],
+    },
     {
       id: MASTERCLASSES,
       titulo: "Masterclasses Especiais",
