@@ -79,7 +79,15 @@ export default function NovaAreaConsultor() {
   const conteudo = useRef<HTMLElement>(null);
   const menu = useRef<HTMLElement>(null);
   const [pedidoNavegacao, setPedidoNavegacao] = useState(0);
+  const [pedidoAvisos, setPedidoAvisos] = useState(0);
   const [mostrarVoltarAoMenu, setMostrarVoltarAoMenu] = useState(false);
+
+  useEffect(() => {
+    if (!pedidoAvisos) return;
+    const avisos = document.getElementById("questionarios-inicio");
+    avisos?.focus({ preventScroll: true });
+    avisos?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+  }, [pedidoAvisos]);
 
   useEffect(() => {
     if (!voltarAoInicio) return;
@@ -223,6 +231,8 @@ export default function NovaAreaConsultor() {
 
   const totalFeitos = feitos.length;
   const primeiroNome = dados.nome.split(" ")[0];
+  const questionariosPendentes = dados.erroAvisos ? 0 : (dados.avisos?.length ?? 0);
+  const avisoQuestionarios = `${questionariosPendentes} ${questionariosPendentes === 1 ? "questionário" : "questionários"} por responder`;
   return (
     <div className={estilos.pagina}>
       <div className={estilos.contentor}>
@@ -233,7 +243,13 @@ export default function NovaAreaConsultor() {
             <div><span className={estilos.etiqueta}>TROPA DE ELITE</span><p>A minha área</p></div>
           </div>
           <div className={estilos.conta}>
-            <div><strong>Olá, {primeiroNome}</strong><span>{email}</span></div>
+            <div className={estilos.identidadeConta}>
+              <div><strong>Olá, {primeiroNome}</strong><span className={estilos.emailConta}>{email}</span></div>
+              {questionariosPendentes > 0 && <button type="button" className={estilos.avisosConta} aria-label={`${avisoQuestionarios}. Ver avisos.`} title={avisoQuestionarios} aria-controls="questionarios-inicio" onClick={() => { setSeccao("inicio"); setPedidoAvisos(pedido => pedido + 1); }}>
+                <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4M12 2V1" /></svg>
+                <span className={estilos.numeroAvisos} aria-hidden="true">{questionariosPendentes}</span>
+              </button>}
+            </div>
             <button type="button" className={estilos.sair} onClick={() => { limparEmailGuardado(); setDados(null); setEstado("sem-acesso"); }}>Sair <Seta /></button>
           </div>
         </header>

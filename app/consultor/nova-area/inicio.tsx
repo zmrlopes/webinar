@@ -58,7 +58,7 @@ export function InicioNovaArea({ avisos, erroAvisos, feitos, aoComecar, acabadoA
       <button type="button" className={comuns.botao} onClick={aoComecar}>{feitos ? "Continuar os primeiros passos" : "Começar agora"} <span aria-hidden="true">→</span></button>
     </div>}
 
-    <section className={estilos.seccao} aria-labelledby="titulo-questionarios-inicio">
+    <section id="questionarios-inicio" className={estilos.seccao} tabIndex={-1} aria-labelledby="titulo-questionarios-inicio">
       <div className={estilos.cabecalho}>
         <div><span className={comuns.etiqueta}>AVISOS PARA TI</span><h2 id="titulo-questionarios-inicio">Questionários por responder</h2></div>
         {!erroAvisos && avisos.length > 0 && <span className={estilos.contador}>{avisos.length} {avisos.length === 1 ? "pendente" : "pendentes"}</span>}
