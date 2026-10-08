@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { podeVerNovaArea, type DadosEventosPresenciais } from "@/lib/consultor-nova-area";
 import { buscarMembroEquipa } from "@/lib/equipa";
 import { buscarPedidoDoConsultor } from "@/lib/bilhetes-convencao";
+import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
 import { EVENTO_TITULO, EVENTO_LOCAL, EVENTO_PRECO_ADULTO, EVENTO_PRECO_CRIANCA_MAIS10, estaoInscricoesAbertas } from "@/lib/eventos";
 
 export async function POST(request: Request): Promise<Response> {
@@ -31,6 +32,10 @@ export async function POST(request: Request): Promise<Response> {
           bilhetes: pedido.bilhetes, pagamento: pedido.pagamento,
           comprovativoNome: pedido.comprovativoNome, comprovativoEm: pedido.comprovativoEm?.toISOString() ?? null,
           comprovativo2Nome: pedido.comprovativo2Nome, comprovativo2Em: pedido.comprovativo2Em?.toISOString() ?? null,
+        } : !pedido && email === EMAIL_PAINEL_DEMONSTRACAO ? {
+          // A mesma demonstração de comprovativos apresentada na área atual.
+          bilhetes: 2, pagamento: "Só uma parte, para bloquear o lugar",
+          comprovativoNome: null, comprovativoEm: null, comprovativo2Nome: null, comprovativo2Em: null,
         } : null,
       },
     };

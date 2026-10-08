@@ -130,18 +130,20 @@ function EnvioComprovativo({
   );
 }
 
-export function ConvencaoCartao({ email, pedido, aoAcrescentar }: { email: string; pedido: PedidoConvencao; aoAcrescentar?: () => void }) {
+export function ConvencaoCartao({ email, pedido, mostrarLinkBilhetes = true, mostrarCabecalho = true }: {
+  email: string; pedido: PedidoConvencao; mostrarLinkBilhetes?: boolean; mostrarCabecalho?: boolean;
+}) {
   const pagaEmDuasVezes = pedido.pagamento !== "O valor total";
   const pagamento = pagaEmDuasVezes ? "Pagas em duas vezes" : "Pagas o valor total";
 
   return (
     <div className="vqb-cartao vqb-convencao">
-      <span className="vqb-destaque-etiqueta">Convenção</span>
+      {mostrarCabecalho && <><span className="vqb-destaque-etiqueta">Convenção</span>
       <h3 className="vqb-destaque-titulo">Convenção Nacional iCligo</h3>
-      <p className="vqb-destaque-data">13 de março de 2027 · TGV, pack da Sara Izza</p>
+      <p className="vqb-destaque-data">13 de março de 2027 · TGV, pack da Sara Izza</p></>}
       <p className="vqb-destaque-texto">
         O teu pedido: {pedido.bilhetes} {pedido.bilhetes === 1 ? "bilhete" : "bilhetes"} · {pagamento}.{" "}
-        {aoAcrescentar ? <button type="button" className="vqb-convencao-link" onClick={aoAcrescentar}>Acrescentar bilhetes</button> : <a href="/bilhetes-convencao" className="vqb-convencao-link">
+        {mostrarLinkBilhetes && <a href="/bilhetes-convencao" className="vqb-convencao-link">
           Acrescentar bilhetes
         </a>}
       </p>

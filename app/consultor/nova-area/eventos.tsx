@@ -4,11 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import type { DadosEventosPresenciais } from "@/lib/consultor-nova-area";
 import { EventoForm } from "../evento-form";
 import { ConvencaoCartao } from "../convencao-cartao";
-import FormularioBilhetes from "../../bilhetes-convencao/formulario";
 import estilos from "./nova-area.module.css";
 import s from "./eventos.module.css";
-
-const OPCOES_PAGAMENTO = ["Só uma parte, para bloquear o lugar", "O valor total"];
 
 function dataEvento(dia: string): string {
   return new Date(`${dia}T12:00:00Z`).toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Lisbon" });
@@ -19,8 +16,7 @@ export function EventosPresenciais({ email, nome }: { email: string; nome: strin
   const [estado, setEstado] = useState<"carregar" | "pronto" | "erro">("carregar");
   const [erro, setErro] = useState("");
   const [tentativa, setTentativa] = useState(0);
-  const [acao, setAcao] = useState<"teambuilding" | "bilhetes" | "pedido" | null>(null);
-  const [pedidoGravado, setPedidoGravado] = useState(false);
+  const [acao, setAcao] = useState<"teambuilding" | null>(null);
   const detalhes = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -62,7 +58,6 @@ export function EventosPresenciais({ email, nome }: { email: string; nome: strin
     {estado === "carregar" && <p className={s.aviso} role="status">A carregar os eventos…</p>}
     {estado === "erro" && <div className={s.erro} role="alert"><p>{erro}</p><button type="button" className={estilos.botaoSecundario} onClick={() => setTentativa(n => n + 1)}>Tentar novamente</button></div>}
     {estado === "pronto" && dados && <>
-      {pedidoGravado && <p className={s.confirmado} role="status">✓ Pedido de bilhetes gravado.</p>}
       <div className={s.grade}>
         <article className={s.cartao}>
           <span className={estilos.etiqueta}>EVENTO DA EQUIPA</span>
@@ -78,20 +73,14 @@ export function EventosPresenciais({ email, nome }: { email: string; nome: strin
           <h2>{dados.convencao.titulo}</h2>
           <p className={s.data}><time dateTime={dados.convencao.data}>{dataEvento(dados.convencao.data)}</time></p>
           <p className={s.local}>Local e horário a confirmar</p>
-          <p className={s.descricao}>Reserva o teu lugar no pack de bilhetes comprado pela equipa e acompanha o teu pedido.</p>
+          <p className={s.lembrete}><strong>Lembra-te:</strong> se quiseres um bilhete para a Convenção, fala diretamente com a Sara.</p>
           {dados.convencao.erroPedido ? <div className={s.erro} role="alert"><p>Não foi possível consultar o teu pedido.</p><button type="button" className={estilos.botaoSecundario} onClick={() => setTentativa(n => n + 1)}>Tentar novamente</button></div>
-            : dados.convencao.pedido ? <p className={s.nota}>O teu pedido: <strong>{dados.convencao.pedido.bilhetes} {dados.convencao.pedido.bilhetes === 1 ? "bilhete" : "bilhetes"}</strong>.</p> : <p className={s.nota}>Ainda não tens um pedido de bilhetes registado.</p>}
-          <button type="button" className={estilos.botao} disabled={dados.convencao.erroPedido} aria-expanded={acao === "pedido" || acao === "bilhetes"} aria-controls="detalhes-evento-presencial" onClick={() => setAcao(dados.convencao.pedido ? "pedido" : "bilhetes")}>{dados.convencao.pedido ? "Ver pedido e comprovativos" : "Pedir bilhetes"}</button>
+            : dados.convencao.pedido ? <div className={s.pedido}><ConvencaoCartao email={email} pedido={dados.convencao.pedido} mostrarLinkBilhetes={false} mostrarCabecalho={false} /></div> : <p className={s.nota}>Depois de o teu pedido estar registado, podes anexar aqui os comprovativos de pagamento.</p>}
         </article>
       </div>
       {acao && <div id="detalhes-evento-presencial" ref={detalhes} className={s.detalhes} tabIndex={-1}>
-        <div className={s.cabecalhoDetalhes}><h2>{acao === "teambuilding" ? "Inscrição no Teambuilding" : acao === "bilhetes" ? "Pedido de bilhetes da Convenção" : "O teu pedido da Convenção"}</h2><button type="button" className={estilos.botaoSecundario} onClick={() => setAcao(null)}>Fechar</button></div>
+        <div className={s.cabecalhoDetalhes}><h2>Inscrição no Teambuilding</h2><button type="button" className={estilos.botaoSecundario} onClick={() => setAcao(null)}>Fechar</button></div>
         {acao === "teambuilding" && dados.teambuilding.inscricoesAbertas && <EventoForm email={email} nome={nome} />}
-        {acao === "pedido" && dados.convencao.pedido && <div className={s.pedido}><ConvencaoCartao email={email} pedido={dados.convencao.pedido} aoAcrescentar={() => setAcao("bilhetes")} /></div>}
-        {acao === "bilhetes" && <div className={s.formularioBilhetes}>
-          <p className={s.nota}>O teu bilhete faz parte do pack comprado pela equipa. {dados.convencao.pedido ? "Indica apenas os bilhetes que queres acrescentar e os nomes de quem os vai usar." : "Preenche os teus dados e escolhe a forma de pagamento."}</p>
-          <FormularioBilhetes opcoesPagamento={OPCOES_PAGAMENTO} nomeInicial={nome} emailInicial={email} embutido aoGravar={() => { setPedidoGravado(true); setAcao(null); setTentativa(n => n + 1); }} />
-        </div>}
       </div>}
     </>}
   </section>;
