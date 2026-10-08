@@ -4,9 +4,20 @@ import { useEffect, useRef, useState } from "react";
 import { diaDoAcontecimento, diaEmPortugal, diasDoMes, mudarMes, NOMES_CATEGORIAS, type AcontecimentoCalendario, type CategoriaAcontecimento } from "@/lib/calendario-consultor";
 import estilos from "./nova-area.module.css";
 import s from "./calendario.module.css";
+import { EventoForm } from "../evento-form";
 
 const CATEGORIAS = Object.keys(NOMES_CATEGORIAS) as CategoriaAcontecimento[];
 const DIAS_SEMANA = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+const ETIQUETAS_EVENTOS: Record<CategoriaAcontecimento, string> = {
+  webinar: "Webinar", welcome: "Welcome", formacao: "Equipa", icligo: "iCliGo", evento: "Evento",
+};
+
+function MarcaAcontecimento({ categoria }: { categoria: CategoriaAcontecimento }) {
+  return <span className={s.marcaEvento}>
+    {categoria === "icligo" ? <img className={s.logoIcligo} src="/icligo-logo.png" alt="" width={32} height={32} /> : <span className={s.ponto} aria-hidden="true" />}
+    <span className={s.nomeMarca}>{ETIQUETAS_EVENTOS[categoria]}</span>
+  </span>;
+}
 
 function dataLonga(dia: string): string {
   return new Date(`${dia}T12:00:00Z`).toLocaleDateString("pt-PT", {
@@ -23,7 +34,7 @@ function horario(acontecimento: AcontecimentoCalendario): string {
   return `${hora(acontecimento.comecaEm)}${acontecimento.terminaEm ? ` – ${hora(acontecimento.terminaEm)}` : ""}`;
 }
 
-export function CalendarioConsultor({ email }: { email: string }) {
+export function CalendarioConsultor({ email, nome }: { email: string; nome: string | null }) {
   const hoje = diaEmPortugal();
   const [mes, setMes] = useState(hoje.slice(0, 7));
   const [diaSelecionado, setDiaSelecionado] = useState(hoje);
@@ -35,6 +46,47 @@ export function CalendarioConsultor({ email }: { email: string }) {
   const [tentativa, setTentativa] = useState(0);
   const [selecionado, setSelecionado] = useState<AcontecimentoCalendario | null>(null);
   const dialogo = useRef<HTMLDialogElement>(null);
+  const [aPedir, setAPedir] = useState(false);
+  const [erroAcao, setErroAcao] = useState("");
+  const [confirmado, setConfirmado] = useState(false);
+  const [mostrarInscricaoEvento, setMostrarInscricaoEvento] = useState(false);
+  const acontecimentoAtual = useRef<string | undefined>(undefined);
+  acontecimentoAtual.current = selecionado?.id;
+
+  function abrirAcontecimento(acontecimento: AcontecimentoCalendario) {
+    setErroAcao("");
+    setConfirmado(false);
+    setMostrarInscricaoEvento(false);
+    setSelecionado(acontecimento);
+  }
+
+  async function pedirAcesso() {
+    if (!selecionado?.webinarId || aPedir) return;
+    const acontecimento = selecionado;
+    const janela = acontecimento.inscrito ? window.open("about:blank", "_blank") : null;
+    if (janela) janela.opener = null;
+    setAPedir(true);
+    setErroAcao("");
+    try {
+      const resposta = await fetch(`/api/consultor/backoffice/${acontecimento.categoria === "webinar" ? "webinar" : "formacao"}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, webinarId: acontecimento.webinarId }),
+      });
+      const corpo = await resposta.json().catch(() => ({}));
+      if (!resposta.ok || typeof corpo.url !== "string") throw new Error(corpo.erro ?? "Não foi possível preparar o teu acesso. Tenta novamente.");
+      if (acontecimento.inscrito) {
+        if (janela) janela.location.href = corpo.url;
+        else window.location.href = corpo.url;
+      } else {
+        setDados(atual => atual ? { ...atual, acontecimentos: atual.acontecimentos.map(a => a.id === acontecimento.id ? { ...a, inscrito: true } : a) } : atual);
+        setSelecionado(atual => atual?.id === acontecimento.id ? { ...atual, inscrito: true } : atual);
+        if (acontecimentoAtual.current === acontecimento.id) setConfirmado(true);
+      }
+    } catch (falha) {
+      janela?.close();
+      if (acontecimentoAtual.current === acontecimento.id) setErroAcao(falha instanceof Error ? falha.message : "Falha de ligação. Tenta novamente.");
+    } finally { setAPedir(false); }
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -87,8 +139,8 @@ export function CalendarioConsultor({ email }: { email: string }) {
   const tituloMes = new Date(`${mes}-01T12:00:00Z`).toLocaleDateString("pt-PT", { month: "long", year: "numeric", timeZone: "Europe/Lisbon" });
 
   function lista(listaEventos: AcontecimentoCalendario[]) {
-    return <div className={s.lista}>{listaEventos.map(a => <button type="button" key={a.id} className={s.itemAgenda} data-categoria={a.categoria} onClick={() => setSelecionado(a)}>
-      <span className={s.ponto} aria-hidden="true" />
+    return <div className={s.lista}>{listaEventos.map(a => <button type="button" key={a.id} className={s.itemAgenda} data-categoria={a.categoria} onClick={() => abrirAcontecimento(a)}>
+      {a.categoria === "icligo" ? <img className={s.logoIcligo} src="/icligo-logo.png" alt="" width={32} height={32} /> : <span className={s.ponto} aria-hidden="true" />}
       <span className={s.itemTexto}><strong>{a.titulo}</strong><span>{horario(a)} · {NOMES_CATEGORIAS[a.categoria]}</span>{a.local && <small>{a.local}</small>}</span>
       <span aria-hidden="true">↗</span>
     </button>)}</div>;
@@ -124,14 +176,19 @@ export function CalendarioConsultor({ email }: { email: string }) {
       <p className={s.resumo} aria-live="polite">{estado === "erro" ? "Calendário indisponível" : estado === "carregar" || dados?.mes !== mes ? "A carregar os acontecimentos…" : `${visiveis.length} ${visiveis.length === 1 ? "acontecimento" : "acontecimentos"} neste mês · Horas de Portugal`}</p>
       {estado === "erro" && <div className={s.erro} role="alert"><p>{erro}</p><button type="button" onClick={() => setTentativa(n => n + 1)}>Tentar novamente</button></div>}
       {vista === "mes" ? <>
+        <div className={s.deslocacaoMes} tabIndex={0} role="region" aria-label={`Calendário de ${tituloMes}`}>
         <div className={s.grelha} aria-labelledby="mes-calendario" aria-busy={estado === "carregar"}>
           {DIAS_SEMANA.map(d => <div className={s.diaSemana} key={d}>{d}</div>)}
           {diasDoMes(mes).map(dia => <div key={dia} className={s.dia} data-dia={dia} data-fora={!dia.startsWith(mes)} data-selecionado={diaSelecionado === dia}>
             <button type="button" className={s.numero} data-hoje={dia === hoje} aria-label={dataLonga(dia)} aria-pressed={diaSelecionado === dia} onClick={() => escolherDia(dia)}>{Number(dia.slice(-2))}</button>
-            <div className={s.eventosDia}>{(porDia.get(dia) ?? []).map(a => <button type="button" className={s.acontecimento} key={a.id} data-categoria={a.categoria} title={`${a.titulo} · ${horario(a)}`} aria-label={`${a.titulo}, ${dataLonga(dia)}, ${horario(a)}`} onClick={() => { setDiaSelecionado(dia); setSelecionado(a); }}>
-              <span className={s.ponto} aria-hidden="true" /><span className={s.hora}>{a.diaInteiro ? "" : hora(a.comecaEm)}</span><span className={s.eventoTexto}>{a.titulo}</span>
+            <div className={s.eventosDia}>{(porDia.get(dia) ?? []).map(a => <button type="button" className={s.acontecimento} key={a.id} data-categoria={a.categoria} title={`${a.titulo} · ${horario(a)}`} aria-label={`${a.titulo}, ${dataLonga(dia)}, ${horario(a)}`} aria-haspopup="dialog" onClick={() => { setDiaSelecionado(dia); abrirAcontecimento(a); }}>
+              <MarcaAcontecimento categoria={a.categoria} />
+              <span className={s.hora}>{a.diaInteiro ? "Hora por confirmar" : hora(a.comecaEm)}</span>
+              <span className={s.eventoTexto}>{a.titulo}</span>
+              <span className={s.verDetalhes} aria-hidden="true">Ver detalhes <span>↗</span></span>
             </button>)}</div>
           </div>)}
+        </div>
         </div>
         <div className={s.agendaDia}>
           <h3>{dataLonga(diaSelecionado)}</h3>
@@ -142,15 +199,26 @@ export function CalendarioConsultor({ email }: { email: string }) {
         {estado === "pronto" && !visiveis.length && <p>Sem acontecimentos para os filtros selecionados neste mês.</p>}
       </div>}
     </div>
-    <dialog ref={dialogo} className={s.dialogo} aria-labelledby="titulo-acontecimento" onCancel={() => setSelecionado(null)} onClose={() => setSelecionado(null)} onClick={e => { if (e.target === e.currentTarget) setSelecionado(null); }}>
+    <dialog ref={dialogo} className={s.dialogo} aria-labelledby="titulo-acontecimento" onCancel={() => setSelecionado(null)} onClick={e => { if (e.target === e.currentTarget) setSelecionado(null); }}>
       {selecionado && <div>
         <button type="button" className={s.fechar} onClick={() => setSelecionado(null)} aria-label="Fechar detalhes">×</button>
-        <span className={s.tipoDetalhes} data-categoria={selecionado.categoria}><span className={s.ponto} />{NOMES_CATEGORIAS[selecionado.categoria]}</span>
+        <span className={s.tipoDetalhes} data-categoria={selecionado.categoria}>{selecionado.categoria === "icligo" ? <img className={s.logoIcligo} src="/icligo-logo.png" alt="" width={32} height={32} /> : <span className={s.ponto} />}{NOMES_CATEGORIAS[selecionado.categoria]}</span>
         <h2 id="titulo-acontecimento">{selecionado.titulo}</h2>
         <p>{dataLonga(diaDoAcontecimento(selecionado))}</p>
         <p><strong>{horario(selecionado)}</strong>{!selecionado.diaInteiro && " · Hora de Portugal"}</p>
         {selecionado.local && <p>{selecionado.local}</p>}
-        {selecionado.url && <a className={estilos.botao} href={selecionado.url} target="_blank" rel="noopener noreferrer">{selecionado.categoria === "icligo" ? "Ir para a formação" : "Ver evento"} ↗</a>}
+        <div className={s.acoes} data-categoria={selecionado.categoria}>
+          {selecionado.webinarId && <button type="button" className={`${estilos.botao} ${s.botaoAcao}`} disabled={aPedir} onClick={() => void pedirAcesso()}>
+            {aPedir ? "A preparar o teu acesso…" : !selecionado.inscrito ? "Inscrever-me" : selecionado.categoria === "webinar" ? "Entrar no webinar" : selecionado.categoria === "welcome" ? "Entrar na sessão" : "Entrar na formação"} <span aria-hidden="true">↗</span>
+          </button>}
+          {selecionado.url && <a className={`${estilos.botao} ${s.botaoAcao}`} href={selecionado.url} target="_blank" rel="noopener noreferrer">{selecionado.categoria === "icligo" ? "Ir para a formação" : selecionado.id === "convencao-2027" ? "Comprar bilhetes" : "Ver evento"} <span aria-hidden="true">↗</span></a>}
+          {selecionado.id === "teambuilding-2026" && <>
+            <button type="button" className={`${estilos.botao} ${s.botaoAcao}`} disabled={!selecionado.inscricoesAbertas || mostrarInscricaoEvento} onClick={() => setMostrarInscricaoEvento(true)}>{selecionado.inscricoesAbertas ? "Inscrever-me no evento" : "Inscrições encerradas"}</button>
+            {mostrarInscricaoEvento && <EventoForm email={email} nome={nome} />}
+          </>}
+          {confirmado && <p role="status" className={s.confirmado}>✓ Inscrição confirmada. Já podes usar o botão para entrar.</p>}
+          {erroAcao && <p role="alert" className={s.erroAcao}>{erroAcao}</p>}
+        </div>
       </div>}
     </dialog>
   </section>;

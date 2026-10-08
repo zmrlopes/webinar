@@ -9,6 +9,9 @@ export interface AcontecimentoCalendario {
   diaInteiro: boolean;
   local: string | null;
   url: string | null;
+  webinarId?: string;
+  inscrito?: boolean;
+  inscricoesAbertas?: boolean;
 }
 
 export const NOMES_CATEGORIAS: Record<CategoriaAcontecimento, string> = {

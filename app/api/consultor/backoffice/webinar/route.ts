@@ -3,7 +3,8 @@ import { db } from "@/lib/db";
 import { criarEmailSender, enviarConfirmacao } from "@/lib/email";
 import { buscarMembroEquipa } from "@/lib/equipa";
 import { pedirLinkPessoal, SalaError } from "@/lib/sala-zoom";
-import { buscarProximoWebinarPublico } from "@/lib/webinars";
+import { buscarProximoWebinarPublico, TITULO_WEBINAR_PUBLICO } from "@/lib/webinars";
+import { podeVerNovaArea } from "@/lib/consultor-nova-area";
 
 /**
  * "Entrar na formação" do próximo webinar público, a partir do backoffice:
@@ -21,14 +22,29 @@ import { buscarProximoWebinarPublico } from "@/lib/webinars";
 export async function POST(request: Request): Promise<Response> {
   const corpo = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   const email = corpo?.email;
+  const webinarId = corpo?.webinarId;
 
   if (typeof email !== "string" || !email.includes("@")) {
     return NextResponse.json({ erro: "email inválido" }, { status: 400 });
   }
   const emailNormalizado = email.trim().toLowerCase();
+  if (webinarId !== undefined) {
+    if (typeof webinarId !== "string" || !webinarId) {
+      return NextResponse.json({ erro: "webinarId inválido" }, { status: 400 });
+    }
+    if (!podeVerNovaArea(emailNormalizado)) {
+      return NextResponse.json({ erro: "Este acesso pelo calendário ainda está em preparação." }, { status: 403 });
+    }
+  }
 
   try {
-    const proximo = await buscarProximoWebinarPublico();
+    // O calendário escolhe a sessão exata; os pedidos da área atual continuam a usar a próxima.
+    const proximo = typeof webinarId === "string"
+      ? (await db().query<{ id: string }>(
+          `select id from webinars where id::text = $1 and cancelada_em is null
+           and (publico_para_leads or titulo = $2)`, [webinarId, TITULO_WEBINAR_PUBLICO],
+        )).rows[0]
+      : await buscarProximoWebinarPublico();
     if (!proximo) {
       return NextResponse.json({ erro: "não há sessões públicas agendadas de momento" }, { status: 404 });
     }

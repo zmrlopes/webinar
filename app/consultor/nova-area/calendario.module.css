@@ -17,22 +17,28 @@
 .contentor [data-categoria=webinar], .dialogo [data-categoria=webinar] { --cor-evento: #242424; --fundo-evento: #f0f0ed; }
 .contentor [data-categoria=welcome], .dialogo [data-categoria=welcome] { --cor-evento: #6f7b35; --fundo-evento: #eef2df; }
 .contentor [data-categoria=formacao], .dialogo [data-categoria=formacao] { --cor-evento: #4b5320; --fundo-evento: #f1f2e8; }
-.contentor [data-categoria=icligo], .dialogo [data-categoria=icligo] { --cor-evento: #f0603f; --fundo-evento: #fff2ee; }
+.contentor [data-categoria=icligo], .dialogo [data-categoria=icligo] { --cor-evento: #f0603f; --fundo-evento: #fff0e6; }
 .contentor [data-categoria=evento], .dialogo [data-categoria=evento] { --cor-evento: #907433; --fundo-evento: #faf4e5; }
 .resumo { margin: 0; padding: 14px 20px; color: #6b6a63; font-size: 12px; }
-.grelha { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-top: 1px solid #e5e5dc; }
+.deslocacaoMes { overflow-x: auto; }
+.deslocacaoMes:focus-visible { outline: 2px solid #4b5320; outline-offset: -2px; }
+.grelha { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); min-width: 980px; border-top: 1px solid #e5e5dc; }
 .diaSemana { padding: 10px 0; color: #6b6a63; font-size: 11px; text-align: center; border-bottom: 1px solid #e5e5dc; }
-.dia { min-width: 0; min-height: 120px; padding: 8px 5px; border-right: 1px solid #e5e5dc; border-bottom: 1px solid #e5e5dc; }
+.dia { min-width: 0; min-height: 185px; padding: 10px 6px; border-right: 1px solid #e5e5dc; border-bottom: 1px solid #e5e5dc; }
 .dia:nth-child(7n) { border-right: none; }
 .dia[data-fora=true] { background: #f8f8f5; color: #a6a69c; }
 .dia[data-selecionado=true] { background: #fafbf4; box-shadow: inset 0 0 0 1px #4b532080; }
 .numero { display: grid; place-items: center; width: 28px; height: 28px; margin: 0 auto 5px !important; padding: 0; border: none; border-radius: 50%; background: transparent; color: inherit; font-size: 12px; cursor: pointer; }
 .numero[data-hoje=true] { background: #4b5320; color: #fff; }
-.eventosDia { display: flex; flex-direction: column; gap: 4px; }
-.acontecimento { display: flex; align-items: center; gap: 4px; min-width: 0; width: 100%; border: none; border-radius: 5px; padding: 4px; background: var(--fundo-evento); color: #303326; cursor: pointer; font-size: 10px; line-height: 1.4; text-align: left; }
-.hora { font-size: 9px; flex: none; }
-.eventoTexto { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.acontecimento:hover { outline: 1px solid var(--cor-evento); }
+.eventosDia { display: flex; flex-direction: column; gap: 10px; }
+.acontecimento { display: flex; flex-direction: column; align-items: stretch; gap: 9px; min-width: 0; width: 100%; border: 1px solid var(--cor-evento); border-left-width: 5px; border-radius: 9px; padding: 12px 9px; background: var(--fundo-evento); color: #111; cursor: pointer; font: inherit; font-size: 15px; line-height: 1.45; text-align: left; box-shadow: 0 2px 4px #0000000d; }
+.marcaEvento { display: flex; align-items: center; gap: 7px; min-width: 0; color: #303326; font-size: 12px; font-weight: 750; }
+.logoIcligo { display: block; width: 32px; height: 32px; flex: none; object-fit: contain; }
+.acontecimento[data-categoria=icligo] .marcaEvento { color: #9c321c; font-size: 14px; }
+.hora { align-self: flex-start; padding: 3px 7px; border-radius: 5px; background: #fff; color: #242424; font-size: 13px; font-weight: 750; }
+.eventoTexto { font-weight: 750; white-space: normal; overflow-wrap: anywhere; }
+.verDetalhes { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding-top: 7px; border-top: 1px solid #0000001a; color: #303326; font-size: 11px; font-weight: 650; }
+.acontecimento:hover, .acontecimento:focus-visible { outline: 2px solid var(--cor-evento); outline-offset: 1px; }
 .agendaDia, .agendaMes { padding: 20px; }
 .agendaDia h3, .agendaMes h3 { margin: 0 0 12px; color: #4b5320; font-size: 14px; text-transform: capitalize; }
 .agendaDia > p, .agendaMes > p { font-size: 13px; color: #6b6a63; }
@@ -51,6 +57,12 @@
 .dialogo a { margin-top: 12px; }
 .fechar { display: block; margin-left: auto !important; padding: 0 7px; background: transparent; color: #6b6a63; border: none; font-size: 26px; cursor: pointer; }
 .tipoDetalhes { display: flex; align-items: center; gap: 8px; color: var(--cor-evento); font-size: 12px; font-weight: 650; }
+.acoes { display: grid; gap: 12px; margin-top: 20px; }
+.acoes .botaoAcao { width: 100%; justify-content: center; margin: 0; text-align: center; }
+.acoes[data-categoria=icligo] .botaoAcao { background: #f0603f; border-color: #f0603f; color: #fff; }
+.botaoAcao:disabled { opacity: .6; cursor: default; }
+.acoes .confirmado { margin: 0; color: #4b5320; }
+.acoes .erroAcao { margin: 0; color: #b3261e; }
 @media (max-width: 700px) {
   .barra { padding: 16px; }
   .navegacao h2 { font-size: 18px; margin-left: 5px; }
@@ -59,11 +71,15 @@
   .legenda { padding: 0 16px; gap: 6px; }
   .legenda button { font-size: 10px; }
   .resumo { padding: 12px 16px; font-size: 11px; }
+  .grelha { min-width: 0; }
   .dia { min-height: 75px; padding: 5px 2px; }
   .numero { font-size: 11px; width: 23px; height: 23px; }
   .eventosDia { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 4px; }
-  .acontecimento { width: 14px; height: 14px; border-radius: 50%; padding: 3px; justify-content: center; }
-  .hora, .eventoTexto { display: none; }
+  .acontecimento { display: flex; flex-direction: row; align-items: center; width: 14px; height: 14px; border: none; border-radius: 50%; padding: 3px; gap: 0; justify-content: center; box-shadow: none; }
+  .acontecimento .marcaEvento { gap: 0; }
+  .acontecimento[data-categoria=icligo] { width: 30px; height: 30px; padding: 2px; border: 1px solid #f0603f; border-radius: 8px; background: #fff0e6; }
+  .acontecimento .logoIcligo { width: 24px; height: 24px; }
+  .acontecimento .nomeMarca, .hora, .eventoTexto, .verDetalhes { display: none; }
   .agendaDia, .agendaMes { padding: 16px; }
   .dialogo { padding: 20px; }
 }

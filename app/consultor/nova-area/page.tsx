@@ -254,7 +254,7 @@ export default function NovaAreaConsultor() {
             </div>
             </section>}
             {seccao === "leads" && <LeadsNovaArea linkPartilha={dados.linkPartilha} />}
-            {seccao === "calendario" && <CalendarioConsultor email={email} />}
+            {seccao === "calendario" && <CalendarioConsultor email={email} nome={dados.nome} />}
             {seccao === "tarefas-equipa" && <TarefasIniciaisEquipa membros={dados.equipaPrimeirosPassos} />}
             {seccao === "proximo-webinar" && <ProximoWebinar webinar={dados.proximoWebinar} email={email} aoInscrever={() => setDados(atual => atual?.proximoWebinar ? { ...atual, proximoWebinar: { ...atual.proximoWebinar, inscrito: true } } : atual)} />}
             {seccao === "proximas-formacoes" && <ProximasFormacoes formacoes={dados.proximasFormacoes} email={email} aoInscrever={id => setDados(atual => atual ? {

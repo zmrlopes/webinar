@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { podeVerNovaArea } from "@/lib/consultor-nova-area";
 import { mudarMes, type AcontecimentoCalendario } from "@/lib/calendario-consultor";
 import { TITULO_WEBINAR_PUBLICO, TITULO_WELCOME_ABOARD } from "@/lib/webinars";
-import { EVENTO_TITULO, EVENTO_LOCAL } from "@/lib/eventos";
+import { EVENTO_TITULO, EVENTO_LOCAL, estaoInscricoesAbertas } from "@/lib/eventos";
 
 export async function POST(request: Request): Promise<Response> {
   const corpo = await request.json().catch(() => null);
@@ -18,12 +18,14 @@ export async function POST(request: Request): Promise<Response> {
   try {
     const inicio = `${mes}-01`, fim = `${mudarMes(mes, 1)}-01`;
     const [sessoes, externas] = await Promise.all([
-      db().query<{ id: string; titulo: string; publico_para_leads: boolean; sessao_externa_em: Date; duracao_minutos: number | null }>(
-        `select id, titulo, publico_para_leads, sessao_externa_em, duracao_minutos
-         from webinars where cancelada_em is null
+      db().query<{ id: string; titulo: string; publico_para_leads: boolean; sessao_externa_em: Date; duracao_minutos: number | null; inscrito: boolean }>(
+        `select w.id, w.titulo, w.publico_para_leads, w.sessao_externa_em, w.duracao_minutos,
+           exists(select 1 from registrations r where r.webinar_id = w.id
+             and r.email = $3 and r.cancelada_em is null and r.link_pessoal is not null) as inscrito
+         from webinars w where w.cancelada_em is null
            and sessao_externa_em >= ($1::date::timestamp at time zone 'Europe/Lisbon')
            and sessao_externa_em < ($2::date::timestamp at time zone 'Europe/Lisbon')
-         order by sessao_externa_em`, [inicio, fim],
+         order by sessao_externa_em`, [inicio, fim, email],
       ),
       db().query<{ id: string; titulo: string; sessao_externa_em: Date; link: string }>(
         `select id, titulo, sessao_externa_em, link from formacoes_externas
@@ -39,7 +41,7 @@ export async function POST(request: Request): Promise<Response> {
           : s.titulo === TITULO_WEBINAR_PUBLICO || s.publico_para_leads ? "webinar" as const : "formacao" as const,
         comecaEm: s.sessao_externa_em.toISOString(),
         terminaEm: s.duracao_minutos && s.duracao_minutos > 0 ? new Date(s.sessao_externa_em.getTime() + s.duracao_minutos * 60000).toISOString() : null,
-        diaInteiro: false, local: "Online", url: null,
+        diaInteiro: false, local: "Online", url: null, webinarId: s.id, inscrito: s.inscrito,
       })),
       ...externas.rows.map(f => ({
         id: `icligo-${f.id}`, titulo: f.titulo, categoria: "icligo" as const,
@@ -49,7 +51,7 @@ export async function POST(request: Request): Promise<Response> {
     // Eventos presenciais já anunciados na plataforma; a hora ainda não foi indicada.
     if (mes === "2026-11") acontecimentos.push({
       id: "teambuilding-2026", titulo: EVENTO_TITULO, categoria: "evento", comecaEm: "2026-11-14",
-      terminaEm: null, diaInteiro: true, local: EVENTO_LOCAL, url: null,
+      terminaEm: null, diaInteiro: true, local: EVENTO_LOCAL, url: null, inscricoesAbertas: await estaoInscricoesAbertas(),
     });
     if (mes === "2027-03") acontecimentos.push({
       id: "convencao-2027", titulo: "Convenção Nacional iCliGo", categoria: "evento", comecaEm: "2027-03-13",
