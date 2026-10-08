@@ -35,6 +35,19 @@ export interface DadosNovaArea {
   equipaPrimeirosPassos: MembroPrimeirosPassos[];
   proximoWebinar: ProximoWebinarNovaArea | null;
   proximasFormacoes: FormacaoNovaArea[];
+  primeirosPassos: { feitos: number[]; guardado: boolean };
+  avisos: AvisoInicio[];
+  erroAvisos: boolean;
+}
+
+export interface AvisoInicio {
+  id: string;
+  categoria: "evento" | "equipa";
+  icone: "questionario" | "trofeu" | "hotel";
+  titulo: string;
+  texto: string;
+  href: string;
+  anonimo?: boolean;
 }
 
 export type FormacaoNovaArea = {

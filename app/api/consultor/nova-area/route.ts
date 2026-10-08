@@ -4,6 +4,8 @@ import { podeVerNovaArea, type DadosNovaArea } from "@/lib/consultor-nova-area";
 import { listarWelcomeAboardDaEquipa, obterElegibilidadeWelcomeAboard } from "@/lib/welcome-aboard";
 import { buscarProximaSessaoWelcomeAboard, buscarProximoWebinarPublico, buscarWebinarFormacao, listarFormacoesEquipa } from "@/lib/webinars";
 import { listarFormacoesExternasFuturas } from "@/lib/formacoes-externas";
+import { obterProgressoConsultor } from "@/lib/progresso-consultor";
+import { obterAvisosConsultor } from "@/lib/avisos-consultor";
 
 export async function POST(request: Request): Promise<Response> {
   const corpo = await request.json().catch(() => null);
@@ -24,7 +26,7 @@ export async function POST(request: Request): Promise<Response> {
     if (!membro) {
       return NextResponse.json({ erro: "Não encontrámos esta conta na equipa." }, { status: 403 });
     }
-    const [welcomeAboard, sessao, proximoWebinar, equipa, links, formacao, formacoesEquipa, formacoesExternas] = await Promise.all([
+    const [welcomeAboard, sessao, proximoWebinar, equipa, links, formacao, formacoesEquipa, formacoesExternas, primeirosPassos, avisosInicio] = await Promise.all([
       obterElegibilidadeWelcomeAboard(email),
       buscarProximaSessaoWelcomeAboard(),
       buscarProximoWebinarPublico(),
@@ -37,6 +39,11 @@ export async function POST(request: Request): Promise<Response> {
       buscarWebinarFormacao(),
       listarFormacoesEquipa(email),
       listarFormacoesExternasFuturas(),
+      obterProgressoConsultor(email),
+      obterAvisosConsultor(email).then(avisos => ({ avisos, erro: false })).catch(erro => {
+        console.error("falha ao carregar avisos da página inicial:", erro);
+        return { avisos: [], erro: true };
+      }),
     ]);
     async function jaInscrito(webinarId: string | undefined): Promise<boolean> {
       if (!webinarId) return false;
@@ -55,6 +62,9 @@ export async function POST(request: Request): Promise<Response> {
     ]);
     const dados: DadosNovaArea = {
       nome: membro.nome,
+      primeirosPassos,
+      avisos: avisosInicio.avisos,
+      erroAvisos: avisosInicio.erro,
       linkPartilha: links.rows[0] ? new URL(`/${encodeURIComponent(links.rows[0].referencia)}`, request.url).href : null,
       upline: membro.upline_email ? { nome: membro.upline_nome, email: membro.upline_email } : null,
       welcomeAboard,

@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { buscarQuestionario } from "@/lib/questionarios-lista";
 import { lerEmailGuardado } from "../../armazenamento";
+import { podeVerNovaArea } from "@/lib/consultor-nova-area";
 
 type Estado = "a-carregar" | "pronto" | "a-enviar" | "enviado" | "sem-conta";
 
@@ -18,9 +19,11 @@ export default function QuestionarioPagina() {
 
 function QuestionarioFormulario() {
   const { slug } = useParams<{ slug: string }>();
-  const emPreview = useSearchParams().get("preview") === "1";
+  const searchParams = useSearchParams();
+  const emPreview = searchParams.get("preview") === "1";
   const q = buscarQuestionario(slug);
   const [email, setEmail] = useState<string | null>(null);
+  const voltar = searchParams.get("origem") === "nova-area" && podeVerNovaArea(email ?? "") ? "/consultor/nova-area" : "/consultor";
   const [estado, setEstado] = useState<Estado>("a-carregar");
   const [erro, setErro] = useState("");
   const [respostas, setRespostas] = useState<Record<string, string | number>>({});
@@ -112,7 +115,7 @@ function QuestionarioFormulario() {
         @media (max-width: 420px) { .vqq-escala { grid-template-columns: repeat(5, 1fr); } }
       `}</style>
       <div className="vqq-caixa">
-        <Link href="/consultor" className="vqq-voltar">
+        <Link href={voltar} className="vqq-voltar">
           ← O teu backoffice
         </Link>
 

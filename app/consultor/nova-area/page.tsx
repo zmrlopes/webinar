@@ -16,6 +16,8 @@ import { LeadsNovaArea } from "./leads";
 import { ProximasFormacoes, FormacoesGravadas, DocumentosNovaArea } from "./formacao";
 import { CalendarioConsultor } from "./calendario";
 import { EventosPresenciais } from "./eventos";
+import { InicioNovaArea } from "./inicio";
+import { limparPrimeirosPassos } from "@/lib/primeiros-passos";
 
 const CHAVE_PROGRESSO = "consultor-nova-area:primeiros-passos:v1";
 const TITULOS = [
@@ -30,8 +32,8 @@ function Seta() {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
 
-function Passo({ numero, titulo, concluido, alternar, children }: {
-  numero: number; titulo: string; concluido: boolean; alternar: () => void; children: ReactNode;
+function Passo({ numero, titulo, concluido, alternar, children, aGuardar }: {
+  numero: number; titulo: string; concluido: boolean; alternar: () => void; children: ReactNode; aGuardar: boolean;
 }) {
   return (
     <article id={`passo-${numero}`} className={`${estilos.passo} ${concluido ? estilos.passoFeito : ""}`} aria-labelledby={`titulo-passo-${numero}`}>
@@ -42,7 +44,7 @@ function Passo({ numero, titulo, concluido, alternar, children }: {
       <div className={estilos.passoConteudo}>
         {children}
         <div className={estilos.passoRodape}>
-          <button type="button" className={estilos.concluir} aria-pressed={concluido} onClick={alternar}>
+          <button type="button" className={estilos.concluir} aria-pressed={concluido} disabled={aGuardar} onClick={alternar}>
             <span className={estilos.checkbox} aria-hidden="true">{concluido && "✓"}</span>
             {concluido ? "Passo concluído" : "Já fiz este passo"}
           </button>
@@ -69,11 +71,22 @@ export default function NovaAreaConsultor() {
   const [aInscrever, setAInscrever] = useState(false);
   const [erroSessao, setErroSessao] = useState("");
   const [inscrito, setInscrito] = useState(false);
-  const [seccao, setSeccao] = useState<"comeca-aqui" | "calendario" | "leads" | "tarefas-equipa" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "documentos" | "eventos-presenciais">("comeca-aqui");
+  const [seccao, setSeccao] = useState<"inicio" | "comeca-aqui" | "calendario" | "leads" | "tarefas-equipa" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "documentos" | "eventos-presenciais">("inicio");
+  const [aGuardarPasso, setAGuardarPasso] = useState<number | null>(null);
+  const [erroProgresso, setErroProgresso] = useState("");
+  const [acabadoAgora, setAcabadoAgora] = useState(false);
+  const [voltarAoInicio, setVoltarAoInicio] = useState(false);
   const conteudo = useRef<HTMLElement>(null);
   const menu = useRef<HTMLElement>(null);
   const [pedidoNavegacao, setPedidoNavegacao] = useState(0);
   const [mostrarVoltarAoMenu, setMostrarVoltarAoMenu] = useState(false);
+
+  useEffect(() => {
+    if (!voltarAoInicio) return;
+    conteudo.current?.focus({ preventScroll: true });
+    conteudo.current?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+    setVoltarAoInicio(false);
+  }, [voltarAoInicio]);
 
   useEffect(() => {
     if (!pedidoNavegacao || !window.matchMedia("(max-width: 760px)").matches) return;
@@ -106,11 +119,10 @@ export default function NovaAreaConsultor() {
     if (!podeVerNovaArea(conta)) { setEstado("sem-acesso"); return; }
     const controller = new AbortController();
     setEmail(conta);
+    let progressoLocal: number[] = [];
     try {
       const guardados: unknown = JSON.parse(localStorage.getItem(CHAVE_PROGRESSO) ?? "[]");
-      if (Array.isArray(guardados)) {
-        setFeitos([...new Set(guardados.filter((n): n is number => Number.isInteger(n) && n >= 1 && n <= 5))]);
-      }
+      progressoLocal = limparPrimeirosPassos(guardados);
     } catch { /* O progresso continua a funcionar se o armazenamento estiver indisponível. */ }
     async function carregar() {
       try {
@@ -122,6 +134,18 @@ export default function NovaAreaConsultor() {
         if (controller.signal.aborted) return;
         if (resposta.status === 403) { setEstado("sem-acesso"); return; }
         if (!resposta.ok) throw new Error(corpo.erro ?? "Não foi possível carregar a nova área.");
+        let feitosGuardados = limparPrimeirosPassos(corpo.primeirosPassos?.feitos);
+        if (!corpo.primeirosPassos?.guardado && progressoLocal.length) {
+          const importacao = await fetch("/api/consultor/nova-area/progresso", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: conta, feitos: progressoLocal }), signal: controller.signal,
+          });
+          const progresso = await importacao.json();
+          if (!importacao.ok) throw new Error(progresso.erro ?? "Não foi possível recuperar os teus primeiros passos.");
+          feitosGuardados = limparPrimeirosPassos(progresso.feitos);
+        }
+        if (controller.signal.aborted) return;
+        setFeitos(feitosGuardados);
         setDados(corpo);
         setInscrito(corpo.inscritoWelcomeAboard === true);
         setEstado("pronto");
@@ -135,10 +159,28 @@ export default function NovaAreaConsultor() {
     return () => controller.abort();
   }, []);
 
-  function alternarPasso(numero: number) {
-    const atualizados = feitos.includes(numero) ? feitos.filter(n => n !== numero) : [...feitos, numero];
-    setFeitos(atualizados);
-    try { localStorage.setItem(CHAVE_PROGRESSO, JSON.stringify(atualizados)); } catch { /* Sem bloquear a página. */ }
+  async function alternarPasso(numero: number) {
+    if (aGuardarPasso !== null) return;
+    setAGuardarPasso(numero);
+    setErroProgresso("");
+    try {
+      const resposta = await fetch("/api/consultor/nova-area/progresso", {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, passo: numero, concluido: !feitos.includes(numero) }),
+      });
+      const corpo = await resposta.json();
+      if (!resposta.ok) throw new Error(corpo.erro ?? "Não foi possível guardar este passo.");
+      const atualizados = limparPrimeirosPassos(corpo.feitos);
+      setFeitos(atualizados);
+      try { localStorage.setItem(CHAVE_PROGRESSO, JSON.stringify(atualizados)); } catch { /* A conta já tem o progresso guardado. */ }
+      if (atualizados.length === 5) {
+        setAcabadoAgora(true);
+        setSeccao("inicio");
+        setVoltarAoInicio(true);
+      }
+    } catch (falha) {
+      setErroProgresso(falha instanceof Error ? falha.message : "Não foi possível guardar este passo. Tenta novamente.");
+    } finally { setAGuardarPasso(null); }
   }
 
   async function entrarWelcomeAboard() {
@@ -200,9 +242,13 @@ export default function NovaAreaConsultor() {
           <aside className={estilos.lateral}>
             <nav id="menu-nova-area" ref={menu} aria-label="Secções da nova área">
               <div className={estilos.grupoMenu}>
+                <span className={estilos.etiqueta}>A MINHA ÁREA</span>
+                <button type="button" className={seccao === "inicio" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("inicio")} aria-current={seccao === "inicio" ? "page" : undefined} aria-controls="conteudo-nova-area">Início <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3V10Z" stroke="currentColor" strokeWidth="1.6" /><path d="M9 20v-7h6v7" stroke="currentColor" strokeWidth="1.6" /></svg></button>
+              </div>
+              {totalFeitos < 5 && <div className={estilos.grupoMenu}>
                 <span className={estilos.etiqueta}>PRIMEIROS PASSOS</span>
                 <button type="button" className={seccao === "comeca-aqui" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("comeca-aqui")} aria-current={seccao === "comeca-aqui" ? "page" : undefined} aria-controls="conteudo-nova-area">Começa aqui <span>{5 - totalFeitos}</span></button>
-              </div>
+              </div>}
               <div className={estilos.grupoMenu}>
                 <button type="button" className={seccao === "calendario" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calendario")} aria-current={seccao === "calendario" ? "page" : undefined} aria-controls="conteudo-nova-area">Calendário <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" strokeWidth="1.6" /><path d="M7 3v4m10-4v4M3 11h18" stroke="currentColor" strokeWidth="1.6" /></svg></button>
               </div>
@@ -236,14 +282,17 @@ export default function NovaAreaConsultor() {
           </aside>
 
           <main id="conteudo-nova-area" ref={conteudo} tabIndex={-1} aria-label="Conteúdo da secção" className={estilos.conteudo}>
+            {seccao === "inicio" && <InicioNovaArea avisos={dados.avisos ?? []} erroAvisos={dados.erroAvisos ?? false} feitos={totalFeitos} aoComecar={() => abrirSeccao("comeca-aqui")} acabadoAgora={acabadoAgora} />}
             {seccao === "comeca-aqui" && <section id="comeca-aqui" aria-label="Começa aqui">
             <div className={estilos.intro}>
               <span className={estilos.etiqueta}>BEM-VINDO À EQUIPA</span>
               <h1>Começa aqui<span>.</span></h1>
               <p>Os teus primeiros passos, por esta ordem. <strong>{totalFeitos} de 5 feitos.</strong></p>
+              {aGuardarPasso !== null && <p role="status">A guardar o passo {aGuardarPasso}…</p>}
+              {erroProgresso && <p role="alert" className={estilos.erroOrganizacao}>{erroProgresso}</p>}
             </div>
             <div className={estilos.passos}>
-              <Passo numero={1} titulo="Entra no grupo de WhatsApp Welcome Aboard" concluido={feitos.includes(1)} alternar={() => alternarPasso(1)}>
+              <Passo numero={1} titulo="Entra no grupo de WhatsApp Welcome Aboard" concluido={feitos.includes(1)} alternar={() => void alternarPasso(1)} aGuardar={aGuardarPasso !== null}>
                 <p>O teu ponto de encontro para começares acompanhado. Junta-te ao grupo de acolhimento da equipa.</p>
                 <div className={estilos.grupo}>
                   <span className={estilos.grupoIcone} aria-hidden="true"><svg width="25" height="25" viewBox="0 0 24 24" fill="none"><path d="M20 11.5a8 8 0 0 1-12 7L4 20l1.5-4A8 8 0 1 1 20 11.5Z" stroke="currentColor" strokeWidth="1.7" /><path d="M8.5 8.5c.8 3.2 2.5 4.8 5.5 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg></span>
@@ -254,20 +303,20 @@ export default function NovaAreaConsultor() {
                 </div>
               </Passo>
 
-              <Passo numero={2} titulo="Marca a 1.ª videochamada com o teu upline" concluido={feitos.includes(2)} alternar={() => alternarPasso(2)}>
+              <Passo numero={2} titulo="Marca a 1.ª videochamada com o teu upline" concluido={feitos.includes(2)} alternar={() => void alternarPasso(2)} aGuardar={aGuardarPasso !== null}>
                 <p>Uma conversa curta, no máximo 30 minutos, para se conhecerem e para te orientar no arranque.</p>
                 {dados.upline?.nome && <p className={estilos.upline}>O teu upline é <strong>{dados.upline.nome}.</strong></p>}
                 <a className={estilos.botao} href={mensagemWhatsApp(dados.nome)} target="_blank" rel="noopener noreferrer">Preparar mensagem no WhatsApp <Seta /></a>
                 <p className={estilos.nota}>Escolhe o contacto do teu upline e combina a chamada.</p>
               </Passo>
 
-              <Passo numero={3} titulo="Faz o curso Be a Travel Partner" concluido={feitos.includes(3)} alternar={() => alternarPasso(3)}>
+              <Passo numero={3} titulo="Faz o curso Be a Travel Partner" concluido={feitos.includes(3)} alternar={() => void alternarPasso(3)} aGuardar={aGuardarPasso !== null}>
                 <p>É <strong>obrigatório</strong> e está na academia da iCliGo. Faz-se lá; aqui fica o caminho para chegares ao curso.</p>
                 <a className={estilos.botao} href={LINK_CURSO_TRAVEL_PARTNER} target="_blank" rel="noopener noreferrer">Ir para o curso <Seta /></a>
                 <p className={estilos.nota}>Entra com a tua conta da iCliGo Academy.</p>
               </Passo>
 
-              <Passo numero={4} titulo="Vai ao Welcome Aboard — a Sessão 1 e a Sessão 2" concluido={feitos.includes(4)} alternar={() => alternarPasso(4)}>
+              <Passo numero={4} titulo="Vai ao Welcome Aboard — a Sessão 1 e a Sessão 2" concluido={feitos.includes(4)} alternar={() => void alternarPasso(4)} aGuardar={aGuardarPasso !== null}>
                 <p><strong>Todas as quartas-feiras, às 21:20</strong>, com os líderes. É uma sala de Zoom que se divide em duas: começas pela Sessão 1 e, na semana seguinte, vais à Sessão 2.</p>
                 <div className={estilos.sessoes}>
                   <div className={estilos.sessao}><h3><span aria-hidden="true">✈️</span> Sessão 1</h3><p>Foco em começar e fazer as primeiras reservas.</p><span className={dados.welcomeAboard?.sessao1Concluida ? estilos.presencaFeita : estilos.presencaPendente}>{dados.welcomeAboard?.sessao1Concluida ? "✓ Concluída" : "Por fazer"}</span></div>
@@ -281,7 +330,7 @@ export default function NovaAreaConsultor() {
                 {erroSessao && <p role="alert" className={estilos.erro}>{erroSessao}</p>}
               </Passo>
 
-              <Passo numero={5} titulo="Marca a 2.ª videochamada com o teu upline, para definir objetivos" concluido={feitos.includes(5)} alternar={() => alternarPasso(5)}>
+              <Passo numero={5} titulo="Marca a 2.ª videochamada com o teu upline, para definir objetivos" concluido={feitos.includes(5)} alternar={() => void alternarPasso(5)} aGuardar={aGuardarPasso !== null}>
                 <p>Com os primeiros passos feitos, é a conversa para definirem juntos os teus objetivos. Chega a ela com o teu objetivo já pensado.</p>
                 <a className={estilos.botao} href={mensagemWhatsApp(dados.nome, true)} target="_blank" rel="noopener noreferrer">Preparar mensagem no WhatsApp <Seta /></a>
                 <p className={estilos.nota}>Escolhe o contacto do teu upline e combina a segunda chamada.</p>

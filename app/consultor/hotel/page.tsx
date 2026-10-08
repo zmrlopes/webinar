@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { lerEmailGuardado } from "../armazenamento";
+import { podeVerNovaArea } from "@/lib/consultor-nova-area";
 
 type Estado = "a-carregar" | "pronto" | "a-enviar" | "enviado" | "erro" | "sem-conta";
 type TipoQuarto = "single" | "duplo";
@@ -20,6 +21,7 @@ function HotelFormulario() {
   const searchParams = useSearchParams();
   const emPreview = searchParams.get("preview") === "1";
   const [email, setEmail] = useState<string | null>(null);
+  const voltar = searchParams.get("origem") === "nova-area" && podeVerNovaArea(email ?? "") ? "/consultor/nova-area" : "/consultor";
   const [estado, setEstado] = useState<Estado>("a-carregar");
   const [erro, setErro] = useState("");
   const [querQuarto, setQuerQuarto] = useState<boolean | null>(null);
@@ -168,7 +170,7 @@ function HotelFormulario() {
         }
       `}</style>
       <div className="vqx-caixa">
-        <Link href="/consultor" className="vqx-voltar">
+        <Link href={voltar} className="vqx-voltar">
           ← O teu backoffice
         </Link>
         <h1>Quarto no hotel — Teambuilding de 14 de novembro</h1>

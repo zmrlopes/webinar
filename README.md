@@ -9,6 +9,19 @@ base de dados Postgres (Neon) ligada.
 
 ## Estado
 
+### Página inicial da nova área
+
+`/consultor/nova-area` abre em **Início**, com os questionários pendentes
+destinados à conta (os três do evento e os questionários da equipa abertos).
+Reutiliza as regras de inscrição e de resposta existentes; a conta de demonstração
+continua a ver os exemplos. Há também um espaço reservado para futuros comunicados.
+**Começa aqui** permanece no menu até as cinco tarefas estarem marcadas.
+Os passos são guardados por conta em `dashboard_config`, com atualização de um
+passo de cada vez para preservar alterações de outros dispositivos. As antigas
+marcas do navegador são importadas uma vez, sem substituir progresso já guardado.
+As alterações continuam limitadas à conta de teste. Testes com dados temporários:
+`node --import tsx scripts/testes-inicio-consultor.ts` (requer `DATABASE_URL`).
+
 ### Formações do fórum iCliGo na nova área
 
 O calendário de `/consultor/nova-area` importa as formações online de todas as línguas do fórum. Mantém as bandeiras da origem e converte as horas para Portugal. A importação fica limitada à conta definida em `src/lib/demo.ts`; as formações manuais e a área atual continuam independentes.

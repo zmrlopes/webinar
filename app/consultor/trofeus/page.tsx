@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { TROFEUS_JA_TENHO, TROFEUS_QUERO, type Trofeu } from "@/lib/trofeus-lista";
 import { lerEmailGuardado } from "../armazenamento";
+import { podeVerNovaArea } from "@/lib/consultor-nova-area";
 
 type Estado = "a-carregar" | "pronto" | "a-enviar" | "enviado" | "erro" | "sem-conta";
 
@@ -48,6 +49,7 @@ function TrofeusFormulario() {
   const searchParams = useSearchParams();
   const emPreview = searchParams.get("preview") === "1";
   const [email, setEmail] = useState<string | null>(null);
+  const voltar = searchParams.get("origem") === "nova-area" && podeVerNovaArea(email ?? "") ? "/consultor/nova-area" : "/consultor";
   const [estado, setEstado] = useState<Estado>("a-carregar");
   const [erro, setErro] = useState("");
   const [quero, setQuero] = useState<string[]>([]);
@@ -166,7 +168,7 @@ function TrofeusFormulario() {
         }
       `}</style>
       <div className="vqx-caixa">
-        <Link href="/consultor" className="vqx-voltar">
+        <Link href={voltar} className="vqx-voltar">
           ← O teu backoffice
         </Link>
         <h1>Troféus — Teambuilding de 14 de novembro</h1>
