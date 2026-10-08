@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { descarregarDocumento, finalizarDocumento } from '@/lib/documentos';
 import { TAMANHO_PARTE } from '@/lib/documentos-formatos';
+import { pastaIdValido } from '@/lib/documentos-pastas';
 type Contexto = {params:Promise<{id:string}>};
 export const maxDuration = 300;
 function idValido(id: string) { return /^[a-f0-9-]{36}$/i.test(id); }
@@ -35,8 +36,13 @@ export async function POST(request: Request,{params}:Contexto) {
 export async function PATCH(request: Request,{params}:Contexto) {
   const {id}=await params;
   const c=await request.json().catch(()=>null);
-  if(!idValido(id) || typeof c?.publicado!=='boolean') return Response.json({erro:'dados inválidos'},{status:400});
-  await db().query("update documentos set publicado=$2 where id=$1 and estado='pronto'",[id,c.publicado]);
+  const mudaPublicacao = typeof c?.publicado === 'boolean';
+  const mudaPasta = c !== null && typeof c === 'object' && Object.hasOwn(c,'pastaId');
+  if(!idValido(id) || (!mudaPublicacao && !mudaPasta) || (c?.publicado!==undefined && !mudaPublicacao) || (mudaPasta && c.pastaId!==null && !pastaIdValido(c.pastaId))) return Response.json({erro:'dados inválidos'},{status:400});
+  const {rowCount}=await db().query(`update documentos set publicado=case when $2::boolean then $3::boolean else publicado end,
+    pasta_id=case when $4::boolean then $5::uuid else pasta_id end where id=$1 and estado='pronto'
+    and (not $4::boolean or $5::uuid is null or exists(select 1 from documentos_pastas where id=$5::uuid))`,[id,mudaPublicacao,c.publicado??null,mudaPasta,c.pastaId??null]);
+  if(!rowCount) return Response.json({erro:'documento ou pasta não encontrado'},{status:404});
   return Response.json({ok:true});
 }
 export async function DELETE(_request: Request,{params}:Contexto) {

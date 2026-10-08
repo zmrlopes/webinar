@@ -5,10 +5,11 @@ import { fragmentarTexto, TAMANHO_PARTE } from './documentos-formatos';
 export interface Documento {
   id: string; titulo: string; nome: string; tipo: string; categoria: string; descricao: string;
   tamanho: number; publicado: boolean; conhecimento_estado: string; criado_em: string;
+  pasta_id: string | null;
 }
 export async function listarDocumentos(admin = false): Promise<Documento[]> {
   const { rows } = await db().query(`select id,titulo,nome,tipo,categoria,descricao,tamanho::float8 as tamanho,
-    publicado,conhecimento_estado,criado_em from documentos where estado='pronto' ${admin ? '' : 'and publicado'} order by categoria,titulo`);
+    publicado,conhecimento_estado,criado_em,pasta_id from documentos where estado='pronto' ${admin ? '' : 'and publicado'} order by categoria,titulo`);
   return rows;
 }
 export async function finalizarDocumento(id: string, texto: string): Promise<void> {
