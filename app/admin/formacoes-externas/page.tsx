@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listarFormacoesExternas } from "@/lib/formacoes-externas";
 import { GestorFormacoesExternas } from "./gestor-formacoes-externas";
+import { ImportacaoForum } from "./importacao-forum";
 
 export const dynamic = "force-dynamic";
 
@@ -90,6 +91,7 @@ export default async function FormacoesExternasPagina() {
           ← Início
         </Link>
         <h1>Formações externas (iCliGo)</h1>
+        <ImportacaoForum />
         <p className="ad-subtitulo">
           Formações da própria iCliGo (ex: "Be an Expert", "Be a Pro") em português — sem inscrição nem
           email próprios, só um link para fora. Aparecem no painel do consultor, em "Próximas sessões",

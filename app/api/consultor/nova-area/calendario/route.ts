@@ -4,6 +4,8 @@ import { podeVerNovaArea } from "@/lib/consultor-nova-area";
 import { mudarMes, type AcontecimentoCalendario } from "@/lib/calendario-consultor";
 import { TITULO_WEBINAR_PUBLICO, TITULO_WELCOME_ABOARD } from "@/lib/webinars";
 import { EVENTO_TITULO, EVENTO_LOCAL, estaoInscricoesAbertas } from "@/lib/eventos";
+import { obterCalendarioForum } from "@/lib/forum-icligo";
+import { juntarFormacoesIcligo, linguaDaFormacao, tituloSemBandeira } from "@/lib/formacoes-forum-icligo";
 
 export async function POST(request: Request): Promise<Response> {
   const corpo = await request.json().catch(() => null);
@@ -17,7 +19,7 @@ export async function POST(request: Request): Promise<Response> {
   }
   try {
     const inicio = `${mes}-01`, fim = `${mudarMes(mes, 1)}-01`;
-    const [sessoes, externas] = await Promise.all([
+    const [sessoes, externas, forum] = await Promise.all([
       db().query<{ id: string; titulo: string; publico_para_leads: boolean; sessao_externa_em: Date; duracao_minutos: number | null; inscrito: boolean }>(
         `select w.id, w.titulo, w.publico_para_leads, w.sessao_externa_em, w.duracao_minutos,
            exists(select 1 from registrations r where r.webinar_id = w.id
@@ -33,6 +35,7 @@ export async function POST(request: Request): Promise<Response> {
            and sessao_externa_em < ($2::date::timestamp at time zone 'Europe/Lisbon')
          order by sessao_externa_em`, [inicio, fim],
       ),
+      obterCalendarioForum(mes),
     ]);
     const acontecimentos: AcontecimentoCalendario[] = [
       ...sessoes.rows.map(s => ({
@@ -43,10 +46,10 @@ export async function POST(request: Request): Promise<Response> {
         terminaEm: s.duracao_minutos && s.duracao_minutos > 0 ? new Date(s.sessao_externa_em.getTime() + s.duracao_minutos * 60000).toISOString() : null,
         diaInteiro: false, local: "Online", url: null, webinarId: s.id, inscrito: s.inscrito,
       })),
-      ...externas.rows.map(f => ({
-        id: `icligo-${f.id}`, titulo: f.titulo, categoria: "icligo" as const,
+      ...juntarFormacoesIcligo(externas.rows.map(f => ({
+        id: `icligo-${f.id}`, titulo: tituloSemBandeira(f.titulo), categoria: "icligo" as const, lingua: linguaDaFormacao(f.titulo) ?? "pt",
         comecaEm: f.sessao_externa_em.toISOString(), terminaEm: null, diaInteiro: false, local: "Online · iCliGo", url: f.link,
-      })),
+      })), forum.formacoes),
     ];
     // Eventos presenciais já anunciados na plataforma; a hora ainda não foi indicada.
     if (mes === "2026-11") acontecimentos.push({
@@ -58,7 +61,7 @@ export async function POST(request: Request): Promise<Response> {
       terminaEm: null, diaInteiro: true, local: null, url: "/bilhetes-convencao",
     });
     acontecimentos.sort((a, b) => a.comecaEm.localeCompare(b.comecaEm) || a.titulo.localeCompare(b.titulo));
-    return NextResponse.json({ mes, acontecimentos }, { headers: { "Cache-Control": "private, no-store" } });
+    return NextResponse.json({ mes, acontecimentos, forum: { atualizadoEm: forum.atualizadoEm, aviso: forum.aviso } }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (erro) {
     console.error("falha ao carregar o calendário da conta de teste:", erro);
     return NextResponse.json({ erro: "Não foi possível carregar o calendário. Tenta novamente." }, { status: 500 });

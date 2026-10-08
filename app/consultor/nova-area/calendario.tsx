@@ -5,6 +5,8 @@ import { diaDoAcontecimento, diaEmPortugal, diasDoMes, mudarMes, NOMES_CATEGORIA
 import estilos from "./nova-area.module.css";
 import s from "./calendario.module.css";
 import { EventoForm } from "../evento-form";
+import { BandeiraFormacao } from "./bandeira-formacao";
+import { LINGUAS_FORMACOES } from "@/lib/formacoes-forum-icligo";
 
 const CATEGORIAS = Object.keys(NOMES_CATEGORIAS) as CategoriaAcontecimento[];
 const DIAS_SEMANA = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
@@ -35,7 +37,7 @@ export function CalendarioConsultor({ email, nome }: { email: string; nome: stri
   const [diaSelecionado, setDiaSelecionado] = useState(hoje);
   const [vista, setVista] = useState<"mes" | "agenda">("mes");
   const [categorias, setCategorias] = useState(CATEGORIAS);
-  const [dados, setDados] = useState<{ mes: string; acontecimentos: AcontecimentoCalendario[] } | null>(null);
+  const [dados, setDados] = useState<{ mes: string; acontecimentos: AcontecimentoCalendario[]; forum?: { atualizadoEm: string | null; aviso?: string } } | null>(null);
   const [estado, setEstado] = useState<"carregar" | "pronto" | "erro">("carregar");
   const [erro, setErro] = useState("");
   const [tentativa, setTentativa] = useState(0);
@@ -137,6 +139,7 @@ export function CalendarioConsultor({ email, nome }: { email: string; nome: stri
     return <div className={s.lista}>{listaEventos.map(a => <button type="button" key={a.id} className={s.itemAgenda} data-categoria={a.categoria} onClick={() => abrirAcontecimento(a)}>
       {a.categoria === "icligo" ? <img className={s.logoIcligo} src="/icligo-logo.png" alt="" width={32} height={32} /> : <span className={s.ponto} aria-hidden="true" />}
       <span className={s.itemTexto}><strong>{a.titulo}</strong><span>{horario(a)} · {NOMES_CATEGORIAS[a.categoria]}</span>{a.local && <small>{a.local}</small>}</span>
+      <BandeiraFormacao lingua={a.lingua} className={s.bandeiraAgenda} />
       <span aria-hidden="true">↗</span>
     </button>)}</div>;
   }
@@ -169,6 +172,8 @@ export function CalendarioConsultor({ email, nome }: { email: string; nome: stri
         </button>)}
       </div>
       <p className={s.resumo} aria-live="polite">{estado === "erro" ? "Calendário indisponível" : estado === "carregar" || dados?.mes !== mes ? "A carregar os acontecimentos…" : `${visiveis.length} ${visiveis.length === 1 ? "acontecimento" : "acontecimentos"} neste mês · Horas de Portugal`}</p>
+      {dados?.mes === mes && dados.forum?.atualizadoEm && <p className={s.importacao}>Formações iCliGo atualizadas automaticamente · {new Date(dados.forum.atualizadoEm).toLocaleString("pt-PT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Lisbon" })}</p>}
+      {dados?.mes === mes && dados.forum?.aviso && <p className={s.avisoImportacao} role="status">{dados.forum.aviso} As formações já importadas continuam disponíveis.</p>}
       {estado === "erro" && <div className={s.erro} role="alert"><p>{erro}</p><button type="button" onClick={() => setTentativa(n => n + 1)}>Tentar novamente</button></div>}
       {vista === "mes" ? <>
         <div className={s.deslocacaoMes} tabIndex={0} role="region" aria-label={`Calendário de ${tituloMes}`}>
@@ -176,12 +181,13 @@ export function CalendarioConsultor({ email, nome }: { email: string; nome: stri
           {DIAS_SEMANA.map(d => <div className={s.diaSemana} key={d}>{d}</div>)}
           {diasDoMes(mes).map(dia => <div key={dia} className={s.dia} data-dia={dia} data-fora={!dia.startsWith(mes)} data-selecionado={diaSelecionado === dia}>
             <button type="button" className={s.numero} data-hoje={dia === hoje} aria-label={dataLonga(dia)} aria-pressed={diaSelecionado === dia} onClick={() => escolherDia(dia)}>{Number(dia.slice(-2))}</button>
-            <div className={s.eventosDia}>{(porDia.get(dia) ?? []).map(a => <button type="button" className={s.acontecimento} key={a.id} data-categoria={a.categoria} title={`${a.titulo} · ${horario(a)}`} aria-label={`${a.titulo}, ${dataLonga(dia)}, ${horario(a)}`} aria-haspopup="dialog" onClick={() => { setDiaSelecionado(dia); abrirAcontecimento(a); }}>
+            <div className={s.eventosDia}>{(porDia.get(dia) ?? []).map(a => <button type="button" className={s.acontecimento} key={a.id} data-categoria={a.categoria} data-com-lingua={!!a.lingua} title={`${a.titulo} · ${horario(a)}${a.lingua ? ` · ${LINGUAS_FORMACOES[a.lingua].nome}` : ""}`} aria-label={`${a.titulo}, ${dataLonga(dia)}, ${horario(a)}${a.lingua ? `, ${LINGUAS_FORMACOES[a.lingua].nome}` : ""}`} aria-haspopup="dialog" onClick={() => { setDiaSelecionado(dia); abrirAcontecimento(a); }}>
               <MarcaAcontecimento categoria={a.categoria} />
               <span className={s.conteudoEvento}>
                 <span className={s.hora}>{a.diaInteiro ? "Hora por confirmar" : hora(a.comecaEm)}</span>
                 <span className={s.eventoTexto}>{a.titulo}</span>
               </span>
+              <BandeiraFormacao lingua={a.lingua} className={s.bandeiraEvento} />
             </button>)}</div>
           </div>)}
         </div>
@@ -203,6 +209,7 @@ export function CalendarioConsultor({ email, nome }: { email: string; nome: stri
         <p>{dataLonga(diaDoAcontecimento(selecionado))}</p>
         <p><strong>{horario(selecionado)}</strong>{!selecionado.diaInteiro && " · Hora de Portugal"}</p>
         {selecionado.local && <p>{selecionado.local}</p>}
+        {selecionado.lingua && <p className={s.linguaDetalhes}><BandeiraFormacao lingua={selecionado.lingua} /> {LINGUAS_FORMACOES[selecionado.lingua].nome}</p>}
         <div className={s.acoes} data-categoria={selecionado.categoria}>
           {selecionado.webinarId && <button type="button" className={`${estilos.botao} ${s.botaoAcao}`} disabled={aPedir} onClick={() => void pedirAcesso()}>
             {aPedir ? "A preparar o teu acesso…" : !selecionado.inscrito ? "Inscrever-me" : selecionado.categoria === "webinar" ? "Entrar no webinar" : selecionado.categoria === "welcome" ? "Entrar na sessão" : "Entrar na formação"} <span aria-hidden="true">↗</span>

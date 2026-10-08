@@ -20,6 +20,14 @@
 .contentor [data-categoria=icligo], .dialogo [data-categoria=icligo] { --cor-evento: #f0603f; --fundo-evento: #f9dfd4; }
 .contentor [data-categoria=evento], .dialogo [data-categoria=evento] { --cor-evento: #907433; --fundo-evento: #f0e7d3; }
 .resumo { margin: 0; padding: 14px 20px; color: #6b6a63; font-size: 12px; }
+.importacao { margin: -5px 0 12px; padding: 0 20px; color: #6b6a63; font-size: 11px; }
+.avisoImportacao { margin: 0 20px 16px; padding: 12px; border: 1px solid #e7d5a5; border-radius: 8px; background: #fff9ec; color: #6c5725; font-size: 12px; }
+.acontecimento { position: relative; }
+.acontecimento[data-com-lingua=true] .hora { padding-right: 20px; }
+.bandeiraEvento { position: absolute; right: 4px; top: 5px; line-height: 1; }
+.bandeiraEvento svg { width: 16px; height: 11px; }
+.bandeiraAgenda { flex: none; }
+.linguaDetalhes { display: flex; align-items: center; gap: 8px; }
 .deslocacaoMes { overflow-x: auto; }
 .deslocacaoMes:focus-visible { outline: 2px solid #4b5320; outline-offset: -2px; }
 .grelha { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-top: 1px solid #e5e5dc; }
@@ -78,6 +86,9 @@
   .acontecimento[data-categoria=icligo] { width: 30px; height: 30px; padding: 2px; border: 1px solid #f0603f; border-radius: 8px; background: #fff0e6; }
   .acontecimento .logoIcligo { width: 24px; height: 24px; }
   .conteudoEvento { display: none; }
+  .bandeiraEvento { top: auto; bottom: -2px; right: -2px; border: 1px solid #fff; border-radius: 2px; }
+  .bandeiraEvento svg { width: 14px; height: 10px; }
+  .importacao { padding: 0 16px; }
   .agendaDia, .agendaMes { padding: 16px; }
   .dialogo { padding: 20px; }
 }

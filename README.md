@@ -9,6 +9,14 @@ base de dados Postgres (Neon) ligada.
 
 ## Estado
 
+### Formações do fórum iCliGo na nova área
+
+O calendário de `/consultor/nova-area` importa as formações online de todas as línguas do fórum. Mantém as bandeiras da origem e converte as horas para Portugal. A importação fica limitada à conta definida em `src/lib/demo.ts`; as formações manuais e a área atual continuam independentes.
+
+A sincronização corre de hora a hora e também ao consultar um mês cuja importação tenha mais de uma hora. Se o fórum falhar ou a sessão expirar, mantém a última importação e mostra um aviso. A administração tem um botão **Atualizar agora** em `/admin/formacoes-externas`.
+
+Para ligar ou renovar a sessão, abre o fórum num perfil dedicado do Chrome com `--remote-debugging-port=9341`, faz login e executa `node --import tsx scripts/ligar-forum-icligo.ts`. Requer `DATABASE_URL` no ambiente ou no `.env`. A sessão fica na base de dados; não deve ser copiada para o repositório. Testes: `node --import tsx scripts/testes-forum-icligo.ts`.
+
 Implementação por fases, seguindo a secção 14 do guia. Progresso:
 
 - [x] **Fase 1** — chave no ambiente + cliente da API (`src/lib/sala-zoom.ts`) + testes 1-5

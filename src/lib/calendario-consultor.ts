@@ -1,3 +1,5 @@
+import type { LinguaFormacao } from "./formacoes-forum-icligo";
+
 export type CategoriaAcontecimento = "webinar" | "welcome" | "formacao" | "icligo" | "evento";
 
 export interface AcontecimentoCalendario {
@@ -12,6 +14,8 @@ export interface AcontecimentoCalendario {
   webinarId?: string;
   inscrito?: boolean;
   inscricoesAbertas?: boolean;
+  lingua?: LinguaFormacao | null;
+  origem?: "forum-icligo";
 }
 
 export const NOMES_CATEGORIAS: Record<CategoriaAcontecimento, string> = {
