@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   LINK_CURSO_TRAVEL_PARTNER,
   LINK_GRUPO_WELCOME_ABOARD,
@@ -70,6 +70,36 @@ export default function NovaAreaConsultor() {
   const [erroSessao, setErroSessao] = useState("");
   const [inscrito, setInscrito] = useState(false);
   const [seccao, setSeccao] = useState<"comeca-aqui" | "calendario" | "leads" | "tarefas-equipa" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "documentos" | "eventos-presenciais">("comeca-aqui");
+  const conteudo = useRef<HTMLElement>(null);
+  const menu = useRef<HTMLElement>(null);
+  const [pedidoNavegacao, setPedidoNavegacao] = useState(0);
+  const [mostrarVoltarAoMenu, setMostrarVoltarAoMenu] = useState(false);
+
+  useEffect(() => {
+    if (!pedidoNavegacao || !window.matchMedia("(max-width: 760px)").matches) return;
+    conteudo.current?.focus({ preventScroll: true });
+    conteudo.current?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+  }, [pedidoNavegacao]);
+
+  useEffect(() => {
+    if (estado !== "pronto" || !menu.current) return;
+    const observador = new IntersectionObserver(([entrada]) => {
+      setMostrarVoltarAoMenu(!!entrada && !entrada.isIntersecting && entrada.boundingClientRect.bottom < 0);
+    });
+    observador.observe(menu.current);
+    return () => observador.disconnect();
+  }, [estado]);
+
+  function abrirSeccao(proxima: typeof seccao) {
+    setSeccao(proxima);
+    // O contador também permite voltar ao conteúdo ao clicar na secção já ativa.
+    setPedidoNavegacao(pedido => pedido + 1);
+  }
+
+  function voltarAoMenu() {
+    menu.current?.querySelector<HTMLButtonElement>("button[aria-current='page']")?.focus({ preventScroll: true });
+    menu.current?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+  }
 
   useEffect(() => {
     const conta = lerEmailGuardado()?.trim().toLowerCase() ?? "";
@@ -168,29 +198,29 @@ export default function NovaAreaConsultor() {
 
         <div className={estilos.layout}>
           <aside className={estilos.lateral}>
-            <nav aria-label="Secções da nova área">
+            <nav id="menu-nova-area" ref={menu} aria-label="Secções da nova área">
               <div className={estilos.grupoMenu}>
                 <span className={estilos.etiqueta}>PRIMEIROS PASSOS</span>
-                <button type="button" className={seccao === "comeca-aqui" ? estilos.navAtivo : estilos.navItem} onClick={() => setSeccao("comeca-aqui")} aria-current={seccao === "comeca-aqui" ? "page" : undefined} aria-controls="conteudo-nova-area">Começa aqui <span>{5 - totalFeitos}</span></button>
+                <button type="button" className={seccao === "comeca-aqui" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("comeca-aqui")} aria-current={seccao === "comeca-aqui" ? "page" : undefined} aria-controls="conteudo-nova-area">Começa aqui <span>{5 - totalFeitos}</span></button>
               </div>
               <div className={estilos.grupoMenu}>
-                <button type="button" className={seccao === "calendario" ? estilos.navAtivo : estilos.navItem} onClick={() => setSeccao("calendario")} aria-current={seccao === "calendario" ? "page" : undefined} aria-controls="conteudo-nova-area">Calendário <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" strokeWidth="1.6" /><path d="M7 3v4m10-4v4M3 11h18" stroke="currentColor" strokeWidth="1.6" /></svg></button>
+                <button type="button" className={seccao === "calendario" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calendario")} aria-current={seccao === "calendario" ? "page" : undefined} aria-controls="conteudo-nova-area">Calendário <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" strokeWidth="1.6" /><path d="M7 3v4m10-4v4M3 11h18" stroke="currentColor" strokeWidth="1.6" /></svg></button>
               </div>
               <div className={estilos.grupoMenu}>
                 <span className={estilos.etiqueta}>A MINHA ORGANIZAÇÃO</span>
-                <button type="button" className={seccao === "leads" ? estilos.navAtivo : estilos.navItem} onClick={() => setSeccao("leads")} aria-current={seccao === "leads" ? "page" : undefined} aria-controls="conteudo-nova-area">Leads</button>
-                <button type="button" className={seccao === "tarefas-equipa" ? estilos.navAtivo : estilos.navItem} onClick={() => setSeccao("tarefas-equipa")} aria-current={seccao === "tarefas-equipa" ? "page" : undefined} aria-controls="conteudo-nova-area">Tarefas iniciais da equipa</button>
-                <button type="button" className={seccao === "proximo-webinar" ? estilos.navAtivo : estilos.navItem} onClick={() => setSeccao("proximo-webinar")} aria-current={seccao === "proximo-webinar" ? "page" : undefined} aria-controls="conteudo-nova-area">Próximo webinar</button>
+                <button type="button" className={seccao === "leads" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("leads")} aria-current={seccao === "leads" ? "page" : undefined} aria-controls="conteudo-nova-area">Leads</button>
+                <button type="button" className={seccao === "tarefas-equipa" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("tarefas-equipa")} aria-current={seccao === "tarefas-equipa" ? "page" : undefined} aria-controls="conteudo-nova-area">Tarefas iniciais da equipa</button>
+                <button type="button" className={seccao === "proximo-webinar" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("proximo-webinar")} aria-current={seccao === "proximo-webinar" ? "page" : undefined} aria-controls="conteudo-nova-area">Próximo webinar</button>
               </div>
               <div className={estilos.grupoMenu}>
                 <span className={estilos.etiqueta}>FORMAÇÃO</span>
-                <button type="button" className={seccao === "proximas-formacoes" ? estilos.navAtivo : estilos.navItem} onClick={() => setSeccao("proximas-formacoes")} aria-current={seccao === "proximas-formacoes" ? "page" : undefined} aria-controls="conteudo-nova-area">Próximas formações</button>
-                <button type="button" className={seccao === "formacoes-gravadas" ? estilos.navAtivo : estilos.navItem} onClick={() => setSeccao("formacoes-gravadas")} aria-current={seccao === "formacoes-gravadas" ? "page" : undefined} aria-controls="conteudo-nova-area">Formações gravadas</button>
-                <button type="button" className={seccao === "documentos" ? estilos.navAtivo : estilos.navItem} onClick={() => setSeccao("documentos")} aria-current={seccao === "documentos" ? "page" : undefined} aria-controls="conteudo-nova-area">Documentos</button>
+                <button type="button" className={seccao === "proximas-formacoes" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("proximas-formacoes")} aria-current={seccao === "proximas-formacoes" ? "page" : undefined} aria-controls="conteudo-nova-area">Próximas formações</button>
+                <button type="button" className={seccao === "formacoes-gravadas" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("formacoes-gravadas")} aria-current={seccao === "formacoes-gravadas" ? "page" : undefined} aria-controls="conteudo-nova-area">Formações gravadas</button>
+                <button type="button" className={seccao === "documentos" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("documentos")} aria-current={seccao === "documentos" ? "page" : undefined} aria-controls="conteudo-nova-area">Documentos</button>
               </div>
               <div className={estilos.grupoMenu}>
                 <span className={estilos.etiqueta}>EVENTOS</span>
-                <button type="button" className={seccao === "eventos-presenciais" ? estilos.navAtivo : estilos.navItem} onClick={() => setSeccao("eventos-presenciais")} aria-current={seccao === "eventos-presenciais" ? "page" : undefined} aria-controls="conteudo-nova-area">Eventos presenciais</button>
+                <button type="button" className={seccao === "eventos-presenciais" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("eventos-presenciais")} aria-current={seccao === "eventos-presenciais" ? "page" : undefined} aria-controls="conteudo-nova-area">Eventos presenciais</button>
               </div>
             </nav>
             {seccao === "comeca-aqui" && <div className={estilos.resumo}>
@@ -205,7 +235,7 @@ export default function NovaAreaConsultor() {
             <Link className={estilos.voltar} href="/consultor">Consultar a área atual <Seta /></Link>
           </aside>
 
-          <main id="conteudo-nova-area" className={estilos.conteudo}>
+          <main id="conteudo-nova-area" ref={conteudo} tabIndex={-1} aria-label="Conteúdo da secção" className={estilos.conteudo}>
             {seccao === "comeca-aqui" && <section id="comeca-aqui" aria-label="Começa aqui">
             <div className={estilos.intro}>
               <span className={estilos.etiqueta}>BEM-VINDO À EQUIPA</span>
@@ -272,6 +302,10 @@ export default function NovaAreaConsultor() {
           </main>
         </div>
       </div>
+      {mostrarVoltarAoMenu && <button type="button" className={estilos.voltarAoMenu} onClick={voltarAoMenu} aria-label="Voltar ao menu no topo" aria-controls="menu-nova-area">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        Menu
+      </button>}
     </div>
   );
 }
