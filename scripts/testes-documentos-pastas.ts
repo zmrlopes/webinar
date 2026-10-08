@@ -55,7 +55,7 @@ try{
  const pastaSchema=(await readFile('migrations/049_documentos_pastas.sql','utf8')).replace('create table if not exists','create temp table');
  const comandos=(s:string)=>s.split(';').map(t=>t.trim()).filter(Boolean);
  const partes=comandos(pastaSchema),semente=partes.findIndex(t=>t.startsWith('insert into documentos_pastas'));
- const renomear=comandos(await readFile('migrations/050_documentos_pasta_madrid.sql','utf8'));
+ const renomear=comandos((await readFile('migrations/050_documentos_pasta_madrid.sql','utf8'))+'\n'+(await readFile('migrations/051_documentos_pasta_be_a_leader.sql','utf8')));
  const setup=[
   ...comandos(schema).map(q=>sql.query(q)),
   sql.query(`insert into documentos(id,titulo,nome,tipo,categoria,descricao,tamanho,publicado,estado,conhecimento_estado,texto)
@@ -79,7 +79,7 @@ try{
  const porNome=new Map(planos.map((p,i)=>[p.nome,resultados[setup.length+i]!]));
  assert.equal(porNome.get('criar-pasta')!.rows[0]!.nome,'Novos');assert.equal(porNome.get('duplicada')!.rows.length,0);
  assert.equal(porNome.get('admin-inicial')!.rows.find(p=>p.id===congresso)!.total,2);
- assert.deepEqual(porNome.get('consultor-inicial')!.rows.map(p=>[p.nome,p.total]),[['Be a Leader Madrid 26',1]]);
+ assert.deepEqual(porNome.get('consultor-inicial')!.rows.map(p=>[p.nome,p.total]),[['Be a Leader 26',1]]);
  assert.equal(porNome.get('documentos-publicados')!.rows.length,2);
  assert.equal(porNome.get('upload-com-pasta')!.rows.length,1);
  assert.equal(porNome.get('upload-pasta-inexistente')!.rows.length,0);

@@ -37,5 +37,5 @@ título, descrição curta e seta, como na versão atual.
 Os grupos do menu começam recolhidos no computador e no telemóvel; clicar
 no nome do separador mostra ou esconde as opções desse grupo.
 Na nova área, os Documentos são organizados em pastas. Os PDFs Be a Leader
-Madrid 2026 ficam em “Be a Leader Madrid 26”. As pastas são criadas e escolhidas no admin;
+Madrid 2026 ficam em “Be a Leader 26”. As pastas são criadas e escolhidas no admin;
 a vista por pastas permanece limitada à nova área da conta de teste.
