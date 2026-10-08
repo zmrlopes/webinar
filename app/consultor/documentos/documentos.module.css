@@ -10,7 +10,7 @@
 .filtros { display:flex; gap:.75rem; margin:1.5rem 0; flex-wrap:wrap; }
 .filtros input { flex:1; min-width:180px; }
 .pagina input,.pagina select,.pagina textarea { padding:.75rem; border:1px solid #d6d8ce; border-radius:8px; font:inherit; background:white; color:#1c2115; box-sizing:border-box; }
-.grade { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1rem; }
+.grade { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr)); gap:1rem; }
 .cartao { background:white; border:1px solid #dfe1d6; border-radius:14px; padding:1.35rem; display:flex; flex-direction:column; gap:.8rem; overflow-wrap:anywhere; }
 .cartao h2 { margin:0; font-size:1.1rem; line-height:1.4; }
 .cartao p { margin:0; line-height:1.5; }

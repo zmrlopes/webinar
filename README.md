@@ -11,12 +11,13 @@ base de dados Postgres (Neon) ligada.
 
 ### Pastas nos Documentos
 
-Na nova área da conta de teste, os Documentos abrem numa biblioteca por pastas.
+Os Documentos abrem numa biblioteca por pastas na área atual (`/consultor/documentos`)
+para todos os consultores da equipa e na nova área da conta de teste.
 A pasta **Be a Leader 26** reúne os 19 PDFs Be a Leader Madrid 2026. Há pesquisa
 em todas as pastas ou dentro de uma pasta; os links de download mantêm a assinatura.
 Em `/admin/documentos`, é possível criar pastas, escolhê-las ao enviar ficheiros
 e mover documentos existentes. Pastas vazias ou com apenas documentos ocultos
-não aparecem ao consultor. A área atual mantém a lista anterior.
+não aparecem ao consultor. Ambas as versões usam os mesmos documentos e pastas.
 
 A migração `049_documentos_pastas.sql` acrescenta apenas a organização: mantém
 categorias, bytes e conhecimento. A migração `051_documentos_pasta_be_a_leader.sql`
