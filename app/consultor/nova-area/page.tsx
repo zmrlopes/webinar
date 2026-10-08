@@ -15,6 +15,7 @@ import { ProximoWebinar, TarefasIniciaisEquipa } from "./organizacao";
 import { LeadsNovaArea } from "./leads";
 import { ProximasFormacoes, FormacoesGravadas, DocumentosNovaArea } from "./formacao";
 import { CalendarioConsultor } from "./calendario";
+import { EventosPresenciais } from "./eventos";
 
 const CHAVE_PROGRESSO = "consultor-nova-area:primeiros-passos:v1";
 const TITULOS = [
@@ -68,7 +69,7 @@ export default function NovaAreaConsultor() {
   const [aInscrever, setAInscrever] = useState(false);
   const [erroSessao, setErroSessao] = useState("");
   const [inscrito, setInscrito] = useState(false);
-  const [seccao, setSeccao] = useState<"comeca-aqui" | "calendario" | "leads" | "tarefas-equipa" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "documentos">("comeca-aqui");
+  const [seccao, setSeccao] = useState<"comeca-aqui" | "calendario" | "leads" | "tarefas-equipa" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "documentos" | "eventos-presenciais">("comeca-aqui");
 
   useEffect(() => {
     const conta = lerEmailGuardado()?.trim().toLowerCase() ?? "";
@@ -187,6 +188,10 @@ export default function NovaAreaConsultor() {
                 <button type="button" className={seccao === "formacoes-gravadas" ? estilos.navAtivo : estilos.navItem} onClick={() => setSeccao("formacoes-gravadas")} aria-current={seccao === "formacoes-gravadas" ? "page" : undefined} aria-controls="conteudo-nova-area">Formações gravadas</button>
                 <button type="button" className={seccao === "documentos" ? estilos.navAtivo : estilos.navItem} onClick={() => setSeccao("documentos")} aria-current={seccao === "documentos" ? "page" : undefined} aria-controls="conteudo-nova-area">Documentos</button>
               </div>
+              <div className={estilos.grupoMenu}>
+                <span className={estilos.etiqueta}>EVENTOS</span>
+                <button type="button" className={seccao === "eventos-presenciais" ? estilos.navAtivo : estilos.navItem} onClick={() => setSeccao("eventos-presenciais")} aria-current={seccao === "eventos-presenciais" ? "page" : undefined} aria-controls="conteudo-nova-area">Eventos presenciais</button>
+              </div>
             </nav>
             {seccao === "comeca-aqui" && <div className={estilos.resumo}>
               <span className={estilos.etiqueta}>O TEU ARRANQUE</span>
@@ -262,6 +267,7 @@ export default function NovaAreaConsultor() {
             } : atual)} />}
             {seccao === "formacoes-gravadas" && <FormacoesGravadas />}
             {seccao === "documentos" && <DocumentosNovaArea />}
+            {seccao === "eventos-presenciais" && <EventosPresenciais email={email} nome={dados.nome} />}
             <footer className={estilos.rodape}><span className={estilos.ponto} />Nova área em construção <span>·</span> Visível apenas na conta de teste</footer>
           </main>
         </div>

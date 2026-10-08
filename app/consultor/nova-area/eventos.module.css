@@ -1,0 +1,42 @@
+.grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.cartao { display: flex; flex-direction: column; min-width: 0; padding: 24px; border: 1px solid #dfe1d6; border-radius: 16px; background: #fbfaf6; }
+.cartao > span { display: flex; align-items: center; gap: 7px; }
+.logo { display: block; flex: none; }
+.cartao h2 { margin: 14px 0; font-size: 21px; line-height: 1.35; overflow-wrap: anywhere; }
+.data { margin: 0; color: #4b5320; font-size: 15px; font-weight: 650; }
+.local { margin: 6px 0 0; font-size: 12px; color: #6b6a63; }
+.local span { margin: 0 3px; }
+.descricao { margin: 18px 0 12px; font-size: 14px; color: #53544b; }
+.nota { margin: 0 0 20px; color: #6b6a63; font-size: 12px; line-height: 1.6; }
+.cartao > button:last-child { width: 100%; margin-top: auto; }
+.aviso { padding: 20px; border-radius: 12px; background: #fbfaf6; color: #6b6a63; font-size: 14px; }
+.erro { margin-bottom: 18px; padding: 16px; border: 1px solid #edd5d2; border-radius: 12px; background: #fff5f4; color: #b3261e; font-size: 13px; }
+.erro p { margin: 0 0 12px; }
+.confirmado { color: #4b5320; font-size: 14px; }
+.detalhes { margin-top: 24px; padding: 24px; border: 1px solid #dfe1d6; border-radius: 16px; background: #fff; scroll-margin-top: 24px; }
+.cabecalhoDetalhes { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 22px; }
+.cabecalhoDetalhes h2 { margin: 0; font-size: 19px; line-height: 1.4; }
+.cabecalhoDetalhes button { flex: none; }
+.formularioBilhetes { --navy: #4b5320; --yellow: #c9971c; --ink: #000; --field: #fff; --line: #dfe1d6; --err: #b3261e; --ok: #4b5320; --fonte-titulo: system-ui; max-width: 640px; margin: 0 auto; }
+.formularioBilhetes button { font-family: inherit; }
+.pedido :global(.vqb-destaque-etiqueta) { color: #4b5320; font-size: 12px; font-weight: 700; }
+.pedido :global(.vqb-destaque-titulo) { margin: 10px 0; font-size: 21px; }
+.pedido :global(.vqb-destaque-data), .pedido :global(.vqb-destaque-texto) { font-size: 14px; color: #6b6a63; }
+.pedido :global(.vqb-convencao-link) { padding: 0; border: 0; background: transparent; color: #4b5320; font: inherit; font-weight: 650; text-decoration: underline; cursor: pointer; }
+.pedido :global(.vqb-convencao-pagamentos) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.pedido :global(.vqb-convencao-form) { display: grid; gap: 10px; min-width: 0; padding: 18px; border: 1px solid #e2e2da; border-radius: 12px; background: #fbfaf6; }
+.pedido :global(.vqb-convencao-form label) { font-size: 13px; font-weight: 650; }
+.pedido :global(.vqb-convencao-form input) { width: 100%; min-width: 0; padding: 8px; border: 1px solid #dfe1d6; border-radius: 8px; background: #fff; font-size: 12px; }
+.pedido :global(.vqb-convencao-form button) { justify-self: start; padding: 10px 18px; border: none; border-radius: 20px; background: #4b5320; color: #fff; font-size: 13px; font-weight: 650; cursor: pointer; }
+.pedido :global(.vqb-convencao-form button:disabled) { opacity: .6; cursor: default; }
+.pedido :global(.vqb-convencao-ok) { color: #4b5320; font-size: 12px; }
+.pedido :global(.vqb-convencao-falta) { color: #6b6a63; font-size: 12px; }
+.pedido :global(.vqb-erro) { color: #b3261e; font-size: 12px; }
+@media (max-width: 1000px) { .grade { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 700px) {
+  .cartao, .detalhes { padding: 18px; }
+  .cartao h2 { font-size: 19px; }
+  .cabecalhoDetalhes { align-items: flex-start; gap: 10px; }
+  .cabecalhoDetalhes h2 { font-size: 17px; }
+  .pedido :global(.vqb-convencao-pagamentos) { grid-template-columns: minmax(0, 1fr); }
+}

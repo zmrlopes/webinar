@@ -40,3 +40,16 @@ export interface DadosNovaArea {
 export type FormacaoNovaArea = {
   id: string; titulo: string; comecaEm: string;
 } & ({ tipo: "interna"; duracaoMinutos: number; inscrito: boolean } | { tipo: "externa"; link: string });
+
+export interface DadosEventosPresenciais {
+  teambuilding: {
+    titulo: string; data: string; local: string; precoAdulto: number; precoCrianca: number; inscricoesAbertas: boolean;
+  };
+  convencao: {
+    titulo: string; data: string; erroPedido: boolean;
+    pedido: {
+      bilhetes: number; pagamento: string; comprovativoNome: string | null; comprovativoEm: string | null;
+      comprovativo2Nome: string | null; comprovativo2Em: string | null;
+    } | null;
+  };
+}

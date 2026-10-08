@@ -5,7 +5,9 @@ import estilos from "./bilhetes.module.css";
 
 type Estado = "pronto" | "a-gravar" | "gravado";
 
-export default function Formulario({ opcoesPagamento }: { opcoesPagamento: string[] }) {
+export default function Formulario({ opcoesPagamento, nomeInicial = "", emailInicial = "", embutido = false, aoGravar }: {
+  opcoesPagamento: string[]; nomeInicial?: string; emailInicial?: string; embutido?: boolean; aoGravar?: () => void;
+}) {
   const [estado, setEstado] = useState<Estado>("pronto");
   const [erro, setErro] = useState("");
   const [nomeGravado, setNomeGravado] = useState("");
@@ -61,6 +63,7 @@ export default function Formulario({ opcoesPagamento }: { opcoesPagamento: strin
       );
       setEstado("gravado");
       formulario.reset();
+      aoGravar?.();
     } catch {
       setErro("Sem ligação. Verifica a internet e carrega outra vez em Gravar pedido.");
       setEstado("pronto");
@@ -84,7 +87,7 @@ export default function Formulario({ opcoesPagamento }: { opcoesPagamento: strin
             <strong>{acrescento.total} bilhetes</strong>.
           </p>
         )}
-        <p>Às 16h30 de 3 de outubro enviamos-te o preço e os dados para pagares.</p>
+        <p>{embutido ? "Consulta o teu pedido e envia os comprovativos neste separador." : "Às 16h30 de 3 de outubro enviamos-te o preço e os dados para pagares."}</p>
         <button type="button" className={estilos.botaoSecundario} onClick={() => setEstado("pronto")}>
           Acrescentar mais bilhetes
         </button>
@@ -96,7 +99,7 @@ export default function Formulario({ opcoesPagamento }: { opcoesPagamento: strin
     <form className={estilos.formulario} onSubmit={gravar} noValidate>
       <div className={estilos.campo}>
         <label htmlFor="nome">Nome completo</label>
-        <input id="nome" name="nome" type="text" autoComplete="name" required />
+        <input id="nome" name="nome" type="text" autoComplete="name" defaultValue={nomeInicial} required />
       </div>
       <div className={estilos.linha}>
         <div className={estilos.campo}>
@@ -105,7 +108,7 @@ export default function Formulario({ opcoesPagamento }: { opcoesPagamento: strin
         </div>
         <div className={estilos.campo}>
           <label htmlFor="email">Email</label>
-          <input id="email" name="email" type="email" autoComplete="email" required />
+          <input id="email" name="email" type="email" autoComplete="email" defaultValue={emailInicial} required />
         </div>
       </div>
       <div className={`${estilos.linha} ${estilos.linhaBilhetes}`}>
