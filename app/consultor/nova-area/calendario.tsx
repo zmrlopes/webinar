@@ -8,14 +8,9 @@ import { EventoForm } from "../evento-form";
 
 const CATEGORIAS = Object.keys(NOMES_CATEGORIAS) as CategoriaAcontecimento[];
 const DIAS_SEMANA = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
-const ETIQUETAS_EVENTOS: Record<CategoriaAcontecimento, string> = {
-  webinar: "Webinar", welcome: "Welcome", formacao: "Equipa", icligo: "iCliGo", evento: "Evento",
-};
-
 function MarcaAcontecimento({ categoria }: { categoria: CategoriaAcontecimento }) {
   return <span className={s.marcaEvento}>
     {categoria === "icligo" ? <img className={s.logoIcligo} src="/icligo-logo.png" alt="" width={32} height={32} /> : <span className={s.ponto} aria-hidden="true" />}
-    <span className={s.nomeMarca}>{ETIQUETAS_EVENTOS[categoria]}</span>
   </span>;
 }
 
@@ -183,9 +178,10 @@ export function CalendarioConsultor({ email, nome }: { email: string; nome: stri
             <button type="button" className={s.numero} data-hoje={dia === hoje} aria-label={dataLonga(dia)} aria-pressed={diaSelecionado === dia} onClick={() => escolherDia(dia)}>{Number(dia.slice(-2))}</button>
             <div className={s.eventosDia}>{(porDia.get(dia) ?? []).map(a => <button type="button" className={s.acontecimento} key={a.id} data-categoria={a.categoria} title={`${a.titulo} · ${horario(a)}`} aria-label={`${a.titulo}, ${dataLonga(dia)}, ${horario(a)}`} aria-haspopup="dialog" onClick={() => { setDiaSelecionado(dia); abrirAcontecimento(a); }}>
               <MarcaAcontecimento categoria={a.categoria} />
-              <span className={s.hora}>{a.diaInteiro ? "Hora por confirmar" : hora(a.comecaEm)}</span>
-              <span className={s.eventoTexto}>{a.titulo}</span>
-              <span className={s.verDetalhes} aria-hidden="true">Ver detalhes <span>↗</span></span>
+              <span className={s.conteudoEvento}>
+                <span className={s.hora}>{a.diaInteiro ? "Hora por confirmar" : hora(a.comecaEm)}</span>
+                <span className={s.eventoTexto}>{a.titulo}</span>
+              </span>
             </button>)}</div>
           </div>)}
         </div>
