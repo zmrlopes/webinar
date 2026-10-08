@@ -26,10 +26,11 @@ async function main() {
     const nome='047_documentos.sql';
     const migration=await readFile(path.join('migrations',nome),'utf8');
     await sql.transaction([...migration.split(';').map(s=>s.trim()).filter(Boolean).map(s=>sql.query(s)),sql.query('insert into schema_migrations(nome) values($1) on conflict do nothing',[nome])]);
-    const pastasNome='049_documentos_pastas.sql';
-    if(!(await sql.query('select nome from schema_migrations where nome=$1',[pastasNome])).length){
-      const pastasMigration=await readFile(path.join('migrations',pastasNome),'utf8');
-      await sql.transaction([...pastasMigration.split(';').map(s=>s.trim()).filter(Boolean).map(s=>sql.query(s)),sql.query('insert into schema_migrations(nome) values($1) on conflict do nothing',[pastasNome])]);
+    for(const pastasNome of ['049_documentos_pastas.sql','050_documentos_pasta_madrid.sql']) {
+      if(!(await sql.query('select nome from schema_migrations where nome=$1',[pastasNome])).length){
+        const pastasMigration=await readFile(path.join('migrations',pastasNome),'utf8');
+        await sql.transaction([...pastasMigration.split(';').map(s=>s.trim()).filter(Boolean).map(s=>sql.query(s)),sql.query('insert into schema_migrations(nome) values($1) on conflict do nothing',[pastasNome])]);
+      }
     }
   }
   if(process.argv.includes('--schema')) { console.log('Migração de documentos aplicada.');return; }
@@ -61,7 +62,7 @@ async function main() {
     const titulo=nome.replace(/\s*-\s*\d{2}OUT(?:26)?\s*-\s*Be a leader Madrid26\.pdf$/i,'').replace(/\.pdf$/i,'').replace(/\s+/g,' ').trim();
     const descricao=(nome==='Processo Convite.pdf'?'Guia do convite ao acompanhamento.':'Apresentação do congresso Be a Leader Madrid, 2 a 4 de outubro de 2026.')+(bytes.length<origem.length?' PDF otimizado para download.':'');
     const [doc]=await sql.query(`insert into documentos(titulo,nome,tipo,categoria,descricao,tamanho,sha256,pasta_id)
-      values($1,$2,$3,'Be a Leader Madrid 2026',$4,$5,$6,(select id from documentos_pastas where lower(nome)='congresso'))
+      values($1,$2,$3,'Be a Leader Madrid 2026',$4,$5,$6,(select id from documentos_pastas where lower(nome)='be a leader madrid 26'))
       on conflict(sha256) where sha256 is not null do update set tamanho=excluded.tamanho returning id`,[titulo,nome,tipoDocumento(nome),descricao,bytes.length,hash]);
     const existentes=await sql.query('select indice from documentos_partes where documento_id=$1',[doc!.id]);
     const feitos=new Set(existentes.map(r=>r.indice));

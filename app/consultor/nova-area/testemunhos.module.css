@@ -1,0 +1,28 @@
+.pesquisa { margin: 0 0 1.25rem; }
+.pesquisa label { display: block; margin-bottom: .5rem; font-size: .85rem; font-weight: 700; }
+.campo { display: flex; align-items: center; gap: .65rem; padding: .65rem .85rem; background: #fff; border: 1px solid #d5d6c9; border-radius: 9px; color: #4b5320; }
+.campo:focus-within { outline: 2px solid #4b5320; outline-offset: 2px; }
+.campo svg { flex-shrink: 0; }
+.campo input { flex: 1; min-width: 0; padding: .2rem 0; background: transparent; border: 0; outline: none; font: inherit; font-size: .95rem; color: #171813; }
+.campo button { padding: 0 .25rem; border: 0; background: transparent; color: #4b5320; font-size: 1.5rem; cursor: pointer; }
+.pesquisa p { margin: .5rem 0 0; color: #686b60; font-size: .8rem; }
+.grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: .65rem; }
+.cartao { display: flex; align-items: center; gap: .8rem; min-width: 0; padding: .8rem; border: 1px solid #dedfd5; border-radius: 10px; background: #fff; color: #171813; font: inherit; text-align: left; cursor: pointer; transition: border-color .15s, background .15s; }
+.cartao:hover { border-color: #4b5320; background: #f7f8f2; }
+.cartao:focus-visible, .dialogo button:focus-visible, .playlist:focus-visible { outline: 2px solid #4b5320; outline-offset: 3px; }
+.miniatura { position: relative; flex: 0 0 88px; height: 50px; overflow: hidden; border-radius: 6px; background: #e8eade; }
+.miniatura img { width: 100%; height: 100%; object-fit: cover; }
+.miniatura svg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.texto { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
+.texto strong { font-size: .85rem; line-height: 1.4; overflow-wrap: anywhere; }
+.texto > span { font-size: .75rem; color: #4b5320; }
+.playlist { display: inline-block; margin-top: 1.2rem; color: #4b5320; font-size: .85rem; }
+.dialogo { width: min(880px, calc(100% - 24px)); max-height: calc(100dvh - 24px); padding: 0; border: 1px solid #d5d6c9; border-radius: 12px; color: #171813; background: #fff; }
+.dialogo::backdrop { background: #000b; }
+.player { padding: 1rem; }
+.cabecalho { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: .85rem; }
+.cabecalho h2 { flex: 1; margin: 0; font-size: 1rem; line-height: 1.5; overflow-wrap: anywhere; }
+.cabecalho button { flex-shrink: 0; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 6px; background: #f0f1e9; color: #4b5320; font: inherit; font-size: 1.5rem; cursor: pointer; }
+.player iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 6px; background: #000; }
+.player > a { display: inline-block; margin-top: .85rem; color: #4b5320; font-size: .85rem; }
+@media (max-width: 760px) { .grade { grid-template-columns: 1fr; } .cartao { padding: .7rem; gap: .65rem; } .miniatura { flex-basis: 72px; height: 42px; } .player { padding: .75rem; } }

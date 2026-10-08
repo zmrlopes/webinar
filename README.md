@@ -12,15 +12,25 @@ base de dados Postgres (Neon) ligada.
 ### Pastas nos Documentos
 
 Na nova área da conta de teste, os Documentos abrem numa biblioteca por pastas.
-A pasta **Congresso** reúne os 19 PDFs Be a Leader Madrid 2026. Há pesquisa
+A pasta **Be a Leader Madrid 26** reúne os 19 PDFs Be a Leader Madrid 2026. Há pesquisa
 em todas as pastas ou dentro de uma pasta; os links de download mantêm a assinatura.
 Em `/admin/documentos`, é possível criar pastas, escolhê-las ao enviar ficheiros
 e mover documentos existentes. Pastas vazias ou com apenas documentos ocultos
 não aparecem ao consultor. A área atual mantém a lista anterior.
 
 A migração `049_documentos_pastas.sql` acrescenta apenas a organização: mantém
-categorias, bytes e conhecimento. Novas importações do mesmo congresso usam essa
+categorias, bytes e conhecimento. A migração `050_documentos_pasta_madrid.sql`
+corrige o nome da pasta, preservando o seu ID. Novas importações do mesmo congresso usam essa
 pasta. Testes com tabelas temporárias: `node --import tsx scripts/testes-documentos-pastas.ts`.
+
+### Testemunhos na nova área
+
+Em **Formação → Testemunhos**, os 23 vídeos da playlist iCliGo aparecem em cards
+compactos com título e duração. A pesquisa combina palavras e ignora acentos.
+Cada card abre o vídeo num diálogo com alternativa para ver no YouTube.
+A lista está em `src/lib/testemunhos.json`; para voltar a importar os títulos
+públicos, executar `node scripts/importar-testemunhos.mjs` e publicar a alteração.
+Esta secção fica limitada à nova área da conta de teste.
 
 ### Página inicial da nova área
 
