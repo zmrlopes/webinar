@@ -1,0 +1,22 @@
+import assert from "node:assert/strict";
+import { calcularVenda, lerNumeroCalculadora } from "../src/lib/calculadora-venda";
+import { podeVerNovaArea } from "../src/lib/consultor-nova-area";
+import { EMAIL_PAINEL_DEMONSTRACAO } from "../src/lib/demo";
+
+assert.deepEqual(calcularVenda(1000, 12, 30), { comissao: 36, pontos: 0.6 });
+assert.deepEqual(calcularVenda(72000, 12, 30), { comissao: 2592, pontos: 43.2 });
+assert.deepEqual(calcularVenda(1000, 6, 30), { comissao: 18, pontos: 0.3 });
+assert.deepEqual(calcularVenda(1000, 24, 30), { comissao: 72, pontos: 1.2 });
+assert.deepEqual(calcularVenda(1000, 12, 50), { comissao: 60, pontos: 0.6 });
+assert.deepEqual(calcularVenda(1000, 12, 0), { comissao: 0, pontos: 0.6 });
+assert.deepEqual(calcularVenda(1000, 0, 30), { comissao: 0, pontos: 0 });
+assert.deepEqual(calcularVenda(0, 12, 30), { comissao: 0, pontos: 0 });
+const decimal = calcularVenda(1234.56, 12.5, 35);
+assert(decimal);
+assert.equal(new Intl.NumberFormat("pt-PT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(decimal.comissao), "54,01");
+for (const [texto, esperado] of [["1000,50", 1000.5], ["1000.50", 1000.5], [" 12,5 ", 12.5], ["0", 0]] as const) assert.equal(lerNumeroCalculadora(texto), esperado);
+for (const texto of ["", " ", "-1", "12%", "1,2,3", "1e3", "Infinity", "1".repeat(310)]) assert.equal(lerNumeroCalculadora(texto), null);
+for (const valores of [[-1, 12, 30], [1000, 101, 30], [1000, 12, 101], [1000, -1, 30], [1000, 12, -1], [NaN, 12, 30], [Infinity, 12, 30]]) assert.equal(calcularVenda(valores[0]!, valores[1]!, valores[2]!), null);
+assert(podeVerNovaArea(EMAIL_PAINEL_DEMONSTRACAO));
+assert(!podeVerNovaArea("outro-consultor@example.com"));
+console.log("OK: comissão bruta, pontos proporcionais à margem e independentes da comissão, decimais, campos inválidos e acesso limitado à conta de teste.");

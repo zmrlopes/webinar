@@ -9,6 +9,15 @@ base de dados Postgres (Neon) ligada.
 
 ## Estado
 
+### Calculadoras na nova área
+
+Em **Objetivos → Calculadoras**, a conta de teste pode simular a comissão bruta
+e os pontos de uma venda. Faturação, margem de lucro e percentagem da comissão
+são editáveis; a margem começa em 12% e a comissão em 30%.
+Os resultados atualizam-se automaticamente, com duas casas decimais e sem histórico.
+Os pontos dependem apenas da faturação e da margem: 1.000 € a 12% dão 0,60 pontos.
+Testes dos cálculos: `node node_modules/tsx/dist/cli.mjs scripts/testes-calculadora-venda.ts`.
+
 ### Pastas nos Documentos
 
 Os Documentos abrem numa biblioteca por pastas na área atual (`/consultor/documentos`)
