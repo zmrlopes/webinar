@@ -18,6 +18,13 @@ Os resultados atualizam-se automaticamente, com duas casas decimais e sem histó
 Os pontos dependem apenas da faturação e da margem: 1.000 € a 12% dão 0,60 pontos.
 Testes dos cálculos: `node node_modules/tsx/dist/cli.mjs scripts/testes-calculadora-venda.ts`.
 
+A calculadora **Quanto preciso para atingir a minha comissão?** reparte um objetivo
+de comissão bruta entre vendas próprias e TPs, com percentagens que somam 100%.
+Cada TP gera 80 € de bónus e 1 ponto, valorizado pelo patamar selecionado.
+Os TPs sobem ao inteiro seguinte e a faturação ao cêntimo seguinte; o total previsto
+mostra o efeito destes arredondamentos. Começa com 500 €, 10% em TPs e 90% em vendas.
+Testes: `node node_modules/tsx/dist/cli.mjs scripts/testes-calculadora-objetivo.ts`.
+
 ### Pastas nos Documentos
 
 Os Documentos abrem numa biblioteca por pastas na área atual (`/consultor/documentos`)

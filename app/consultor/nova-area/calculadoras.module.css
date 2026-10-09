@@ -1,4 +1,5 @@
 .cartao { padding: 28px; border: 1px solid #e2e2da; border-radius: 20px; background: #fff; box-shadow: 0 3px 14px #4b532006; }
+.cartao + .cartao { margin-top: 24px; }
 .cabecalho { display: flex; align-items: flex-start; gap: 14px; }
 .icone { display: grid; place-items: center; flex: none; width: 48px; height: 48px; border-radius: 14px; color: #4b5320; background: #4b532013; }
 .cabecalho h2 { margin: 1px 0 5px; color: #000; font-size: 20px; font-weight: 750; letter-spacing: -.02em; line-height: 1.4; }
@@ -26,6 +27,19 @@
 .contas summary:focus-visible { outline: 2px solid #4b5320; outline-offset: 4px; border-radius: 4px; }
 .contas p { margin: 12px 0 0; color: #6b6a63; font-size: 12px; overflow-wrap: anywhere; }
 .contas strong { color: #000; }
+.seletor { box-sizing: border-box; width: 100%; max-width: 520px; min-height: 52px; padding: 12px 14px; border: 1px solid #c9cbb9; border-radius: 11px; background: #fff; color: #000; font: inherit; font-size: 16px; }
+.seletor:focus-visible { outline: 2px solid #4b5320; outline-offset: 3px; }
+.reparticao { min-width: 0; margin: 26px 0; padding: 18px; border: 1px solid #e2e2da; border-radius: 14px; }
+.reparticao legend { padding: 0 6px; color: #4b5320; font-size: 14px; font-weight: 700; }
+.camposReparticao { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.resumoObjetivo { grid-column: 1 / -1; min-width: 0; margin-top: 4px; }
+.resumoObjetivo dl { margin: 0; }
+.resumoObjetivo dl > div { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 9px 0; color: #6b6a63; font-size: 13px; }
+.resumoObjetivo dt { min-width: 0; }
+.resumoObjetivo dd { margin: 0; color: #000; font-weight: 650; text-align: right; overflow-wrap: anywhere; }
+.resumoObjetivo dl > .total { margin-top: 8px; padding: 16px 0 0; border-top: 1px solid #e2e2da; color: #4b5320; font-weight: 700; }
+.total dd { color: #4b5320; font-size: 22px; }
 @media (max-width: 1100px) { .campos { grid-template-columns: 1fr; gap: 18px; } }
 @media (max-width: 760px) { .cartao { padding: 20px; } .cabecalho h2 { font-size: 18px; } .cabecalho p { font-size: 13px; } .resultados { gap: 12px; } .resultado { padding: 16px; } .resultado strong { font-size: 26px; } }
 @media (max-width: 400px) { .cartao { padding: 16px; } .resultados { grid-template-columns: 1fr; } .icone { width: 40px; height: 40px; } }
+@media (max-width: 760px) { .camposReparticao { grid-template-columns: 1fr; gap: 18px; } .reparticao { padding: 14px; } .resumoObjetivo dl > div { font-size: 12px; } .total dd { font-size: 20px; } }
