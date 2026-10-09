@@ -38,7 +38,7 @@ export function CalculadorasNovaArea() {
   const resultado = venda !== null && margemLucro !== null && percentagemComissao !== null
     ? calcularVenda(venda, margemLucro, percentagemComissao) : null;
 
-  return <section id="calculadoras" aria-label="Calculadoras">
+  return <section id="calculadoras" className={css.calculadoras} aria-label="Calculadoras">
     <div className={estilos.intro}>
       <span className={estilos.etiqueta}>OBJETIVOS</span>
       <h1>Calculadoras<span>.</span></h1>
