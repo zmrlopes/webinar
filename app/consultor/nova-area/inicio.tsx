@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { AvisoInicio } from "@/lib/consultor-nova-area";
 import estilos from "./inicio.module.css";
 import comuns from "./nova-area.module.css";
+import { AvisoRelatorioCore } from "./core-rank";
 
 function Icone({ tipo }: { tipo: AvisoInicio["icone"] | "comunicado" }) {
   return <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -29,12 +30,14 @@ function CartaoQuestionario({ aviso }: { aviso: AvisoInicio }) {
   </article>;
 }
 
-export function InicioNovaArea({ avisos, erroAvisos, feitos, aoComecar, acabadoAgora }: {
+export function InicioNovaArea({ avisos, erroAvisos, feitos, aoComecar, acabadoAgora, email, aoAbrirCore }: {
   avisos: AvisoInicio[];
   erroAvisos: boolean;
   feitos: number;
   aoComecar: () => void;
   acabadoAgora: boolean;
+  email: string;
+  aoAbrirCore: () => void;
 }) {
   const evento = avisos.filter(a => a.categoria === "evento");
   const equipa = avisos.filter(a => a.categoria === "equipa");
@@ -45,6 +48,7 @@ export function InicioNovaArea({ avisos, erroAvisos, feitos, aoComecar, acabadoA
       <p>Os teus avisos, questionários e novidades da equipa.</p>
     </div>
 
+    <AvisoRelatorioCore email={email} aoAbrir={aoAbrirCore} />
     {acabadoAgora && <div role="status" className={estilos.concluido}>
       <span aria-hidden="true">✓</span>
       <div><strong>Primeiros passos concluídos!</strong><p>O teu arranque está feito. A partir de agora, encontras aqui as novidades e os avisos da equipa.</p></div>

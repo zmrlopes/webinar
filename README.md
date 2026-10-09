@@ -286,6 +286,30 @@ nem mostrado em nenhuma página de admin (secção 6 do guia) — as consultas e
 
 ### Cron em produção
 
+O desafio **Objetivos → Core Rank** está na nova área, apenas na conta de teste
+definida em `src/lib/demo.ts`. Mantém as tarefas da referência da Sara, com as
+cores da equipa, e cobre 11 de outubro a 31 de dezembro de 2026, por mês. O
+objetivo próprio de 3 novos TPs e 3.000 € de reservas confirmadas acumula até
+dezembro. Os 82 dias têm focos diferentes.
+
+O registo só aceita o próprio dia, na hora de Lisboa, através de **Guardar o
+meu dia**. Depois de guardado fica imutável. As tarefas semanais são fechadas
+uma vez por semana, no dia escolhido; campos vazios continuam sem informação.
+O balanço recebe quantidades correspondentes das tarefas e admite ajustes
+antes de guardar para evitar duplicações. O histórico permite consultar dias,
+resumos por semana/mês e exportar PDF/Excel, incluindo os relatórios.
+
+`/api/cron/core-rank` analisa a semana anterior com a integração de IA já usada
+na plataforma (`ANTHROPIC_API_KEY`), ao início de segunda-feira. A execução
+diária às 08:00 UTC recupera falhas, sem duplicar relatórios; exige `CRON_SECRET`.
+Os relatórios ficam na conta do consultor, com aviso no Início da nova área.
+Dias sem informação e tarefas não aplicáveis não são tratados como falhas.
+O Top 10 de atividade é exclusivo do admin em `/admin/core-rank`, com filtros
+semanais, mensais e do desafio, protegido pelo Basic Auth existente.
+
+Verificação do calendário, validação, balanço, classificação e exportações:
+`node node_modules/tsx/dist/cli.mjs scripts/testes-core-rank.ts`.
+
 `vercel.json` define os cinco crons nas cadências da secção 9 — mas o
 **Vercel Hobby só permite cron diário**, tal como o guia descreve para o
 próprio anfitrião. `.github/workflows/cron.yml` é a alternativa pronta a

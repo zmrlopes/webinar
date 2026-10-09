@@ -1,0 +1,57 @@
+import assert from "node:assert/strict";
+import ExcelJS from "exceljs";
+import { PDFDocument } from "pdf-lib";
+import { CAMPOS_CORE, DIAS_CORE, TAREFAS_CORE, classificarCore, dataLisboa, diasMesCore, formularioVazio, metricasDasTarefas, podeGuardarDia, resumirCore, semanaCore, validarFormularioCore, type DadosCore, type DiaCore } from "../src/lib/core-rank";
+import { FOCO_CORE } from "../src/lib/core-rank-foco";
+import { validarTextoRelatorio } from "../src/lib/core-rank-registos";
+import { exportarExcelCore, exportarPdfCore } from "../src/lib/core-rank-exportar";
+
+assert.equal(DIAS_CORE.length,82);
+assert.deepEqual(diasMesCore("2026-11"),Array.from({length:30},(_,i)=>`2026-11-${String(i+1).padStart(2,"0")}`));
+assert.equal(diasMesCore("2026-12").length,31);
+assert.equal(semanaCore("2026-11-01"),"2026-10-26"); // Domingo, semana atravessa o mês.
+assert.equal(semanaCore("2026-11-02"),"2026-11-02");
+assert.equal(dataLisboa(new Date("2026-10-11T23:30:00Z")),"2026-10-12"); // Hora de verão de Lisboa.
+assert.equal(dataLisboa(new Date("2026-11-11T23:30:00Z")),"2026-11-11");
+assert.equal(new Set(Object.values(FOCO_CORE)).size,82);
+assert(DIAS_CORE.every(d=>typeof FOCO_CORE[d]==="string" && FOCO_CORE[d]!.length>30));
+assert.equal(TAREFAS_CORE.length,32);
+const vazio=validarFormularioCore(formularioVazio());
+assert.equal(vazio.metricas.sales,null);
+assert.throws(()=>validarFormularioCore({...vazio,metricas:{sales:-1}}));
+assert.throws(()=>validarFormularioCore({...vazio,metricas:{sales:10.123}}));
+assert.throws(()=>validarFormularioCore({...vazio,metricas:{tps:1.5}}));
+assert.throws(()=>validarFormularioCore({...vazio,tarefas:{desconhecida:{estado:"done",quantidade:1}}}));
+assert.throws(()=>validarFormularioCore({...vazio,tarefas:{core_time:{estado:"na",quantidade:60}}}));
+const dia: DiaCore={...formularioVazio(),email:"teste@example.com",nome:"Teste",data:"2026-10-11",guardadoEm:"2026-10-11T20:00:00Z",tarefas:{core_time:{estado:"done",quantidade:60},core_talk:{estado:"no",quantidade:null},core_care:{estado:"na",quantidade:null},core_follow:{estado:"",quantidade:null}},metricas:{...vazio.metricas,minutes:60,sales:1000,tps:1}};
+assert.equal(podeGuardarDia("2026-10-11",[],"2026-10-11"),true);
+assert.equal(podeGuardarDia("2026-10-11",[dia],"2026-10-11"),false);
+assert.equal(podeGuardarDia("2026-10-11",[],"2026-10-12"),false);
+assert.equal(podeGuardarDia("2026-10-12",[],"2026-10-11"),false);
+assert.equal(podeGuardarDia("2027-01-01",[],"2027-01-01"),false);
+const resumo=resumirCore([dia],"2026-10-11","2026-10-12");
+assert.equal(resumo.percentagem,50);assert.equal(resumo.avaliadas,2);assert.equal(resumo.diasRegistados,1);
+assert.deepEqual(resumo.diasSemInformacao,["2026-10-12"]);
+assert.equal(resumo.totais.responses,null);
+assert.equal(resumo.totais.sales,1000);
+assert.equal(resumirCore([],"2026-10-11","2026-10-12").percentagem,null);
+const auto=metricasDasTarefas({core_time:{estado:"done",quantidade:45},core_follow:{estado:"done",quantidade:3},team_follow:{estado:"done",quantidade:2},travel_quote:{estado:"no",quantidade:null}});
+assert.equal(auto.minutes,45);assert.equal(auto.followups,5);assert.equal(auto.contacts,null);
+assert.equal(auto.sales,undefined); // Vendas e TPs não são inventados a partir de tarefas.
+const todosNa={...dia,tarefas:{core_care:{estado:"na" as const,quantidade:null}}};
+const ranking=classificarCore([{email:"a",nome:"A",dias:[dia]},{email:"b",nome:"B",dias:[{...dia,tarefas:{core_time:{estado:"done",quantidade:1}}}]},{email:"c",nome:"C",dias:[todosNa]}],"2026-10-11","2026-10-12");
+assert.deepEqual(ranking.map(c=>c.email),["b","a"]); // Não se aplica fica fora; sem avaliação não entra no top.
+const relatorio=validarTextoRelatorio(JSON.stringify({resumo:"Um dia registado; os restantes dias ficam sem informação.",pontosFortes:["Reservaste 60 minutos."],melhorias:["Escolhe um próximo passo para os contactos."],descurado:["Marcaste criar novas conversas como não realizado."],proximasAcoes:["Reserva um horário.","Inicia três conversas.","Retoma os interessados."]}));
+assert.equal(relatorio.proximasAcoes.length,3);
+assert.throws(()=>validarTextoRelatorio('{"resumo":"inventado"}'));
+const dados: DadosCore={hoje:"2026-10-12",dias:[{...dia,aprendizagem:"Cliente pediu preço e datas. 😀",proximoPasso:"Confirmar a proposta."}],relatorios:[{...relatorio,semana:"2026-10-05",ate:"2026-10-11",criadoEm:"2026-10-12T08:00:00Z"}]};
+const excel=await exportarExcelCore(dados,"Conta de teste"), livro=new ExcelJS.Workbook();
+await livro.xlsx.load(excel as unknown as Parameters<typeof livro.xlsx.load>[0]);
+assert.equal(livro.worksheets.length,4);
+const folha=livro.getWorksheet("Dias")!;
+assert.equal(folha.rowCount,3);assert.equal(folha.getRow(3).getCell(2).value,"Sem informação");
+const indiceResponses=CAMPOS_CORE.findIndex(([id])=>id==="responses")+3;
+assert.equal(folha.getRow(2).getCell(indiceResponses).value,null);
+assert.equal(livro.getWorksheet("Tarefas")!.rowCount,5);
+const pdf=await PDFDocument.load(await exportarPdfCore(dados,"Conta de teste"));assert(pdf.getPageCount()>0);
+console.log("Core Rank: calendário, 82 focos únicos, validação, bloqueio de dias, dados em falta, balanço automático, classificação, relatório e exportações verificados.");

@@ -1,0 +1,246 @@
+{
+  "tasks": {
+    "core": [
+      [
+        "time",
+        "Reservar tempo para o negócio",
+        "Um bloco realista na agenda",
+        "Escolhe um horário e três ações concretas para esse período. Regista na quantidade os minutos que dedicaste ao negócio."
+      ],
+      [
+        "talk",
+        "Criar novas conversas",
+        "3 pessoas · sugestão",
+        "Inicia ou retoma conversa com três pessoas. Conhece os seus interesses e percebe se existe abertura para falar de viagens ou do negócio. Regista abaixo contactos iniciados e conversas com resposta separadamente."
+      ],
+      [
+        "follow",
+        "Dar seguimento a conversas",
+        "3 follow-ups · sugestão",
+        "Retoma um convite, uma apresentação vista ou um orçamento enviado. Combina um próximo passo, respeitando a decisão da pessoa."
+      ],
+      [
+        "invite",
+        "Fazer um convite adequado",
+        "1 convite · sugestão",
+        "Convida uma pessoa interessada para conhecer o negócio ou oferece ajuda no planeamento de uma viagem. Personaliza a abordagem."
+      ],
+      [
+        "care",
+        "Cuidar de quem já confiou",
+        "Quando se aplicar",
+        "Acompanha um cliente com reserva ativa ou um TP que esteja a começar. Resolve uma necessidade ou ajuda a definir a próxima ação."
+      ],
+      [
+        "review",
+        "Rever o dia e preparar amanhã",
+        "2 minutos",
+        "Identifica o que avançou, regista uma aprendizagem e escolhe a primeira ação de amanhã."
+      ]
+    ],
+    "team": [
+      [
+        "new",
+        "Conhecer pessoas novas",
+        "2 pessoas",
+        "Inicia uma conversa num contexto natural: atividades, eventos, comunidade ou redes sociais. Procura conhecer os interesses da pessoa."
+      ],
+      [
+        "reconnect",
+        "Retomar contactos",
+        "3 contactos",
+        "Fala com pessoas com quem já tens relação. Pergunta como estão, o que fazem e que projetos têm."
+      ],
+      [
+        "invite",
+        "Fazer convites personalizados",
+        "2 convites",
+        "Quando houver abertura, convida para uma apresentação ou conversa marcada. Explica por que te lembraste daquela pessoa."
+      ],
+      [
+        "follow",
+        "Acompanhar interessados",
+        "3 follow-ups",
+        "Pergunta o que acharam da apresentação, esclarece dúvidas e combina o próximo passo. Respeita quem não quer continuar."
+      ],
+      [
+        "story",
+        "Mostrar o negócio nos stories",
+        "1 sequência curta",
+        "Mostra uma tarefa real de TP, uma aprendizagem ou responde a uma dúvida. Inclui uma pergunta para iniciar conversa."
+      ],
+      [
+        "reply",
+        "Responder às interações",
+        "Mensagens do dia",
+        "Responde a perguntas e sondagens. Percebe o interesse antes de fazer um convite."
+      ],
+      [
+        "onboard",
+        "Acompanhar a primeira semana de um TP",
+        "Quando houver um novo TP",
+        "Ajuda-o a conhecer a formação inicial, organizar a primeira semana e realizar as primeiras ações com acompanhamento."
+      ],
+      [
+        "list",
+        "Atualizar a lista de contactos",
+        "5 minutos",
+        "Regista a fase de cada contacto e a data do próximo passo."
+      ]
+    ],
+    "travel": [
+      [
+        "service",
+        "Apresentar os teus serviços",
+        "3 pessoas",
+        "Explica a conhecidos que ajudas a pesquisar, planear e reservar viagens, com acompanhamento."
+      ],
+      [
+        "old",
+        "Reativar clientes e pedidos antigos",
+        "2 contactos",
+        "Pergunta se já têm alguma viagem em mente ou se querem retomar um pedido anterior. Personaliza a conversa."
+      ],
+      [
+        "quote",
+        "Acompanhar orçamentos",
+        "3 follow-ups",
+        "Pergunta se a proposta corresponde ao que procuram, o que falta ajustar e quando pretendem decidir."
+      ],
+      [
+        "active",
+        "Trabalhar pedidos ativos",
+        "Pedidos do dia",
+        "Recolhe destino, datas, flexibilidade, viajantes, partida, orçamento e prioridades. Prepara uma proposta adequada."
+      ],
+      [
+        "content",
+        "Partilhar conteúdo útil",
+        "1 conteúdo",
+        "Publica uma dica, esclarece uma dúvida ou apresenta uma promoção com preço, datas e condições claras."
+      ],
+      [
+        "interest",
+        "Conversar com interessados em viagens",
+        "Interações do dia",
+        "Responde às perguntas e sondagens. Pergunta quando gostariam de viajar e que experiência procuram."
+      ],
+      [
+        "vip",
+        "Convidar para o grupo VIP",
+        "1 convite",
+        "Explica que promoções vão encontrar e pergunta se querem receber o link."
+      ],
+      [
+        "record",
+        "Atualizar pedidos de viagem",
+        "5 minutos",
+        "Regista o estado dos orçamentos, o valor e a data combinada para voltar a falar."
+      ]
+    ],
+    "week": [
+      [
+        "promos",
+        "Partilhar duas promoções da equipa",
+        "1 vez por semana · dia à escolha",
+        "Escolhe duas promoções, edita o Canva da equipa e partilha no grupo das promoções. Confirma preços e condições."
+      ],
+      [
+        "presentation",
+        "Acompanhar uma apresentação",
+        "1 vez por semana",
+        "Convida interessados, confirma presenças e marca uma conversa depois da apresentação."
+      ],
+      [
+        "mailtravel",
+        "Enviar um email sobre viagens",
+        "1 vez por semana",
+        "Partilha uma dica e propostas relevantes com quem aceitou receber estes emails. Inclui um convite para pedir orçamento."
+      ],
+      [
+        "mailteam",
+        "Enviar um email sobre o negócio",
+        "1 vez por semana",
+        "Esclarece uma dúvida e convida para uma apresentação. Envia apenas a quem escolheu receber conteúdos sobre o negócio."
+      ],
+      [
+        "referral",
+        "Pedir recomendações",
+        "2 vezes por semana",
+        "Pede a um cliente satisfeito que partilhe o teu contacto com alguém que esteja a planear viajar."
+      ],
+      [
+        "review",
+        "Pedir um testemunho",
+        "1 vez por semana",
+        "Recolhe o feedback de um cliente e pede autorização antes de partilhar."
+      ],
+      [
+        "partner",
+        "Explorar uma parceria",
+        "1 vez por semana",
+        "Contacta um negócio relevante, como um fotógrafo de casamentos ou uma associação. Propõe uma conversa sobre colaboração."
+      ],
+      [
+        "after",
+        "Acompanhar o regresso de viagem",
+        "Depois de cada viagem",
+        "Pergunta como correu, recolhe feedback e percebe se podes ajudar numa próxima viagem."
+      ],
+      [
+        "learn",
+        "Aprender e aplicar uma competência",
+        "1 competência por semana",
+        "Escolhe uma formação ou leitura curta. Aplica uma ideia numa conversa, num convite ou no acompanhamento de um cliente."
+      ],
+      [
+        "balance",
+        "Rever a semana",
+        "Ao domingo",
+        "Revê contactos, convites, apresentações, pedidos, reservas e novos TPs. Escolhe o que vais melhorar."
+      ]
+    ]
+  },
+  "fields": [
+    [
+      "minutes",
+      "Minutos dedicados ao negócio"
+    ],
+    [
+      "contacts",
+      "Contactos iniciados"
+    ],
+    [
+      "responses",
+      "Conversas com resposta"
+    ],
+    [
+      "followups",
+      "Follow-ups realizados"
+    ],
+    [
+      "invites",
+      "Convites para o negócio"
+    ],
+    [
+      "attended",
+      "Pessoas que assistiram"
+    ],
+    [
+      "requests",
+      "Pedidos de orçamento"
+    ],
+    [
+      "quotes",
+      "Orçamentos apresentados (€)"
+    ],
+    [
+      "sales",
+      "Vendas confirmadas (€)"
+    ],
+    [
+      "tps",
+      "Novos TPs"
+    ]
+  ]
+}

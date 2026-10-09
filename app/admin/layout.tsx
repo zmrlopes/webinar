@@ -114,6 +114,7 @@ const LINKS = [
   { href: "/admin/documentos", label: "Documentos", icon: IconQuestionarios },
   { href: "/admin/objecoes/conhecimento", label: "Objeções", icon: IconObjecoes },
   { href: "/admin/dashboard-negocio", label: "Dashboard Negócio", icon: IconDashboardNegocio },
+  { href: "/admin/core-rank", label: "Core Rank · Top 10", icon: IconDashboardNegocio },
   { href: "/admin/questionarios", label: "Questionários", icon: IconQuestionarios },
 ];
 

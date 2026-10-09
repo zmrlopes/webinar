@@ -1,0 +1,16 @@
+.pagina { color: #000; max-width: 1500px; margin: 0 auto; }
+.etiqueta { font-size: 11px; color: #4b5320; font-weight: 700; letter-spacing: .1em; }
+.pagina h1 { font-size: 30px; letter-spacing: -.03em; margin: 14px 0; }
+.pagina p { font-size: 15px; line-height: 1.7; color: #55574f; }
+.filtros { display: flex; gap: 18px; flex-wrap: wrap; align-items: end; margin: 28px 0; }
+.filtros label { font-size: 14px; font-weight: 650; }
+.filtros select { display: block; margin-top: 8px; padding: 12px; border: 1px solid #c9cbb9; border-radius: 9px; background: #fff; font: inherit; color: #000; }
+.filtros button { padding: 13px 20px; border: 0; border-radius: 9px; color: #fff; background: #4b5320; font: inherit; cursor: pointer; }
+.tabela { overflow-x: auto; background: #fff; border: 1px solid #e2e2da; border-radius: 14px; margin-top: 24px; }
+.tabela table { width: 100%; border-collapse: collapse; font-size: 14px; white-space: nowrap; }
+.tabela caption { text-align: left; padding: 18px; font-weight: 650; color: #4b5320; }
+.tabela th, .tabela td { text-align: left; padding: 18px; border-top: 1px solid #e2e2da; }
+.tabela th { background: #f0f2e5; color: #4b5320; font-size: 12px; }
+.tabela small { display: block; margin-top: 5px; color: #55574f; font-size: 12px; }
+.vazio { padding: 24px; border: 1px solid #e2e2da; border-radius: 14px; background: #fff; }
+@media(max-width:760px) { .pagina h1 { font-size: 24px; } .filtros { gap: 12px; } }
