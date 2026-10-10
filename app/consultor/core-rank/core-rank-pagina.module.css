@@ -1,0 +1,4 @@
+.pagina { max-width: 1180px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+.voltar { display: inline-block; margin-bottom: 1.25rem; color: #4b5320; font-size: .9rem; text-decoration: none; }
+.voltar:hover { text-decoration: underline; }
+@media (max-width: 600px) { .pagina { padding: 1rem .75rem 2rem; } }

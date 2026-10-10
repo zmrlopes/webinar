@@ -753,6 +753,11 @@ export function BackofficeHome() {
               <Link href="/consultor/documentos" className="vqb-menu-item">
                 Documentos
               </Link>
+              {emTesteVisual && (
+                <Link href="/consultor/core-rank" className="vqb-menu-item">
+                  Core Rank
+                </Link>
+              )}
               <button
                 type="button"
                 className={

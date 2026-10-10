@@ -42,3 +42,8 @@ Por indicação explícita do utilizador, a organização por pastas também apa
 em `/consultor/documentos`, na área atual, para todos os consultores da equipa.
 Esta autorização é específica dos Documentos; o restante novo visual continua
 limitado à nova área da conta de teste.
+
+Por indicação explícita do utilizador, o Core Rank também fica acessível
+na área atual em `/consultor/core-rank`, apenas para a conta de teste.
+Reutiliza o mesmo componente e os mesmos registos da nova área; o link no
+menu atual só aparece para `EMAIL_PAINEL_DEMONSTRACAO`.
