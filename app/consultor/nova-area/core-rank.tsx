@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CAMPOS_CORE, DIAS_CORE, FIM_CORE, GRUPOS_CORE, INICIO_CORE, META_TPS, META_VENDAS, TAREFAS_CORE, dataLisboa, diasMesCore, formularioVazio, metricasDasTarefas, podeGuardarDia, resumirCore, semanaCore, type DadosCore, type EstadoTarefa, type FormularioCore, type GrupoCore, type MarcaCore } from "@/lib/core-rank";
+import { CAMPOS_CORE, DIAS_CORE, FIM_CORE, GRUPOS_CORE, INICIO_CORE, META_TPS, META_VENDAS, TAREFAS_CORE, dataLisboa, diaTesteCore, diasCoreConta, diasMesCore, formularioVazio, metricasDasTarefas, podeGuardarDia, resumirCore, semanaCore, type DadosCore, type EstadoTarefa, type FormularioCore, type GrupoCore, type MarcaCore } from "@/lib/core-rank";
 import { FOCO_CORE } from "@/lib/core-rank-foco";
 import css from "./core-rank.module.css";
 
@@ -44,9 +44,10 @@ export function CoreRankNovaArea({email, nome, abrirRelatorios = 0}: {email: str
     let ativo = true;
     void pedirCore(email).then(d => {
       if (!ativo) return; setDados(d);
-      const inicial = d.hoje < INICIO_CORE ? INICIO_CORE : d.hoje > FIM_CORE ? FIM_CORE : d.hoje;
+      const inicioConta = diasCoreConta(email)[0]!;
+      const inicial = d.hoje < inicioConta ? inicioConta : d.hoje > FIM_CORE ? FIM_CORE : d.hoje;
       setData(inicial); setMes(inicial.slice(0, 7));
-      const anterior = d.dias.at(-1);
+      const anterior = d.dias.filter(dia => !dia.teste).at(-1);
       setRascunho({...formularioVazio(), diaPromocoes: anterior?.diaPromocoes ?? null});
     }).catch(e => {if (ativo) setErro(e.message);});
     return () => {ativo = false;};
@@ -66,15 +67,16 @@ export function CoreRankNovaArea({email, nome, abrirRelatorios = 0}: {email: str
 
   if (!dados) return <section className={css.pagina} aria-live="polite"><h1>Core Rank</h1><p>{erro || "A carregar o teu plano…"}</p>{erro && <button className={css.botao} onClick={() => window.location.reload()}>Tentar novamente</button>}</section>;
   const guardado = dados.dias.find(d => d.data === data);
+  const teste = diaTesteCore(data, email);
   const semana = semanaCore(data);
-  const registoSemanal = dados.dias.find(d => semanaCore(d.data) === semana && Object.keys(d.tarefas).some(id => id.startsWith("week_")));
+  const registoSemanal = dados.dias.find(d => (teste ? d.data === data : !d.teste) && semanaCore(d.data) === semana && Object.keys(d.tarefas).some(id => id.startsWith("week_")));
   const atual = guardado ?? rascunho;
-  const editavel = podeGuardarDia(data, dados.dias, dados.hoje);
+  const editavel = podeGuardarDia(data, dados.dias, dados.hoje, email);
   const diaSemana = new Date(`${data}T12:00:00Z`).getUTCDay();
   const semanalEditavel = editavel && !registoSemanal && atual.diaPromocoes === diaSemana;
   const tarefasVisiveis = TAREFAS_CORE.filter(t => t.grupo === grupo);
   const totais = resumirCore(dados.dias, INICIO_CORE, FIM_CORE).totais;
-  const diasMes = diasMesCore(mes);
+  const diasMes = diasMesCore(mes, email);
   const feitas = Object.values(atual.tarefas).filter(t => t.estado === "done").length;
   const nomeMes = new Intl.DateTimeFormat("pt-PT", {month: "long", year: "numeric"}).format(new Date(`${mes}-15T12:00:00Z`));
 
@@ -88,7 +90,7 @@ export function CoreRankNovaArea({email, nome, abrirRelatorios = 0}: {email: str
     });
   }
   function escolherMes(proximo: string) {
-    setMes(proximo); setData(dados!.hoje.startsWith(proximo) && dados!.hoje >= INICIO_CORE && dados!.hoje <= FIM_CORE ? dados!.hoje : diasMesCore(proximo)[0]!);
+    setMes(proximo); setData(dados!.hoje.startsWith(proximo) && dados!.hoje >= diasCoreConta(email)[0]! && dados!.hoje <= FIM_CORE ? dados!.hoje : diasMesCore(proximo, email)[0]!);
   }
   async function guardar() {
     if (!editavel || aGuardar) return;
@@ -118,17 +120,18 @@ export function CoreRankNovaArea({email, nome, abrirRelatorios = 0}: {email: str
     <div className={css.orientacao}><strong>O ritmo é teu. A consistência faz a diferença.</strong><p>Estas tarefas não são obrigatórias. São sugestões para criares mais oportunidades de adesão e venda. Escolhe as que consegues fazer e regista a tua atividade com honestidade. Os resultados dependem de vários fatores e não são garantidos.</p></div>
     <div className={css.perfil}><label>O teu nome<input value={nome} disabled/></label><label>Dia das tuas promoções<select value={registoSemanal?.diaPromocoes ?? atual.diaPromocoes ?? ""} disabled={!editavel || !!registoSemanal || aGuardar} onChange={e => setRascunho(v => ({...v, diaPromocoes: e.target.value === "" ? null : Number(e.target.value)}))}><option value="">Escolhe um dia</option>{DIAS_SEMANA.map((d, i) => <option key={d} value={i}>{d}</option>)}</select></label></div>
     <p className={css.ajuda}>Os registos ficam guardados na tua conta, acessíveis no computador e no telemóvel. O objetivo é acumulado até 31 de dezembro.</p>
-    <div className={css.indicadores}><div className={css.indicador}><span>NOVOS TPS</span><strong>{totais.tps ?? 0} / {META_TPS}</strong><progress max={META_TPS} value={Math.min(totais.tps ?? 0, META_TPS)} aria-label="Progresso de novos TPs"/></div><div className={css.indicador}><span>VENDAS CONFIRMADAS</span><strong>{euros(totais.sales ?? 0)} / 3.000€</strong><progress max={META_VENDAS} value={Math.min(totais.sales ?? 0, META_VENDAS)} aria-label="Progresso de vendas confirmadas"/></div><div className={css.indicador}><span>DIAS COM REGISTO</span><strong>{dados.dias.length} / {DIAS_CORE.length}</strong><small>O teu caminho até dezembro</small></div></div>
+    <div className={css.indicadores}><div className={css.indicador}><span>NOVOS TPS</span><strong>{totais.tps ?? 0} / {META_TPS}</strong><progress max={META_TPS} value={Math.min(totais.tps ?? 0, META_TPS)} aria-label="Progresso de novos TPs"/></div><div className={css.indicador}><span>VENDAS CONFIRMADAS</span><strong>{euros(totais.sales ?? 0)} / 3.000€</strong><progress max={META_VENDAS} value={Math.min(totais.sales ?? 0, META_VENDAS)} aria-label="Progresso de vendas confirmadas"/></div><div className={css.indicador}><span>DIAS COM REGISTO</span><strong>{dados.dias.filter(d => !d.teste).length} / {DIAS_CORE.length}</strong><small>O teu caminho até dezembro</small></div></div>
     <div className={css.abas} role="tablist" aria-label="Plano e acompanhamento"><button className={css.botao} role="tab" aria-selected={aba === "plano"} onClick={() => setAba("plano")}>O meu plano</button><button className={css.botao} role="tab" aria-selected={aba === "historico"} onClick={() => setAba("historico")}>Histórico</button><button className={css.botao} role="tab" aria-selected={aba === "relatorios"} onClick={() => void lerRelatorios()}>Relatórios semanais{dados.relatorios.some(r => !r.lidoEm) ? " · Novo" : ""}</button></div>
     {erro && <p className={`${css.mensagem} ${css.erro}`} role="alert">{erro}</p>}{mensagem && <p className={css.mensagem} role="status">{mensagem}</p>}
     {aba !== "relatorios" && <div className={css.meses}><button className={css.botao} aria-label="Mês anterior" disabled={mes === MESES[0]} onClick={() => escolherMes(MESES[MESES.indexOf(mes) - 1]!)}>←</button><strong>{nomeMes}</strong><button className={css.botao} aria-label="Mês seguinte" disabled={mes === MESES.at(-1)} onClick={() => escolherMes(MESES[MESES.indexOf(mes) + 1]!)}>→</button></div>}
     {aba === "plano" && <div id="core-rank-plano">
-      <div className={css.cabecalho}><div><span className={css.etiqueta}>O TEU PLANO DIÁRIO</span><h2>Pequenas ações. Novas oportunidades.</h2></div><button className={css.botao} onClick={() => {const hoje = dados.hoje < INICIO_CORE ? INICIO_CORE : dados.hoje > FIM_CORE ? FIM_CORE : dados.hoje; setData(hoje); setMes(hoje.slice(0,7));}}>Ir para hoje</button></div>
+      <div className={css.cabecalho}><div><span className={css.etiqueta}>O TEU PLANO DIÁRIO</span><h2>Pequenas ações. Novas oportunidades.</h2></div><button className={css.botao} onClick={() => {const inicio = diasCoreConta(email)[0]!; const hoje = dados.hoje < inicio ? inicio : dados.hoje > FIM_CORE ? FIM_CORE : dados.hoje; setData(hoje); setMes(hoje.slice(0,7));}}>Ir para hoje</button></div>
       <div className={css.calendario} aria-label={`Dias de ${nomeMes}`}>{diasMes.map(d => <button key={d} className={css.dia} aria-label={dataExtenso(d)} aria-current={d === data ? "date" : undefined} data-guardado={dados.dias.some(r => r.data === d)} onClick={() => setData(d)}><small>{DIAS_SEMANA[new Date(`${d}T12:00:00Z`).getUTCDay()]!.slice(0,3).toUpperCase()}</small>{Number(d.slice(-2))}</button>)}</div>
       <div className={css.dataDia}><h3>{dataExtenso(data)}</h3><span>{feitas} tarefas feitas</span></div>
+      {teste && <p className={css.mensagem}>Dia de teste — disponível apenas nesta conta. Podes preencher, guardar, consultar o histórico e exportar. Este registo fica fora do objetivo, da classificação e dos relatórios do desafio.</p>}
       {!editavel && <p className={css.mensagem}>{guardado ? "Dia guardado — consulta disponível, sem alterações." : data < dados.hoje ? "Sem informação. Os dias anteriores não podem ser preenchidos." : dados.hoje < INICIO_CORE ? "O desafio começa a 11 de outubro. Podes consultar o plano; o registo abre nesse dia." : "Este dia ainda não está disponível para registo. Só podes guardar o próprio dia."}</p>}
       <p className={css.ajuda}>As quantidades são sugestões e as tarefas são opcionais. Começa pelas prioridades e escolhe as restantes ações de acordo com o teu tempo. Uma mesma conversa pode contribuir para várias tarefas; regista cada contacto ou resultado apenas uma vez no balanço do dia.</p>
-      <div className={css.foco}><span className={css.etiqueta}>FOCO DO DIA</span><p>{FOCO_CORE[data]}</p></div>
+      <div className={css.foco}><span className={css.etiqueta}>FOCO DO DIA</span><p>{teste ? "Experimenta as tarefas e o balanço do dia. Para testar as tarefas semanais, escolhe sábado no dia das tuas promoções." : FOCO_CORE[data]}</p></div>
       <div className={css.grupos}><h3>Começa por estas ações ↓</h3><p>Reserva o teu tempo e avança nas prioridades. Depois explora as outras ações para desenvolveres o teu negócio.</p><div className={css.grelhaGrupos} role="tablist" aria-label="Grupos de tarefas">{GRUPOS_CORE.map((g, i) => <button key={g.id} className={css.grupo} role="tab" aria-selected={grupo === g.id} onClick={() => setGrupo(g.id)}><span>0{i}</span><div><strong>{g.titulo}</strong><small>{g.descricao}</small></div></button>)}</div></div>
       {grupo === "week" && <p className={css.mensagem}>{registoSemanal ? `As tarefas desta semana foram guardadas em ${dataExtenso(registoSemanal.data)}.` : atual.diaPromocoes === null ? "Escolhe o dia das tuas promoções no topo. Nesse dia, guarda também as tarefas da semana." : `Regista as tarefas semanais à ${DIAS_SEMANA[atual.diaPromocoes]!.toLowerCase()}; ficam fechadas depois de guardar esse dia.`}</p>}
       <fieldset disabled={!editavel || aGuardar || (grupo === "week" && !semanalEditavel)} aria-label={GRUPOS_CORE.find(g => g.id === grupo)!.titulo}>

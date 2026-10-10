@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { podeVerNovaArea } from "./consultor-nova-area";
 import { chamarClaude } from "./objecoes";
-import { dataLisboa, diasEntre, FIM_CORE, INICIO_CORE, resumirCore, semanaCore, somarDias, validarFormularioCore, type DadosCore, type DiaCore, type RelatorioCore } from "./core-rank";
+import { dataLisboa, diaTesteCore, diasEntre, FIM_CORE, INICIO_CORE, podeGuardarDia, resumirCore, semanaCore, somarDias, validarFormularioCore, type DadosCore, type DiaCore, type RelatorioCore } from "./core-rank";
 
 const PREFIXO = "core-rank:2026:";
 const chaveDia = (email: string, data: string) => `${PREFIXO}dia:${email}:${data}`;
@@ -27,16 +27,17 @@ export async function guardarDiaCore(email: string, nome: string, data: string, 
     await cliente.query("begin");
     await cliente.query("select pg_advisory_xact_lock(hashtext($1))", [`${PREFIXO}${email}`]);
     // Volta a verificar o relógio depois de adquirir o bloqueio, inclusive na passagem da meia-noite.
-    if (data !== dataLisboa() || data < INICIO_CORE || data > FIM_CORE) throw new ErroCore("Só podes guardar o próprio dia, entre 11 de outubro e 31 de dezembro.");
+    if (!podeGuardarDia(data, [], dataLisboa(), email)) throw new ErroCore("Só podes guardar o próprio dia, entre 11 de outubro e 31 de dezembro.");
+    const teste = diaTesteCore(data, email);
     const semana = semanaCore(data);
     const {rows} = await cliente.query<{valor: DiaCore}>(
       "select valor from dashboard_config where chave like $1 and valor->>'data' >= $2 and valor->>'data' <= $3", [`${PREFIXO}dia:${email}:%`, semana, somarDias(semana, 6)],
     );
     const semanal = Object.keys(formulario.tarefas).some(id => id.startsWith("week_"));
-    const anterior = rows.map(r => r.valor).find(d => Object.keys(d.tarefas).some(id => id.startsWith("week_")));
+    const anterior = rows.map(r => r.valor).find(d => !teste && !d.teste && Object.keys(d.tarefas).some(id => id.startsWith("week_")));
     if (semanal && anterior) throw new ErroCore("As tarefas desta semana já foram guardadas. Atualiza a página.", 409);
     if (semanal && formulario.diaPromocoes !== new Date(`${data}T12:00:00Z`).getUTCDay()) throw new ErroCore("As tarefas semanais são guardadas apenas no dia da semana que escolheste.");
-    const registo: DiaCore = {...formulario, email, nome, data, guardadoEm: new Date().toISOString()};
+    const registo: DiaCore = {...formulario, email, nome, data, guardadoEm: new Date().toISOString(), ...(teste ? {teste: true} : {})};
     const insercao = await cliente.query("insert into dashboard_config (chave, valor) values ($1, $2::jsonb) on conflict (chave) do nothing returning chave", [chaveDia(email, data), JSON.stringify(registo)]);
     if (!insercao.rowCount) throw new ErroCore("Este dia já foi guardado e não pode ser alterado.", 409);
     await cliente.query("commit");
@@ -64,7 +65,7 @@ export function validarTextoRelatorio(texto: string): Pick<RelatorioCore, "resum
 export async function gerarProximoRelatorioCore(): Promise<{estado: string; semana?: string}> {
   const hoje = dataLisboa();
   if (hoje <= INICIO_CORE) return {estado: "sem-semanas-fechadas"};
-  const todos = await listarDiasCore();
+  const todos = (await listarDiasCore()).filter(d => !d.teste);
   const emails = [...new Set(todos.map(d => d.email))];
   const semanas = [...new Set(diasEntre(INICIO_CORE, FIM_CORE).map(semanaCore))].filter(s => somarDias(s, 6) < hoje);
   for (const email of emails) {

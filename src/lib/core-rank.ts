@@ -1,7 +1,12 @@
 import referencia from "./core-rank-tarefas.json";
+import { EMAIL_PAINEL_DEMONSTRACAO } from "./demo";
 
 export const INICIO_CORE = "2026-10-11";
 export const FIM_CORE = "2026-12-31";
+export const DIA_TESTE_CORE = "2026-10-10";
+export function diaTesteCore(data: string, email = ""): boolean {
+  return data === DIA_TESTE_CORE && email.trim().toLowerCase() === EMAIL_PAINEL_DEMONSTRACAO;
+}
 export const META_TPS = 3;
 export const META_VENDAS = 3000;
 export type GrupoCore = "core" | "team" | "travel" | "week";
@@ -19,7 +24,7 @@ export const TAREFAS_CORE: TarefaCore[] = GRUPOS_CORE.flatMap(({id: grupo}) =>
 export const CAMPOS_CORE = referencia.fields as [string, string][];
 export type MarcaCore = {estado: EstadoTarefa; quantidade: number | null};
 export type FormularioCore = {tarefas: Record<string, MarcaCore>; metricas: Record<string, number | null>; aprendizagem: string; proximoPasso: string; diaPromocoes: number | null};
-export type DiaCore = FormularioCore & {email: string; nome: string; data: string; guardadoEm: string};
+export type DiaCore = FormularioCore & {email: string; nome: string; data: string; guardadoEm: string; teste?: boolean};
 export type RelatorioCore = {semana: string; ate: string; criadoEm: string; resumo: string; pontosFortes: string[]; melhorias: string[]; descurado: string[]; proximasAcoes: string[]; lidoEm?: string};
 export type DadosCore = {hoje: string; dias: DiaCore[]; relatorios: RelatorioCore[]; automacao?: {ia: boolean; agendamento: boolean}};
 
@@ -38,12 +43,16 @@ export function diasEntre(inicio: string, fim: string): string[] {
   const dias: string[] = []; for (let d = inicio; d <= fim; d = somarDias(d, 1)) dias.push(d); return dias;
 }
 export const DIAS_CORE = diasEntre(INICIO_CORE, FIM_CORE);
-export function diasMesCore(mes: string): string[] { return DIAS_CORE.filter(d => d.startsWith(mes)); }
+export function diasCoreConta(email = ""): string[] { return diaTesteCore(DIA_TESTE_CORE, email) ? [DIA_TESTE_CORE, ...DIAS_CORE] : DIAS_CORE; }
+export function diasMesCore(mes: string, email = ""): string[] { return diasCoreConta(email).filter(d => d.startsWith(mes)); }
+export function datasHistoricoCore(dados: DadosCore): string[] {
+  return [...new Set([...diasEntre(INICIO_CORE, dados.hoje < FIM_CORE ? dados.hoje : FIM_CORE), ...dados.dias.filter(d => d.teste).map(d => d.data)])].sort();
+}
 export function formularioVazio(): FormularioCore {
   return {tarefas: {}, metricas: Object.fromEntries(CAMPOS_CORE.map(([id]) => [id, null])), aprendizagem: "", proximoPasso: "", diaPromocoes: null};
 }
-export function podeGuardarDia(data: string, dias: DiaCore[], hoje = dataLisboa()): boolean {
-  return data === hoje && data >= INICIO_CORE && data <= FIM_CORE && !dias.some(d => d.data === data);
+export function podeGuardarDia(data: string, dias: DiaCore[], hoje = dataLisboa(), email = ""): boolean {
+  return data === hoje && ((data >= INICIO_CORE && data <= FIM_CORE) || diaTesteCore(data, email)) && !dias.some(d => d.data === data);
 }
 
 /** Valida sem converter campos vazios em zero. O servidor continua a validar o dia e a unicidade. */
@@ -86,7 +95,7 @@ export function metricasDasTarefas(tarefas: Record<string, MarcaCore>): Record<s
 
 /** Dias sem registo e tarefas por registar ficam fora da avaliação; nunca são classificados como falhas. */
 export function resumirCore(dias: DiaCore[], inicio: string, fim: string) {
-  const periodo = dias.filter(d => d.data >= inicio && d.data <= fim);
+  const periodo = dias.filter(d => !d.teste && d.data >= inicio && d.data <= fim);
   const totais = Object.fromEntries(CAMPOS_CORE.map(([id]) => {
     const valores = periodo.map(d => d.metricas[id]).filter((v): v is number => v !== null && v !== undefined);
     return [id, valores.length ? valores.reduce((s, n) => s + n, 0) : null];

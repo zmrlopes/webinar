@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import { CAMPOS_CORE, INICIO_CORE, FIM_CORE, TAREFAS_CORE, diasEntre, resumirCore, type DadosCore } from "./core-rank";
+import { CAMPOS_CORE, INICIO_CORE, FIM_CORE, TAREFAS_CORE, datasHistoricoCore, resumirCore, type DadosCore } from "./core-rank";
 
 const ESTADOS = {"": "Sem informação", done: "Fiz", no: "Não fiz", na: "Não se aplica"};
 const dinheiro = (n: number) => new Intl.NumberFormat("pt-PT", {style: "currency", currency: "EUR"}).format(n);
@@ -9,9 +9,9 @@ export async function exportarExcelCore(dados: DadosCore, nome: string): Promise
   const livro = new ExcelJS.Workbook(); livro.creator = "Tropa de Elite"; livro.created = new Date();
   const dias = livro.addWorksheet("Dias");
   dias.columns = [{header: "Data", key: "data", width: 14}, {header: "Estado", key: "estado", width: 22}, ...CAMPOS_CORE.map(([key, header]) => ({header, key, width: 24})), {header: "Aprendizagem", key: "aprendizagem", width: 45}, {header: "Próximo passo", key: "proximoPasso", width: 45}];
-  for (const data of diasEntre(INICIO_CORE, dados.hoje < FIM_CORE ? dados.hoje : FIM_CORE)) {
+  for (const data of datasHistoricoCore(dados)) {
     const dia = dados.dias.find(d => d.data === data);
-    dias.addRow({data, estado: dia ? "Guardado" : "Sem informação", ...dia?.metricas, aprendizagem: dia?.aprendizagem, proximoPasso: dia?.proximoPasso});
+    dias.addRow({data, estado: dia?.teste ? "Teste — guardado" : dia ? "Guardado" : "Sem informação", ...dia?.metricas, aprendizagem: dia?.aprendizagem, proximoPasso: dia?.proximoPasso});
   }
   for (const id of ["sales", "quotes"]) dias.getColumn(id).numFmt = '#,##0.00 "€"';
   const tarefas = livro.addWorksheet("Tarefas");
@@ -25,7 +25,7 @@ export async function exportarExcelCore(dados: DadosCore, nome: string): Promise
   }
   const resumo = livro.addWorksheet("Resumo");
   resumo.columns = [{header: "Campo", key: "campo", width: 35}, {header: "Valor", key: "valor", width: 55}];
-  resumo.addRows([{campo: "Consultor", valor: nome}, {campo: "Desafio", valor: "11 outubro — 31 dezembro 2026"}, {campo: "Objetivo acumulado", valor: "3 novos TPs próprios + 3.000 € de reservas confirmadas"}, {campo: "Dias guardados", valor: dados.dias.length}, {campo: "Campos vazios", valor: "Sem informação; não equivalem a zero"}, {campo: "Tarefas não aplicáveis", valor: "Excluídas da avaliação"}]);
+  resumo.addRows([{campo: "Consultor", valor: nome}, {campo: "Desafio", valor: "11 outubro — 31 dezembro 2026"}, {campo: "Objetivo acumulado", valor: "3 novos TPs próprios + 3.000 € de reservas confirmadas"}, {campo: "Dias guardados", valor: dados.dias.filter(d => !d.teste).length}, {campo: "Registos de teste", valor: dados.dias.filter(d => d.teste).length}, {campo: "Campos vazios", valor: "Sem informação; não equivalem a zero"}, {campo: "Tarefas não aplicáveis", valor: "Excluídas da avaliação"}]);
   for (const folha of livro.worksheets) {
     folha.views = [{state: "frozen", ySplit: 1}]; folha.autoFilter = {from: {row: 1, column: 1}, to: {row: 1, column: folha.columnCount}};
     folha.getRow(1).height = 30; folha.getRow(1).font = {bold: true, color: {argb: "FFFFFFFF"}}; folha.getRow(1).fill = {type: "pattern", pattern: "solid", fgColor: {argb: "FF4B5320"}};
@@ -54,12 +54,12 @@ export async function exportarPdfCore(dados: DadosCore, nome: string): Promise<U
   linha("TROPA DE ELITE · CORE RANK", true); linha(nome, true);
   linha("Desafio: 11 de outubro a 31 de dezembro de 2026. Objetivo acumulado: 3 TPs próprios + 3.000 € de reservas confirmadas.");
   const resumo = resumirCore(dados.dias, INICIO_CORE, dados.hoje < FIM_CORE ? dados.hoje : FIM_CORE);
-  linha(`Dias guardados: ${dados.dias.length}. Novos TPs: ${resumo.totais.tps ?? 0}. Vendas confirmadas: ${dinheiro(resumo.totais.sales ?? 0)}.`);
+  linha(`Dias guardados no desafio: ${dados.dias.filter(d => !d.teste).length}. Novos TPs: ${resumo.totais.tps ?? 0}. Vendas confirmadas: ${dinheiro(resumo.totais.sales ?? 0)}.`);
   linha("Os campos vazios ficam sem informação. Não se aplica fica fora da avaliação.");
   if (resumo.diasSemInformacao.length) linha(`Dias sem informação: ${resumo.diasSemInformacao.join(", ")}`);
   if (!dados.dias.length) linha("Ainda não há dias guardados.");
   for (const d of dados.dias) {
-    linha(d.data, true);
+    linha(`${d.data}${d.teste ? " — Registo de teste (fora do objetivo e da classificação)" : ""}`, true);
     for (const [id, titulo] of CAMPOS_CORE) linha(`${titulo}: ${d.metricas[id] == null ? "Sem informação" : ["quotes","sales"].includes(id) ? dinheiro(d.metricas[id]!) : d.metricas[id]}`);
     for (const [id, marca] of Object.entries(d.tarefas)) linha(`${TAREFAS_CORE.find(t => t.id === id)?.titulo ?? id}: ${ESTADOS[marca.estado]}${marca.quantidade === null ? "" : ` · Quantidade: ${marca.quantidade}`}`);
     linha(`Aprendizagem: ${d.aprendizagem || "Sem informação"}`); linha(`Próximo passo: ${d.proximoPasso || "Sem informação"}`);

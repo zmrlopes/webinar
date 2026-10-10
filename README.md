@@ -299,6 +299,11 @@ O balanço recebe quantidades correspondentes das tarefas e admite ajustes
 antes de guardar para evitar duplicações. O histórico permite consultar dias,
 resumos por semana/mês e exportar PDF/Excel, incluindo os relatórios.
 
+Por autorização do utilizador, a conta de teste pode guardar também o dia
+10 de outubro de 2026, apenas nesse próprio dia. O registo fica identificado
+como teste no histórico/exportações e excluído do objetivo, da classificação,
+dos relatórios automáticos e do bloqueio das tarefas semanais do desafio.
+
 `/api/cron/core-rank` analisa a semana anterior com a integração de IA já usada
 na plataforma (`ANTHROPIC_API_KEY`), ao início de segunda-feira. A execução
 diária às 08:00 UTC recupera falhas, sem duplicar relatórios; exige `CRON_SECRET`.
