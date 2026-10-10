@@ -1,13 +1,13 @@
-.pagina { color: #000; }
+.pagina { --dourado-texto: #896313; color: #000; }
 .pagina p { line-height: 1.65; }
 .topo { display: flex; justify-content: space-between; gap: 20px; padding-bottom: 22px; border-bottom: 1px solid #e2e2da; font-size: 12px; font-weight: 750; letter-spacing: .13em; color: #55574f; }
 .hero { display: grid; grid-template-columns: 1.25fr 1fr; gap: 32px; align-items: center; padding: 40px 0 28px; }
-.etiqueta { font-size: 11px; letter-spacing: .16em; font-weight: 750; color: #4b5320; }
+.etiqueta { font-size: 11px; letter-spacing: .16em; font-weight: 750; color: var(--dourado-texto); }
 .hero h1 { font-size: clamp(28px, 3.1vw, 42px); line-height: 1.13; letter-spacing: -.04em; margin: 15px 0 20px; font-weight: 750; }
-.hero h1 span { color: #4b5320; }
+.hero h1 span { color: #b8860b; }
 .hero p { font-size: 15px; color: #55574f; margin: 0; }
 .objetivo { background: #23251e; color: #fff; border-radius: 20px; padding: 28px; }
-.objetivo .etiqueta { color: #dce2bf; }
+.objetivo .etiqueta { color: #e2bd62; }
 .objetivo h2 { font-size: 28px; margin: 18px 0 12px; letter-spacing: -.03em; }
 .objetivo p { color: #e6e8dc; font-size: 14px; }
 .objetivo a { display: inline-block; margin-top: 18px; color: #fff; font-size: 14px; text-underline-offset: 4px; }
@@ -31,7 +31,7 @@
 .indicador progress::-webkit-progress-value { background: #4b5320; border-radius: 4px; }
 .indicador small { color: #55574f; font-size: 14px; }
 .abas { display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #e2e2da; padding-bottom: 14px; margin-bottom: 28px; }
-.botao { border: 1px solid #c9cbb9; border-radius: 9px; padding: 11px 16px; background: #fff; color: #4b5320; font: inherit; font-size: 14px; font-weight: 650; cursor: pointer; }
+.botao { border: 1px solid #c9cbb9; border-radius: 9px; padding: 11px 16px; background: #fff; color: var(--dourado-texto); font: inherit; font-size: 14px; font-weight: 650; cursor: pointer; }
 .botao[aria-selected="true"], .primario { color: #fff; background: #4b5320; border-color: #4b5320; }
 .botao:disabled { cursor: default; opacity: .6; }
 .cabecalho { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
@@ -62,7 +62,7 @@
 .tarefa { display: grid; grid-template-columns: minmax(0,1fr) 155px 75px; align-items: center; gap: 16px; padding: 22px 0; border-bottom: 1px solid #e2e2da; }
 .tarefa h4 { font-size: 15px; margin: 6px 0; }
 .tarefa p { color: #55574f; font-size: 14px; margin: 0; }
-.tarefa > div > span { color: #4b5320; font-size: 11px; font-weight: 650; }
+.tarefa > div > span { color: var(--dourado-texto); font-size: 11px; font-weight: 650; }
 .tarefa select { margin-top: 0; font-size: 14px; }
 .tarefa label { font-size: 12px; }
 .balanco { padding: 26px; border: 1px solid #e2e2da; background: #fff; border-radius: 16px; margin-top: 28px; }
@@ -71,13 +71,13 @@
 .notas { display: grid; gap: 18px; }
 .rodape { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 24px; }
 .rodape p { margin: 0; color: #55574f; font-size: 14px; }
-.mensagem { padding: 14px 18px; border: 1px solid #d8ddc5; border-radius: 10px; background: #f5f6ef; color: #4b5320; font-size: 14px; line-height: 1.6; margin: 18px 0; }
+.mensagem { padding: 14px 18px; border: 1px solid #d8ddc5; border-radius: 10px; background: #f5f6ef; color: var(--dourado-texto); font-size: 14px; line-height: 1.6; margin: 18px 0; }
 .erro { color: #b42318; background: #fff6f5; border-color: #ecc4bf; }
 .historico { display: grid; gap: 10px; }
 .resumoHistorico { margin: 24px 0; padding: 20px; background: #f5f6ef; border: 1px solid #d8ddc5; border-radius: 14px; }
 .resumoHistorico h3 { margin: 0; font-size: 18px; }
 .resumoHistorico p { color: #55574f; font-size: 14px; }
-.resumoHistorico summary { color: #4b5320; font-size: 14px; font-weight: 650; cursor: pointer; }
+.resumoHistorico summary { color: var(--dourado-texto); font-size: 14px; font-weight: 650; cursor: pointer; }
 .resumoMetricas { display: grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap: 16px; margin: 20px 0; }
 .resumoMetricas span { display: block; color: #55574f; font-size: 13px; }
 .resumoMetricas strong { display: block; font-size: 16px; margin-top: 6px; }
@@ -90,12 +90,12 @@
 .exportar > div { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
 .relatorio { padding: 24px; margin-bottom: 16px; border: 1px solid #e2e2da; background: #fff; border-radius: 16px; }
 .relatorio h3 { margin-top: 0; font-size: 20px; }
-.relatorio h4 { font-size: 15px; margin: 22px 0 8px; color: #4b5320; }
+.relatorio h4 { font-size: 15px; margin: 22px 0 8px; color: var(--dourado-texto); }
 .relatorio p, .relatorio li { font-size: 15px; line-height: 1.7; color: #55574f; }
 .relatorio ul { margin: 0; padding-left: 20px; }
 .aviso { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 20px; border: 1px solid #c9971c; border-radius: 14px; background: #fffaf0; color: #000; text-align: left; cursor: pointer; margin-bottom: 24px; }
 .aviso strong { display: block; font-size: 16px; }
 .aviso small { display: block; margin-top: 6px; color: #55574f; font-size: 14px; line-height: 1.5; }
-.aviso > span { font-size: 22px; color: #4b5320; }
+.aviso > span { font-size: 22px; color: #896313; }
 @media (max-width: 1100px) { .hero { gap: 20px; } .tarefa { grid-template-columns: minmax(0,1fr) 125px 65px; gap: 10px; } .metricas { grid-template-columns: repeat(2,minmax(0,1fr)); } .indicador { padding: 16px; } .indicador strong { font-size: 19px; } }
 @media (max-width: 760px) { .topo { font-size: 10px; gap: 12px; } .hero { grid-template-columns: 1fr; padding-top: 28px; } .hero h1 { font-size: 34px; } .objetivo { padding: 24px; } .perfil { grid-template-columns: 1fr; gap: 16px; } .indicadores { grid-template-columns: 1fr; gap: 10px; margin-bottom: 28px; } .indicador strong { font-size: 24px; margin: 10px 0; } .grelhaGrupos { grid-template-columns: 1fr; } .grupos { padding: 16px; } .cabecalho { align-items: start; } .cabecalho h2 { font-size: 20px; } .dataDia { flex-direction: column; gap: 8px; } .tarefa { grid-template-columns: minmax(0,1fr) 80px; gap: 14px; } .tarefa > div { grid-column: 1/-1; } .tarefa select { width: 100%; } .balanco { padding: 20px; } .metricas { grid-template-columns: 1fr; gap: 18px; } .rodape { flex-direction: column; align-items: stretch; } .relatorio { padding: 20px; } .aviso { padding: 16px; } .aviso strong { font-size: 15px; } }
