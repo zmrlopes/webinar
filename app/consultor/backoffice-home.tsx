@@ -8,6 +8,7 @@ import { EventoForm } from "./evento-form";
 import { NotificacoesPush } from "./notificacoes-push";
 import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
 import { AlternarArea } from "./alternar-area";
+import { AvisoRelatorioCore } from "./nova-area/core-rank";
 
 interface DadosIdentificacao {
   nome: string | null;
@@ -607,6 +608,19 @@ export function BackofficeHome() {
               );
             })()}
 
+            {dados.ehConsultorEquipa && <>
+              <div className="vqb-urgente">
+                <Link href="/consultor/core-rank" className="vqb-urgente-item">
+                  <span>
+                    <span>🏆 O desafio Core Rank está lançado!</span>
+                    <span className="vqb-urgente-item-sub">Até 31 de dezembro: 3 novos TPs + 3.000€ em vendas confirmadas. Abre o teu plano e regista o teu dia.</span>
+                  </span>
+                  <span className="vqb-urgente-seta" aria-hidden="true">→</span>
+                </Link>
+              </div>
+              <AvisoRelatorioCore email={email} aoAbrir={() => window.location.assign("/consultor/core-rank#relatorios")} />
+            </>}
+
             <h2>O teu link de partilha</h2>
             <p className="vqb-mudo">
               É este o link que partilhas para as pessoas se inscreverem no webinar. Quem se inscrever
@@ -753,7 +767,7 @@ export function BackofficeHome() {
               <Link href="/consultor/documentos" className="vqb-menu-item">
                 Documentos
               </Link>
-              {emTesteVisual && (
+              {dados.ehConsultorEquipa && (
                 <Link href="/consultor/core-rank" className="vqb-menu-item">
                   Core Rank
                 </Link>

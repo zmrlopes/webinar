@@ -3,7 +3,8 @@ import ExcelJS from "exceljs";
 import { PDFDocument } from "pdf-lib";
 import { CAMPOS_CORE, DIAS_CORE, TAREFAS_CORE, classificarCore, dataLisboa, diaTesteCore, diasMesCore, formularioVazio, metricasDasTarefas, podeGuardarDia, resumirCore, semanaCore, validarFormularioCore, type DadosCore, type DiaCore } from "../src/lib/core-rank";
 import { FOCO_CORE } from "../src/lib/core-rank-foco";
-import { validarTextoRelatorio } from "../src/lib/core-rank-registos";
+import { listarDiasCore, validarTextoRelatorio } from "../src/lib/core-rank-registos";
+import { db, fecharDb } from "../src/lib/db";
 import { exportarExcelCore, exportarPdfCore } from "../src/lib/core-rank-exportar";
 
 assert.equal(DIAS_CORE.length,82);
@@ -24,6 +25,14 @@ assert.throws(()=>validarFormularioCore({...vazio,metricas:{tps:1.5}}));
 assert.throws(()=>validarFormularioCore({...vazio,tarefas:{desconhecida:{estado:"done",quantidade:1}}}));
 assert.throws(()=>validarFormularioCore({...vazio,tarefas:{core_time:{estado:"na",quantidade:60}}}));
 const dia: DiaCore={...formularioVazio(),email:"teste@example.com",nome:"Teste",data:"2026-10-11",guardadoEm:"2026-10-11T20:00:00Z",tarefas:{core_time:{estado:"done",quantidade:60},core_talk:{estado:"no",quantidade:null},core_care:{estado:"na",quantidade:null},core_follow:{estado:"",quantidade:null}},metricas:{...vazio.metricas,minutes:60,sales:1000,tps:1}};
+// Os registos dos consultores publicados também alimentam o histórico, o admin e o cron.
+process.env.DATABASE_URL ??= "postgres://teste:teste@localhost/core_rank_teste";
+const pool = db(), queryOriginal = pool.query;
+pool.query = (async () => ({rows: [{valor: {...dia, data: "2026-10-12"}}, {valor: dia}]})) as unknown as typeof pool.query;
+try {
+  assert.deepEqual((await listarDiasCore(dia.email)).map(d => d.data), ["2026-10-11", "2026-10-12"]);
+  assert.equal((await listarDiasCore()).filter(d => d.email === dia.email).length, 2);
+} finally { pool.query = queryOriginal; await fecharDb(); }
 assert.equal(podeGuardarDia("2026-10-11",[],"2026-10-11"),true);
 assert.equal(podeGuardarDia("2026-10-11",[dia],"2026-10-11"),false);
 assert.equal(podeGuardarDia("2026-10-11",[],"2026-10-12"),false);

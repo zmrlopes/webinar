@@ -1,5 +1,4 @@
 import { db } from "./db";
-import { podeVerNovaArea } from "./consultor-nova-area";
 import { chamarClaude } from "./objecoes";
 import { dataLisboa, diaTesteCore, diasEntre, FIM_CORE, INICIO_CORE, podeGuardarDia, resumirCore, semanaCore, somarDias, validarFormularioCore, type DadosCore, type DiaCore, type RelatorioCore } from "./core-rank";
 
@@ -9,12 +8,12 @@ const chaveRelatorio = (email: string, semana: string) => `${PREFIXO}relatorio:$
 export class ErroCore extends Error { constructor(mensagem: string, public status = 400) { super(mensagem); } }
 
 export async function listarDiasCore(email?: string): Promise<DiaCore[]> {
-  const {rows} = await db().query<{valor: DiaCore}>("select valor from dashboard_config where chave like $1 order by chave", [`${PREFIXO}dia:${email ? email + ":" : ""}%`]);
-  return rows.map(r => r.valor).filter(d => podeVerNovaArea(d.email)).sort((a, b) => a.data.localeCompare(b.data));
+  const {rows} = await db().query<{valor: DiaCore}>("select valor from dashboard_config where starts_with(chave, $1) order by chave", [`${PREFIXO}dia:${email ? email + ":" : ""}`]);
+  return rows.map(r => r.valor).sort((a, b) => a.data.localeCompare(b.data));
 }
 export async function lerDadosCore(email: string): Promise<DadosCore> {
   const [dias, {rows}] = await Promise.all([listarDiasCore(email), db().query<{valor: {estado: string; relatorio?: RelatorioCore}}>(
-    "select valor from dashboard_config where chave like $1 order by chave desc", [`${PREFIXO}relatorio:${email}:%`],
+    "select valor from dashboard_config where starts_with(chave, $1) order by chave desc", [`${PREFIXO}relatorio:${email}:`],
   )]);
   return {hoje: dataLisboa(), dias, relatorios: rows.flatMap(r => r.valor.estado === "pronto" && r.valor.relatorio ? [r.valor.relatorio] : []), automacao: {ia: !!process.env.ANTHROPIC_API_KEY, agendamento: !!process.env.CRON_SECRET}};
 }
@@ -31,7 +30,7 @@ export async function guardarDiaCore(email: string, nome: string, data: string, 
     const teste = diaTesteCore(data, email);
     const semana = semanaCore(data);
     const {rows} = await cliente.query<{valor: DiaCore}>(
-      "select valor from dashboard_config where chave like $1 and valor->>'data' >= $2 and valor->>'data' <= $3", [`${PREFIXO}dia:${email}:%`, semana, somarDias(semana, 6)],
+      "select valor from dashboard_config where starts_with(chave, $1) and valor->>'data' >= $2 and valor->>'data' <= $3", [`${PREFIXO}dia:${email}:`, semana, somarDias(semana, 6)],
     );
     const semanal = Object.keys(formulario.tarefas).some(id => id.startsWith("week_"));
     const anterior = rows.map(r => r.valor).find(d => !teste && !d.teste && Object.keys(d.tarefas).some(id => id.startsWith("week_")));

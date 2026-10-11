@@ -10,7 +10,7 @@ const dataExtenso = (d: string) => new Intl.DateTimeFormat("pt-PT", {weekday: "l
 const MESES = ["2026-10", "2026-11", "2026-12"];
 const DIAS_SEMANA = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
 async function pedirCore(email: string, extra: Record<string, unknown> = {}): Promise<DadosCore> {
-  const r = await fetch("/api/consultor/nova-area/core-rank", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({email, acao: "consultar", ...extra})});
+  const r = await fetch("/api/consultor/core-rank", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({email, acao: "consultar", ...extra})});
   const corpo = await r.json(); if (!r.ok) throw new Error(corpo.erro ?? "Não foi possível carregar os registos."); return corpo;
 }
 
@@ -105,7 +105,7 @@ export function CoreRankNovaArea({email, nome, abrirRelatorios = 0}: {email: str
   async function exportar(formato: "pdf" | "xlsx") {
     setAExportar(true); setErro("");
     try {
-      const r = await fetch("/api/consultor/nova-area/core-rank/exportar", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({email, formato})});
+      const r = await fetch("/api/consultor/core-rank/exportar", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({email, formato})});
       if (!r.ok) throw new Error((await r.json()).erro ?? "Não foi possível exportar.");
       const url = URL.createObjectURL(await r.blob()), a = document.createElement("a"); a.href = url; a.download = `core-rank-historico.${formato}`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e) {setErro(e instanceof Error ? e.message : "Não foi possível exportar.");}

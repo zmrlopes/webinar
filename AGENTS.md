@@ -43,7 +43,8 @@ em `/consultor/documentos`, na área atual, para todos os consultores da equipa.
 Esta autorização é específica dos Documentos; o restante novo visual continua
 limitado à nova área da conta de teste.
 
-Por indicação explícita do utilizador, o Core Rank também fica acessível
-na área atual em `/consultor/core-rank`, apenas para a conta de teste.
-Reutiliza o mesmo componente e os mesmos registos da nova área; o link no
-menu atual só aparece para `EMAIL_PAINEL_DEMONSTRACAO`.
+Por indicação explícita do utilizador, o desafio Core Rank está publicado
+para todos os consultores na área atual em `/consultor/core-rank`.
+Reutiliza o mesmo componente e os mesmos registos da nova área, com histórico
+e relatórios privados por consultor. Esta autorização abrange apenas o Core
+Rank; `/consultor/nova-area` e o seletor continuam exclusivos da conta de teste.
