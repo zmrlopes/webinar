@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { chamarClaude } from "./objecoes";
-import { dataLisboa, diaTesteCore, diasEntre, FIM_CORE, INICIO_CORE, podeGuardarDia, resumirCore, semanaCore, somarDias, validarFormularioCore, type DadosCore, type DiaCore, type RelatorioCore } from "./core-rank";
+import { dataLisboa, diaTesteCore, FIM_CORE, INICIO_CORE, podeGuardarDia, resumirCore, semanaCore, semanasFechadasCore, somarDias, validarFormularioCore, type DadosCore, type DiaCore, type RelatorioCore } from "./core-rank";
 
 const PREFIXO = "core-rank:2026:";
 const chaveDia = (email: string, data: string) => `${PREFIXO}dia:${email}:${data}`;
@@ -26,7 +26,7 @@ export async function guardarDiaCore(email: string, nome: string, data: string, 
     await cliente.query("begin");
     await cliente.query("select pg_advisory_xact_lock(hashtext($1))", [`${PREFIXO}${email}`]);
     // Volta a verificar o relógio depois de adquirir o bloqueio, inclusive na passagem da meia-noite.
-    if (!podeGuardarDia(data, [], dataLisboa(), email)) throw new ErroCore("Só podes guardar o próprio dia, entre 11 de outubro e 31 de dezembro.");
+    if (!podeGuardarDia(data, [], dataLisboa(), email)) throw new ErroCore("Só podes guardar hoje ou ontem, para datas do desafio entre 11 de outubro e 31 de dezembro. A tolerância termina no fim do dia seguinte, pela hora de Lisboa.");
     const teste = diaTesteCore(data, email);
     const semana = semanaCore(data);
     const {rows} = await cliente.query<{valor: DiaCore}>(
@@ -66,7 +66,7 @@ export async function gerarProximoRelatorioCore(): Promise<{estado: string; sema
   if (hoje <= INICIO_CORE) return {estado: "sem-semanas-fechadas"};
   const todos = (await listarDiasCore()).filter(d => !d.teste);
   const emails = [...new Set(todos.map(d => d.email))];
-  const semanas = [...new Set(diasEntre(INICIO_CORE, FIM_CORE).map(semanaCore))].filter(s => somarDias(s, 6) < hoje);
+  const semanas = semanasFechadasCore(hoje);
   for (const email of emails) {
     const dias = todos.filter(d => d.email === email);
     for (const semana of semanas) {

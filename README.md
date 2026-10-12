@@ -292,8 +292,11 @@ cores da equipa, e cobre 11 de outubro a 31 de dezembro de 2026, por mês. O
 objetivo próprio de 3 novos TPs e 3.000 € de reservas confirmadas acumula até
 dezembro. Os 82 dias têm focos diferentes.
 
-O registo só aceita o próprio dia, na hora de Lisboa, através de **Guardar o
-meu dia**. Depois de guardado fica imutável. As tarefas semanais são fechadas
+O registo aceita o próprio dia e o dia anterior, na hora de Lisboa, através
+de **Guardar o meu dia**. Cada data pode ser preenchida até ao fim do dia
+seguinte, incluindo 31 de dezembro até 1 de janeiro. O botão **Preencher ontem**
+abre a data anterior quando ainda não foi guardada. Os rascunhos ficam separados
+por data. Depois de guardado fica imutável. As tarefas semanais são fechadas
 uma vez por semana, no dia escolhido; campos vazios continuam sem informação.
 O balanço recebe quantidades correspondentes das tarefas e admite ajustes
 antes de guardar para evitar duplicações. O histórico permite consultar dias,
@@ -305,7 +308,8 @@ como teste no histórico/exportações e excluído do objetivo, da classificaç�
 dos relatórios automáticos e do bloqueio das tarefas semanais do desafio.
 
 `/api/cron/core-rank` analisa a semana anterior com a integração de IA já usada
-na plataforma (`ANTHROPIC_API_KEY`), ao início de segunda-feira. A execução
+na plataforma (`ANTHROPIC_API_KEY`), a partir de terça-feira, depois da tolerância
+de domingo. A última semana fecha após a tolerância de 31 de dezembro. A execução
 diária às 08:00 UTC recupera falhas, sem duplicar relatórios; exige `CRON_SECRET`.
 Os relatórios ficam na conta do consultor, com aviso no Início da nova área.
 Dias sem informação e tarefas não aplicáveis não são tratados como falhas.

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CAMPOS_CORE, DIAS_CORE, FIM_CORE, GRUPOS_CORE, INICIO_CORE, META_TPS, META_VENDAS, TAREFAS_CORE, dataLisboa, diaTesteCore, diasCoreConta, diasMesCore, formularioVazio, metricasDasTarefas, podeGuardarDia, resumirCore, semanaCore, type DadosCore, type EstadoTarefa, type FormularioCore, type GrupoCore, type MarcaCore } from "@/lib/core-rank";
+import { CAMPOS_CORE, DIAS_CORE, FIM_CORE, GRUPOS_CORE, INICIO_CORE, META_TPS, META_VENDAS, TAREFAS_CORE, dataLisboa, diaTesteCore, diasCoreConta, diasMesCore, formularioVazio, metricasDasTarefas, podeGuardarDia, resumirCore, semanaCore, somarDias, type DadosCore, type EstadoTarefa, type FormularioCore, type GrupoCore, type MarcaCore } from "@/lib/core-rank";
 import { FOCO_CORE } from "@/lib/core-rank-foco";
 import css from "./core-rank.module.css";
 
@@ -33,8 +33,8 @@ export function CoreRankNovaArea({email, nome, abrirRelatorios = 0}: {email: str
   const [mes, setMes] = useState("2026-10");
   const [grupo, setGrupo] = useState<GrupoCore>("core");
   const [aba, setAba] = useState<"plano" | "historico" | "relatorios">(abrirRelatorios ? "relatorios" : "plano");
-  const [rascunho, setRascunho] = useState<FormularioCore>(formularioVazio);
-  const [manuais, setManuais] = useState<string[]>([]);
+  const [rascunhos, setRascunhos] = useState<Record<string, FormularioCore>>({});
+  const [camposManuais, setCamposManuais] = useState<Record<string, string[]>>({});
   const [erro, setErro] = useState("");
   const [mensagem, setMensagem] = useState("");
   const [aGuardar, setAGuardar] = useState(false);
@@ -42,13 +42,12 @@ export function CoreRankNovaArea({email, nome, abrirRelatorios = 0}: {email: str
 
   useEffect(() => {
     let ativo = true;
+    setRascunhos({}); setCamposManuais({});
     void pedirCore(email).then(d => {
       if (!ativo) return; setDados(d);
       const inicioConta = diasCoreConta(email)[0]!;
       const inicial = d.hoje < inicioConta ? inicioConta : d.hoje > FIM_CORE ? FIM_CORE : d.hoje;
       setData(inicial); setMes(inicial.slice(0, 7));
-      const anterior = d.dias.filter(dia => !dia.teste).at(-1);
-      setRascunho({...formularioVazio(), diaPromocoes: anterior?.diaPromocoes ?? null});
     }).catch(e => {if (ativo) setErro(e.message);});
     return () => {ativo = false;};
   }, [email]);
@@ -65,6 +64,16 @@ export function CoreRankNovaArea({email, nome, abrirRelatorios = 0}: {email: str
   }
   useEffect(() => {if (dados && abrirRelatorios) void lerRelatorios();}, [!!dados, abrirRelatorios]); // Abertura pelo aviso do Início, inclusive após voltar ao plano.
 
+  const diaPromocoes = dados?.dias.filter(dia => !dia.teste).at(-1)?.diaPromocoes ?? null;
+  const rascunho = rascunhos[data] ?? {...formularioVazio(), diaPromocoes};
+  const manuais = camposManuais[data] ?? [];
+  function setRascunho(alterar: (valor: FormularioCore) => FormularioCore) {
+    setRascunhos(anteriores => ({...anteriores, [data]: alterar(anteriores[data] ?? {...formularioVazio(), diaPromocoes})}));
+  }
+  function setManuais(alterar: (valor: string[]) => string[]) {
+    setCamposManuais(anteriores => ({...anteriores, [data]: alterar(anteriores[data] ?? [])}));
+  }
+
   if (!dados) return <section className={css.pagina} aria-live="polite"><h1>Core Rank</h1><p>{erro || "A carregar o teu plano…"}</p>{erro && <button className={css.botao} onClick={() => window.location.reload()}>Tentar novamente</button>}</section>;
   const guardado = dados.dias.find(d => d.data === data);
   const teste = diaTesteCore(data, email);
@@ -72,6 +81,8 @@ export function CoreRankNovaArea({email, nome, abrirRelatorios = 0}: {email: str
   const registoSemanal = dados.dias.find(d => (teste ? d.data === data : !d.teste) && semanaCore(d.data) === semana && Object.keys(d.tarefas).some(id => id.startsWith("week_")));
   const atual = guardado ?? rascunho;
   const editavel = podeGuardarDia(data, dados.dias, dados.hoje, email);
+  const ontem = somarDias(dados.hoje, -1);
+  const ontemDisponivel = podeGuardarDia(ontem, dados.dias, dados.hoje, email);
   const diaSemana = new Date(`${data}T12:00:00Z`).getUTCDay();
   const semanalEditavel = editavel && !registoSemanal && atual.diaPromocoes === diaSemana;
   const tarefasVisiveis = TAREFAS_CORE.filter(t => t.grupo === grupo);
@@ -126,10 +137,13 @@ export function CoreRankNovaArea({email, nome, abrirRelatorios = 0}: {email: str
     {aba !== "relatorios" && <div className={css.meses}><button className={css.botao} aria-label="Mês anterior" disabled={mes === MESES[0]} onClick={() => escolherMes(MESES[MESES.indexOf(mes) - 1]!)}>←</button><strong>{nomeMes}</strong><button className={css.botao} aria-label="Mês seguinte" disabled={mes === MESES.at(-1)} onClick={() => escolherMes(MESES[MESES.indexOf(mes) + 1]!)}>→</button></div>}
     {aba === "plano" && <div id="core-rank-plano">
       <div className={css.cabecalho}><div><span className={css.etiqueta}>O TEU PLANO DIÁRIO</span><h2>Pequenas ações. Novas oportunidades.</h2></div><button className={css.botao} onClick={() => {const inicio = diasCoreConta(email)[0]!; const hoje = dados.hoje < inicio ? inicio : dados.hoje > FIM_CORE ? FIM_CORE : dados.hoje; setData(hoje); setMes(hoje.slice(0,7));}}>Ir para hoje</button></div>
+      <p className={css.ajuda}>Tens um dia de tolerância: podes preencher cada dia até ao fim do dia seguinte, pela hora de Lisboa. Seleciona a data a que os dados dizem respeito.</p>
+      {ontemDisponivel && <p><button type="button" className={css.botao} onClick={() => {setData(ontem); setMes(ontem.slice(0,7));}}>Preencher ontem</button></p>}
       <div className={css.calendario} aria-label={`Dias de ${nomeMes}`}>{diasMes.map(d => <button key={d} className={css.dia} aria-label={dataExtenso(d)} aria-current={d === data ? "date" : undefined} data-guardado={dados.dias.some(r => r.data === d)} onClick={() => setData(d)}><small>{DIAS_SEMANA[new Date(`${d}T12:00:00Z`).getUTCDay()]!.slice(0,3).toUpperCase()}</small>{Number(d.slice(-2))}</button>)}</div>
       <div className={css.dataDia}><h3>{dataExtenso(data)}</h3><span>{feitas} tarefas feitas</span></div>
       {teste && <p className={css.mensagem}>Dia de teste — disponível apenas nesta conta. Podes preencher, guardar, consultar o histórico e exportar. Este registo fica fora do objetivo, da classificação e dos relatórios do desafio.</p>}
-      {!editavel && <p className={css.mensagem}>{guardado ? "Dia guardado — consulta disponível, sem alterações." : data < dados.hoje ? "Sem informação. Os dias anteriores não podem ser preenchidos." : dados.hoje < INICIO_CORE ? "O desafio começa a 11 de outubro. Podes consultar o plano; o registo abre nesse dia." : "Este dia ainda não está disponível para registo. Só podes guardar o próprio dia."}</p>}
+      {editavel && data === ontem && <p className={css.mensagem}>Estás a preencher os dados de ontem. Podes guardar até ao fim de hoje, pela hora de Lisboa.</p>}
+      {!editavel && <p className={css.mensagem}>{guardado ? "Dia guardado — consulta disponível, sem alterações." : data < dados.hoje ? "Sem informação. O prazo terminou no fim do dia seguinte a esta data, pela hora de Lisboa." : dados.hoje < INICIO_CORE ? "O desafio começa a 11 de outubro. Podes consultar o plano; o registo abre nesse dia." : "Este dia ainda não está disponível para registo. Só podes guardar hoje ou ontem."}</p>}
       <p className={css.ajuda}>As quantidades são sugestões e as tarefas são opcionais. Começa pelas prioridades e escolhe as restantes ações de acordo com o teu tempo. Uma mesma conversa pode contribuir para várias tarefas; regista cada contacto ou resultado apenas uma vez no balanço do dia.</p>
       <div className={css.foco}><span className={css.etiqueta}>FOCO DO DIA</span><p>{teste ? "Experimenta as tarefas e o balanço do dia. Para testar as tarefas semanais, escolhe sábado no dia das tuas promoções." : FOCO_CORE[data]}</p></div>
       <div className={css.grupos}><h3>Começa por estas ações ↓</h3><p>Reserva o teu tempo e avança nas prioridades. Depois explora as outras ações para desenvolveres o teu negócio.</p><div className={css.grelhaGrupos} role="tablist" aria-label="Grupos de tarefas">{GRUPOS_CORE.map((g, i) => <button key={g.id} className={css.grupo} role="tab" aria-selected={grupo === g.id} onClick={() => setGrupo(g.id)}><span>0{i}</span><div><strong>{g.titulo}</strong><small>{g.descricao}</small></div></button>)}</div></div>
@@ -140,10 +154,10 @@ export function CoreRankNovaArea({email, nome, abrirRelatorios = 0}: {email: str
           return <article key={t.id} className={css.tarefa}><div><span>{t.sugestao}</span><h4>{t.titulo}</h4><p>{t.descricao}</p></div><select aria-label={`${t.titulo} — estado`} value={marca.estado} onChange={e => alterarTarefa(t.id, {estado: e.target.value as EstadoTarefa})}><option value="">Por registar</option><option value="done">Fiz</option><option value="no">Não fiz</option><option value="na">Não se aplica</option></select><label>Qtd.<input aria-label={`${t.titulo} — quantidade`} type="number" min="0" max="9999" step="1" value={marca.quantidade ?? ""} disabled={marca.estado === "na" || marca.estado === "no"} onChange={e => alterarTarefa(t.id, {quantidade: e.target.value === "" ? null : Number(e.target.value)})}/></label></article>;
         })}
       </fieldset>
-      <div className={css.balanco}><span className={css.etiqueta}>FECHAR O DIA</span><h3>O que aconteceu hoje?</h3><p className={css.ajuda}>Regista apenas os resultados deste dia. As tarefas preenchem os campos correspondentes; confirma os totais e ajusta contactos repetidos antes de guardar. Os campos vazios ficam sem informação.</p><fieldset disabled={!editavel || aGuardar}><div className={css.metricas}>{CAMPOS_CORE.map(([id, titulo]) => <label key={id}>{titulo}<input id={`core-metrica-${id}`} type="number" min="0" max={["sales","quotes"].includes(id) ? 100000000 : 100000} step={["sales","quotes"].includes(id) ? "0.01" : "1"} value={atual.metricas[id] ?? ""} onChange={e => {const valor = e.target.value === "" ? null : Number(e.target.value); setManuais(m => m.includes(id) ? m : [...m,id]); setRascunho(v => ({...v, metricas: {...v.metricas, [id]: valor}}));}}/></label>)}</div><div className={css.notas}><label>Uma aprendizagem de hoje<textarea maxLength={1500} placeholder="Ex.: percebi qual era a dúvida que estava a travar a decisão." value={atual.aprendizagem} onChange={e => setRascunho(v => ({...v, aprendizagem: e.target.value}))}/></label><label>O teu próximo passo para amanhã<textarea maxLength={1500} placeholder="Ex.: ligar à pessoa que pediu uma proposta e confirmar as datas." value={atual.proximoPasso} onChange={e => setRascunho(v => ({...v, proximoPasso: e.target.value}))}/></label></div></fieldset><div className={css.rodape}><p>{guardado ? "Este dia está guardado na tua conta." : "Guarda quando terminares. Depois de guardar, o dia fica fechado para alterações."}</p><button type="button" className={`${css.botao} ${css.primario}`} disabled={!editavel || aGuardar} onClick={() => void guardar()}>{aGuardar ? "A guardar…" : guardado ? "Dia guardado ✓" : "Guardar o meu dia ✓"}</button></div></div>
+      <div className={css.balanco}><span className={css.etiqueta}>FECHAR O DIA</span><h3>O que aconteceu neste dia?</h3><p className={css.ajuda}>Regista apenas os resultados deste dia. As tarefas preenchem os campos correspondentes; confirma os totais e ajusta contactos repetidos antes de guardar. Os campos vazios ficam sem informação.</p><fieldset disabled={!editavel || aGuardar}><div className={css.metricas}>{CAMPOS_CORE.map(([id, titulo]) => <label key={id}>{titulo}<input id={`core-metrica-${id}`} type="number" min="0" max={["sales","quotes"].includes(id) ? 100000000 : 100000} step={["sales","quotes"].includes(id) ? "0.01" : "1"} value={atual.metricas[id] ?? ""} onChange={e => {const valor = e.target.value === "" ? null : Number(e.target.value); setManuais(m => m.includes(id) ? m : [...m,id]); setRascunho(v => ({...v, metricas: {...v.metricas, [id]: valor}}));}}/></label>)}</div><div className={css.notas}><label>Uma aprendizagem deste dia<textarea maxLength={1500} placeholder="Ex.: percebi qual era a dúvida que estava a travar a decisão." value={atual.aprendizagem} onChange={e => setRascunho(v => ({...v, aprendizagem: e.target.value}))}/></label><label>O teu próximo passo para o dia seguinte<textarea maxLength={1500} placeholder="Ex.: ligar à pessoa que pediu uma proposta e confirmar as datas." value={atual.proximoPasso} onChange={e => setRascunho(v => ({...v, proximoPasso: e.target.value}))}/></label></div></fieldset><div className={css.rodape}><p>{guardado ? "Este dia está guardado na tua conta." : "Guarda quando terminares. Depois de guardar, o dia fica fechado para alterações."}</p><button type="button" className={`${css.botao} ${css.primario}`} disabled={!editavel || aGuardar} onClick={() => void guardar()}>{aGuardar ? "A guardar…" : guardado ? "Dia guardado ✓" : "Guardar o meu dia ✓"}</button></div></div>
     </div>}
     {aba === "historico" && <div><div className={css.cabecalho}><div><span className={css.etiqueta}>O TEU PERCURSO</span><h2>Histórico de atividade</h2></div></div><p className={css.ajuda}>Abre um dia para consultar as tarefas, os resultados e as tuas notas. Dias sem registo ficam sem informação.</p><ResumoHistoricoCore dados={dados} mes={mes}/><div className={css.historico}>{diasMes.filter(d => d <= dados.hoje).reverse().map(d => {const dia = dados.dias.find(r => r.data === d); return <button key={d} className={`${css.botao} ${css.linhaHistorico}`} onClick={() => {setData(d); setAba("plano");}}><strong>{dataExtenso(d)}</strong><span>{dia ? `${Object.values(dia.tarefas).filter(t => t.estado === "done").length} tarefas feitas · ${dia.metricas.sales === null ? "Vendas sem informação" : euros(dia.metricas.sales ?? 0)} · ${dia.metricas.tps === null ? "TPs sem informação" : `${dia.metricas.tps ?? 0} TPs`}` : "Sem informação"}</span></button>;})}</div>{!diasMes.some(d => d <= dados.hoje) && <p className={css.mensagem}>Ainda não há dias decorridos neste mês do desafio.</p>}</div>}
-    {aba === "relatorios" && <div><div className={css.cabecalho}><div><span className={css.etiqueta}>A TUA ANÁLISE SEMANAL</span><h2>Relatórios semanais</h2></div></div><p className={css.ajuda}>A análise da semana anterior fica disponível à segunda-feira. O aviso aparece no Início. Dias sem informação e tarefas não aplicáveis ficam fora das falhas.</p>{!dados.relatorios.length && <p className={css.mensagem}>O primeiro relatório fica disponível depois da tua primeira semana com registos.</p>}{dados.relatorios.map(r => <article className={css.relatorio} key={r.semana}><h3>{dataExtenso(r.semana < INICIO_CORE ? INICIO_CORE : r.semana)} — {dataExtenso(r.ate)}</h3><p>{r.resumo}</p>{([ ["O que fizeste bem", r.pontosFortes], ["O que tens de melhorar", r.melhorias], ["O que ficou descurado", r.descurado], ["As tuas próximas três ações", r.proximasAcoes] ] as [string,string[]][]).map(([titulo, itens]) => <div key={titulo}><h4>{titulo}</h4><ul>{itens.map((t,i) => <li key={i}>{t}</li>)}</ul></div>)}</article>)}</div>}
+    {aba === "relatorios" && <div><div className={css.cabecalho}><div><span className={css.etiqueta}>A TUA ANÁLISE SEMANAL</span><h2>Relatórios semanais</h2></div></div><p className={css.ajuda}>A análise da semana anterior fica disponível a partir de terça-feira, depois da tolerância para preencher domingo. O aviso aparece no Início. Dias sem informação e tarefas não aplicáveis ficam fora das falhas.</p>{!dados.relatorios.length && <p className={css.mensagem}>O primeiro relatório fica disponível depois da tua primeira semana com registos.</p>}{dados.relatorios.map(r => <article className={css.relatorio} key={r.semana}><h3>{dataExtenso(r.semana < INICIO_CORE ? INICIO_CORE : r.semana)} — {dataExtenso(r.ate)}</h3><p>{r.resumo}</p>{([ ["O que fizeste bem", r.pontosFortes], ["O que tens de melhorar", r.melhorias], ["O que ficou descurado", r.descurado], ["As tuas próximas três ações", r.proximasAcoes] ] as [string,string[]][]).map(([titulo, itens]) => <div key={titulo}><h4>{titulo}</h4><ul>{itens.map((t,i) => <li key={i}>{t}</li>)}</ul></div>)}</article>)}</div>}
     <div className={css.exportar}><h3>Leva o teu progresso contigo.</h3><p className={css.ajuda}>Exporta o histórico, as tarefas e os relatórios disponíveis para guardares uma cópia.</p><div><button className={css.botao} disabled={aExportar} onClick={() => void exportar("pdf")}>{aExportar ? "A exportar…" : "Exportar PDF"}</button><button className={css.botao} disabled={aExportar} onClick={() => void exportar("xlsx")}>Exportar Excel</button></div></div>
   </section>;
 }

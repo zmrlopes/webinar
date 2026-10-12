@@ -43,6 +43,14 @@ export function diasEntre(inicio: string, fim: string): string[] {
   const dias: string[] = []; for (let d = inicio; d <= fim; d = somarDias(d, 1)) dias.push(d); return dias;
 }
 export const DIAS_CORE = diasEntre(INICIO_CORE, FIM_CORE);
+/** A semana só fecha depois da tolerância do seu último dia do desafio. */
+export function semanasFechadasCore(hoje = dataLisboa()): string[] {
+  return [...new Set(DIAS_CORE.map(semanaCore))].filter(semana => {
+    const domingo = somarDias(semana, 6);
+    const ultimoDia = domingo > FIM_CORE ? FIM_CORE : domingo;
+    return somarDias(ultimoDia, 1) < hoje;
+  });
+}
 export function diasCoreConta(email = ""): string[] { return diaTesteCore(DIA_TESTE_CORE, email) ? [DIA_TESTE_CORE, ...DIAS_CORE] : DIAS_CORE; }
 export function diasMesCore(mes: string, email = ""): string[] { return diasCoreConta(email).filter(d => d.startsWith(mes)); }
 export function datasHistoricoCore(dados: DadosCore): string[] {
@@ -52,7 +60,8 @@ export function formularioVazio(): FormularioCore {
   return {tarefas: {}, metricas: Object.fromEntries(CAMPOS_CORE.map(([id]) => [id, null])), aprendizagem: "", proximoPasso: "", diaPromocoes: null};
 }
 export function podeGuardarDia(data: string, dias: DiaCore[], hoje = dataLisboa(), email = ""): boolean {
-  return data === hoje && ((data >= INICIO_CORE && data <= FIM_CORE) || diaTesteCore(data, email)) && !dias.some(d => d.data === data);
+  const diaDoDesafio = data >= INICIO_CORE && data <= FIM_CORE && (data === hoje || data === somarDias(hoje, -1));
+  return (diaDoDesafio || (data === hoje && diaTesteCore(data, email))) && !dias.some(d => d.data === data);
 }
 
 /** Valida sem converter campos vazios em zero. O servidor continua a validar o dia e a unicidade. */
