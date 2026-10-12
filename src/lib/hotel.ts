@@ -194,7 +194,7 @@ export function csvRespostasHotel(respostas: RespostaHotelAdmin[]): string {
 }
 
 /**
- * A mesma tabela do CSV, mas como ficheiro Excel a sério — uma Tabela
+ * Apenas as respostas de quem quer quarto, como ficheiro Excel — uma Tabela
  * nativa (não só células com cor), com cabeçalho fixo e largura das
  * colunas ajustada ao conteúdo. Pedido depois do CSV: aberto num CSV, o
  * Excel mostra tudo espremido numa grelha genérica; como Tabela, já
@@ -224,7 +224,7 @@ export async function gerarExcelRespostasHotel(respostas: RespostaHotelAdmin[]):
   ];
   folha.columns = colunas.map((c) => ({ width: c.largura }));
 
-  const linhas = respostas.map((r) => [
+  const linhas = respostas.filter((r) => r.querQuarto).map((r) => [
     r.nome,
     r.email,
     r.querQuarto ? "Sim" : "Não",

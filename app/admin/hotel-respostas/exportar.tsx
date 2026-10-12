@@ -62,8 +62,8 @@ export function Exportar({ csv, total }: { csv: string; total: number }) {
         {copiado ? "Copiado!" : "Copiar tudo"}
       </button>
       <p className="ad-legenda" style={{ flexBasis: "100%", margin: "0.5rem 0 0" }}>
-        As {total} resposta(s) em tabela — o Excel já vem com filtros e cabeçalho fixo prontos; o CSV
-        serve para enviar ao hotel ou colar numa conversa.
+        O Excel inclui apenas quem pediu quarto, com filtros e cabeçalho fixo. O CSV e o copiar
+        incluem todas as {total} resposta(s).
       </p>
     </div>
   );
