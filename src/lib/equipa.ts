@@ -22,8 +22,8 @@ export interface MembroEquipa {
 
 /**
  * Confirma que `email` é um membro real da equipa — existe em
- * `equipa_afiliados`, a tabela importada do CSV da plataforma de afiliados
- * (scripts/importar-equipa.ts), não a Brevo (que também tem emails de leads
+ * `equipa_afiliados`, alimentada pelo CSV da plataforma de afiliados
+ * e pelo formulário Adicionar consultor no admin, não a Brevo (que também tem emails de leads
  * que nunca deviam ter acesso ao painel do consultor). É o gate usado em
  * todas as rotas de /api/consultor.
  */

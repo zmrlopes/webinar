@@ -1,0 +1,16 @@
+.caixa { padding: 24px; margin: 24px 0 32px; background: #f5f6ef; border: 1px solid #d8ddc5; border-radius: 12px; color: #000; }
+.caixa h2 { font-size: 1.15rem; margin: 0 0 8px; }
+.caixa p { font-size: .9rem; line-height: 1.6; margin: 0 0 20px; }
+.campos { display: flex; align-items: end; flex-wrap: wrap; gap: 16px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.campos label { flex: 1 1 240px; font-size: .9rem; font-weight: 600; }
+.campos input { display: block; box-sizing: border-box; width: 100%; min-height: 44px; margin-top: 8px; padding: 10px 12px; border: 1px solid #bfc4ac; border-radius: 8px; background: #fff; color: #000; font: inherit; font-size: 16px; }
+.campos button { min-height: 44px; padding: 10px 18px; border: 1px solid #4b5320; border-radius: 8px; background: #4b5320; color: #fff; font: inherit; font-size: .9rem; font-weight: 600; cursor: pointer; }
+.campos:disabled button { opacity: .6; cursor: default; }
+.caixa :is(input, button, a):focus-visible { outline: 2px solid #4b5320; outline-offset: 3px; }
+.caixa .erro { margin: 16px 0 0; color: #b42318; }
+.caixa .sucesso { margin: 16px 0 0; color: #343b12; }
+.sucesso a { color: inherit; text-underline-offset: 3px; }
+@media (max-width: 600px) {
+  .caixa { padding: 18px; }
+  .campos label, .campos button { flex-basis: 100%; }
+}

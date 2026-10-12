@@ -1,4 +1,5 @@
 import { listarConsultoresAdmin } from "@/lib/admin";
+import { FormularioNovoConsultor } from "./formulario";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +58,8 @@ export default async function AdminConsultores() {
 
       <div className="ad-caixa">
         <h1>Consultores</h1>
+        <FormularioNovoConsultor />
+        <h2 style={{fontSize: "1.15rem"}}>Consultores que já entraram na plataforma</h2>
         <p className="ad-subtitulo">
           Quem já gerou o link pelo menos uma vez em /consultor — {consultores.length}{" "}
           {consultores.length === 1 ? "consultor ativo" : "consultores ativos"}.

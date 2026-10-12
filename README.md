@@ -265,6 +265,15 @@ consultor a partir da resposta de `/api/consultor/estatisticas`.
 
 ### Painel de administração
 
+Em **Consultores** (`/admin/consultores`), o formulário **Adicionar consultor**
+permite registar nome e email para dar acesso imediato a `/consultor`. O email
+é normalizado e validado; se já existir na equipa, o formulário informa sem
+alterar nome, hierarquia ou outros dados. O registo usa `equipa_afiliados`,
+a mesma tabela consultada pelas áreas dos consultores, e fica disponível
+mesmo sem importar um CSV. O link pessoal é criado quando a pessoa entra.
+O formulário não envia emails. A lista abaixo continua a mostrar quem já
+entrou na plataforma. A gravação exige a autenticação de administrador.
+
 Ao criar ou editar uma formação interna em `/admin/formacoes/nova`, o campo
 **Quem pode ver esta formação?** permite escolher toda a equipa ou apenas
 pessoas selecionadas. A lista inclui consultores que já têm painel, com pesquisa
