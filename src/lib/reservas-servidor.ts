@@ -90,13 +90,26 @@ export async function chamarIAReservas(email: string, instructions: string, cont
       }),
       signal: AbortSignal.timeout(100_000),
     });
+    // A integração já instalada pode usar um modelo sem output_config. Mantém
+    // o mesmo contrato no prompt e a validação local, sem exigir trocar a chave.
+    if (!openAI && schema && resposta.status === 400) {
+      resposta = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST", headers: {"x-api-key": anthropic!, "anthropic-version": "2023-06-01", "Content-Type": "application/json"},
+        body: JSON.stringify({model: process.env.RESERVAS_CLAUDE_MODEL || "claude-sonnet-5", max_tokens: tokens,
+          system: `${sistema}\nO objeto JSON deve seguir este esquema exatamente, incluindo todas as propriedades required:\n${JSON.stringify(schema)}`,
+          messages: [{role: "user", content: blocosClaude()}]}), signal: AbortSignal.timeout(100_000),
+      });
+    }
   } catch {throw new ErroReserva("A análise demorou demasiado ou a ligação falhou. Tenta novamente; os teus dados continuam no editor.", 502);}
   if (!resposta.ok) {
     // Não regista documentos, respostas com dados de clientes ou credenciais.
     const falha = await resposta.json().catch(() => null) as {error?: {code?: string; param?: string; message?: string}} | null;
     const diagnostico = (falha?.error?.message ?? "").replace(/[A-Za-z0-9+/_=-]{40,}/g, "[omitido]").slice(0, 250);
     console.error("Reservas: falha da API de análise", resposta.status, falha?.error?.code ?? "", falha?.error?.param ?? "", diagnostico);
-    throw new ErroReserva(resposta.status === 429 ? "O serviço de análise está ocupado. Tenta novamente dentro de alguns minutos." : "Não foi possível analisar este ficheiro. Tenta novamente ou preenche os dados manualmente.", 502);
+    const erro = new ErroReserva(resposta.status === 429 ? "O serviço de análise está ocupado. Tenta novamente dentro de alguns minutos." : "Não foi possível analisar este ficheiro. Tenta novamente ou preenche os dados manualmente.", 502);
+    erro.diagnostico = {servico: openAI ? "OpenAI" : "Claude", status: resposta.status,
+      parametro: ["output_config","schema","max_tokens","media_type","image","model","billing","credit","quota","api-key"].find(p => diagnostico.toLowerCase().includes(p)) ?? "nao_indicado"};
+    throw erro;
   }
   const corpo = await resposta.json() as {status?: string; stop_reason?: string; content?: {type: string; text?: string}[]; output?: {type: string; content?: {type: string; text?: string}[]}[]};
   if (corpo.status === "incomplete" || corpo.stop_reason === "max_tokens") throw new ErroReserva("A referência é demasiado complexa para uma só análise. Experimenta uma imagem apenas do desenho final.", 422);

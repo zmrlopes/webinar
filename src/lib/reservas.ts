@@ -39,7 +39,10 @@ export interface MaterialReserva {
   referencia: string; maxHoteis: number; elementos: ElementoReserva[]; dados: DadosReserva;
 }
 export interface ResumoReserva { id: string; nome: string; tipo: "modelo" | "material"; formato: FormatoReserva; atualizadoEm: string }
-export class ErroReserva extends Error { constructor(mensagem: string, public status = 400) { super(mensagem); } }
+export class ErroReserva extends Error {
+  diagnostico?: {servico: string; status: number; parametro: string};
+  constructor(mensagem: string, public status = 400) { super(mensagem); }
+}
 export const dimensoesReserva = (formato: FormatoReserva) => ({ largura: 1080, altura: formato === "story" ? 1920 : 1350 });
 export const hotelVazio = (): HotelReserva => ({nome: "", quarto: "", regime: "", total: null, precoPessoa: null});
 export const dadosReservaVazios = (): DadosReserva => ({destino: "", frase: "", partida: "", ida: "", regresso: "", voo: "", viajantes: null, bagagem: "", transfer: "", condicoes: "Preços sujeitos a disponibilidade e alterações.", hoteis: [hotelVazio()]});

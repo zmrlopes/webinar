@@ -80,6 +80,10 @@ async function main() {
         assert.equal(endpoint,"https://api.anthropic.com/v1/messages");
         const mensagem=(pedido.messages as {content:{type:string;source?:{media_type:string;data:string}}[]}[])[0]!;
         assert.equal(mensagem.content[0]!.source!.media_type,"image/png");assert.equal(mensagem.content[1]!.type,"document");assert.equal(mensagem.content[1]!.source!.data,"cGRm");assert(pedido.output_config);
+        let chamadas=0;
+        globalThis.fetch=(async(_url,init)=>{chamadas++;pedido=JSON.parse(init?.body as string);return chamadas===1?Response.json({error:{message:"output_config unsupported"}},{status:400}):Response.json({content:[{type:"text",text:'{"ok":true}'}]});}) as typeof fetch;
+        assert.deepEqual(await chamarIAReservas(EMAIL_PAINEL_DEMONSTRACAO,"JSON",[{type:"input_image",image_url:"data:image/png;base64,aGVsbG8=",detail:"high"}],100,{type:"object"}),{ok:true});
+        assert.equal(chamadas,2);assert.equal(pedido.output_config,undefined);assert.match(pedido.system as string,/esquema exatamente/);
       } finally {if(chaveClaude===undefined)delete process.env.ANTHROPIC_API_KEY;else process.env.ANTHROPIC_API_KEY=chaveClaude;}
     } finally {if(chave===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=chave;}
   } finally {pool.query=originalQuery;globalThis.fetch=originalFetch;await fecharDb();}

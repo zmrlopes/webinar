@@ -30,7 +30,7 @@ export async function POST(request: Request): Promise<Response> {
       default: throw new ErroReserva("Ação inválida.");
     }
   } catch (erro) {
-    if (erro instanceof ErroReserva) return NextResponse.json({erro: erro.message}, {status: erro.status});
+    if (erro instanceof ErroReserva) return NextResponse.json({erro: erro.message, ...(erro.diagnostico ? {diagnostico: erro.diagnostico} : {})}, {status: erro.status});
     console.error("Reservas: pedido não concluído", erro instanceof Error ? erro.name : "erro");
     return NextResponse.json({erro: "Não foi possível concluir o pedido. Tenta novamente."}, {status: 500});
   }
