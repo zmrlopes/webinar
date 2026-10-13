@@ -4,6 +4,9 @@ import { EMAIL_PAINEL_DEMONSTRACAO } from "./demo";
 export const INICIO_CORE = "2026-10-11";
 export const FIM_CORE = "2026-12-31";
 export const DIA_TESTE_CORE = "2026-10-10";
+export function podeGravarProgressoCore(email: string): boolean {
+  return email.trim().toLowerCase() === EMAIL_PAINEL_DEMONSTRACAO;
+}
 export function diaTesteCore(data: string, email = ""): boolean {
   return data === DIA_TESTE_CORE && email.trim().toLowerCase() === EMAIL_PAINEL_DEMONSTRACAO;
 }
@@ -24,7 +27,7 @@ export const TAREFAS_CORE: TarefaCore[] = GRUPOS_CORE.flatMap(({id: grupo}) =>
 export const CAMPOS_CORE = referencia.fields as [string, string][];
 export type MarcaCore = {estado: EstadoTarefa; quantidade: number | null};
 export type FormularioCore = {tarefas: Record<string, MarcaCore>; metricas: Record<string, number | null>; aprendizagem: string; proximoPasso: string; diaPromocoes: number | null};
-export type DiaCore = FormularioCore & {email: string; nome: string; data: string; guardadoEm: string; teste?: boolean};
+export type DiaCore = FormularioCore & {email: string; nome: string; data: string; guardadoEm: string; estado?: "aberto" | "fechado"; fechadoEm?: string; teste?: boolean};
 export type RelatorioCore = {semana: string; ate: string; criadoEm: string; resumo: string; pontosFortes: string[]; melhorias: string[]; descurado: string[]; proximasAcoes: string[]; lidoEm?: string};
 export type DadosCore = {hoje: string; dias: DiaCore[]; relatorios: RelatorioCore[]; automacao?: {ia: boolean; agendamento: boolean}};
 
@@ -59,9 +62,11 @@ export function datasHistoricoCore(dados: DadosCore): string[] {
 export function formularioVazio(): FormularioCore {
   return {tarefas: {}, metricas: Object.fromEntries(CAMPOS_CORE.map(([id]) => [id, null])), aprendizagem: "", proximoPasso: "", diaPromocoes: null};
 }
+/** Os registos anteriores à separação entre gravar e fechar já estavam fechados. */
+export function diaFechadoCore(dia: DiaCore): boolean { return dia.estado !== "aberto"; }
 export function podeGuardarDia(data: string, dias: DiaCore[], hoje = dataLisboa(), email = ""): boolean {
   const diaDoDesafio = data >= INICIO_CORE && data <= FIM_CORE && (data === hoje || data === somarDias(hoje, -1));
-  return (diaDoDesafio || (data === hoje && diaTesteCore(data, email))) && !dias.some(d => d.data === data);
+  return (diaDoDesafio || (data === hoje && diaTesteCore(data, email))) && !dias.some(d => d.data === data && (!podeGravarProgressoCore(email) || diaFechadoCore(d)));
 }
 
 /** Valida sem converter campos vazios em zero. O servidor continua a validar o dia e a unicidade. */

@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { chamarClaude } from "./objecoes";
-import { dataLisboa, diaTesteCore, FIM_CORE, INICIO_CORE, podeGuardarDia, resumirCore, semanaCore, semanasFechadasCore, somarDias, validarFormularioCore, type DadosCore, type DiaCore, type RelatorioCore } from "./core-rank";
+import { dataLisboa, diaFechadoCore, diaTesteCore, FIM_CORE, INICIO_CORE, podeGravarProgressoCore, podeGuardarDia, resumirCore, semanaCore, semanasFechadasCore, somarDias, validarFormularioCore, type DadosCore, type DiaCore, type RelatorioCore } from "./core-rank";
 
 const PREFIXO = "core-rank:2026:";
 const chaveDia = (email: string, data: string) => `${PREFIXO}dia:${email}:${data}`;
@@ -18,8 +18,10 @@ export async function lerDadosCore(email: string): Promise<DadosCore> {
   return {hoje: dataLisboa(), dias, relatorios: rows.flatMap(r => r.valor.estado === "pronto" && r.valor.relatorio ? [r.valor.relatorio] : []), automacao: {ia: !!process.env.ANTHROPIC_API_KEY, agendamento: !!process.env.CRON_SECRET}};
 }
 
-/** INSERT único + bloqueio por consultor: dois dispositivos não podem alterar dias nem duplicar a semana. */
-export async function guardarDiaCore(email: string, nome: string, data: string, corpo: unknown): Promise<DiaCore> {
+/** O bloqueio por consultor permite atualizar dias abertos sem alterar dias fechados nem duplicar a semana. */
+export async function guardarDiaCore(email: string, nome: string, data: string, corpo: unknown, acao: "guardar" | "gravar" | "fechar" = "guardar"): Promise<DiaCore> {
+  const novoFluxo = podeGravarProgressoCore(email);
+  if (acao !== "guardar" && !novoFluxo) throw new ErroCore("Gravar progresso e fechar o dia estão disponíveis apenas na conta de teste.", 403);
   const formulario = validarFormularioCore(corpo);
   const cliente = await db().connect();
   try {
@@ -32,13 +34,19 @@ export async function guardarDiaCore(email: string, nome: string, data: string, 
     const {rows} = await cliente.query<{valor: DiaCore}>(
       "select valor from dashboard_config where starts_with(chave, $1) and valor->>'data' >= $2 and valor->>'data' <= $3", [`${PREFIXO}dia:${email}:`, semana, somarDias(semana, 6)],
     );
+    const dias = rows.map(r => r.valor);
+    const existente = dias.find(d => d.data === data);
+    if (existente && (!novoFluxo || diaFechadoCore(existente))) throw new ErroCore(novoFluxo ? "Este dia já está fechado e não pode ser alterado." : "Este dia já foi guardado e não pode ser alterado.", 409);
     const semanal = Object.keys(formulario.tarefas).some(id => id.startsWith("week_"));
-    const anterior = rows.map(r => r.valor).find(d => !teste && !d.teste && Object.keys(d.tarefas).some(id => id.startsWith("week_")));
+    const anterior = dias.find(d => d.data !== data && !teste && !d.teste && Object.keys(d.tarefas).some(id => id.startsWith("week_")));
     if (semanal && anterior) throw new ErroCore("As tarefas desta semana já foram guardadas. Atualiza a página.", 409);
     if (semanal && formulario.diaPromocoes !== new Date(`${data}T12:00:00Z`).getUTCDay()) throw new ErroCore("As tarefas semanais são guardadas apenas no dia da semana que escolheste.");
-    const registo: DiaCore = {...formulario, email, nome, data, guardadoEm: new Date().toISOString(), ...(teste ? {teste: true} : {})};
-    const insercao = await cliente.query("insert into dashboard_config (chave, valor) values ($1, $2::jsonb) on conflict (chave) do nothing returning chave", [chaveDia(email, data), JSON.stringify(registo)]);
-    if (!insercao.rowCount) throw new ErroCore("Este dia já foi guardado e não pode ser alterado.", 409);
+    const agora = new Date().toISOString();
+    const registo: DiaCore = {...formulario, email, nome, data, guardadoEm: agora, ...(novoFluxo ? {estado: acao === "gravar" ? "aberto" as const : "fechado" as const, ...(acao !== "gravar" ? {fechadoEm: agora} : {})} : {}), ...(teste ? {teste: true} : {})};
+    const insercao = await cliente.query(`insert into dashboard_config (chave, valor) values ($1, $2::jsonb)
+      on conflict (chave) do update set valor = excluded.valor, atualizado_em = now()
+      where dashboard_config.valor->>'estado' = 'aberto' and $3::boolean returning chave`, [chaveDia(email, data), JSON.stringify(registo), novoFluxo]);
+    if (!insercao.rowCount) throw new ErroCore("Este dia já está fechado e não pode ser alterado.", 409);
     await cliente.query("commit");
     return registo;
   } catch (erro) { await cliente.query("rollback"); throw erro; }

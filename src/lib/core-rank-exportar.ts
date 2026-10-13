@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import { CAMPOS_CORE, INICIO_CORE, FIM_CORE, TAREFAS_CORE, datasHistoricoCore, resumirCore, type DadosCore } from "./core-rank";
+import { CAMPOS_CORE, INICIO_CORE, FIM_CORE, TAREFAS_CORE, datasHistoricoCore, diaFechadoCore, podeGravarProgressoCore, resumirCore, type DadosCore } from "./core-rank";
 
 const ESTADOS = {"": "Sem informação", done: "Fiz", no: "Não fiz", na: "Não se aplica"};
 const dinheiro = (n: number) => new Intl.NumberFormat("pt-PT", {style: "currency", currency: "EUR"}).format(n);
@@ -11,7 +11,7 @@ export async function exportarExcelCore(dados: DadosCore, nome: string): Promise
   dias.columns = [{header: "Data", key: "data", width: 14}, {header: "Estado", key: "estado", width: 22}, ...CAMPOS_CORE.map(([key, header]) => ({header, key, width: 24})), {header: "Aprendizagem", key: "aprendizagem", width: 45}, {header: "Próximo passo", key: "proximoPasso", width: 45}];
   for (const data of datasHistoricoCore(dados)) {
     const dia = dados.dias.find(d => d.data === data);
-    dias.addRow({data, estado: dia?.teste ? "Teste — guardado" : dia ? "Guardado" : "Sem informação", ...dia?.metricas, aprendizagem: dia?.aprendizagem, proximoPasso: dia?.proximoPasso});
+    dias.addRow({data, estado: dia && podeGravarProgressoCore(dia.email) ? `${dia.teste ? "Teste — " : ""}${diaFechadoCore(dia) ? "Fechado" : "Em preenchimento"}` : dia?.teste ? "Teste — guardado" : dia ? "Guardado" : "Sem informação", ...dia?.metricas, aprendizagem: dia?.aprendizagem, proximoPasso: dia?.proximoPasso});
   }
   for (const id of ["sales", "quotes"]) dias.getColumn(id).numFmt = '#,##0.00 "€"';
   const tarefas = livro.addWorksheet("Tarefas");
@@ -59,7 +59,7 @@ export async function exportarPdfCore(dados: DadosCore, nome: string): Promise<U
   if (resumo.diasSemInformacao.length) linha(`Dias sem informação: ${resumo.diasSemInformacao.join(", ")}`);
   if (!dados.dias.length) linha("Ainda não há dias guardados.");
   for (const d of dados.dias) {
-    linha(`${d.data}${d.teste ? " — Registo de teste (fora do objetivo e da classificação)" : ""}`, true);
+    linha(`${d.data}${podeGravarProgressoCore(d.email) ? ` — ${diaFechadoCore(d) ? "Fechado" : "Em preenchimento"}` : ""}${d.teste ? " — Registo de teste (fora do objetivo e da classificação)" : ""}`, true);
     for (const [id, titulo] of CAMPOS_CORE) linha(`${titulo}: ${d.metricas[id] == null ? "Sem informação" : ["quotes","sales"].includes(id) ? dinheiro(d.metricas[id]!) : d.metricas[id]}`);
     for (const [id, marca] of Object.entries(d.tarefas)) linha(`${TAREFAS_CORE.find(t => t.id === id)?.titulo ?? id}: ${ESTADOS[marca.estado]}${marca.quantidade === null ? "" : ` · Quantidade: ${marca.quantidade}`}`);
     linha(`Aprendizagem: ${d.aprendizagem || "Sem informação"}`); linha(`Próximo passo: ${d.proximoPasso || "Sem informação"}`);

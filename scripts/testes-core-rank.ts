@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { mock } from "node:test";
 import ExcelJS from "exceljs";
 import { PDFDocument } from "pdf-lib";
-import { CAMPOS_CORE, DIAS_CORE, TAREFAS_CORE, classificarCore, dataLisboa, diaTesteCore, diasMesCore, formularioVazio, metricasDasTarefas, podeGuardarDia, resumirCore, semanaCore, semanasFechadasCore, validarFormularioCore, type DadosCore, type DiaCore } from "../src/lib/core-rank";
+import { CAMPOS_CORE, DIAS_CORE, TAREFAS_CORE, classificarCore, dataLisboa, diaFechadoCore, diaTesteCore, diasMesCore, formularioVazio, metricasDasTarefas, podeGravarProgressoCore, podeGuardarDia, resumirCore, semanaCore, semanasFechadasCore, validarFormularioCore, type DadosCore, type DiaCore } from "../src/lib/core-rank";
 import { FOCO_CORE } from "../src/lib/core-rank-foco";
 import { ErroCore, guardarDiaCore, listarDiasCore, validarTextoRelatorio } from "../src/lib/core-rank-registos";
 import { db, fecharDb } from "../src/lib/db";
@@ -38,6 +38,15 @@ assert.equal(podeGuardarDia("2026-10-11",[],"2026-10-11"),true);
 assert.equal(podeGuardarDia("2026-10-11",[dia],"2026-10-11"),false);
 assert.equal(podeGuardarDia("2026-10-11",[],"2026-10-12"),true);
 assert.equal(podeGuardarDia("2026-10-11",[dia],"2026-10-12"),false);
+const aberto: DiaCore = {...dia, email: "zmrlopes@gmail.com", estado: "aberto"};
+assert.equal(diaFechadoCore(dia),true); // Compatibilidade com os dias já fechados antes da alteração.
+assert.equal(diaFechadoCore(aberto),false);
+assert.equal(podeGravarProgressoCore(" ZMRLOPES@gmail.com "),true);
+assert.equal(podeGravarProgressoCore(dia.email),false);
+assert.equal(podeGuardarDia("2026-10-11",[aberto],"2026-10-11",dia.email),false);
+assert.equal(podeGuardarDia("2026-10-11",[aberto],"2026-10-11",aberto.email),true);
+assert.equal(podeGuardarDia("2026-10-11",[aberto],"2026-10-12",aberto.email),true);
+assert.equal(podeGuardarDia("2026-10-11",[aberto],"2026-10-13",aberto.email),false);
 assert.equal(podeGuardarDia("2026-10-11",[],"2026-10-13"),false);
 assert.equal(podeGuardarDia("2026-10-31",[],"2026-11-01"),true);
 assert.equal(podeGuardarDia("2026-11-30",[],"2026-12-01"),true);
@@ -96,7 +105,9 @@ assert.equal(livro.getWorksheet("Tarefas")!.rowCount,5);
 const pdf=await PDFDocument.load(await exportarPdfCore(dados,"Conta de teste"));assert(pdf.getPageCount()>0);
 const exportacaoTeste=new ExcelJS.Workbook();await exportacaoTeste.xlsx.load(await exportarExcelCore({hoje:"2026-10-10",dias:[teste],relatorios:[]},"Teste") as unknown as Parameters<typeof livro.xlsx.load>[0]);
 assert.equal(exportacaoTeste.getWorksheet("Dias")!.getRow(2).getCell(1).value,"2026-10-10");
-assert.equal(exportacaoTeste.getWorksheet("Dias")!.getRow(2).getCell(2).value,"Teste — guardado");
+assert.equal(exportacaoTeste.getWorksheet("Dias")!.getRow(2).getCell(2).value,"Teste — Fechado");
+const exportacaoAberto=new ExcelJS.Workbook();await exportacaoAberto.xlsx.load(await exportarExcelCore({hoje:"2026-10-12",dias:[aberto],relatorios:[]},"Teste") as unknown as Parameters<typeof livro.xlsx.load>[0]);
+assert.equal(exportacaoAberto.getWorksheet("Dias")!.getRow(2).getCell(2).value,"Em preenchimento");
 // Exercita a gravação no servidor com relógio controlado e sem base de dados real.
 const poolGravacao = db(), connectOriginal = poolGravacao.connect;
 const gravados = new Map<string, DiaCore>();
@@ -106,9 +117,10 @@ const cliente = {
     if (sql.includes("pg_advisory_xact_lock") && mudarRelogioNoBloqueio) mock.timers.setTime(Date.parse("2026-10-12T23:00:00Z"));
     if (sql.startsWith("select valor")) return {rows: [...gravados.values()].filter(d => d.data >= String(parametros[1]) && d.data <= String(parametros[2])).map(valor => ({valor}))};
     if (sql.startsWith("insert")) {
-      assert(sql.includes("on conflict (chave) do nothing"));
+      assert(sql.includes("on conflict (chave) do update"));
+      assert(sql.includes("where dashboard_config.valor->>'estado' = 'aberto' and $3::boolean"));
       const chave = String(parametros[0]);
-      if (gravados.has(chave)) return {rows: [], rowCount: 0};
+      if (gravados.has(chave) && diaFechadoCore(gravados.get(chave)!)) return {rows: [], rowCount: 0};
       gravados.set(chave, JSON.parse(String(parametros[1])) as DiaCore);
       return {rows: [{chave}], rowCount: 1};
     }
@@ -119,22 +131,48 @@ const cliente = {
 poolGravacao.connect = (async () => cliente) as unknown as typeof poolGravacao.connect;
 mock.timers.enable({apis: ["Date"], now: Date.parse("2026-10-12T20:00:00Z")});
 try {
+  const emailTeste = "zmrlopes@gmail.com";
+  await assert.rejects(() => guardarDiaCore(dia.email, dia.nome, "2026-10-12", formularioVazio(), "gravar"), (erro: unknown) => erro instanceof ErroCore && erro.status === 403);
+  await assert.rejects(() => guardarDiaCore(dia.email, dia.nome, "2026-10-12", formularioVazio(), "fechar"), (erro: unknown) => erro instanceof ErroCore && erro.status === 403);
+  const original = await guardarDiaCore(dia.email, dia.nome, "2026-10-12", formularioVazio());
+  assert.equal(original.estado,undefined);
+  await assert.rejects(() => guardarDiaCore(dia.email, dia.nome, "2026-10-12", formularioVazio()), (erro: unknown) => erro instanceof ErroCore && erro.status === 409);
+  gravados.clear();
   const tarefaSemanal = TAREFAS_CORE.find(t => t.grupo === "week")!.id;
   const formularioDomingo = {...formularioVazio(), diaPromocoes: 0, tarefas: {[tarefaSemanal]: {estado: "done" as const, quantidade: 2}}};
-  const domingo = await guardarDiaCore(dia.email, dia.nome, "2026-10-11", formularioDomingo);
+  const progresso = await guardarDiaCore(emailTeste, dia.nome, "2026-10-11", formularioDomingo, "gravar");
+  assert.equal(progresso.estado,"aberto");assert.equal(progresso.fechadoEm,undefined);
+  assert.equal(podeGuardarDia(progresso.data,[progresso],"2026-10-12",emailTeste),true);
+  const atualizado = {...formularioDomingo, aprendizagem: "Primeiro contacto concluído.", metricas: {...formularioDomingo.metricas, sales: 125.50}, tarefas: {[tarefaSemanal]: {estado: "done" as const, quantidade: 4}}};
+  const segundoProgresso = await guardarDiaCore(emailTeste, dia.nome, "2026-10-11", atualizado, "gravar");
+  assert.equal(segundoProgresso.estado,"aberto");assert.equal(gravados.size,1);
+  assert.equal(segundoProgresso.tarefas[tarefaSemanal]!.quantidade,4);
+  assert.equal([...gravados.values()][0]!.aprendizagem,atualizado.aprendizagem);
+  const domingo = await guardarDiaCore(emailTeste, dia.nome, "2026-10-11", {...atualizado, proximoPasso: "Enviar proposta."}, "fechar");
+  assert.equal(domingo.estado,"fechado");assert.equal(domingo.fechadoEm,domingo.guardadoEm);
+  assert.equal(domingo.metricas.sales,125.50);assert.equal(domingo.proximoPasso,"Enviar proposta.");
+  assert.equal(gravados.size,1);
   assert.equal(domingo.data,"2026-10-11"); // A atividade pertence a domingo, apesar da gravação na segunda.
   assert.equal(domingo.guardadoEm,"2026-10-12T20:00:00.000Z");
-  await assert.rejects(() => guardarDiaCore(dia.email, dia.nome, "2026-10-11", formularioVazio()), (erro: unknown) => erro instanceof ErroCore && erro.status === 409);
-  await assert.rejects(() => guardarDiaCore(dia.email, dia.nome, "2026-10-10", formularioVazio()), (erro: unknown) => erro instanceof ErroCore && erro.status === 400);
-  await assert.rejects(() => guardarDiaCore(dia.email, dia.nome, "2026-10-13", formularioVazio()), (erro: unknown) => erro instanceof ErroCore && erro.status === 400);
+  await assert.rejects(() => guardarDiaCore(emailTeste, dia.nome, "2026-10-11", formularioVazio()), (erro: unknown) => erro instanceof ErroCore && erro.status === 409);
+  await assert.rejects(() => guardarDiaCore(emailTeste, dia.nome, "2026-10-11", formularioVazio(), "gravar"), (erro: unknown) => erro instanceof ErroCore && erro.status === 409);
+  assert.equal([...gravados.values()][0]!.proximoPasso,"Enviar proposta.");
+  const direto = await guardarDiaCore(emailTeste, dia.nome, "2026-10-12", {...formularioVazio(), aprendizagem: "Fechar grava também."}, "fechar");
+  assert.equal(direto.estado,"fechado");assert.equal(direto.aprendizagem,"Fechar grava também.");
+  gravados.set(`core-rank:2026:dia:${emailTeste}:2026-10-12`, {...dia,data:"2026-10-12"});
+  await assert.rejects(() => guardarDiaCore(emailTeste, dia.nome, "2026-10-12", formularioVazio(), "gravar"), (erro: unknown) => erro instanceof ErroCore && erro.status === 409);
+  await assert.rejects(() => guardarDiaCore(emailTeste, dia.nome, "2026-10-10", formularioVazio()), (erro: unknown) => erro instanceof ErroCore && erro.status === 400);
+  await assert.rejects(() => guardarDiaCore(emailTeste, dia.nome, "2026-10-13", formularioVazio()), (erro: unknown) => erro instanceof ErroCore && erro.status === 400);
   gravados.clear();
   mock.timers.setTime(Date.parse("2026-10-19T20:00:00Z"));
   gravados.set("semanal-anterior", {...domingo, data: "2026-10-16", diaPromocoes: 5});
-  await assert.rejects(() => guardarDiaCore(dia.email, dia.nome, "2026-10-18", formularioDomingo), (erro: unknown) => erro instanceof ErroCore && erro.status === 409);
+  await assert.rejects(() => guardarDiaCore(emailTeste, dia.nome, "2026-10-18", formularioDomingo), (erro: unknown) => erro instanceof ErroCore && erro.status === 409);
+  gravados.set("semanal-anterior", {...domingo, data: "2026-10-16", diaPromocoes: 5, estado: "aberto"});
+  await assert.rejects(() => guardarDiaCore(emailTeste, dia.nome, "2026-10-18", formularioDomingo, "gravar"), (erro: unknown) => erro instanceof ErroCore && erro.status === 409);
   gravados.clear();
   mock.timers.setTime(Date.parse("2026-10-12T22:59:59Z"));
   mudarRelogioNoBloqueio = true;
-  await assert.rejects(() => guardarDiaCore(dia.email, dia.nome, "2026-10-11", formularioVazio()), (erro: unknown) => erro instanceof ErroCore && erro.status === 400);
+  await assert.rejects(() => guardarDiaCore(emailTeste, dia.nome, "2026-10-11", formularioVazio()), (erro: unknown) => erro instanceof ErroCore && erro.status === 400);
   assert.equal(gravados.size,0); // O prazo é verificado depois de adquirir o bloqueio.
 } finally { mock.timers.reset(); poolGravacao.connect = connectOriginal; await fecharDb(); }
-console.log("Core Rank: calendário, 82 focos únicos, validação, tolerância de um dia na hora de Lisboa, bloqueio de dias guardados, fecho semanal após tolerância, dados em falta, balanço automático, classificação, relatório e exportações verificados.");
+console.log("Core Rank: gravação repetida de progresso, fecho com os últimos dados, proteção de dias fechados e antigos, tarefas semanais, tolerância na hora de Lisboa, calendário, balanço, classificação, relatórios e exportações verificados.");
