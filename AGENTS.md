@@ -49,8 +49,8 @@ Reutiliza o mesmo componente e os mesmos registos da nova área, com histórico
 e relatórios privados por consultor. Esta autorização abrange apenas o Core
 Rank; `/consultor/nova-area` e o seletor continuam exclusivos da conta de teste.
 
-Por indicação do utilizador, a separação do Core Rank em “Gravar” (progresso
-editável) e “Fechar o dia” está publicada apenas na conta de teste definida
-em `src/lib/demo.ts`. As restantes contas mantêm “Guardar o meu dia” e o fecho
-imediato. A restrição aplica-se também às ações da API; disponibilizar os dois
-botões a todos os consultores requer uma instrução explícita do utilizador.
+Por indicação explícita do utilizador, a separação do Core Rank em “Gravar”
+(progresso editável) e “Fechar o dia” está publicada para todos os consultores,
+incluindo as ações da API. Os dias já fechados, incluindo os registos antigos,
+mantêm-se bloqueados para alterações. Esta autorização abrange apenas o Core
+Rank; a nova área e o seletor continuam exclusivos da conta de teste.

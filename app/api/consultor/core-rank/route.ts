@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { podeGravarProgressoCore } from "@/lib/core-rank";
 import { buscarMembroEquipa } from "@/lib/equipa";
 import { ErroCore, guardarDiaCore, lerDadosCore, marcarRelatorioLido } from "@/lib/core-rank-registos";
 
@@ -8,7 +7,6 @@ export async function POST(request: Request): Promise<Response> {
   const email = typeof corpo?.email === "string" ? corpo.email.trim().toLowerCase() : "";
   if (!email.includes("@")) return NextResponse.json({erro: "Identifica-te com o teu email de consultor."}, {status: 400});
   if (!corpo || !["consultar", "guardar", "gravar", "fechar", "ler-relatorio"].includes(corpo.acao)) return NextResponse.json({erro: "Pedido inválido."}, {status: 400});
-  if (["gravar", "fechar"].includes(corpo.acao) && !podeGravarProgressoCore(email)) return NextResponse.json({erro: "Esta alteração está disponível apenas na conta de teste."}, {status: 403});
   try {
     const membro = await buscarMembroEquipa(email);
     if (!membro) return NextResponse.json({erro: "Conta não encontrada na equipa."}, {status: 403});
