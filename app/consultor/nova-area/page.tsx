@@ -20,6 +20,7 @@ import { InicioNovaArea } from "./inicio";
 import { TestemunhosNovaArea } from "./testemunhos";
 import { CalculadorasNovaArea } from "./calculadoras";
 import { CoreRankNovaArea } from "./core-rank";
+import { ReservasNovaArea } from "./reservas";
 import { limparPrimeirosPassos } from "@/lib/primeiros-passos";
 
 const CHAVE_PROGRESSO = "consultor-nova-area:primeiros-passos:v1";
@@ -83,7 +84,8 @@ export default function NovaAreaConsultor() {
   const [aInscrever, setAInscrever] = useState(false);
   const [erroSessao, setErroSessao] = useState("");
   const [inscrito, setInscrito] = useState(false);
-  const [seccao, setSeccao] = useState<"inicio" | "comeca-aqui" | "calendario" | "leads" | "tarefas-equipa" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "testemunhos" | "documentos" | "eventos-presenciais" | "calculadoras" | "core-rank">("inicio");
+  const [seccao, setSeccao] = useState<"inicio" | "comeca-aqui" | "calendario" | "leads" | "tarefas-equipa" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "testemunhos" | "documentos" | "eventos-presenciais" | "calculadoras" | "core-rank" | "reservas">("inicio");
+  const [reservasAberto, setReservasAberto] = useState(false);
   const [coreAberto, setCoreAberto] = useState(false);
   const [abrirRelatoriosCore, setAbrirRelatoriosCore] = useState(0);
   const [aGuardarPasso, setAGuardarPasso] = useState<number | null>(null);
@@ -127,6 +129,7 @@ export default function NovaAreaConsultor() {
 
   function abrirSeccao(proxima: typeof seccao) {
     if (proxima === "core-rank") setCoreAberto(true);
+    if (proxima === "reservas") setReservasAberto(true);
     setSeccao(proxima);
     // O contador também permite voltar ao conteúdo ao clicar na secção já ativa.
     setPedidoNavegacao(pedido => pedido + 1);
@@ -302,6 +305,9 @@ export default function NovaAreaConsultor() {
                 <button type="button" className={seccao === "calculadoras" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calculadoras")} aria-current={seccao === "calculadoras" ? "page" : undefined} aria-controls="conteudo-nova-area">Calculadoras</button>
                 <button type="button" className={seccao === "core-rank" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("core-rank")} aria-current={seccao === "core-rank" ? "page" : undefined} aria-controls="conteudo-nova-area">Core Rank</button>
               </GrupoMenu>
+              <GrupoMenu titulo="Reservas" ativo={seccao === "reservas"}>
+                <button type="button" className={seccao === "reservas" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("reservas")} aria-current={seccao === "reservas" ? "page" : undefined} aria-controls="conteudo-nova-area">Criar templates</button>
+              </GrupoMenu>
               <GrupoMenu titulo="Formação" ativo={seccao === "proximas-formacoes" || seccao === "formacoes-gravadas" || seccao === "testemunhos" || seccao === "documentos"}>
                 <button type="button" className={seccao === "proximas-formacoes" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("proximas-formacoes")} aria-current={seccao === "proximas-formacoes" ? "page" : undefined} aria-controls="conteudo-nova-area">Próximas formações</button>
                 <button type="button" className={seccao === "formacoes-gravadas" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("formacoes-gravadas")} aria-current={seccao === "formacoes-gravadas" ? "page" : undefined} aria-controls="conteudo-nova-area">Formações gravadas</button>
@@ -374,6 +380,7 @@ export default function NovaAreaConsultor() {
             {seccao === "leads" && <LeadsNovaArea linkPartilha={dados.linkPartilha} />}
             {seccao === "calendario" && <CalendarioConsultor email={email} nome={dados.nome} />}
             {seccao === "calculadoras" && <CalculadorasNovaArea />}
+            {reservasAberto && <div hidden={seccao !== "reservas"}><ReservasNovaArea email={email} /></div>}
             {coreAberto && <div hidden={seccao !== "core-rank"}><CoreRankNovaArea email={email} nome={dados.nome} abrirRelatorios={abrirRelatoriosCore} /></div>}
             {seccao === "tarefas-equipa" && <TarefasIniciaisEquipa membros={dados.equipaPrimeirosPassos} />}
             {seccao === "proximo-webinar" && <ProximoWebinar webinar={dados.proximoWebinar} email={email} aoInscrever={() => setDados(atual => atual?.proximoWebinar ? { ...atual, proximoWebinar: { ...atual.proximoWebinar, inscrito: true } } : atual)} />}

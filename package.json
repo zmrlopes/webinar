@@ -25,6 +25,7 @@
     "enviar-relatorio-consultores": "tsx scripts/enviar-relatorio-consultores.ts",
     "verificar-presencas-agora": "tsx scripts/verificar-presencas-agora.ts",
     "typecheck": "tsc --noEmit",
+    "test:reservas": "tsx scripts/testes-reservas.ts",
     "importar-documentos": "tsx scripts/importar-documentos.ts"
   },
   "dependencies": {

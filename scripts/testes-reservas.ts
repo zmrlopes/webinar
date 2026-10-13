@@ -1,0 +1,88 @@
+import assert from "node:assert/strict";
+import { PDFDocument, StandardFonts } from "pdf-lib";
+import { POST } from "../app/api/consultor/nova-area/reservas/route";
+import { db, fecharDb } from "../src/lib/db";
+import { EMAIL_PAINEL_DEMONSTRACAO } from "../src/lib/demo";
+import { abrirReserva, analisarReferenciaReserva, chamarIAReservas, descarregarFotoReserva, guardarReserva, importarPDFReserva, listarReservas } from "../src/lib/reservas-servidor";
+import { aPartirDoModeloReserva, dadosReservaVazios, elementoReserva, hotelVazio, novoMaterialReserva, precoPessoaReserva, textoElementoReserva, validarDadosReserva, validarMaterialReserva } from "../src/lib/reservas";
+
+async function main() {
+  const material = novoMaterialReserva();
+  material.dados.destino = "Amesterdão"; material.dados.viajantes = 2; material.dados.hoteis[0]!.total = 1078;
+  assert.equal(precoPessoaReserva(material.dados, material.dados.hoteis[0]!), 539);
+  material.dados.hoteis[0]!.precoPessoa = 599.9;
+  assert.equal(precoPessoaReserva(material.dados, material.dados.hoteis[0]!), 599.9, "O preço explícito prevalece sobre a divisão");
+  material.dados.hoteis[0]!.precoPessoa = null; material.dados.viajantes = null;
+  assert.equal(precoPessoaReserva(material.dados, material.dados.hoteis[0]!), null, "Não inventa o número de viajantes");
+  assert.throws(() => validarDadosReserva({...material.dados, viajantes: 0}));
+  assert.throws(() => validarDadosReserva({...material.dados, ida: "2026-02-30"}));
+  assert.throws(() => validarDadosReserva({...material.dados, ida: "2026-10-20", regresso: "2026-10-19"}));
+  assert.throws(() => validarDadosReserva({...material.dados, hoteis: [{...hotelVazio(), total: -1}]}));
+  assert.throws(() => validarMaterialReserva({...material, dados: {...material.dados, hoteis: [hotelVazio(),hotelVazio()]}}), /espaço/);
+  const multi = {...material, maxHoteis: 2, dados: {...material.dados, hoteis: [{...hotelVazio(), nome: "Hotel A", precoPessoa: 500}, {...hotelVazio(), nome: "Hotel B", precoPessoa: 650}]}};
+  const campo = {...elementoReserva("texto","Hotel",{x:0,y:0,w:40,h:10}), campo: "hotel" as const, hotel: 1};
+  assert.equal(textoElementoReserva(campo,validarMaterialReserva(multi).dados),"Hotel B");
+  assert.equal(textoElementoReserva({...campo,capitalizacao:"maiusculas"},multi.dados),"HOTEL B");
+  assert.equal(aPartirDoModeloReserva(multi).dados.hoteis.length,2);
+  assert.equal(aPartirDoModeloReserva(multi).dados.destino,"");
+  const adulterada = {...material, elementos: material.elementos.map(e=>e.tipo==="marca"?{...e,texto:"Outra marca",imagem:"https://evil.example/logo",cor:"#000000"}:e)};
+  const marca = validarMaterialReserva(adulterada).elementos.find(e=>e.tipo==="marca")!;
+  assert.equal(marca.texto,""); assert.equal(marca.imagem,undefined); assert.equal(marca.cor,"#ffffff");
+  assert.equal(validarMaterialReserva({...material,elementos:material.elementos.filter(e=>e.tipo!=="marca")}).elementos.filter(e=>e.tipo==="marca").length,1);
+  assert.throws(()=>validarMaterialReserva({...material,referencia:"data:image/svg+xml;base64,PHN2Zz4="}));
+  assert.throws(()=>validarMaterialReserva({...material,elementos:[{...campo,imagem:"https://example.com/image.jpg"}]}));
+  assert.equal((await POST(new Request("http://localhost/api",{method:"POST",body:JSON.stringify({email:"outra-conta@example.com",acao:"listar"})}))).status,403);
+  await assert.rejects(()=>descarregarFotoReserva("https://upload.wikimedia.org.evil.example/a.jpg"),/Origem/);
+  await assert.rejects(()=>descarregarFotoReserva("https://user:password@upload.wikimedia.org/a.jpg"),/Origem/);
+
+  process.env.DATABASE_URL ||= "postgres://test:test@localhost/test";
+  const pool = db(), originalQuery = pool.query, originalFetch = globalThis.fetch;
+  const registos = new Map<string, {valor: Record<string, unknown>; atualizado_em: Date}>();
+  pool.query = (async (sql: string, valores: unknown[] = []) => {
+    if (/equipa_afiliados/.test(sql)) return {rows:[{email:EMAIL_PAINEL_DEMONSTRACAO,nome:"Teste"}],rowCount:1};
+    if (sql.includes("'janela'")) return {rows:[{chave:valores[0]}],rowCount:1};
+    if (sql.startsWith("insert into dashboard_config")) {registos.set(valores[0] as string,{valor:JSON.parse(valores[1] as string),atualizado_em:new Date()});return {rows:[],rowCount:1};}
+    if (sql.includes("where chave = $1")) return {rows:registos.has(valores[0] as string)?[registos.get(valores[0] as string)]:[],rowCount:0};
+    if (sql.includes("starts_with(chave")) return {rows:[...registos.entries()].filter(([k])=>k.startsWith(valores[0] as string)).map(([,r])=>({id:r.valor.id,nome:r.valor.nome,tipo:r.valor.tipo,formato:(r.valor.material as {formato:string}).formato,atualizado_em:r.atualizado_em})),rowCount:1};
+    throw new Error(`Consulta de teste inesperada: ${sql.slice(0,60)}`);
+  }) as typeof pool.query;
+  try {
+    const salvo = await guardarReserva(EMAIL_PAINEL_DEMONSTRACAO,{tipo:"material",material});
+    assert.equal((await abrirReserva(EMAIL_PAINEL_DEMONSTRACAO,salvo.id)).material.dados.destino,"Amesterdão");
+    await assert.rejects(()=>abrirReserva("outra-conta@example.com",salvo.id),/não existe/);
+    assert.equal((await listarReservas("outra-conta@example.com")).length,0);
+    await assert.rejects(()=>guardarReserva("outra-conta@example.com",{id:salvo.id,tipo:"material",material}),/não existe/);
+    const chave = process.env.OPENAI_API_KEY; process.env.OPENAI_API_KEY="chave-de-teste";
+    try {
+      const pdf=await PDFDocument.create(), pagina=pdf.addPage(); const fonte=await pdf.embedFont(StandardFonts.Helvetica);
+      pagina.drawText("Proposta MyOffice Amsterdam - Hotel A, total 1078 EUR, 2 viajantes. Ida 01/10/2026 e regresso 05/10/2026. Bagagem de mao.",{font:fonte,size:12,x:20,y:500});
+      let pedido: Record<string,unknown> = {};
+      globalThis.fetch = (async (_url, init) => {pedido=JSON.parse(init?.body as string);return Response.json({status:"completed",output:[{type:"message",content:[{type:"output_text",text:JSON.stringify({propostas:[{...dadosReservaVazios(),destino:"Amesterdão",viajantes:2,hoteis:[{...hotelVazio(),nome:"Hotel A",total:1078}]}],avisos:["Confirmar bagagem"]})}]}]});}) as typeof fetch;
+      const importado=await importarPDFReserva(EMAIL_PAINEL_DEMONSTRACAO,new File([new Uint8Array(await pdf.save()).buffer],"proposta.pdf",{type:"application/pdf"}));
+      assert.equal(importado.propostas[0]!.destino,"Amesterdão"); assert.equal(importado.avisos[0],"Confirmar bagagem"); assert.equal(pedido.store,false);
+      assert.match(JSON.stringify(pedido.input), /JSON/, "O modo JSON exige a palavra no input, não apenas nas instructions");
+      assert.equal(precoPessoaReserva(importado.propostas[0]!,importado.propostas[0]!.hoteis[0]!),539);
+      globalThis.fetch=(async()=>Response.json({status:"completed",output:[{type:"message",content:[{type:"output_text",text:JSON.stringify({nome:"Duas opções",maxHoteis:2,fundo:"#123456",fundoFinal:"#abcdef",elementos:[{...campo,hotel:1}]})}]}]})) as typeof fetch;
+      const referencia=await analisarReferenciaReserva(EMAIL_PAINEL_DEMONSTRACAO,"data:image/png;base64,aGVsbG8=","feed");
+      assert.equal(referencia.maxHoteis,2);assert.equal(referencia.dados.hoteis.length,2);assert.equal(referencia.formato,"feed");assert.equal(referencia.elementos.at(-1)?.tipo,"marca");
+      globalThis.fetch=(async()=>Response.json({status:"completed",output:[{type:"message",content:[{type:"output_text",text:JSON.stringify({nome:"Coordenadas normalizadas",maxHoteis:1,elementos:[{...campo,x:.25,y:.3,w:.5,h:.1,tamanho:.08,hotel:0}]})}]}]})) as typeof fetch;
+      const normalizada=await analisarReferenciaReserva(EMAIL_PAINEL_DEMONSTRACAO,"data:image/png;base64,aGVsbG8=","story");
+      assert.equal(normalizada.elementos[0]!.x,25);assert.equal(normalizada.elementos[0]!.w,50);assert.equal(normalizada.elementos[0]!.tamanho,8);
+      globalThis.fetch=(async()=>Response.json({status:"incomplete",output:[]})) as typeof fetch;
+      await assert.rejects(()=>analisarReferenciaReserva(EMAIL_PAINEL_DEMONSTRACAO,"data:image/png;base64,aGVsbG8=","story"),/complexa/);
+      await assert.rejects(()=>importarPDFReserva(EMAIL_PAINEL_DEMONSTRACAO,new File(["isto nao e um pdf"],"fake.pdf")),/não é um PDF/);
+      const chaveClaude=process.env.ANTHROPIC_API_KEY;
+      delete process.env.OPENAI_API_KEY;process.env.ANTHROPIC_API_KEY="chave-claude-de-teste";
+      try {
+        let endpoint="";
+        globalThis.fetch=(async(url,init)=>{endpoint=String(url);pedido=JSON.parse(init?.body as string);return Response.json({stop_reason:"end_turn",content:[{type:"text",text:'```json\n{"ok":true}\n```'}]});}) as typeof fetch;
+        assert.deepEqual(await chamarIAReservas(EMAIL_PAINEL_DEMONSTRACAO,"Responde JSON",[{type:"input_image",image_url:"data:image/png;base64,aGVsbG8=",detail:"high"},{type:"input_file",filename:"proposta.pdf",file_data:"data:application/pdf;base64,cGRm"}],100,{type:"object"}),{ok:true});
+        assert.equal(endpoint,"https://api.anthropic.com/v1/messages");
+        const mensagem=(pedido.messages as {content:{type:string;source?:{media_type:string;data:string}}[]}[])[0]!;
+        assert.equal(mensagem.content[0]!.source!.media_type,"image/png");assert.equal(mensagem.content[1]!.type,"document");assert.equal(mensagem.content[1]!.source!.data,"cGRm");assert(pedido.output_config);
+      } finally {if(chaveClaude===undefined)delete process.env.ANTHROPIC_API_KEY;else process.env.ANTHROPIC_API_KEY=chaveClaude;}
+    } finally {if(chave===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=chave;}
+  } finally {pool.query=originalQuery;globalThis.fetch=originalFetch;await fecharDb();}
+  console.log("OK: preço explícito/cálculo sem valores inventados, datas, capacidade por referência, campos por hotel, marca protegida, isolamento por conta, bloqueio fora do teste, rejeição de URLs inseguras, leitura de PDF e análise multimodal. Nenhum dado real alterado.");
+}
+main().catch(e=>{console.error(e);process.exitCode=1;});

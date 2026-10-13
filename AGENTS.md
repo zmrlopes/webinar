@@ -54,3 +54,10 @@ Por indicação explícita do utilizador, a separação do Core Rank em “Grava
 incluindo as ações da API. Os dias já fechados, incluindo os registos antigos,
 mantêm-se bloqueados para alterações. Esta autorização abrange apenas o Core
 Rank; a nova área e o seletor continuam exclusivos da conta de teste.
+
+Por indicação explícita do utilizador, Reservas → Criar templates fica
+publicado apenas na nova área da conta de teste. Cada consultor poderá
+carregar referências próprias para stories/feed; os textos e gráficos são
+editáveis, mas o logótipo e nome iCliGo ficam protegidos. A importação de
+propostas PDF, os modelos e o histórico seguem a mesma restrição na API.
+Publicar Reservas para os restantes consultores requer nova instrução explícita.
