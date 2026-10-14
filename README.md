@@ -53,6 +53,8 @@ foto original para não repetir dados da promoção anterior. A funcionalidade
 continua limitada à conta de teste.
 As análises dispõem de 150 segundos por pedido ao serviço; a rota permite
 180 segundos para incluir a preparação das imagens e a validação.
+O esquema da análise pede apenas as propriedades relevantes de cada tipo de
+elemento, para reduzir respostas cortadas pelo limite de saída do serviço.
 
 ### Calculadoras na nova área
 
