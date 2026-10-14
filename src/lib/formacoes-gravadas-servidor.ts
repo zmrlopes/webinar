@@ -1,7 +1,9 @@
 import { createHash, randomUUID } from "node:crypto";
 import { db } from "./db";
-import { CATEGORIAS_FORMACOES, type Categoria } from "./formacoes-gravadas";
+import { CATEGORIAS_FORMACOES, formacoesGravadasPublicadas, type Categoria } from "./formacoes-gravadas";
 import { normalizarLinkGravacao } from "./formacoes-links";
+import { EMAIL_PAINEL_DEMONSTRACAO } from "./demo";
+import { SQL_AVISO_GRAVACAO } from "./formacoes-gravadas-notificacoes";
 
 const PREFIXO = "formacoes-gravadas:v1:";
 export interface GravacaoAdmin {
@@ -44,11 +46,21 @@ export async function guardarGravacaoAdmin(valor: unknown): Promise<GravacaoAdmi
   if (idRecebido !== undefined && !idValido(idRecebido)) throw new ErroGravacao("Gravação inválida.");
   const id = (idRecebido as string | undefined) ?? randomUUID();
   const gravacao = {...dados, id};
+  const parametros = [PREFIXO + id, JSON.stringify(gravacao), "gravacao-aviso:v1:" + id, EMAIL_PAINEL_DEMONSTRACAO, formacoesGravadasPublicadas()];
   if (idRecebido) {
-    const {rowCount} = await db().query("update dashboard_config set valor = $2::jsonb, atualizado_em = now() where chave = $1", [PREFIXO + id, JSON.stringify(gravacao)]);
-    if (!rowCount) throw new ErroGravacao("Esta gravação já não existe. Atualiza a página.", 404);
+    const {rows} = await db().query(`with anterior as materialized (
+        select valor from dashboard_config where chave = $1 for update
+      ), gravacao as (
+        update dashboard_config d set valor = $2::jsonb, atualizado_em = now() from anterior a
+        where d.chave = $1 returning d.valor,
+          ((d.valor->>'visivel')::boolean and not (a.valor->>'visivel')::boolean) as avisar
+      ) ${SQL_AVISO_GRAVACAO}`, parametros);
+    if (!rows.length) throw new ErroGravacao("Esta gravação já não existe. Atualiza a página.", 404);
   } else {
-    await db().query("insert into dashboard_config (chave, valor) values ($1, $2::jsonb)", [PREFIXO + id, JSON.stringify(gravacao)]);
+    await db().query(`with gravacao as (
+      insert into dashboard_config (chave, valor) values ($1, $2::jsonb)
+      returning valor, (valor->>'visivel')::boolean as avisar
+    ) ${SQL_AVISO_GRAVACAO}`, parametros);
   }
   return gravacao;
 }

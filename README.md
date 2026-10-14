@@ -22,6 +22,14 @@ as aulas mais recentes, as contagens e a marcação como vista incluem as novas
 gravações. O ID de cada aula mantém-se ao editar o título ou link, preservando
 o progresso privado por consultor. Testes: `node --import tsx scripts/testes-formacoes-gravadas-admin.ts`.
 
+Na primeira publicação de uma nova gravação (incluindo uma que estava oculta),
+é criado um aviso push por consultor ativo com painel e subscrição de notificações.
+A gravação e os avisos são guardados na mesma operação. O envio começa ao publicar;
+o cron `/api/cron/formacoes-gravadas` retoma pendências de cinco em cinco minutos.
+Editar ou republicar a mesma gravação não repete o aviso. Os avisos usam uma etiqueta
+por gravação para agrupar novas tentativas no dispositivo. Não são enviados emails.
+Testes com tabelas temporárias: `node --import tsx scripts/testes-formacoes-gravadas-push.ts` (requer `DATABASE_URL`).
+
 ### Importação de propostas MyOffice nos templates
 
 O importador envia o PDF completo para análise, incluindo páginas em imagem.

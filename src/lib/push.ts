@@ -17,7 +17,11 @@ export interface AvisoPush {
   corpo: string;
   /** Caminho para onde a notificação leva ao ser tocada, ex: "/consultor". */
   url: string;
+  /** Identifica o mesmo aviso nas novas tentativas, sem criar notificações repetidas. */
+  tag?: string;
 }
+
+export interface ResultadoPush {configurado: boolean; enviadas: number; falhas: number}
 
 interface ConfigPush {
   chavePublica: string;
@@ -67,33 +71,43 @@ export async function removerSubscricaoPush(endpoint: string): Promise<void> {
  * nada.
  */
 export async function notificarPush(email: string, aviso: AvisoPush): Promise<void> {
+  await enviarPushComResultado(email, aviso);
+}
+
+/** Resultado de entrega usado pelas filas que repetem tentativas com falha. */
+export async function enviarPushComResultado(email: string, aviso: AvisoPush): Promise<ResultadoPush> {
   const config = configPush();
-  if (!config) return;
+  if (!config) return {configurado: false, enviadas: 0, falhas: 0};
 
   const { rows } = await db().query<{ endpoint: string; p256dh: string; auth: string }>(
     `select endpoint, p256dh, auth from push_subscriptions where email = $1`,
     [email],
   );
-  if (rows.length === 0) return;
+  if (rows.length === 0) return {configurado: true, enviadas: 0, falhas: 0};
 
-  const webpush = await import("web-push");
+  const {default: webpush} = await import("web-push");
   webpush.setVapidDetails(config.assunto, config.chavePublica, config.chavePrivada);
 
-  const payload = JSON.stringify({ titulo: aviso.titulo, corpo: aviso.corpo, url: aviso.url });
+  const payload = JSON.stringify({ titulo: aviso.titulo, corpo: aviso.corpo, url: aviso.url, ...(aviso.tag ? {tag: aviso.tag} : {}) });
+  let enviadas = 0, falhas = 0;
 
   for (const r of rows) {
     try {
       await webpush.sendNotification(
         { endpoint: r.endpoint, keys: { p256dh: r.p256dh, auth: r.auth } },
         payload,
+        aviso.tag ? {timeout: 8000} : undefined,
       );
+      enviadas++;
     } catch (erro) {
       const codigo = (erro as { statusCode?: number }).statusCode;
       if (codigo === 404 || codigo === 410) {
         await removerSubscricaoPush(r.endpoint).catch(() => {});
       } else {
+        falhas++;
         console.error(`falha ao enviar push para ${email}:`, erro);
       }
     }
   }
+  return {configurado: true, enviadas, falhas};
 }

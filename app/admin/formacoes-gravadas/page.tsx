@@ -17,6 +17,7 @@ export default async function PaginaFormacoesGravadas() {
       <Link href="/admin">← Início</Link>
       <h1>Formações gravadas</h1>
       <p className={css.nota}>Adiciona o título e o link da gravação. Ao guardar, fica disponível em Formações gravadas na área dos consultores.</p>
+      <p className={css.nota}>Na primeira publicação, os consultores com notificações ativas recebem automaticamente um aviso na app. Editar ou voltar a publicar a mesma gravação não repete o aviso.</p>
       <GestorGravacoes iniciais={gravacoes} categorias={categorias} />
       <Link href="/admin/formacoes-aviso">Avisar a equipa sobre as formações gravadas →</Link>
     </div>

@@ -36,6 +36,7 @@ self.addEventListener("push", (evento) => {
       // sem forma nenhuma.
       badge: "/icons/badge-96.png",
       data: { url: dados.url },
+      ...(dados.tag ? { tag: dados.tag } : {}),
     }),
   );
 });

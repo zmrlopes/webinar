@@ -28,6 +28,12 @@ async function main() {
   const pool = db(), original = pool.query, registos = new Map<string, GravacaoAdmin>(), vistas = new Map<string, Set<string>>();
   pool.query = (async (sql: string, valores: unknown[] = []) => {
     const chave = String(valores[0]);
+    if (sql.includes("evento as (")) {
+      if (sql.includes("with anterior") && !registos.has(chave)) return {rows: [], rowCount: 0};
+      const gravacao = JSON.parse(String(valores[1])); registos.set(chave, gravacao);
+      return {rows: [{valor: gravacao}], rowCount: 1};
+    }
+    if (sql.startsWith("with proximo as")) return {rows: [], rowCount: 0};
     if (sql.includes("from equipa_afiliados")) return {rows: chave === "consultor@example.com" ? [{nome: "Consultor"}] : [], rowCount: 0};
     if (sql.includes("select aula_id")) return {rows: [...vistas.get(chave) ?? []].map(aula_id => ({aula_id})), rowCount: 0};
     if (sql.includes("insert into formacoes_vistas")) {const set = vistas.get(chave) ?? new Set<string>(); set.add(String(valores[1])); vistas.set(chave, set); return {rows: [], rowCount: 1};}

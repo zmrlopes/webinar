@@ -72,3 +72,8 @@ de formações gravadas em `/admin/formacoes-gravadas`. As gravações publicada
 integram a biblioteca existente em `/consultor/formacoes` para a equipa e a
 mesma secção na nova área da conta de teste. As aulas antigas e o progresso
 por consultor mantêm-se. Esta autorização abrange apenas as formações gravadas.
+
+Por indicação explícita do utilizador, a primeira publicação de cada nova
+formação gravada envia automaticamente uma notificação push aos consultores
+ativos com painel e notificações ativadas. Editar, ocultar e voltar a publicar
+a mesma gravação não repete o aviso. As falhas são retomadas pela fila automática.
