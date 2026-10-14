@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import sharp from "sharp";
 import { PDFDocument, StandardFonts } from "pdf-lib";
 import { POST } from "../app/api/consultor/nova-area/reservas/route";
 import { db, fecharDb } from "../src/lib/db";
@@ -61,7 +62,30 @@ async function main() {
       const importado=await importarPDFReserva(EMAIL_PAINEL_DEMONSTRACAO,new File([new Uint8Array(await pdf.save()).buffer],"proposta.pdf",{type:"application/pdf"}));
       assert.equal(importado.propostas[0]!.destino,"Amesterdão"); assert.equal(importado.avisos[0],"Confirmar bagagem"); assert.equal(pedido.store,false);
       assert.match(JSON.stringify(pedido.input), /JSON/, "O modo JSON exige a palavra no input, não apenas nas instructions");
+      const ficheiroEnviado = () => (pedido.input as {content: {type: string; file_data?: string}[]}[])[0]!.content.find(c => c.type === "input_file");
+      assert.equal(ficheiroEnviado()?.file_data, `data:application/pdf;base64,${Buffer.from(await pdf.save()).toString("base64")}`, "Envia também o PDF completo quando há texto selecionável");
       assert.equal(precoPessoaReserva(importado.propostas[0]!,importado.propostas[0]!.hoteis[0]!),539);
+      // Reproduz o MyOffice: mais de 100 caracteres no cabeçalho e proposta em imagem noutra página.
+      const misto = await PDFDocument.create();
+      const fonteMista = await misto.embedFont(StandardFonts.Helvetica);
+      misto.addPage().drawText("Contactos Travel Partner e RNAVT. ".repeat(5), {font: fonteMista, size: 8, x: 20, y: 750});
+      const imagemProposta = await sharp(Buffer.from('<svg width="600" height="200" xmlns="http://www.w3.org/2000/svg"><rect width="600" height="200" fill="white"/><text x="20" y="50">Amsterdam - Hotel A - Total 1078 EUR - 2 viajantes</text></svg>')).png().toBuffer();
+      const imagemPDF = await misto.embedPng(imagemProposta);
+      misto.addPage().drawImage(imagemPDF, {x: 0, y: 400, width: 600, height: 200});
+      const bytesMistos = await misto.save();
+      const {extractText} = await import("unpdf");
+      assert((await extractText(new Uint8Array(bytesMistos), {mergePages: true})).text.trim().length >= 100, "O cabeçalho reproduz a condição que descartava as imagens");
+      await importarPDFReserva(EMAIL_PAINEL_DEMONSTRACAO, new File([new Uint8Array(bytesMistos).buffer], "myoffice-misto.pdf", {type: "application/pdf"}));
+      assert.equal(ficheiroEnviado()?.file_data, `data:application/pdf;base64,${Buffer.from(bytesMistos).toString("base64")}`, "Preserva todas as páginas e imagens da proposta MyOffice");
+      const digitalizado = await PDFDocument.create(), paginaDigitalizada = digitalizado.addPage();
+      paginaDigitalizada.drawImage(await digitalizado.embedPng(imagemProposta), {x: 0, y: 400, width: 600, height: 200});
+      const bytesDigitalizados = await digitalizado.save();
+      await importarPDFReserva(EMAIL_PAINEL_DEMONSTRACAO, new File([new Uint8Array(bytesDigitalizados).buffer], "digitalizado.pdf", {type: "application/pdf"}));
+      assert.equal(ficheiroEnviado()?.file_data, `data:application/pdf;base64,${Buffer.from(bytesDigitalizados).toString("base64")}`, "Também mantém a leitura visual de PDFs sem texto");
+      const longo = await PDFDocument.create();
+      for (let i = 0; i < 31; i++) longo.addPage();
+      const bytesLongos = await longo.save();
+      await assert.rejects(() => importarPDFReserva(EMAIL_PAINEL_DEMONSTRACAO, new File([new Uint8Array(bytesLongos).buffer], "longo.pdf")), /até 30 páginas/);
       globalThis.fetch=(async()=>Response.json({status:"completed",output:[{type:"message",content:[{type:"output_text",text:JSON.stringify({nome:"Duas opções",maxHoteis:2,fundo:"#123456",fundoFinal:"#abcdef",elementos:[{...campo,hotel:1}]})}]}]})) as typeof fetch;
       const referencia=await analisarReferenciaReserva(EMAIL_PAINEL_DEMONSTRACAO,"data:image/png;base64,aGVsbG8=","feed");
       assert.equal(referencia.maxHoteis,2);assert.equal(referencia.dados.hoteis.length,2);assert.equal(referencia.formato,"feed");assert.equal(referencia.elementos.at(-1)?.tipo,"marca");

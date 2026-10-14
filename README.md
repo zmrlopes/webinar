@@ -9,6 +9,14 @@ base de dados Postgres (Neon) ligada.
 
 ## Estado
 
+### Importação de propostas MyOffice nos templates
+
+O importador envia o PDF completo para análise, incluindo páginas em imagem.
+Os PDFs iCliGo podem ter apenas contactos e rodapés como texto selecionável;
+esse texto não substitui a leitura visual da proposta. Mantêm-se os limites
+de 4 MB e 30 páginas e o acesso exclusivo à nova área da conta de teste.
+Os testes de Reservas cobrem PDFs com texto, imagens e conteúdo misto.
+
 ### Calculadoras na nova área
 
 Em **Objetivos → Calculadoras**, a conta de teste pode simular a comissão bruta

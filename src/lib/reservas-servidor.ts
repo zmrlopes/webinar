@@ -155,14 +155,15 @@ export async function importarPDFReserva(email: string, ficheiro: File) {
   if (!ficheiro.size || ficheiro.size > 4_000_000 || !ficheiro.name.toLowerCase().endsWith(".pdf")) throw new ErroReserva("Escolhe um PDF com menos de 4 MB.");
   const bytes = new Uint8Array(await ficheiro.arrayBuffer());
   if (Buffer.from(bytes.subarray(0, 5)).toString() !== "%PDF-") throw new ErroReserva("O ficheiro não é um PDF válido.");
-  const {getDocumentProxy, extractText} = await import("unpdf");
-  let textoPDF = "";
+  const {getDocumentProxy} = await import("unpdf");
   try {
     const pdf = await getDocumentProxy(bytes.slice());
-    try {if (pdf.numPages > 30) throw new ErroReserva("Importa uma proposta com até 30 páginas."); textoPDF = (await extractText(pdf, {mergePages: true})).text;} finally {await pdf.cleanup();}
+    try {if (pdf.numPages > 30) throw new ErroReserva("Importa uma proposta com até 30 páginas.");} finally {await pdf.cleanup();}
   } catch (erro) {if (erro instanceof ErroReserva) throw erro; throw new ErroReserva("Não foi possível ler o PDF. Confirma que não está protegido por palavra-passe.", 422);}
-  const conteudo: EntradaIA[] = textoPDF.trim().length >= 100 ? [{type: "input_text", text: textoPDF.slice(0, 90_000)}] : [{type: "input_file", filename: "proposta.pdf", file_data: `data:application/pdf;base64,${Buffer.from(bytes).toString("base64")}`}];
-  conteudo.push({type: "input_text", text: "Extrai as opções deste orçamento MyOffice e assinala o que necessita de confirmação."});
+  // Os PDFs MyOffice misturam cabeçalhos em texto com a proposta em imagens.
+  // Mesmo com texto extraível, envia o documento completo para ler todas as páginas.
+  const conteudo: EntradaIA[] = [{type: "input_file", filename: "proposta.pdf", file_data: `data:application/pdf;base64,${Buffer.from(bytes).toString("base64")}`}];
+  conteudo.push({type: "input_text", text: "Analisa todas as páginas deste orçamento MyOffice, incluindo os dados em imagens. O texto selecionável pode conter apenas a capa, contactos e rodapé. Extrai as opções da proposta e assinala o que necessita de confirmação."});
   const valor = await chamarIAReservas(email, `Extrai exclusivamente dados comprovados neste PDF de um orçamento de viagem. Sem adivinhar nem inventar serviços incluídos. Não devolvas dados pessoais de clientes, referências de reserva, dados de pagamento ou comissões. JSON {"propostas":[{"destino":"","frase":"","partida":"","ida":"YYYY-MM-DD ou vazio","regresso":"","voo":"","viajantes":null,"bagagem":"","transfer":"","condicoes":"","hoteis":[{"nome":"","quarto":"","regime":"","total":null,"precoPessoa":null}]}],"avisos":["Dados que precisam de confirmação"]}. Número de viajantes e valores numéricos ou null se ausentes. Um objeto por destino/datas/voos diferentes. Várias alternativas de hotel para a MESMA viagem ficam em hoteis, até 6 por proposta. Total é o total daquela opção; precoPessoa só quando EXPLICITAMENTE indicado. Nunca atribuas a todas as opções o preço de apenas uma. Não dividas já os valores: a aplicação calcula após confirmação. Frase fica vazia. Não inventes destino com base apenas no nome do hotel. Máximo 12 propostas. Se não for um orçamento utilizável, responde propostas=[] e um aviso.`, conteudo, 5000);
   if (!Array.isArray(valor.propostas) || !valor.propostas.length || valor.propostas.length > 12) throw new ErroReserva("Não encontrámos propostas neste PDF. Podes introduzir os dados manualmente.", 422);
   return {propostas: valor.propostas.map(p => validarDadosReserva({...dadosReservaVazios(), ...(p as object)})), avisos: Array.isArray(valor.avisos) ? valor.avisos.filter((a): a is string => typeof a === "string").slice(0, 12).map(a => a.slice(0, 500)) : []};
