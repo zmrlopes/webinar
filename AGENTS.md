@@ -66,3 +66,9 @@ Por indicação explícita do utilizador, o card de entrada no grupo WhatsApp
 Welcome Aboard também aparece nos Avisos da área atual (`/consultor`) para
 os consultores da equipa, com o mesmo convite definido em
 `LINK_GRUPO_WELCOME_ABOARD`. Esta autorização abrange apenas este card.
+
+Por indicação explícita do utilizador, o admin pode adicionar e gerir links
+de formações gravadas em `/admin/formacoes-gravadas`. As gravações publicadas
+integram a biblioteca existente em `/consultor/formacoes` para a equipa e a
+mesma secção na nova área da conta de teste. As aulas antigas e o progresso
+por consultor mantêm-se. Esta autorização abrange apenas as formações gravadas.

@@ -382,11 +382,11 @@ export default async function AdminDashboard() {
               <div className="ad-acao-sub">Sessões novo consultor →</div>
             </div>
           </Link>
-          <Link href="/admin/formacoes-aviso" className="ad-cartao ad-acao">
+          <Link href="/admin/formacoes-gravadas" className="ad-cartao ad-acao">
             <div className="ad-icone-badge"><IconEnvelope /></div>
             <div>
               <div className="ad-acao-titulo">Formações gravadas</div>
-              <div className="ad-acao-sub">Avisar a equipa →</div>
+              <div className="ad-acao-sub">Adicionar e gerir gravações →</div>
             </div>
           </Link>
           <Link href="/admin/activecampaign" className="ad-cartao ad-acao">

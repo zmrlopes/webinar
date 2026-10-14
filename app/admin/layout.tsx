@@ -112,6 +112,7 @@ const LINKS = [
   { href: "/admin/consultores", label: "Consultores", icon: IconConsultores },
   { href: "/admin/eventos", label: "Eventos", icon: IconEventos },
   { href: "/admin/documentos", label: "Documentos", icon: IconQuestionarios },
+  { href: "/admin/formacoes-gravadas", label: "Formações gravadas", icon: IconSessoes },
   { href: "/admin/objecoes/conhecimento", label: "Objeções", icon: IconObjecoes },
   { href: "/admin/dashboard-negocio", label: "Dashboard Negócio", icon: IconDashboardNegocio },
   { href: "/admin/core-rank", label: "Core Rank · Top 10", icon: IconDashboardNegocio },
@@ -134,7 +135,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       return (
         pathname.startsWith("/admin/sessoes") ||
         pathname.startsWith("/admin/webinar") ||
-        pathname.startsWith("/admin/formacoes")
+        (pathname.startsWith("/admin/formacoes") && !pathname.startsWith("/admin/formacoes-gravadas"))
       );
     }
     return pathname.startsWith(href);

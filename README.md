@@ -9,6 +9,19 @@ base de dados Postgres (Neon) ligada.
 
 ## Estado
 
+### Gestão de formações gravadas
+
+Em `/admin/formacoes-gravadas`, o admin adiciona título e link (YouTube ou
+outra plataforma), escolhe categoria, origem, curso e módulo e indica a data.
+Duração e formador são opcionais. Pode editar, ocultar/publicar e remover as
+gravações adicionadas. O aviso à equipa continua disponível por um link nesta página.
+
+Os registos são guardados individualmente em `dashboard_config`, sem migração,
+e acrescentados à biblioteca existente nas duas áreas do consultor. A pesquisa,
+as aulas mais recentes, as contagens e a marcação como vista incluem as novas
+gravações. O ID de cada aula mantém-se ao editar o título ou link, preservando
+o progresso privado por consultor. Testes: `node --import tsx scripts/testes-formacoes-gravadas-admin.ts`.
+
 ### Importação de propostas MyOffice nos templates
 
 O importador envia o PDF completo para análise, incluindo páginas em imagem.

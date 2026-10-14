@@ -11,6 +11,7 @@ import type {
   ModuloExterno,
 } from "@/lib/formacoes-gravadas";
 import { comDestinos } from "@/lib/destinos";
+import { aulaTemVideo, urlDaAula } from "@/lib/formacoes-links";
 
 /**
  * Pesquisa das formações gravadas, partilhada pela página inicial das
@@ -106,7 +107,7 @@ export function ResultadosPesquisa({
         ].flatMap(({ curso, interna }) =>
           curso.modulos.flatMap((modulo) =>
             modulo.aulas
-              .filter((a) => a.youtube !== null)
+              .filter(aulaTemVideo)
               .map((aula) => ({
                 aula,
                 curso,
@@ -177,7 +178,7 @@ export function ResultadosPesquisa({
     return (
       <LicaoLinha
         key={`${categoria.id}-${aula.id}`}
-        licao={{ titulo: aula.titulo, url: urlDoVideo(aula.youtube ?? "") }}
+        licao={{ titulo: aula.titulo, url: urlDaAula(aula) }}
         contexto={contexto}
         seta="▶"
       />

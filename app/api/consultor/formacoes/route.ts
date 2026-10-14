@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { CATEGORIAS_FORMACOES, contarAulas, contarCursos, procurarCategoria } from "@/lib/formacoes-gravadas";
+import { contarAulas, contarCursos } from "@/lib/formacoes-gravadas";
+import { carregarCategoriasGravadas } from "@/lib/formacoes-gravadas-servidor";
 import { listarAulasVistas, verificarAcessoFormacoes } from "@/lib/formacoes-vistas";
 
 /**
@@ -40,8 +41,9 @@ export async function POST(request: Request): Promise<Response> {
       );
     }
 
+    const categorias = await carregarCategoriasGravadas();
     if (categoriaId === undefined) {
-      const disponiveis = CATEGORIAS_FORMACOES.filter((c) => c.disponivel);
+      const disponiveis = categorias.filter((c) => c.disponivel);
       const extra = completo
         ? {
             completas: disponiveis,
@@ -53,7 +55,7 @@ export async function POST(request: Request): Promise<Response> {
         : {};
       return NextResponse.json({
         ...extra,
-        categorias: CATEGORIAS_FORMACOES.map((c) => ({
+        categorias: categorias.map((c) => ({
           id: c.id,
           titulo: c.titulo,
           descricao: c.descricao,
@@ -64,7 +66,7 @@ export async function POST(request: Request): Promise<Response> {
       });
     }
 
-    const categoria = procurarCategoria(categoriaId);
+    const categoria = categorias.find(c => c.id === categoriaId);
     if (!categoria || !categoria.disponivel) {
       return NextResponse.json({ erro: "categoria não encontrada" }, { status: 404 });
     }

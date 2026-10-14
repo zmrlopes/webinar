@@ -5,7 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import type { Aula, Categoria, Curso, CursoExterno, Modulo } from "@/lib/formacoes-gravadas";
 import { lerEmailGuardado } from "../../armazenamento";
 import { ESTILOS_FORMACOES } from "../estilos";
-import { LicaoLinha, ResultadosPesquisa, urlDoVideo } from "../pesquisa";
+import { LicaoLinha, ResultadosPesquisa } from "../pesquisa";
+import { aulaTemVideo, urlDaAula } from "@/lib/formacoes-links";
 
 type Estado = "a-carregar" | "sem-conta" | "indisponivel" | "nao-encontrada" | "erro" | "pronto";
 
@@ -120,7 +121,7 @@ function AulaCartao({
     </div>
   );
 
-  if (aula.youtube === null) {
+  if (!aulaTemVideo(aula)) {
     return (
       <div className="vqf-aula">
         <div className="vqf-capa vqf-capa-vazia">Vídeo em breve</div>
@@ -132,14 +133,14 @@ function AulaCartao({
   return (
     <div className={vista ? "vqf-aula vqf-aula-vista" : "vqf-aula"}>
       <a
-        href={urlDoVideo(aula.youtube)}
+        href={urlDaAula(aula)}
         target="_blank"
         rel="noopener noreferrer"
         className="vqf-capa"
-        aria-label={`Ver "${aula.titulo}" no YouTube`}
+        aria-label={`Ver "${aula.titulo}"${aula.youtube ? " no YouTube" : ""}`}
       >
         {/* Capa do vídeo tirada do próprio YouTube — <img> simples, sem otimização do Next. */}
-        <img src={capaDoVideo(aula.youtube)} alt="" loading="lazy" />
+        {aula.youtube ? <img src={capaDoVideo(aula.youtube)} alt="" loading="lazy" /> : <div className="vqf-capa vqf-capa-vazia">Ver gravação</div>}
         <span className="vqf-play" aria-hidden="true">
           ▶
         </span>
@@ -224,7 +225,7 @@ export function CategoriaPagina({ categoriaId, embutida = false, aoVoltar }: {
       ),
     [cursos],
   );
-  const comVideo = useMemo(() => todas.filter((t) => t.aula.youtube !== null), [todas]);
+  const comVideo = useMemo(() => todas.filter((t) => aulaTemVideo(t.aula)), [todas]);
 
   const maisRecentes = useMemo(
     () => [...comVideo].sort((a, b) => b.aula.data.localeCompare(a.aula.data)).slice(0, MAIS_RECENTES),
@@ -377,7 +378,7 @@ export function CategoriaPagina({ categoriaId, embutida = false, aoVoltar }: {
                     <h2>Sessões gravadas</h2>
                   ))}
                 {cursos.map((curso, indice) => {
-                  const aulasCurso = curso.modulos.flatMap((m) => m.aulas).filter((a) => a.youtube !== null);
+                  const aulasCurso = curso.modulos.flatMap((m) => m.aulas).filter(aulaTemVideo);
                   const vistasCurso = aulasCurso.filter((a) => vistas.has(a.id)).length;
                   const pct = aulasCurso.length > 0 ? Math.round((vistasCurso / aulasCurso.length) * 100) : 0;
                   return (
@@ -406,7 +407,7 @@ export function CategoriaPagina({ categoriaId, embutida = false, aoVoltar }: {
                       </summary>
                       <div className="vqf-curso-corpo">
                         {curso.modulos.map((modulo) => {
-                          const aulasModulo = modulo.aulas.filter((a) => a.youtube !== null);
+                          const aulasModulo = modulo.aulas.filter(aulaTemVideo);
                           const vistasModulo = aulasModulo.filter((a) => vistas.has(a.id)).length;
                           return (
                             <details className="vqf-modulo" key={modulo.titulo}>

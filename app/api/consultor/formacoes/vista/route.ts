@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { todosOsIdsDeAulas } from "@/lib/formacoes-gravadas";
+import { carregarCategoriasGravadas } from "@/lib/formacoes-gravadas-servidor";
 import { marcarAulaVista, verificarAcessoFormacoes } from "@/lib/formacoes-vistas";
 
 /** Marca (vista: true) ou desmarca (vista: false) uma aula como vista. */
@@ -24,7 +24,9 @@ export async function POST(request: Request): Promise<Response> {
     if (acesso !== "ok") {
       return NextResponse.json({ erro: "sem acesso às formações gravadas" }, { status: 403 });
     }
-    if (!todosOsIdsDeAulas().has(aulaId)) {
+    const categorias = await carregarCategoriasGravadas();
+    const existe = categorias.some(c => c.disponivel && [...c.cursos, ...c.icligo.cursos].some(curso => curso.modulos.some(m => m.aulas.some(a => a.id === aulaId))));
+    if (!existe) {
       return NextResponse.json({ erro: "aula não encontrada" }, { status: 404 });
     }
 

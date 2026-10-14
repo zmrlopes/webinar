@@ -1,5 +1,6 @@
 import { EMAIL_PAINEL_DEMONSTRACAO } from "./demo";
 import { EQUIPA_ICLIGO, RESERVAS_ICLIGO } from "./formacoes-icligo";
+import { aulaTemVideo } from "./formacoes-links";
 
 /**
  * Formações gravadas (/consultor/formacoes) — recriação, no painel do
@@ -21,11 +22,13 @@ export function formacoesGravadasVisiveis(email: string): boolean {
 }
 
 export interface Aula {
-  /** Chave estável (ID do vídeo do YouTube; ver formacoes_vistas). */
+  /** Chave estável (YouTube nas aulas antigas; ID próprio nas adicionadas no admin). */
   id: string;
   titulo: string;
   /** ID do vídeo no YouTube; null enquanto a aula ainda não tem vídeo alojado aí. */
   youtube: string | null;
+  /** Link de uma gravação adicionada no admin, também de outras plataformas. */
+  url?: string;
   min: number | null;
   /** Data de publicação na escola (AAAA-MM-DD) — só serve para "mais recentes". */
   data: string;
@@ -765,7 +768,7 @@ export function contarCursos(categoria: Categoria): number {
 export function contarAulas(categoria: Categoria): number {
   const videos = todosOsCursos(categoria).reduce(
     (total, curso) =>
-      total + curso.modulos.reduce((t, m) => t + m.aulas.filter((a) => a.youtube !== null).length, 0),
+      total + curso.modulos.reduce((t, m) => t + m.aulas.filter(aulaTemVideo).length, 0),
     0,
   );
   const licoes = categoria.icligo.externos.reduce(
