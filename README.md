@@ -38,6 +38,20 @@ esse texto não substitui a leitura visual da proposta. Mantêm-se os limites
 de 4 MB e 30 páginas e o acesso exclusivo à nova área da conta de teste.
 Os testes de Reservas cobrem PDFs com texto, imagens e conteúdo misto.
 
+A reconstrução das referências de Reservas mede a composição com uma grelha
+auxiliar e distingue a arte de interfaces à volta da imagem. O editor suporta
+Montserrat e Bebas Neue locais (licenças em `public/fonts`), sombras, alinhamento
+vertical, formas com degradé e ícones vetoriais. Os exemplos da referência só
+aparecem na pré-visualização; o PNG utiliza os dados da viagem. Rótulos antes e
+depois de um valor acompanham o respetivo campo dinâmico.
+
+Nos modelos existentes, usar **Reanalisar referência** e comparar com o original
+antes de guardar. A reanálise preserva as fotografias carregadas e os dados;
+quando o novo desenho suporta menos hotéis, as opções anteriores ficam
+disponíveis para seleção. Fotografias com textos sobrepostos podem precisar da
+foto original para não repetir dados da promoção anterior. A funcionalidade
+continua limitada à conta de teste.
+
 ### Calculadoras na nova área
 
 Em **Objetivos → Calculadoras**, a conta de teste pode simular a comissão bruta

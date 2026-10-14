@@ -38,6 +38,7 @@
 .previewTopo { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 11px; }
 .previewTopo span { color: #777b6d; }
 .canvasWrap { position: relative; width: min(100%, 360px); margin: 0 auto; box-shadow: 0 8px 20px #00000017; line-height: 0; }
+.comparacao {display: block; width: 100%; height: auto;}
 .canvasWrap canvas { width: 100%; height: auto; display: block; cursor: pointer; }
 .selecao { position: absolute; border: 2px solid #b1db57; box-sizing: border-box; pointer-events: none; }
 .preview > small { font-size: 11px; color: #707467; }

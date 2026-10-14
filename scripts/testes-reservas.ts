@@ -5,7 +5,7 @@ import { POST } from "../app/api/consultor/nova-area/reservas/route";
 import { db, fecharDb } from "../src/lib/db";
 import { EMAIL_PAINEL_DEMONSTRACAO } from "../src/lib/demo";
 import { abrirReserva, analisarReferenciaReserva, chamarIAReservas, descarregarFotoReserva, guardarReserva, importarPDFReserva, listarReservas } from "../src/lib/reservas-servidor";
-import { aPartirDoModeloReserva, dadosReservaVazios, elementoReserva, hotelVazio, novoMaterialReserva, precoPessoaReserva, textoElementoReserva, validarDadosReserva, validarMaterialReserva } from "../src/lib/reservas";
+import { aPartirDoModeloReserva, dadosReservaVazios, elementoReserva, hotelVazio, manterFotografiasReserva, novoMaterialReserva, precoPessoaReserva, textoElementoReserva, validarDadosReserva, validarMaterialReserva } from "../src/lib/reservas";
 
 async function main() {
   const material = novoMaterialReserva();
@@ -26,6 +26,25 @@ async function main() {
   assert.equal(textoElementoReserva({...campo,capitalizacao:"maiusculas"},multi.dados),"HOTEL B");
   assert.equal(aPartirDoModeloReserva(multi).dados.hoteis.length,2);
   assert.equal(aPartirDoModeloReserva(multi).dados.destino,"");
+  const exemplo = {...campo, campo: "preco" as const, hotel: 0, texto: "927€"};
+  assert.equal(textoElementoReserva(exemplo, dadosReservaVazios(), true), "927€");
+  assert.equal(textoElementoReserva(exemplo, dadosReservaVazios(), false), "", "Os preços de exemplo da referência nunca são exportados como dados confirmados");
+  assert.equal(textoElementoReserva({...exemplo, campo:"destino", texto:"Ilha do Sal"}, {...dadosReservaVazios(), destino:"Gran Canaria"}, true), "Gran Canaria");
+  const partida = {...exemplo, campo:"partida" as const, texto:"Saída de Lisboa", prefixo:"Saída de ", sufixo:""};
+  assert.equal(textoElementoReserva(partida, {...dadosReservaVazios(), partida:"Porto"}), "Saída de Porto");
+  assert.equal(textoElementoReserva(partida, dadosReservaVazios(), true), "Saída de Lisboa");
+  assert.equal(textoElementoReserva(partida, dadosReservaVazios()), "", "Não exporta rótulos soltos quando faltam os dados");
+  const precoComRotulo = {...exemplo, sufixo:" / PESSOA"};
+  assert.match(textoElementoReserva(precoComRotulo, {...dadosReservaVazios(), hoteis:[{...hotelVazio(),precoPessoa:500}]}), /500 € \/ PESSOA/);
+  assert.equal(validarMaterialReserva({...novoMaterialReserva(), elementos:[partida]}).elementos[0]!.prefixo, "Saída de ", "Conserva o espaço que separa o rótulo do valor");
+  const foto = {...elementoReserva("foto","Própria",{x:0,y:0,w:100,h:100}), imagem:"data:image/png;base64,aGVsbG8=", credito:"Autoria", origem:"https://commons.wikimedia.org/wiki/Teste"};
+  const novaFoto = elementoReserva("foto","Novo espaço",{x:5,y:5,w:80,h:60});
+  const fotosMantidas = manterFotografiasReserva([foto], [novaFoto]);
+  assert.equal(fotosMantidas[0]!.imagem,foto.imagem); assert.equal(fotosMantidas[0]!.credito,"Autoria"); assert.equal(fotosMantidas[0]!.x,5);
+  assert.equal(manterFotografiasReserva([foto], []).length,1, "Não perde fotografias quando a análise deteta menos espaços");
+  assert.equal(manterFotografiasReserva([foto, {...foto,id:"segunda"}], [novaFoto]).filter(e=>e.imagem).length,2);
+  const comEstilos = validarMaterialReserva({...novoMaterialReserva(), marcaEstilo:"clara", elementos:[{...campo, hotel:0, fonte:"geometrica", sombra:true, vertical:"top"}, {...elementoReserva("forma","Degradé",{x:0,y:60,w:100,h:40}), cor:"#000000", opacidade:0, corFinal:"#000000", opacidadeFinal:.9}]});
+  assert.equal(comEstilos.marcaEstilo,"clara"); assert.equal(comEstilos.elementos[0]!.fonte,"geometrica"); assert.equal(comEstilos.elementos[0]!.sombra,true); assert.equal(comEstilos.elementos[0]!.vertical,"top"); assert.equal(comEstilos.elementos[1]!.opacidadeFinal,.9);
   const adulterada = {...material, elementos: material.elementos.map(e=>e.tipo==="marca"?{...e,texto:"Outra marca",imagem:"https://evil.example/logo",cor:"#000000"}:e)};
   const marca = validarMaterialReserva(adulterada).elementos.find(e=>e.tipo==="marca")!;
   assert.equal(marca.texto,""); assert.equal(marca.imagem,undefined); assert.equal(marca.cor,"#ffffff");
@@ -53,6 +72,7 @@ async function main() {
     await assert.rejects(()=>abrirReserva("outra-conta@example.com",salvo.id),/não existe/);
     assert.equal((await listarReservas("outra-conta@example.com")).length,0);
     await assert.rejects(()=>guardarReserva("outra-conta@example.com",{id:salvo.id,tipo:"material",material}),/não existe/);
+    const referenciaTeste = "data:image/png;base64," + (await sharp({create:{width:200,height:400,channels:3,background:"#123456"}}).png().toBuffer()).toString("base64");
     const chave = process.env.OPENAI_API_KEY; process.env.OPENAI_API_KEY="chave-de-teste";
     try {
       const pdf=await PDFDocument.create(), pagina=pdf.addPage(); const fonte=await pdf.embedFont(StandardFonts.Helvetica);
@@ -87,13 +107,19 @@ async function main() {
       const bytesLongos = await longo.save();
       await assert.rejects(() => importarPDFReserva(EMAIL_PAINEL_DEMONSTRACAO, new File([new Uint8Array(bytesLongos).buffer], "longo.pdf")), /até 30 páginas/);
       globalThis.fetch=(async()=>Response.json({status:"completed",output:[{type:"message",content:[{type:"output_text",text:JSON.stringify({nome:"Duas opções",maxHoteis:2,fundo:"#123456",fundoFinal:"#abcdef",elementos:[{...campo,hotel:1}]})}]}]})) as typeof fetch;
-      const referencia=await analisarReferenciaReserva(EMAIL_PAINEL_DEMONSTRACAO,"data:image/png;base64,aGVsbG8=","feed");
+      const referencia=await analisarReferenciaReserva(EMAIL_PAINEL_DEMONSTRACAO,referenciaTeste,"feed");
       assert.equal(referencia.maxHoteis,2);assert.equal(referencia.dados.hoteis.length,2);assert.equal(referencia.formato,"feed");assert.equal(referencia.elementos.at(-1)?.tipo,"marca");
       globalThis.fetch=(async()=>Response.json({status:"completed",output:[{type:"message",content:[{type:"output_text",text:JSON.stringify({nome:"Coordenadas normalizadas",maxHoteis:1,elementos:[{...campo,x:.25,y:.3,w:.5,h:.1,tamanho:.08,hotel:0}]})}]}]})) as typeof fetch;
-      const normalizada=await analisarReferenciaReserva(EMAIL_PAINEL_DEMONSTRACAO,"data:image/png;base64,aGVsbG8=","story");
+      const normalizada=await analisarReferenciaReserva(EMAIL_PAINEL_DEMONSTRACAO,referenciaTeste,"story");
       assert.equal(normalizada.elementos[0]!.x,25);assert.equal(normalizada.elementos[0]!.w,50);assert.equal(normalizada.elementos[0]!.tamanho,8);
+      const imagemCorte = await sharp({create:{width:400,height:600,channels:3,background:"#aabbcc"}}).png().toBuffer();
+      globalThis.fetch=(async()=>Response.json({status:"completed",output:[{type:"message",content:[{type:"output_text",text:JSON.stringify({nome:"Arte dentro de screenshot",maxHoteis:1,areaTemplate:{x:25,y:10,w:50,h:80},elementos:[{...campo,tipo:"foto",hotel:0,recorte:{x:30,y:20,w:20,h:30}}]})}]}]})) as typeof fetch;
+      const recortada=await analisarReferenciaReserva(EMAIL_PAINEL_DEMONSTRACAO,"data:image/png;base64,"+imagemCorte.toString("base64"),"story");
+      const tamanhoCorte=await sharp(Buffer.from(recortada.referencia.split(",")[1]!,"base64")).metadata();
+      assert.equal(tamanhoCorte.width,200);assert.equal(tamanhoCorte.height,480);
+      assert.deepEqual(recortada.elementos[0]!.recorte,{x:10,y:12.5,w:40,h:37.5});
       globalThis.fetch=(async()=>Response.json({status:"incomplete",output:[]})) as typeof fetch;
-      await assert.rejects(()=>analisarReferenciaReserva(EMAIL_PAINEL_DEMONSTRACAO,"data:image/png;base64,aGVsbG8=","story"),/complexa/);
+      await assert.rejects(()=>analisarReferenciaReserva(EMAIL_PAINEL_DEMONSTRACAO,referenciaTeste,"story"),/complexa/);
       await assert.rejects(()=>importarPDFReserva(EMAIL_PAINEL_DEMONSTRACAO,new File(["isto nao e um pdf"],"fake.pdf")),/não é um PDF/);
       const chaveClaude=process.env.ANTHROPIC_API_KEY;
       delete process.env.OPENAI_API_KEY;process.env.ANTHROPIC_API_KEY="chave-claude-de-teste";

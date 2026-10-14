@@ -2,7 +2,7 @@
 export type FormatoReserva = "story" | "feed";
 export const CAMPOS_RESERVA = ["livre", "destino", "frase", "partida", "datas", "ida", "regresso", "noites", "viajantes", "voo", "preco", "total", "hotel", "quarto", "regime", "bagagem", "transfer", "condicoes"] as const;
 export type CampoReserva = typeof CAMPOS_RESERVA[number];
-export const ICONES_RESERVA = ["aviao", "hotel", "refeicao", "mala", "transfer", "calendario"] as const;
+export const ICONES_RESERVA = ["aviao", "hotel", "refeicao", "mala", "transfer", "calendario", "ligacao"] as const;
 export type IconeReserva = typeof ICONES_RESERVA[number];
 export interface CaixaReserva { x: number; y: number; w: number; h: number }
 export interface ElementoReserva extends CaixaReserva {
@@ -10,11 +10,13 @@ export interface ElementoReserva extends CaixaReserva {
   tipo: "texto" | "forma" | "foto" | "grafico" | "marca";
   nome: string;
   texto: string;
+  prefixo?: string;
+  sufixo?: string;
   campo: CampoReserva;
   hotel: number;
   cor: string;
   tamanho: number;
-  fonte: "sans" | "serif" | "condensada";
+  fonte: "sans" | "serif" | "condensada" | "geometrica";
   negrito: boolean;
   alinhar: "left" | "center" | "right";
   opacidade: number;
@@ -26,6 +28,10 @@ export interface ElementoReserva extends CaixaReserva {
   origem?: string;
   icone?: IconeReserva;
   capitalizacao?: "normal" | "maiusculas";
+  vertical?: "top" | "middle" | "bottom";
+  sombra?: boolean;
+  corFinal?: string;
+  opacidadeFinal?: number;
 }
 export interface HotelReserva {
   nome: string; quarto: string; regime: string; total: number | null; precoPessoa: number | null;
@@ -37,6 +43,7 @@ export interface DadosReserva {
 export interface MaterialReserva {
   versao: 1; nome: string; formato: FormatoReserva; fundo: string; fundoFinal: string;
   referencia: string; maxHoteis: number; elementos: ElementoReserva[]; dados: DadosReserva;
+  marcaEstilo?: "cartao" | "clara" | "escura";
 }
 export interface ResumoReserva { id: string; nome: string; tipo: "modelo" | "material"; formato: FormatoReserva; atualizadoEm: string }
 export class ErroReserva extends Error {
@@ -73,6 +80,7 @@ const texto = (v: unknown, max = 1000): string => {
   if (typeof v !== "string" || v.length > max) throw new ErroReserva(`Texto inválido ou demasiado longo (máximo ${max} caracteres).`);
   return v.trim();
 };
+const afixo = (v: string): string => {texto(v, 120); return v;};
 const numero = (v: unknown, min: number, max: number, padrao: number): number => {
   if (v == null) return padrao;
   if (typeof v !== "number" || !Number.isFinite(v) || v < min || v > max) throw new ErroReserva("Dimensão ou quantidade inválida.");
@@ -126,12 +134,17 @@ export function validarMaterialReserva(valor: unknown): MaterialReserva {
     const hotel = numero(e.hotel, 0, maxHoteis - 1, 0);
     if (!Number.isInteger(hotel)) throw new ErroReserva("Opção de hotel inválida.");
     elementos.push({id, tipo: e.tipo as ElementoReserva["tipo"], nome: texto(e.nome, 100) || "Elemento", ...caixa(e), texto: texto(e.texto, 2000), campo, hotel,
-      cor: cor(e.cor, "#ffffff"), tamanho: numero(e.tamanho, .5, 25, 4), fonte: e.fonte === "serif" || e.fonte === "condensada" ? e.fonte : "sans",
+      cor: cor(e.cor, "#ffffff"), tamanho: numero(e.tamanho, .5, 25, 4), fonte: e.fonte === "serif" || e.fonte === "condensada" || e.fonte === "geometrica" ? e.fonte : "sans",
       negrito: e.negrito === true, alinhar: e.alinhar === "left" || e.alinhar === "right" ? e.alinhar : "center",
       opacidade: numero(e.opacidade, 0, 1, 1), raio: numero(e.raio, 0, 50, 0), figura: e.figura === "elipse" ? "elipse" : "retangulo",
       ...(e.recorte ? {recorte: caixa(objeto(e.recorte))} : {}), ...(e.imagem ? {imagem: imagemReserva(e.imagem)} : {}),
       ...(ICONES_RESERVA.includes(e.icone as IconeReserva) ? {icone: e.icone as IconeReserva} : {}),
       capitalizacao: e.capitalizacao === "maiusculas" ? "maiusculas" : "normal",
+      ...(e.vertical === "top" || e.vertical === "bottom" || e.vertical === "middle" ? {vertical: e.vertical} : {}),
+      ...(e.sombra === true ? {sombra: true} : {}),
+      ...(typeof e.prefixo === "string" ? {prefixo: afixo(e.prefixo)} : {}),
+      ...(typeof e.sufixo === "string" ? {sufixo: afixo(e.sufixo)} : {}),
+      ...(typeof e.corFinal === "string" ? {corFinal: cor(e.corFinal, cor(e.cor, "#ffffff")), opacidadeFinal: numero(e.opacidadeFinal, 0, 1, 1)} : {}),
       ...(e.credito ? {credito: texto(e.credito, 500)} : {}), ...(e.origem && typeof e.origem === "string" && /^https:\/\/commons\.wikimedia\.org\/wiki\//.test(e.origem) ? {origem: texto(e.origem, 1500)} : {}),
     });
   }
@@ -139,7 +152,8 @@ export function validarMaterialReserva(valor: unknown): MaterialReserva {
   elementos.push(marcaReserva(marca));
   const dados = validarDadosReserva(v.dados);
   if (dados.hoteis.length > maxHoteis) throw new ErroReserva(`Este modelo tem espaço para ${maxHoteis} ${maxHoteis === 1 ? "hotel" : "hotéis"}.`);
-  const material: MaterialReserva = {versao: 1, nome: texto(v.nome, 120) || "Sem nome", formato: v.formato, fundo: cor(v.fundo, "#ffffff"), fundoFinal: cor(v.fundoFinal, cor(v.fundo, "#ffffff")), referencia: imagemReserva(v.referencia), maxHoteis, elementos, dados};
+  const material: MaterialReserva = {versao: 1, nome: texto(v.nome, 120) || "Sem nome", formato: v.formato, fundo: cor(v.fundo, "#ffffff"), fundoFinal: cor(v.fundoFinal, cor(v.fundo, "#ffffff")), referencia: imagemReserva(v.referencia), maxHoteis, elementos, dados,
+    ...(v.marcaEstilo === "clara" || v.marcaEstilo === "escura" || v.marcaEstilo === "cartao" ? {marcaEstilo: v.marcaEstilo} : {})};
   if (JSON.stringify(material).length > 3_700_000) throw new ErroReserva("Este material tem demasiadas imagens. Reduz o tamanho das fotografias.", 413);
   return material;
 }
@@ -157,8 +171,25 @@ export function textoElementoReserva(e: ElementoReserva, dados: DadosReserva, ex
   const euros = (n: number) => `${new Intl.NumberFormat("pt-PT", {maximumFractionDigits: 2}).format(n)} €`;
   const noites = dados.ida && dados.regresso ? Math.round((Date.parse(dados.regresso) - Date.parse(dados.ida)) / 86_400_000) : null;
   const valores: Record<CampoReserva, string> = {livre: e.texto, destino: dados.destino, frase: dados.frase, partida: dados.partida, datas, ida: formatarData(dados.ida), regresso: formatarData(dados.regresso), noites: noites === null ? "" : `${noites} noites`, viajantes: dados.viajantes === null ? "" : `${dados.viajantes} viajantes`, voo: dados.voo, preco: preco === null ? "" : euros(preco), total: h?.total == null ? "" : euros(h.total), hotel: h?.nome ?? "", quarto: h?.quarto ?? "", regime: h?.regime ?? "", bagagem: dados.bagagem, transfer: dados.transfer, condicoes: dados.condicoes};
-  const resultado = valores[e.campo] || (exemplo && e.campo !== "livre" ? `{${e.campo}${["hotel", "regime", "preco"].includes(e.campo) && e.hotel ? ` ${e.hotel + 1}` : ""}}` : "");
+  // Os exemplos da referência servem apenas para rever a composição. Nunca
+  // entram no PNG final sem dados da viagem confirmados.
+  const valor = valores[e.campo];
+  const resultado = valor ? e.campo === "livre" ? valor : `${e.prefixo ?? ""}${valor}${e.sufixo ?? ""}` : (exemplo && e.campo !== "livre" ? e.texto || `{${e.campo}${["hotel", "regime", "preco"].includes(e.campo) && e.hotel ? ` ${e.hotel + 1}` : ""}}` : "");
   return e.capitalizacao === "maiusculas" ? resultado.toLocaleUpperCase("pt-PT") : resultado;
+}
+export function manterFotografiasReserva(anteriores: ElementoReserva[], novos: ElementoReserva[]): ElementoReserva[] {
+  const fotografias = anteriores.filter(e => e.tipo === "foto" && e.imagem);
+  let indice = 0;
+  const elementos = novos.map(e => {
+    if (e.tipo !== "foto") return e;
+    const anterior = fotografias[indice++];
+    return anterior ? {...e, imagem: anterior.imagem, recorte: undefined, credito: anterior.credito, origem: anterior.origem} : e;
+  });
+  // Mesmo se a análise detetar menos espaços, não perde fotografias carregadas.
+  const restantes = fotografias.slice(indice);
+  const ultimaFoto = elementos.reduce((ultima, e, i) => e.tipo === "foto" ? i : ultima, -1);
+  elementos.splice(ultimaFoto + 1, 0, ...restantes.map(e => ({...e, id: crypto.randomUUID()})));
+  return elementos;
 }
 export function aPartirDoModeloReserva(modelo: MaterialReserva): MaterialReserva {
   return {...structuredClone(modelo), nome: "Novo material", dados: {...dadosReservaVazios(), hoteis: Array.from({length: modelo.maxHoteis}, hotelVazio)}};
