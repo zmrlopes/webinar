@@ -12,6 +12,9 @@ async function main() {
   const enviar = async (email: string, aviso: AvisoPush) => {enviados.push({email, aviso}); return {configurado: true, enviadas: 1, falhas: 0};};
   const base = {titulo: "Formação de teste", link: "https://youtu.be/abcDEF_12-3", categoria: "essenciais", origem: "tropa-elite", curso: "Sessões ao Vivo da Equipa", modulo: "Novas formações", data: "2026-10-14", visivel: true};
   try {
+    // Mantém o mesmo backend no pooler durante todo o teste. O rollback remove
+    // as tabelas temporárias antes de devolver a ligação ao serviço partilhado.
+    await cliente.query("begin");
     await cliente.query(`create temporary table dashboard_config (chave text primary key, valor jsonb not null, atualizado_em timestamptz not null default now());
       create temporary table equipa_afiliados (email text primary key, estado text);
       create temporary table links_consultor (referencia_email text);
@@ -63,11 +66,13 @@ async function main() {
 
     await cliente.query("alter table dashboard_config add constraint falha_teste check (not (starts_with(chave, 'gravacao-push:v1:') and valor->>'email' = 'falha@example.com')); insert into equipa_afiliados values('falha@example.com','ACTIVE'); insert into links_consultor values('falha@example.com'); insert into push_subscriptions values('falha@example.com');");
     const antes = await contar("");
+    await cliente.query("savepoint falha_agendamento");
     await assert.rejects(() => guardarGravacaoAdmin(base), /falha_teste/);
+    await cliente.query("rollback to savepoint falha_agendamento");
     assert.equal(await contar(""), antes, "Uma falha ao agendar reverte a publicação inteira");
     const segredo = process.env.CRON_SECRET; process.env.CRON_SECRET = "teste-cron-local";
     try {assert.equal((await cron(new Request("https://exemplo.test/api/cron/formacoes-gravadas"))).status, 401);} finally {if (segredo === undefined) delete process.env.CRON_SECRET; else process.env.CRON_SECRET = segredo;}
     console.log("OK: publicação atómica, ocultas sem avisos, primeira disponibilização, destinatários elegíveis, repetição de falhas, concorrência, sem avisos em edições, sem avisos de gravações removidas e cron protegido. Só tabelas temporárias; nenhum push real enviado.");
-  } finally {pool.query = original; cliente.release(); await fecharDb();}
+  } finally {pool.query = original; try {await cliente.query("rollback");} finally {cliente.release(); await fecharDb();}}
 }
 main().catch(e => {console.error(e); process.exitCode = 1;});
