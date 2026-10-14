@@ -61,3 +61,8 @@ carregar referências próprias para stories/feed; os textos e gráficos são
 editáveis, mas o logótipo e nome iCliGo ficam protegidos. A importação de
 propostas PDF, os modelos e o histórico seguem a mesma restrição na API.
 Publicar Reservas para os restantes consultores requer nova instrução explícita.
+
+Por indicação explícita do utilizador, o card de entrada no grupo WhatsApp
+Welcome Aboard também aparece nos Avisos da área atual (`/consultor`) para
+os consultores da equipa, com o mesmo convite definido em
+`LINK_GRUPO_WELCOME_ABOARD`. Esta autorização abrange apenas este card.

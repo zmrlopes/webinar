@@ -7,6 +7,7 @@ import { ConvencaoCartao, type PedidoConvencao } from "./convencao-cartao";
 import { EventoForm } from "./evento-form";
 import { NotificacoesPush } from "./notificacoes-push";
 import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
+import { LINK_GRUPO_WELCOME_ABOARD } from "@/lib/consultor-nova-area";
 import { AlternarArea } from "./alternar-area";
 import { AvisoRelatorioCore } from "./nova-area/core-rank";
 
@@ -478,6 +479,20 @@ export function BackofficeHome() {
           padding: 1.5rem 1.5rem 1.75rem;
           box-shadow: 0 4px 18px rgba(75, 83, 32, 0.18);
         }
+        .vqb-grupo-whatsapp { display: flex; flex-direction: column; gap: 0.75rem; color: #000000; text-decoration: none; }
+        .vqb-grupo-whatsapp:hover { background: #f2f3e9; }
+        .vqb-grupo-whatsapp:focus-visible { outline: 3px solid #4b5320; outline-offset: 3px; }
+        .vqb-grupo-whatsapp-icone { color: #4b5320; }
+        .vqb-grupo-whatsapp h3 { margin: 0 0 0.4rem; font-size: 1.1rem; }
+        .vqb-grupo-whatsapp p { margin: 0; color: #6b6a63; font-size: 0.9rem; }
+        .vqb-grupo-whatsapp-acao { margin-top: auto; background: #4b5320; color: #ffffff; border-radius: 8px; padding: 0.85rem; text-align: center; font-weight: 700; }
+        @media (max-width: 760px) {
+          .vqb-grupo-whatsapp { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; padding: 1rem; }
+          .vqb-grupo-whatsapp h3 { font-size: 0.95rem; }
+          .vqb-grupo-whatsapp p { font-size: 0.8rem; }
+          .vqb-grupo-whatsapp-acao { margin: 0; padding: 0; background: none; color: #4b5320; }
+          .vqb-grupo-whatsapp-acao-texto { display: none; }
+        }
         .vqb-tabela-wrap { border: 1px solid #000000; border-radius: 10px; overflow-x: auto; }
         .vqb-tabela { width: 100%; min-width: 460px; border-collapse: collapse; background: #f7f6f3; }
         .vqb-tabela th, .vqb-tabela td {
@@ -642,6 +657,23 @@ export function BackofficeHome() {
             <div className="vqb-avisos">
               <h2>Avisos</h2>
               <div className="vqb-avisos-lista">
+              {dados.ehConsultorEquipa && (
+                <a
+                  className="vqb-aviso-destaque vqb-grupo-whatsapp"
+                  href={LINK_GRUPO_WELCOME_ABOARD}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span className="vqb-grupo-whatsapp-icone" aria-hidden="true">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M20 11.5a8 8 0 0 1-12 7L4 20l1.5-4A8 8 0 1 1 20 11.5Z" stroke="currentColor" strokeWidth="1.7" /><path d="M8.5 8.5c.8 3.2 2.5 4.8 5.5 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                  </span>
+                  <div>
+                    <h3>WhatsApp · Welcome Aboard</h3>
+                    <p>Junta-te ao grupo de acolhimento da equipa: primeiros passos, dúvidas e boas-vindas à comunidade.</p>
+                  </div>
+                  <span className="vqb-grupo-whatsapp-acao"><span className="vqb-grupo-whatsapp-acao-texto">Entrar no grupo </span><span aria-hidden="true">→</span></span>
+                </a>
+              )}
               {(dados.questionarios ?? []).map((q) => (
                 <div className="vqb-aviso-destaque" key={q.slug}>
                   <span className="vqb-destaque-etiqueta">🔒 Questionário anónimo</span>
