@@ -51,6 +51,8 @@ quando o novo desenho suporta menos hotéis, as opções anteriores ficam
 disponíveis para seleção. Fotografias com textos sobrepostos podem precisar da
 foto original para não repetir dados da promoção anterior. A funcionalidade
 continua limitada à conta de teste.
+As análises dispõem de 150 segundos por pedido ao serviço; a rota permite
+180 segundos para incluir a preparação das imagens e a validação.
 
 ### Calculadoras na nova área
 

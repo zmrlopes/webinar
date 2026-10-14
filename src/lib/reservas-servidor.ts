@@ -92,7 +92,7 @@ export async function chamarIAReservas(email: string, instructions: string, cont
         model: process.env.RESERVAS_CLAUDE_MODEL || "claude-sonnet-5", max_tokens: tokens, system: sistema,
         messages: [{role: "user", content: blocosClaude()}], ...(schema ? {output_config: {format: {type: "json_schema", schema}}} : {}),
       }),
-      signal: AbortSignal.timeout(100_000),
+      signal: AbortSignal.timeout(150_000),
     });
     // A integração já instalada pode usar um modelo sem output_config. Mantém
     // o mesmo contrato no prompt e a validação local, sem exigir trocar a chave.
@@ -101,7 +101,7 @@ export async function chamarIAReservas(email: string, instructions: string, cont
         method: "POST", headers: {"x-api-key": anthropic!, "anthropic-version": "2023-06-01", "Content-Type": "application/json"},
         body: JSON.stringify({model: process.env.RESERVAS_CLAUDE_MODEL || "claude-sonnet-5", max_tokens: tokens,
           system: `${sistema}\nO objeto JSON deve seguir este esquema exatamente, incluindo todas as propriedades required:\n${JSON.stringify(schema)}`,
-          messages: [{role: "user", content: blocosClaude()}]}), signal: AbortSignal.timeout(100_000),
+          messages: [{role: "user", content: blocosClaude()}]}), signal: AbortSignal.timeout(150_000),
       });
     }
   } catch {throw new ErroReserva("A análise demorou demasiado ou a ligação falhou. Tenta novamente; os teus dados continuam no editor.", 502);}

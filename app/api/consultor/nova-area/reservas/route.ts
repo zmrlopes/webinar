@@ -3,7 +3,7 @@ import { ErroReserva } from "@/lib/reservas";
 import { acessoReservas, abrirReserva, analisarReferenciaReserva, apagarReserva, descarregarFotoReserva, fotografiasReserva, guardarReserva, importarPDFReserva, lerBytesReserva, listarReservas, sugerirFraseReserva } from "@/lib/reservas-servidor";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 180;
 export async function POST(request: Request): Promise<Response> {
   const resposta = (valor: unknown) => NextResponse.json(valor, {headers: {"Cache-Control": "private, no-store"}});
   try {
