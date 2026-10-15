@@ -1,5 +1,7 @@
 import { listarConsultoresAdmin } from "@/lib/admin";
+import { listarConsultoresRegistados } from "@/lib/consultores-admin";
 import { FormularioNovoConsultor } from "./formulario";
+import { ListaConsultoresRegistados } from "./lista-registados";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +14,7 @@ function formatarData(data: Date): string {
 }
 
 export default async function AdminConsultores() {
-  const consultores = await listarConsultoresAdmin();
+  const [consultores, registados] = await Promise.all([listarConsultoresAdmin(), listarConsultoresRegistados()]);
 
   return (
     <main className="ad-pagina">
@@ -59,6 +61,7 @@ export default async function AdminConsultores() {
       <div className="ad-caixa">
         <h1>Consultores</h1>
         <FormularioNovoConsultor />
+        <ListaConsultoresRegistados consultores={registados} />
         <h2 style={{fontSize: "1.15rem"}}>Consultores que já entraram na plataforma</h2>
         <p className="ad-subtitulo">
           Quem já gerou o link pelo menos uma vez em /consultor — {consultores.length}{" "}
