@@ -4,7 +4,7 @@ import { PDFDocument, StandardFonts } from "pdf-lib";
 import { POST } from "../app/api/consultor/nova-area/reservas/route";
 import { db, fecharDb } from "../src/lib/db";
 import { EMAIL_PAINEL_DEMONSTRACAO } from "../src/lib/demo";
-import { abrirReserva, analisarReferenciaReserva, chamarIAReservas, descarregarFotoReserva, guardarReserva, importarPDFReserva, listarReservas } from "../src/lib/reservas-servidor";
+import { abrirReserva, analisarReferenciaReserva, chamarIAReservas, descarregarFotoReserva, fotografiasReserva, guardarReserva, importarPDFReserva, listarReservas } from "../src/lib/reservas-servidor";
 import { aPartirDoModeloReserva, dadosReservaVazios, elementoReserva, hotelVazio, manterFotografiasReserva, novoMaterialReserva, precoPessoaReserva, textoElementoReserva, validarDadosReserva, validarMaterialReserva } from "../src/lib/reservas";
 import { comporModeloReserva, legendaMaterialReserva } from "../src/lib/reservas-modelos";
 
@@ -85,6 +85,19 @@ async function main() {
     throw new Error(`Consulta de teste inesperada: ${sql.slice(0,60)}`);
   }) as typeof pool.query;
   try {
+    const pesquisasFoto:string[]=[];
+    globalThis.fetch=(async url=>{
+      pesquisasFoto.push(new URL(String(url)).searchParams.get("gsrsearch")!);
+      const paginaFoto=(title:string,index:number,licenca="Public domain")=>({title,index,imageinfo:[{url:`https://upload.wikimedia.org/${title}.jpg`,descriptionurl:`https://commons.wikimedia.org/wiki/${title}`,mime:"image/jpeg",extmetadata:{LicenseShortName:{value:licenca},Artist:{value:"Autor"}}}]});
+      return Response.json({query:{pages:{1:paginaFoto("File:Gran Canaria map",0),2:paginaFoto("File:Playa privada",1,"CC BY-SA 4.0"),3:paginaFoto("File:Pozo Izquierdo",3),4:paginaFoto("File:Playa del Inglés",2)}}});
+    }) as typeof fetch;
+    const fotosDestino=await fotografiasReserva("Gran Canaria, Espanha");
+    assert.equal(fotosDestino[0]!.titulo,"Playa del Inglés");assert.equal(fotosDestino.length,2,"Elimina duplicados, mapas e licenças fora do domínio público");
+    assert(pesquisasFoto.every(q=>q.includes('"Gran Canaria"')&&!q.includes("Espanha")),"Pesquisa a localidade quando o PDF também inclui o país");
+    assert(pesquisasFoto.some(q=>q.includes("haswbstatement")));
+    globalThis.fetch=(async()=>{throw new Error("Sem ligação");}) as typeof fetch;
+    await assert.rejects(()=>fotografiasReserva("Gran Canaria"),/fotografia tua/);
+    globalThis.fetch=originalFetch;
     const salvo = await guardarReserva(EMAIL_PAINEL_DEMONSTRACAO,{tipo:"material",material});
     assert.equal((await abrirReserva(EMAIL_PAINEL_DEMONSTRACAO,salvo.id)).material.dados.destino,"Amesterdão");
     await assert.rejects(()=>abrirReserva("outra-conta@example.com",salvo.id),/não existe/);

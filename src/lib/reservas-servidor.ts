@@ -225,19 +225,33 @@ const userAgent = "ReservasConsultor/1.0 (travel promotion editor)";
 const limparHTML = (s: unknown) => typeof s === "string" ? s.replace(/<[^>]*>/g, "").replace(/&[^;]+;/g, " ").replace(/\s+/g, " ").trim().slice(0, 180) : "";
 export async function fotografiasReserva(destino: unknown): Promise<FotoSugeridaReserva[]> {
   if (typeof destino !== "string" || !destino.trim() || destino.length > 160) throw new ErroReserva("Indica um destino para procurar fotografias.");
-  const url = new URL("https://commons.wikimedia.org/w/api.php");
-  url.search = new URLSearchParams({action: "query", format: "json", generator: "search", gsrsearch: destino, gsrnamespace: "6", gsrlimit: "40", prop: "imageinfo", iiprop: "url|extmetadata|mime", iiurlwidth: "1280", iiextmetadatafilter: "LicenseShortName|Artist"}).toString();
-  const resposta = await fetch(url, {headers: {"User-Agent": userAgent}, signal: AbortSignal.timeout(15_000)});
-  if (!resposta.ok) throw new ErroReserva("Não foi possível procurar fotografias. Podes carregar uma fotografia tua.", 502);
-  const corpo = await resposta.json() as {query?: {pages?: Record<string, {title: string; imageinfo?: {thumburl?: string; url?: string; descriptionurl?: string; mime?: string; extmetadata?: Record<string, {value?: string}>}[]}>}};
-  return Object.values(corpo.query?.pages ?? {}).flatMap(p => {
+  // O PDF pode acrescentar o país. Procura a localidade e a licença na própria
+  // pesquisa: filtrar só as primeiras 40 imagens gerais excluía destinos comuns.
+  const local = destino.split(",")[0]!.replace(/["\\]/g, " ").trim() || destino;
+  const pesquisas = [`"${local}" "public domain"`, `"${local}" haswbstatement:P275=Q6938433`];
+  type PaginaFoto = {title: string; index?: number; imageinfo?: {thumburl?: string; url?: string; descriptionurl?: string; mime?: string; extmetadata?: Record<string, {value?: string}>}[]};
+  const resultados = await Promise.allSettled(pesquisas.map(async pesquisa => {
+    const url = new URL("https://commons.wikimedia.org/w/api.php");
+    url.search = new URLSearchParams({action: "query", format: "json", generator: "search", gsrsearch: pesquisa, gsrnamespace: "6", gsrlimit: "40", prop: "imageinfo", iiprop: "url|extmetadata|mime", iiurlwidth: "1280", iiextmetadatafilter: "LicenseShortName|Artist"}).toString();
+    const resposta = await fetch(url, {headers: {"User-Agent": userAgent}, signal: AbortSignal.timeout(15_000)});
+    if (!resposta.ok) throw new ErroReserva("Não foi possível procurar fotografias. Podes carregar uma fotografia tua.", 502);
+    const corpo = await resposta.json() as {error?: unknown; query?: {pages?: Record<string, PaginaFoto>}};
+    if (corpo.error) throw new ErroReserva("Não foi possível procurar fotografias. Podes carregar uma fotografia tua.", 502);
+    return Object.values(corpo.query?.pages ?? {}).sort((a,b)=>(a.index??999)-(b.index??999));
+  }));
+  if (resultados.every(r=>r.status==="rejected")) throw new ErroReserva("Não foi possível procurar fotografias. Podes carregar uma fotografia tua.", 502);
+  const fotos = resultados.flatMap(r=>r.status==="fulfilled"?r.value:[]).flatMap(p => {
     const i = p.imageinfo?.[0], licenca = limparHTML(i?.extmetadata?.LicenseShortName?.value);
     // Só sugere imagens de domínio público/CC0, apropriadas a materiais comerciais sem cláusulas adicionais.
     if (!i || !/^(CC0|Public domain|PD)/i.test(licenca) || !/^image\/(jpeg|png|webp)$/.test(i.mime ?? "")) return [];
     const url = i.thumburl || i.url || "", origem = i.descriptionurl || "";
     if (!url.startsWith("https://upload.wikimedia.org/") || !origem.startsWith("https://commons.wikimedia.org/wiki/")) return [];
     return [{titulo: p.title.replace(/^File:/, ""), url, origem, credito: `${limparHTML(i.extmetadata?.Artist?.value) || "Wikimedia Commons"} · ${licenca}`}];
-  }).slice(0, 6);
+  });
+  const excluir = /map|flag|coat.of.arms|logo|locator|diagram|satellite|insect|butterfly|coin|stamp|seal|bird|portrait|statement|scout|demograf|prisi[oó]n|prison|estadio|stadium/i;
+  const paisagem = /beach|praia|playa|coast|island|resort|faro|lighthouse|skyline|panorama|landscape|paisag|sunset|ocean|dune|city|plaza|bridge|palace|tower|temple|mountain|paysage/i;
+  return [...new Map(fotos.filter(f=>!excluir.test(f.titulo)).map(f=>[f.url,f])).values()]
+    .sort((a,b)=>Number(paisagem.test(b.titulo))-Number(paisagem.test(a.titulo))).slice(0,6);
 }
 export async function descarregarFotoReserva(valor: unknown): Promise<string> {
   if (typeof valor !== "string" || valor.length > 2000) throw new ErroReserva("Fotografia inválida.");
