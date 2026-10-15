@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { aPartirDoModeloReserva, CAMPOS_RESERVA, ICONES_RESERVA, dadosReservaVazios, dimensoesReserva, elementoReserva, espacoFotoReserva, hotelVazio, manterFotografiasReserva, novoMaterialReserva, precoPessoaReserva, validarMaterialReserva, type CampoReserva, type DadosReserva, type ElementoReserva, type FormatoReserva, type HotelReserva, type MaterialReserva, type ResumoReserva } from "@/lib/reservas";
 import { comprimirImagemReserva, desenharReserva, pngReserva } from "@/lib/reservas-canvas";
+import { CriarReservaOrcamento } from "./reservas-orcamento";
+import { legendaMaterialReserva } from "@/lib/reservas-modelos";
 import css from "./reservas.module.css";
 
 const API = "/api/consultor/nova-area/reservas";
@@ -16,7 +18,7 @@ function Campo({titulo, valor, alterar, tipo = "text"}: {titulo: string; valor: 
 }
 
 export function ReservasNovaArea({email}: {email: string}) {
-  const [aba, setAba] = useState<"criar" | "modelos" | "historico">("criar");
+  const [aba, setAba] = useState<"orcamento" | "criar" | "modelos" | "historico">("orcamento");
   const [material, setMaterial] = useState<MaterialReserva>(() => novoMaterialReserva());
   const [registo, setRegisto] = useState<{id: string; tipo: "modelo" | "material"} | null>(null);
   const [lista, setLista] = useState<ResumoReserva[]>([]);
@@ -33,6 +35,7 @@ export function ReservasNovaArea({email}: {email: string}) {
   const [alterado, setAlterado] = useState(false);
   const [revisado, setRevisado] = useState(false);
   const [compararReferencia, setCompararReferencia] = useState(false);
+  const [resultadoSimples, setResultadoSimples] = useState(false);
   const [erroPreview, setErroPreview] = useState("");
   const canvas = useRef<HTMLCanvasElement>(null);
   const referenciaInput = useRef<HTMLInputElement>(null), pdfInput = useRef<HTMLInputElement>(null), fotoInput = useRef<HTMLInputElement>(null);
@@ -85,7 +88,11 @@ export function ReservasNovaArea({email}: {email: string}) {
     try {await acao();} catch (e) {setErro(e instanceof Error ? e.message : "Não foi possível concluir o pedido.");} finally {setOcupado("");}
   }
   function podeSubstituir() {return !alterado || window.confirm("Tens alterações por guardar. Queres abrir outro material e descartar essas alterações?");}
-  function novo() {if (!podeSubstituir()) return; setMaterial(novoMaterialReserva(material.formato)); setRegisto(null); setSelecionado(null); setAlterado(false); setRevisado(false); setAvisos([]); setImportadas([]); setFotografias([]); setErro(""); setMensagem(""); setAba("criar");}
+  function novo() {if (!podeSubstituir()) return; setMaterial(novoMaterialReserva(material.formato)); setResultadoSimples(false); setRegisto(null); setSelecionado(null); setAlterado(false); setRevisado(false); setAvisos([]); setImportadas([]); setFotografias([]); setErro(""); setMensagem(""); setAba("criar");}
+  function receberTemplate(m: MaterialReserva) {
+    if (!podeSubstituir()) return;
+    setMaterial(m); setRegisto(null); setSelecionado(null); setAlterado(true); setRevisado(false); setCompararReferencia(false); setResultadoSimples(true); setAba("criar"); setAvisos([]); setImportadas([]); setFotografias([]); setErro(""); setMensagem("Template criado a partir do orçamento. Revê o resultado antes de descarregar.");
+  }
   async function carregarReferencia(e: ChangeEvent<HTMLInputElement>) {
     const ficheiro = e.target.files?.[0]; e.target.value = ""; if (!ficheiro) return;
     await executar("A reconstruir a tua referência…", async () => {
@@ -148,7 +155,7 @@ export function ReservasNovaArea({email}: {email: string}) {
     await executar("A abrir…", async () => {
       const r = await pedir<Registo>("abrir", {id: item.id}); const m = validarMaterialReserva(r.material);
       setMaterial(acao === "usar" ? aPartirDoModeloReserva(m) : acao === "duplicar" ? {...m, nome: `${m.nome.slice(0, 110)} — cópia`} : m);
-      setRegisto(acao === "editar" ? {id: r.id, tipo: r.tipo} : null); setAlterado(acao !== "editar"); setRevisado(false); setSelecionado(null); setImportadas([]); setAvisos([]); setFotografias([]); setTermoFoto(acao === "usar" ? "" : m.dados.destino); setAba("criar");
+      setRegisto(acao === "editar" ? {id: r.id, tipo: r.tipo} : null); setAlterado(acao !== "editar"); setRevisado(false); setResultadoSimples(false); setSelecionado(null); setImportadas([]); setAvisos([]); setFotografias([]); setTermoFoto(acao === "usar" ? "" : m.dados.destino); setAba("criar");
     });
   }
   async function exportar() {
@@ -204,34 +211,36 @@ export function ReservasNovaArea({email}: {email: string}) {
   const registosAba = lista.filter(r => r.tipo === (aba === "modelos" ? "modelo" : "material"));
 
   return <section className={css.pagina} aria-label="Reservas e templates">
-    <header className={css.intro}><span>RESERVAS</span><h1>As tuas viagens, com o teu desenho.</h1><p>Transforma uma referência e um orçamento num material pronto a partilhar.</p></header>
-    <div className={css.abas} role="tablist" aria-label="Reservas">{([['criar', 'Criar templates'], ['modelos', 'Os meus modelos'], ['historico', 'Histórico']] as const).map(([id, titulo]) => <button type="button" role="tab" aria-selected={aba === id} aria-controls="reservas-painel" key={id} disabled={!!ocupado} onClick={() => setAba(id)}>{titulo}{id !== "criar" && <span>{lista.filter(r => r.tipo === (id === "modelos" ? "modelo" : "material")).length}</span>}</button>)}</div>
+    <header className={css.intro}><span>RESERVAS</span><h1>Do orçamento à publicação.</h1><p>Carrega a proposta, escolhe o formato e gera um template com os dados da viagem.</p></header>
+    <div className={css.abas} role="tablist" aria-label="Reservas">{([['orcamento', 'Criar com orçamento'], ['criar', 'Editor de templates'], ['modelos', 'Os meus modelos'], ['historico', 'Histórico']] as const).map(([id, titulo]) => <button type="button" role="tab" aria-selected={aba === id} aria-controls="reservas-painel" key={id} disabled={!!ocupado} onClick={() => {setAba(id); if (id === "criar") setResultadoSimples(false);}}>{titulo}{(id === "modelos" || id === "historico") && <span>{lista.filter(r => r.tipo === (id === "modelos" ? "modelo" : "material")).length}</span>}</button>)}</div>
     <div aria-live="polite" className={css.mensagens}>{ocupado && <p role="status">{ocupado}</p>}{mensagem && <p className={css.sucesso}>{mensagem}</p>}{erro && <p role="alert" className={css.erro}>{erro}</p>}</div>
     <input ref={referenciaInput} className={css.inputOculto} type="file" accept="image/png,image/jpeg,image/webp" onChange={e => void carregarReferencia(e)} aria-label="Carregar referência" />
     <input ref={pdfInput} className={css.inputOculto} type="file" accept="application/pdf,.pdf" multiple onChange={e => void importarPDF(e)} aria-label="Importar orçamentos em PDF" />
     <input ref={fotoInput} className={css.inputOculto} type="file" accept="image/png,image/jpeg,image/webp" onChange={e => void carregarFoto(e)} aria-label="Carregar fotografia" />
     <div id="reservas-painel" role="tabpanel">
-    {aba === "criar" ? <fieldset className={css.editorCompleto} disabled={!!ocupado}>
-      <div className={css.iniciar}>
+    <div hidden={aba !== "orcamento"}><CriarReservaOrcamento email={email} ia={ia} ocupado={ocupado} onOcupado={setOcupado} onGerar={receberTemplate} /></div>
+    {aba === "orcamento" ? null : aba === "criar" ? <fieldset className={css.editorCompleto} disabled={!!ocupado}>
+      <div className={css.iniciar} hidden={resultadoSimples}>
         <div><h2>1. Escolhe o desenho</h2><p>Carrega uma imagem do material final: PNG, JPG ou WebP. Os textos passam a campos editáveis.</p></div>
         <div className={css.acoes}><button className={css.primario} type="button" disabled={!ia} onClick={() => referenciaInput.current?.click()}>{material.referencia ? "Mudar referência" : "Carregar referência"}</button><button type="button" onClick={novo}>Começar de novo</button></div>
         <div className={css.linha}><Campo titulo="Nome do modelo ou material" valor={material.nome} alterar={v => atualizar(m => ({...m, nome: v.slice(0,120)}))} /><label className={css.campo}><span>Formato</span><select value={material.formato} onChange={e => atualizar(m => ({...m, formato: e.target.value as FormatoReserva}))}><option value="story">Story · 1080 × 1920</option><option value="feed">Feed · 1080 × 1350</option></select></label></div>
         {material.referencia && <div className={css.referencia}><img src={material.referencia} alt="A tua referência original" /><div><strong>Referência original</strong><p>Compara o resultado e ajusta os elementos. Se a foto da referência tiver texto por cima, carrega a fotografia original para evitar repetir textos antigos.</p><button type="button" disabled={!ia} onClick={() => void reanalisar()}>Reanalisar referência</button></div></div>}
         {!ia && <p className={css.nota}>A análise automática precisa de ser configurada. O editor manual, os modelos e a exportação continuam disponíveis.</p>}
       </div>
-      <div className={css.workspace}>
+      <div className={`${css.workspace} ${resultadoSimples ? css.resultadoWorkspace : ""}`}>
         <aside className={css.preview} aria-label="Pré-visualização do material"><div className={css.previewTopo}><strong>Pré-visualização</strong><span>{dimensoes.largura} × {dimensoes.altura}</span></div>
           {material.referencia && <button type="button" aria-pressed={compararReferencia} onClick={() => setCompararReferencia(v => !v)}>{compararReferencia ? "Ver template criado" : "Comparar com a referência"}</button>}
-          <div className={css.canvasWrap}><canvas ref={canvas} style={{display: compararReferencia && material.referencia ? "none" : undefined}} width={1080} height={dimensoes.altura} onPointerDown={selecionarCanvas} aria-label="Pré-visualização. Usa a lista de elementos para selecionar e editar o desenho." />{compararReferencia && material.referencia && <img src={material.referencia} alt="Referência para comparar com o template criado" className={css.comparacao} />}{atual && !compararReferencia && <div className={css.selecao} style={{left: `${atual.x}%`, top: `${atual.y}%`, width: `${atual.w}%`, height: `${atual.h}%`}} />}</div>
+          <div className={css.canvasWrap}><canvas ref={canvas} style={{display: compararReferencia && material.referencia ? "none" : undefined}} width={1080} height={dimensoes.altura} onPointerDown={resultadoSimples ? undefined : selecionarCanvas} aria-label="Pré-visualização. Usa a lista de elementos para selecionar e editar o desenho." />{compararReferencia && material.referencia && <img src={material.referencia} alt="Referência para comparar com o template criado" className={css.comparacao} />}{atual && !resultadoSimples && !compararReferencia && <div className={css.selecao} style={{left: `${atual.x}%`, top: `${atual.y}%`, width: `${atual.w}%`, height: `${atual.h}%`}} />}</div>
           {erroPreview && <p className={css.erro} role="alert">{erroPreview}</p>}
-          <p className={css.nota}>Clica num elemento da imagem ou escolhe-o na lista para editar. A marca iCliGo está protegida.</p>
+          <p className={css.nota}>{resultadoSimples ? "Revê os dados do orçamento e a fotografia antes de descarregar. Podes ajustar o template no editor." : "Clica num elemento da imagem ou escolhe-o na lista para editar. A marca iCliGo está protegida."}</p>
           {material.referencia && <p className={css.nota}>Os campos ainda vazios mostram exemplos da referência apenas nesta pré-visualização. O PNG usa os dados da tua viagem.</p>}
           <label className={css.confirmar}><input type="checkbox" checked={revisado} onChange={e => setRevisado(e.target.checked)} />Confirmei os dados, os preços e o desenho.</label>
           <button className={css.primario} type="button" disabled={!revisado || !!erroPreview} onClick={() => void exportar()}>Descarregar PNG</button>
           <div className={css.acoes}><button type="button" onClick={() => void guardar("material")}>Guardar no histórico</button><button type="button" onClick={() => void guardar("modelo")}>Guardar modelo</button></div>
           <small>{alterado ? "Tens alterações por guardar." : registo ? "Guardado na tua conta." : "O teu material ainda não foi guardado."}</small>
         </aside>
-        <div className={css.formulario}>
+        {resultadoSimples && <div className={css.cartao}><span className={css.etiquetaPronto}>TEMPLATE CRIADO</span><h2>A tua viagem, pronta a divulgar.</h2><p className={css.nota}>A composição já utiliza os dados do orçamento que confirmaste.</p><dl className={css.dadosResultado}><div><dt>Destino</dt><dd>{material.dados.destino}</dd></div><div><dt>Hotel</dt><dd>{material.dados.hoteis[0]?.nome || "—"}</dd></div><div><dt>Regime</dt><dd>{material.dados.hoteis[0]?.regime || "—"}</dd></div><div><dt>Formato</dt><dd>{material.formato === "story" ? "Story · 1080 × 1920" : "Publicação · 1080 × 1350"}</dd></div></dl><div className={css.acoes}><button type="button" onClick={() => setResultadoSimples(false)}>Editar dados e desenho</button><button type="button" onClick={() => {fotoDestino.current=material.elementos.find(e=>e.tipo==="foto")?.id??null;fotoInput.current?.click();}}>Mudar fotografia</button></div><details className={css.servicosOrcamento}><summary>Texto para acompanhar a publicação</summary><p className={css.legendaPublicacao}>{legendaMaterialReserva(material)}</p><button type="button" onClick={() => void executar("A copiar o texto…",async()=>{await navigator.clipboard.writeText(legendaMaterialReserva(material));setMensagem("Texto da publicação copiado.");})}>Copiar texto</button></details><button type="button" className={css.botaoTexto} onClick={() => setAba("orcamento")}>Criar outro template com o orçamento</button></div>}
+        <div className={css.formulario} hidden={resultadoSimples}>
           <article className={css.cartao}><div className={css.tituloLinha}><div><span className={css.passinho}>2</span><h2>Dados da viagem</h2></div><button type="button" disabled={!ia} onClick={() => pdfInput.current?.click()}>Importar PDF MyOffice</button></div>
             <p className={css.nota}>Podes importar uma ou várias propostas em PDF (até 4 MB cada) ou preencher tudo à mão. Confirma sempre os dados extraídos.</p>
             {avisos.length > 0 && <ul className={css.avisos}>{avisos.map((v,i) => <li key={i}>{v}</li>)}</ul>}

@@ -1,0 +1,111 @@
+"use client";
+
+import {useRef, useState, type ChangeEvent} from "react";
+import {dadosReservaVazios, precoPessoaReserva, validarDadosReserva, type DadosReserva, type FormatoReserva, type MaterialReserva} from "@/lib/reservas";
+import {comprimirImagemReserva} from "@/lib/reservas-canvas";
+import {comporModeloReserva, ESTILOS_RESERVA, type EstiloReserva, type FotografiaModeloReserva} from "@/lib/reservas-modelos";
+import css from "./reservas.module.css";
+
+const API = "/api/consultor/nova-area/reservas";
+const euros = (n: number | null) => n === null ? "Por confirmar" : `${new Intl.NumberFormat("pt-PT",{maximumFractionDigits:2}).format(n)} €`;
+type Foto = {titulo: string; url: string; credito: string; origem: string};
+export function CriarReservaOrcamento({email,ia,ocupado,onOcupado,onGerar}: {email:string;ia:boolean;ocupado:string;onOcupado:(v:string)=>void;onGerar:(m:MaterialReserva)=>void}) {
+  const [passo,setPasso] = useState<1|2|3>(1);
+  const [dados,setDados] = useState<DadosReserva>(()=>({...dadosReservaVazios(),condicoes:""}));
+  const [propostas,setPropostas] = useState<DadosReserva[]>([]), [proposta,setProposta] = useState(0), [hotel,setHotel] = useState(0);
+  const [ficheiros,setFicheiros] = useState<string[]>([]), [avisos,setAvisos] = useState<string[]>([]), [erro,setErro] = useState("");
+  const [manual,setManual] = useState(false), [confirmado,setConfirmado] = useState(false);
+  const [formato,setFormato] = useState<FormatoReserva>("story"), [estilo,setEstilo] = useState<EstiloReserva>("elegante");
+  const [foto,setFoto] = useState<FotografiaModeloReserva | null>(null);
+  const pdfInput = useRef<HTMLInputElement>(null), fotoInput = useRef<HTMLInputElement>(null);
+  const preco = dados.hoteis[hotel] ? precoPessoaReserva(dados,dados.hoteis[hotel]!) : null;
+  async function pedir<T>(acao:string,extra:Record<string,unknown>):Promise<T> {
+    const r = await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,acao,...extra})});
+    const c = await r.json(); if (!r.ok) throw new Error(c.erro || "Não foi possível concluir o pedido."); return c;
+  }
+  async function fazer(titulo:string,acao:()=>Promise<void>) {
+    if (ocupado) return; setErro(""); onOcupado(titulo);
+    try {await acao();} catch(e) {setErro(e instanceof Error?e.message:"Não foi possível concluir.");} finally {onOcupado("");}
+  }
+  function alterar<K extends keyof DadosReserva>(campo:K,valor:DadosReserva[K]) {setDados(d=>({...d,[campo]:valor}));setConfirmado(false);if(campo==="destino"&&foto?.origem)setFoto(null);}
+  function selecionarProposta(i:number) {
+    setPropostas(ps=>ps.map((p,n)=>n===proposta?structuredClone(dados):p));
+    setProposta(i);setDados(structuredClone(propostas[i]!));setHotel(0);setConfirmado(false);setFoto(null);
+  }
+  function alterarHotel(campo:"nome"|"regime"|"quarto"|"total"|"precoPessoa",valor:string) {
+    alterar("hoteis",dados.hoteis.map((h,i)=>i===hotel?{...h,[campo]:campo==="total"||campo==="precoPessoa"?valor===""?null:Number(valor):valor}:h));
+  }
+  async function importar(e:ChangeEvent<HTMLInputElement>) {
+    const fs=Array.from(e.target.files??[]);e.target.value="";if(!fs.length)return;
+    await fazer("A ler o orçamento…",async()=>{
+      if(fs.length>6)throw new Error("Carrega até seis PDFs de cada vez.");
+      const ps:DadosReserva[]=[],as:string[]=[],nomes:string[]=[];
+      for(const f of fs) {
+        if(f.size>4_000_000){as.push(`${f.name}: o PDF deve ter até 4 MB.`);continue;}
+        const form=new FormData();form.set("email",email);form.set("ficheiro",f);
+        try {const r=await fetch(API,{method:"POST",body:form}),c=await r.json();if(!r.ok)throw new Error(c.erro);const novas=(c.propostas as unknown[]).map(validarDadosReserva);ps.push(...novas);as.push(...(Array.isArray(c.avisos)?c.avisos.filter((v:unknown)=>typeof v==="string"):[]));if(novas.length)nomes.push(f.name);}
+        catch(ex){as.push(`${f.name}: ${ex instanceof Error?ex.message:"Não foi possível ler."}`);}
+      }
+      setAvisos(as);if(!ps.length)throw new Error(as.join(" ")||"Não foram encontradas propostas neste PDF.");
+      setPropostas(ps);setProposta(0);setHotel(0);setDados(structuredClone(ps[0]!));setFicheiros(nomes);setConfirmado(false);setFoto(null);setPasso(1);
+    });
+  }
+  function continuar() {
+    setErro("");
+    try {validarDadosReserva(dados);if(!dados.destino.trim())throw new Error("Confirma o destino da viagem.");if(preco===null)throw new Error("Confirma o preço por pessoa, ou o total e o número de viajantes.");if(!confirmado)throw new Error("Confirma os dados do orçamento para continuar.");setPasso(2);}catch(e){setErro(e instanceof Error?e.message:"Revê os dados.");}
+  }
+  async function carregarFoto(e:ChangeEvent<HTMLInputElement>) {const f=e.target.files?.[0];e.target.value="";if(f)await fazer("A preparar a fotografia…",async()=>setFoto({imagem:await comprimirImagemReserva(f)}));}
+  async function gerar() {
+    await fazer("A compor o teu template…",async()=>{
+      const d=validarDadosReserva(dados);if(!confirmado||preco===null)throw new Error("Volta ao orçamento e confirma os dados e o preço.");
+      let imagem=foto;
+      if(!imagem) {
+        const r=await pedir<{fotografias:Foto[]}>("fotografias",{destino:d.destino});
+        const paisagens=r.fotografias.filter(f=>!/(?:map|flag|coat.of.arms|logo|locator|diagram|satellite|insect|butterfly|coin|stamp|seal|bird)/i.test(f.titulo));
+        for(const f of paisagens.slice(0,3)) {try {const v=await pedir<{imagem:string}>("usar-foto",{url:f.url});imagem={imagem:v.imagem,credito:f.credito,origem:f.origem};break;}catch{/* Tenta outra fotografia disponível. */}}
+        if(!imagem)throw new Error("Não foi possível escolher uma fotografia automaticamente. Volta ao passo 2 e carrega uma fotografia tua.");
+        setFoto(imagem);
+      }
+      onGerar(comporModeloReserva(d,formato,estilo,imagem,hotel));
+    });
+  }
+  function campo(titulo:string,chave:"destino"|"partida"|"ida"|"regresso"|"bagagem"|"transfer",tipo="text") {return <label className={css.campo}><span>{titulo}</span><input type={tipo} value={dados[chave]} onChange={e=>alterar(chave,e.target.value)} /></label>;}
+  const h=dados.hoteis[hotel]!;
+  return <div className={css.assistente}>
+    <ol className={css.passos} aria-label="Criar template a partir de orçamento">{["Orçamento","Formato e estilo","Texto e gerar"].map((nome,i)=><li key={nome} aria-current={passo===i+1?"step":undefined} data-completo={passo>i+1}><span>{i+1}</span><strong>{nome}</strong></li>)}</ol>
+    {erro&&<p role="alert" className={css.erro}>{erro}</p>}
+    <fieldset disabled={!!ocupado} className={css.editorCompleto}>
+      <input ref={pdfInput} className={css.inputOculto} type="file" accept="application/pdf,.pdf" multiple onChange={e=>void importar(e)} aria-label="Orçamentos PDF para gerar template" />
+      <input ref={fotoInput} className={css.inputOculto} type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>void carregarFoto(e)} aria-label="Fotografia do novo template" />
+      {passo===1&&<div className={css.cartao}>
+        <h2>Qual é a viagem que queres divulgar?</h2><p className={css.nota}>Carrega o orçamento do MyOffice ou de outro fornecedor. Os dados da viagem preenchem o template.</p>
+        <div className={css.uploadOrcamento}><span className={css.documentoIcone} aria-hidden="true">↥</span><div><strong>Começa pelo orçamento</strong><p>PDF até 4 MB · podes carregar várias propostas</p></div><button type="button" className={css.primario} disabled={!ia} onClick={()=>pdfInput.current?.click()}>{ficheiros.length?"Carregar outro orçamento":"Carregar orçamento PDF"}</button></div>
+        {!ia&&<p className={css.nota}>A leitura automática ainda não está configurada. Podes preencher os dados manualmente.</p>}
+        {ficheiros.length>0&&<p className={css.ficheiroImportado}>✓ {ficheiros.join(" · ")}</p>}
+        {avisos.length>0&&<ul className={css.avisos}>{avisos.map((a,i)=><li key={i}>{a}</li>)}</ul>}
+        {propostas.length>1&&<label className={css.campo}><span>Proposta a divulgar</span><select value={proposta} onChange={e=>selecionarProposta(Number(e.target.value))}>{propostas.map((p,i)=><option value={i} key={i}>{p.destino||`Proposta ${i+1}`} · {p.ida||"Data por confirmar"}</option>)}</select></label>}
+        {!(propostas.length||manual)?<button type="button" className={css.botaoTexto} onClick={()=>setManual(true)}>Preencher os dados manualmente</button>:<>
+          <div className={css.grelha}>{campo("Destino","destino")}{campo("Cidade de partida","partida")}{campo("Ida","ida","date")}{campo("Regresso","regresso","date")}</div>
+          <label className={css.campo}><span>Viajantes incluídos no total</span><input type="number" min={1} max={100} value={dados.viajantes??""} onChange={e=>alterar("viajantes",e.target.value===""?null:Number(e.target.value))}/></label>
+          {dados.hoteis.length>1&&<label className={css.campo}><span>Hotel a divulgar neste template</span><select value={hotel} onChange={e=>{setHotel(Number(e.target.value));setConfirmado(false);}}>{dados.hoteis.map((v,i)=><option value={i} key={i}>{v.nome||`Hotel ${i+1}`} · {euros(precoPessoaReserva(dados,v))}</option>)}</select></label>}
+          <div className={css.hotel}><h3>Hotel e preço da proposta</h3><div className={css.grelha}>{([['nome','Nome do hotel'],['regime','Regime alimentar'],['total','Total desta opção (€)'],['precoPessoa','Preço por pessoa (€) · opcional']] as const).map(([key,nome])=><label key={key} className={css.campo}><span>{nome}</span><input type={key==="total"||key==="precoPessoa"?"number":"text"} min={0} step="any" value={h[key]??""} onChange={e=>alterarHotel(key,e.target.value)} /></label>)}</div><p className={css.preco}>Por pessoa <strong>{euros(preco)}</strong><small>O preço explícito por pessoa prevalece. O total só é dividido pelo número de viajantes confirmado.</small></p></div>
+          <details className={css.servicosOrcamento}><summary>Ver serviços e condições extraídos</summary><div className={css.grelha}>{campo("Bagagem","bagagem")}{campo("Transfer","transfer")}</div><label className={css.campo}><span>Condições / notas a mostrar</span><textarea value={dados.condicoes} rows={3} onChange={e=>alterar("condicoes",e.target.value)} /></label></details>
+          <label className={css.confirmar}><input type="checkbox" checked={confirmado} onChange={e=>setConfirmado(e.target.checked)}/>Confirmei as datas, os viajantes, os preços e os serviços do orçamento.</label>
+          <div className={css.rodapePasso}><span>As restantes propostas e hotéis continuam disponíveis nesta seleção.</span><button type="button" className={css.primario} onClick={continuar}>Continuar →</button></div>
+        </>}
+      </div>}
+      {passo===2&&<div className={css.cartao}><h2>Como queres apresentar a viagem?</h2><p className={css.nota}>Escolhe o formato e o estilo. O desenho adapta-se aos dados do orçamento.</p>
+        <div className={css.escolhasFormato}>{([['story','Story','1080 × 1920 · vertical'],['feed','Publicação','1080 × 1350 · feed']] as const).map(([id,nome,desc])=><button key={id} type="button" aria-pressed={formato===id} onClick={()=>setFormato(id)}><span className={id==="story"?css.formatoStory:css.formatoFeed} aria-hidden="true"/><strong>{nome}</strong><small>{desc}</small></button>)}</div>
+        <h3 className={css.subtituloPasso}>Estilo do template</h3><div className={css.estilosModelo}>{ESTILOS_RESERVA.map(e=><button key={e.id} type="button" aria-pressed={estilo===e.id} onClick={()=>setEstilo(e.id)}><span className={e.id==="elegante"?css.amostraElegante:css.amostraFotografica} aria-hidden="true"><i/><b>O teu destino</b><em>desde 1.250 €</em></span><strong>{e.nome}</strong><small>{e.descricao}</small></button>)}</div><p className={css.nota}>As miniaturas ilustram o estilo. O resultado utiliza os preços e dados do teu orçamento.</p>
+        <div className={css.fotoOrcamento}>{foto&&<img src={foto.imagem} alt="Fotografia escolhida para o template"/>}<div><strong>Fotografia do destino</strong><p className={css.nota}>{foto?"Esta fotografia será usada no template.":"Escolhemos uma fotografia do destino automaticamente. Também podes usar uma fotografia tua."}</p><button type="button" onClick={()=>fotoInput.current?.click()}>{foto?"Mudar fotografia":"Carregar a minha fotografia"}</button></div></div>
+        <div className={css.rodapePasso}><button type="button" onClick={()=>{setPasso(1);setErro("");}}>← Orçamento</button><button type="button" className={css.primario} onClick={()=>{setPasso(3);setErro("");}}>Continuar →</button></div>
+      </div>}
+      {passo===3&&<div className={css.cartao}><h2>Prepara o texto e gera o teu template.</h2><p className={css.nota}>O destino, as datas, o hotel e o preço já vêm do orçamento. Podes acrescentar uma frase de destaque.</p>
+        <div className={css.resumoOrcamento}><div><span>DESTINO</span><strong>{dados.destino}</strong><small>{h.nome}</small></div><div><span>POR PESSOA</span><strong>{euros(preco)}</strong><small>{formato==="story"?"Story":"Publicação"} · {ESTILOS_RESERVA.find(e=>e.id===estilo)!.nome}</small></div></div>
+        <label className={css.campo}><span>Frase de destaque · opcional</span><textarea rows={3} maxLength={500} placeholder="A tua próxima viagem começa aqui." value={dados.frase} onChange={e=>setDados(d=>({...d,frase:e.target.value}))}/></label><button type="button" disabled={!ia} onClick={()=>void fazer("A sugerir uma frase…",async()=>{const r=await pedir<{frase:string}>("frase",{destino:dados.destino});setDados(d=>({...d,frase:r.frase}));})}>Sugerir frase</button>
+        <p className={css.marcaProtegida}>A marca iCliGo acompanha o template. Podes ajustar os textos, a fotografia e a composição depois de gerar.</p>
+        <div className={css.rodapePasso}><button type="button" onClick={()=>{setPasso(2);setErro("");}}>← Formato e estilo</button><button type="button" className={css.primario} onClick={()=>void gerar()}>Gerar template</button></div>
+      </div>}
+    </fieldset>
+  </div>;
+}

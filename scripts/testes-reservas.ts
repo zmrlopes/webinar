@@ -6,6 +6,7 @@ import { db, fecharDb } from "../src/lib/db";
 import { EMAIL_PAINEL_DEMONSTRACAO } from "../src/lib/demo";
 import { abrirReserva, analisarReferenciaReserva, chamarIAReservas, descarregarFotoReserva, guardarReserva, importarPDFReserva, listarReservas } from "../src/lib/reservas-servidor";
 import { aPartirDoModeloReserva, dadosReservaVazios, elementoReserva, hotelVazio, manterFotografiasReserva, novoMaterialReserva, precoPessoaReserva, textoElementoReserva, validarDadosReserva, validarMaterialReserva } from "../src/lib/reservas";
+import { comporModeloReserva, legendaMaterialReserva } from "../src/lib/reservas-modelos";
 
 async function main() {
   const material = novoMaterialReserva();
@@ -26,6 +27,23 @@ async function main() {
   assert.equal(textoElementoReserva({...campo,capitalizacao:"maiusculas"},multi.dados),"HOTEL B");
   assert.equal(aPartirDoModeloReserva(multi).dados.hoteis.length,2);
   assert.equal(aPartirDoModeloReserva(multi).dados.destino,"");
+  const dadosModelo = {...dadosReservaVazios(),destino:"Maldivas",partida:"Lisboa",ida:"2026-11-10",regresso:"2026-11-17",viajantes:2,bagagem:"",transfer:"",condicoes:"",hoteis:[{...hotelVazio(),nome:"Hotel A",regime:"Pequeno-almoço",total:2000},{...hotelVazio(),nome:"Hotel B",regime:"Tudo incluído",total:2600}]};
+  const antesModelo = structuredClone(dadosModelo);
+  for (const formato of ["story","feed"] as const) for (const estilo of ["elegante","fotografico"] as const) {
+    const composto = comporModeloReserva(dadosModelo,formato,estilo,{imagem:"data:image/png;base64,aGVsbG8="},1);
+    assert.equal(composto.dados.hoteis.length,1); assert.equal(composto.dados.hoteis[0]!.nome,"Hotel B");
+    assert.equal(precoPessoaReserva(composto.dados,composto.dados.hoteis[0]!),1300);
+    assert.equal(composto.elementos.filter(e=>e.tipo==="marca").length,1);
+    assert(composto.elementos.every(e=>e.x>=0&&e.y>=0&&e.w>0&&e.h>0&&e.x+e.w<=100&&e.y+e.h<=100));
+    assert(!composto.elementos.some(e=>e.campo==="bagagem"||e.campo==="transfer"||e.campo==="condicoes"),"Não inventa serviços nem condições ausentes no orçamento");
+    const legenda = legendaMaterialReserva(composto); assert.match(legenda,/Hotel B/); assert(!legenda.includes("Hotel A")); assert.match(legenda,/1.?300 € por pessoa/);
+    const ePreco=composto.elementos.find(e=>e.campo==="preco")!;
+    composto.dados.hoteis[0]!.precoPessoa=999;
+    assert.match(textoElementoReserva(ePreco,composto.dados),/999/); assert.match(legendaMaterialReserva(composto),/999/);
+  }
+  assert.deepEqual(dadosModelo,antesModelo,"Gerar um template conserva todas as opções do orçamento original");
+  assert.throws(()=>comporModeloReserva(dadosModelo,"story","elegante",{imagem:""}),/fotografia/);
+  assert.throws(()=>comporModeloReserva(dadosModelo,"story","elegante",{imagem:"data:image/png;base64,aGVsbG8="},5),/hotel/);
   const exemplo = {...campo, campo: "preco" as const, hotel: 0, texto: "927€"};
   assert.equal(textoElementoReserva(exemplo, dadosReservaVazios(), true), "927€");
   assert.equal(textoElementoReserva(exemplo, dadosReservaVazios(), false), "", "Os preços de exemplo da referência nunca são exportados como dados confirmados");

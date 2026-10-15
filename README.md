@@ -32,6 +32,13 @@ Testes com tabelas temporárias: `node --import tsx scripts/testes-formacoes-gra
 
 ### Importação de propostas MyOffice nos templates
 
+Reservas abre em **Criar com orçamento**: PDF → confirmação dos dados e hotel →
+formato/estilo → template preenchido. Inclui os estilos Elegante e Fotográfico,
+em Story e Feed, fotografia automática do destino ou própria e texto para copiar.
+O resultado permite editar o desenho, guardar e descarregar o PNG. As restantes
+opções do orçamento continuam no assistente. O editor de referências mantém-se
+num separador próprio. O acesso continua exclusivo à nova área da conta de teste.
+
 O importador envia o PDF completo para análise, incluindo páginas em imagem.
 Os PDFs iCliGo podem ter apenas contactos e rodapés como texto selecionável;
 esse texto não substitui a leitura visual da proposta. Mantêm-se os limites

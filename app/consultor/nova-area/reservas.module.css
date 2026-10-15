@@ -1,4 +1,5 @@
 .pagina { --oliva: #4b5320; color: #111; min-width: 0; }
+.pagina [hidden] { display: none !important; }
 .intro { padding: 8px 0 22px; }
 .intro > span { color: var(--oliva); font-size: 11px; font-weight: 750; letter-spacing: .14em; }
 .intro h1 { margin: 10px 0; font-size: clamp(27px, 3vw, 40px); letter-spacing: -.045em; line-height: 1.2; }
@@ -82,6 +83,56 @@
 .vazio { padding: 40px 20px; text-align: center; background: #f8f9f3; border-radius: 12px; }
 .vazio strong { color: var(--oliva); font-size: 15px; }
 .vazio p { color: #707467; font-size: 13px; }
+.assistente { margin-top: 24px; max-width: 1000px; }
+.passos { list-style: none; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; padding: 0; margin: 0 0 28px; }
+.passos li { display: flex; align-items: center; gap: 10px; color: #86897d; font-size: 12px; border-bottom: 2px solid #e6e9df; padding-bottom: 16px; }
+.passos li > span { display: grid; place-items: center; height: 30px; width: 30px; flex: none; border: 1px solid #dce1cf; border-radius: 50%; background: #fafbf7; }
+.passos li[aria-current="step"] { color: var(--oliva); border-color: var(--oliva); }
+.passos li[aria-current="step"] > span, .passos li[data-completo="true"] > span { color: #fff; background: var(--oliva); border-color: var(--oliva); }
+.uploadOrcamento { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; padding: 30px; border: 1px dashed #b7c09f; border-radius: 14px; background: #fafbf6; margin: 25px 0 16px; }
+.uploadOrcamento > div { flex: 1; min-width: 170px; }
+.uploadOrcamento strong { font-size: 16px; }
+.uploadOrcamento p { color: #74796a; font-size: 12px; margin-bottom: 0; }
+.documentoIcone { font-size: 30px; color: var(--oliva); width: 45px; height: 50px; display: grid; place-items: center; background: #edf0df; border-radius: 10px; }
+.pagina .botaoTexto { border: 0; background: transparent; padding-left: 0; text-align: left; }
+.ficheiroImportado { font-size: 12px; color: var(--oliva); overflow-wrap: anywhere; }
+.servicosOrcamento { margin: 22px 0; padding-top: 18px; border-top: 1px solid #e3e7d7; }
+.servicosOrcamento summary { font-size: 12px; font-weight: 650; cursor: pointer; color: var(--oliva); }
+.rodapePasso { display: flex; align-items: center; justify-content: space-between; gap: 18px; border-top: 1px solid #e4e7da; margin-top: 26px; padding-top: 20px; }
+.rodapePasso > span { font-size: 11px; color: #74796a; max-width: 430px; }
+.escolhasFormato, .estilosModelo { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; margin: 22px 0; }
+.escolhasFormato > button, .estilosModelo > button { display: grid; gap: 8px; text-align: left; padding: 18px; color: #33382a; }
+.escolhasFormato > button[aria-pressed="true"], .estilosModelo > button[aria-pressed="true"] { border-color: var(--oliva); box-shadow: inset 0 0 0 1px var(--oliva); background: #f6f8ee; }
+.escolhasFormato strong, .estilosModelo strong { font-size: 14px; }
+.escolhasFormato small, .estilosModelo small { font-size: 11px; color: #6f7661; line-height: 1.6; font-weight: 400; }
+.formatoStory, .formatoFeed { display: block; width: 24px; height: 40px; border: 1.5px solid #737e52; border-radius: 4px; margin-bottom: 4px; }
+.formatoFeed { width: 32px; }
+.subtituloPasso { font-size: 13px; margin: 26px 0 12px; }
+.amostraElegante, .amostraFotografica { position: relative; isolation: isolate; overflow: hidden; display: grid; align-content: end; gap: 8px; height: 200px; max-width: 200px; margin: 0 auto 10px; width: 100%; padding: 25px 16px; box-sizing: border-box; text-align: center; background: linear-gradient(155deg,#cbdabf 5%,#8dbaae 38%,#d0ded1 39%,#f1eee5 72%); color: #28341c; border-radius: 8px; }
+.amostraElegante i { position: absolute; inset: 36% 7% 7%; z-index: -1; background: #fcfaf4; border-radius: 12px; box-shadow: 0 3px 15px #101d201f; }
+.amostraElegante b, .amostraFotografica b { font: bold 20px Georgia,serif; }
+.amostraElegante em, .amostraFotografica em { font: 14px Georgia,serif; }
+.amostraFotografica { background: linear-gradient(180deg,#cadbc0 0%,#7a9b80 38%,#28351d 100%); text-align: left; color: #fff; }
+.amostraFotografica b { font-family: Arial,sans-serif; }
+.fotoOrcamento { display: flex; gap: 18px; align-items: center; padding: 20px; border: 1px solid #e3e7d7; border-radius: 12px; }
+.fotoOrcamento img { width: 96px; height: 100px; object-fit: cover; border-radius: 8px; }
+.fotoOrcamento strong { font-size: 13px; }
+.resumoOrcamento { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 24px; margin: 22px 0; border: 1px solid #e3e7d7; border-radius: 12px; background: #fafbf6; }
+.resumoOrcamento > div { display: grid; gap: 7px; min-width: 0; }
+.resumoOrcamento span { font-size: 9px; letter-spacing: .12em; color: #737c5e; }
+.resumoOrcamento strong { font-size: 22px; color: var(--oliva); overflow-wrap: anywhere; }
+.resumoOrcamento small { font-size: 11px; color: #6d7560; }
+.resultadoWorkspace { grid-template-columns: minmax(280px,1.25fr) minmax(240px,.8fr); }
+.resultadoWorkspace .canvasWrap { width: min(100%,480px); }
+.resultadoWorkspace .preview { position: static; }
+.etiquetaPronto { display: inline-block; font-size: 9px; font-weight: 750; letter-spacing: .1em; color: var(--oliva); border-radius: 5px; background: #edf0df; padding: 6px 8px; margin-bottom: 18px; }
+.dadosResultado { margin: 24px 0; }
+.dadosResultado > div { border-top: 1px solid #e4e7da; padding: 12px 0; }
+.dadosResultado dt { font-size: 10px; color: #707467; }
+.dadosResultado dd { margin: 6px 0 0; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.legendaPublicacao { white-space: pre-line; font-size: 12px; line-height: 1.8; color: #565d4a; }
+@media (max-width: 950px) { .resultadoWorkspace { grid-template-columns: 1fr; } .resultadoWorkspace .canvasWrap { width: min(100%,360px); } }
+@media (max-width: 600px) { .passos { gap: 8px; } .passos li { flex-direction: column; align-items: flex-start; font-size: 10px; gap: 8px; } .uploadOrcamento { padding: 18px; } .uploadOrcamento > button { width: 100%; } .rodapePasso { flex-wrap: wrap; } .rodapePasso > button:last-child { margin-left: auto; } .estilosModelo, .escolhasFormato { gap: 10px; } .estilosModelo > button, .escolhasFormato > button { padding: 12px; } .amostraElegante, .amostraFotografica { height: 155px; padding: 18px 10px; } .amostraElegante b, .amostraFotografica b { font-size: 16px; } .resumoOrcamento { grid-template-columns: 1fr; padding: 18px; } .fotoOrcamento { flex-wrap: wrap; } }
 @media (max-width: 1150px) { .workspace { grid-template-columns: minmax(210px,.75fr) minmax(270px,1.2fr); gap: 16px; } .cartao, .iniciar { padding: 16px; } .iniciar { grid-template-columns: 1fr; } .preview { padding: 12px; } .preview .acoes { grid-template-columns: 1fr; } }
 @media (max-width: 950px) { .workspace { grid-template-columns: 1fr; } .preview { position: static; } .canvasWrap { width: min(100%,290px); } .preview .acoes { display: flex; justify-content: center; } .preview > button { justify-self: stretch; } }
 @media (max-width: 500px) { .intro h1 { font-size: 28px; } .linha, .grelha { grid-template-columns: 1fr; } .iniciar,.cartao,.biblioteca { padding: 14px; border-radius: 12px; } .tituloLinha { align-items: flex-start; } .acoes { width: 100%; } .fotos { grid-template-columns: 1fr; } .abas { gap: 3px; } .abas button { padding: 8px 10px; font-size: 11px; } .lista article { padding: 14px; } }
