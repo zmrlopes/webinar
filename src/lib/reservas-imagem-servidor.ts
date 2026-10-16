@@ -98,7 +98,8 @@ export async function finalizarImagemReserva(bytes: Buffer, referencia: Referenc
   return imagem;
 }
 export async function gerarImagemReserva(email: string, corpo: Record<string, unknown>): Promise<PublicacaoImagemReserva> {
-  if (!process.env.OPENAI_API_KEY) throw new ErroReserva("A geração de imagens ainda não está configurada na plataforma.", 503);
+  const chaveImagem = process.env.RESERVAS_IMAGE_API_KEY || process.env.OPENAI_API_KEY;
+  if (!chaveImagem) throw new ErroReserva("A geração de imagens ainda não está configurada na plataforma.", 503);
   const id = idValido(corpo.id), dados = dadosPublicacaoReserva(corpo.dados), notas = texto(corpo.notas ?? "", 1500);
   if (corpo.confirmado !== true) throw new ErroReserva("Confirma os dados do orçamento antes de gerar.");
   if (corpo.formato !== "story" && corpo.formato !== "feed") throw new ErroReserva("Escolhe Story ou Publicação.");
@@ -124,7 +125,7 @@ export async function gerarImagemReserva(email: string, corpo: Record<string, un
     form.append("image[]", new Blob([new Uint8Array(Buffer.from(referencia.imagem.split(",")[1]!, "base64"))], {type: "image/webp"}), "referencia.webp");
     if (anterior?.tipo === "publicacao" && anterior.imagem) form.append("image[]", new Blob([new Uint8Array(Buffer.from(anterior.imagem.split(",")[1]!, "base64"))], {type: "image/webp"}), "versao-atual.webp");
     let r: Response;
-    try {r = await fetch("https://api.openai.com/v1/images/edits", {method: "POST", headers: {Authorization: `Bearer ${process.env.OPENAI_API_KEY}`}, body: form, signal: AbortSignal.timeout(210_000)});}
+    try {r = await fetch("https://api.openai.com/v1/images/edits", {method: "POST", headers: {Authorization: `Bearer ${chaveImagem}`}, body: form, signal: AbortSignal.timeout(210_000)});}
     catch {throw new ErroReserva("A geração demorou demasiado ou a ligação falhou. Os dados e a referência ficaram guardados; podes criar uma nova versão.", 502);}
     if (!r.ok) {
       const detalhe = await r.json().catch(() => ({}));

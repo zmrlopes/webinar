@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     try {corpo = JSON.parse(new TextDecoder().decode(bytes)); if (!corpo || typeof corpo !== "object" || Array.isArray(corpo)) throw new Error();} catch {throw new ErroReserva("Pedido inválido.");}
     const email = await acessoReservas(corpo.email);
     switch (corpo.acao) {
-      case "listar": return json({registos: await listarImagensReserva(email), disponivel: !!process.env.OPENAI_API_KEY});
+      case "listar": return json({registos: await listarImagensReserva(email), disponivel: !!(process.env.RESERVAS_IMAGE_API_KEY || process.env.OPENAI_API_KEY) && !!(process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY)});
       case "abrir": return json(await abrirImagemReserva(email, corpo.id));
       case "referencia": return json(await criarReferenciaImagemReserva(email, corpo));
       case "gerar": return json(await gerarImagemReserva(email, corpo));
