@@ -1,12 +1,12 @@
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
-import { loadImage, type Image } from "@napi-rs/canvas";
+import { loadImage } from "@napi-rs/canvas";
 import { PDFDocument } from "pdf-lib";
 import { db } from "./db";
 import { buscarMembroEquipa } from "./equipa";
 import { ErroReserva } from "./reservas";
 import { chamarIAReservas } from "./reservas-servidor";
-import { desenharPlanner } from "./travel-planner-desenho";
+import { desenharPlanner, type FotoDesenho } from "./travel-planner-desenho";
 import {
   diasDaViagem, ErroPlanner, FOTO_WIKIMEDIA, MARCA_PADRAO, validarMarca, MAX_DIAS_PLANNER, pendentesPlanner, RITMOS_PLANNER, TEMAS_DICA, validarDia, validarDica, validarExtras, validarPlanner, validarVoo,
   type DiaPlanner, type DicaPlanner, type ExtrasPlanner, type FotoPlanner, type MarcaPlanner, type ResumoPlanner, type TravelPlanner, type VooPlanner,
@@ -84,7 +84,7 @@ export async function procurarFotos(termo: unknown, quantas = 8): Promise<FotoSu
   const resultados = await Promise.allSettled(pesquisas.map(async pesquisa => {
     const url = new URL("https://commons.wikimedia.org/w/api.php");
     url.search = new URLSearchParams({action: "query", format: "json", generator: "search", gsrsearch: pesquisa, gsrnamespace: "6", gsrlimit: "30",
-      prop: "imageinfo", iiprop: "url|size|mime|extmetadata", iiurlwidth: "1600", iiextmetadatafilter: "LicenseShortName|Artist|DateTimeOriginal"}).toString();
+      prop: "imageinfo", iiprop: "url|size|mime|extmetadata", iiurlwidth: "2400", iiextmetadatafilter: "LicenseShortName|Artist|DateTimeOriginal"}).toString();
     const r = await fetch(url, {headers: {"User-Agent": AGENTE}, signal: AbortSignal.timeout(15_000)});
     if (!r.ok) return [];
     const corpo = await r.json() as {query?: {pages?: Record<string, Pagina>}};
@@ -112,8 +112,20 @@ function pontuacaoFoto(titulo: string): number {
     - (/echium|capsicum|flower|flor\b|plant|insect|road|estrada|interior|detail|pormenor|azulejo|tile|door|porta|window|janela/i.test(titulo) ? 2 : 0);
 }
 
-async function imagemDe(foto: FotoPlanner | null): Promise<Image | null> {
+// As fotografias descarregadas ficam em memória: a pré-visualização é pedida várias vezes seguidas.
+const fotosEmCache = new Map<string, Promise<Buffer | null>>();
+async function imagemDe(foto: FotoPlanner | null): Promise<FotoDesenho | null> {
   if (!foto) return null;
+  if (!fotosEmCache.has(foto.url)) {
+    if (fotosEmCache.size > 60) fotosEmCache.clear();
+    fotosEmCache.set(foto.url, bytesDaFoto(foto.url));
+  }
+  const jpeg = await fotosEmCache.get(foto.url)!;
+  if (!jpeg) { fotosEmCache.delete(foto.url); return null; }
+  return {img: await loadImage(jpeg), foco: foto.foco ?? {x: 0.5, y: 0.5}, inteira: foto.inteira === true};
+}
+async function bytesDaFoto(url: string): Promise<Buffer | null> {
+  const foto = {url};
   try {
     let bytes: Buffer;
     if (foto.url.startsWith("data:image/jpeg;base64,")) bytes = Buffer.from(foto.url.split(",", 2)[1]!, "base64");
@@ -125,8 +137,7 @@ async function imagemDe(foto: FotoPlanner | null): Promise<Image | null> {
       bytes = Buffer.from(await r.arrayBuffer());
       if (bytes.length > 10_000_000) return null;
     }
-    const jpeg = await sharp(bytes, {limitInputPixels: 40_000_000}).rotate().resize({width: 1600, height: 1600, fit: "inside", withoutEnlargement: true}).jpeg({quality: 84}).toBuffer();
-    return await loadImage(jpeg);
+    return await sharp(bytes, {limitInputPixels: 60_000_000}).rotate().resize({width: 2600, height: 2600, fit: "inside", withoutEnlargement: true}).jpeg({quality: 88}).toBuffer();
   } catch { return null; }
 }
 
@@ -206,14 +217,24 @@ Devolve JSON com dias, dicas, emergencia, voos e extras.
 // ---------- PDF ----------
 
 /** Cada página é desenhada como imagem A4 e o PDF junta-as. */
+async function paginasPlanner(email: string, p: TravelPlanner, escala: number): Promise<Buffer[]> {
+  if (!p.viagem.destino) throw new ErroPlanner("Indica o destino da viagem.");
+  const [membro, marca] = await Promise.all([buscarMembroEquipa(email), obterMarca(email)]);
+  const [capa, hotel, ...dias] = await Promise.all([imagemDe(p.foto), imagemDe(p.fotoHotel), ...p.dias.map(d => imagemDe(d.foto))]);
+  return desenharPlanner({p, marca, escala, consultor: membro ? {nome: membro.nome, email} : null, imagens: {capa, hotel, dias}});
+}
+
+/** As páginas tal como vão sair, em tamanho de ecrã, a partir do que está no editor (mesmo por guardar). */
+export async function previsualizarPlanner(email: string, valor: unknown): Promise<string[]> {
+  const paginas = await paginasPlanner(email, validarPlanner(valor), 0.75);
+  return paginas.map(b => `data:image/jpeg;base64,${b.toString("base64")}`);
+}
+
 export async function pdfPlanner(email: string, id: unknown): Promise<{bytes: Uint8Array; nome: string}> {
   const p = await abrirPlanner(email, id);
   const pendentes = pendentesPlanner(p);
   if (pendentes.length) throw new ErroPlanner(`Antes de descarregar, confirma: ${pendentes.join(", ")}.`, 409);
-  if (!p.viagem.destino) throw new ErroPlanner("Indica o destino da viagem.");
-  const [membro, marca] = await Promise.all([buscarMembroEquipa(email), obterMarca(email)]);
-  const [capa, hotel, ...dias] = await Promise.all([imagemDe(p.foto), imagemDe(p.fotoHotel), ...p.dias.map(d => imagemDe(d.foto))]);
-  const paginas = await desenharPlanner({p, marca, consultor: membro ? {nome: membro.nome, email} : null, imagens: {capa, hotel, dias}});
+  const paginas = await paginasPlanner(email, p, 2);
 
   const pdf = await PDFDocument.create();
   pdf.setTitle(`${p.viagem.destino} · Travel planner`); pdf.setAuthor("iCliGo travel partners"); pdf.setLanguage("pt-PT");
@@ -224,6 +245,20 @@ export async function pdfPlanner(email: string, id: unknown): Promise<{bytes: Ui
   }
   const nome = `${p.viagem.destino.normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "viagem"}-travel-planner.pdf`;
   return {bytes: await pdf.save(), nome};
+}
+
+/** Procura um local no OpenStreetMap (Nominatim), para corrigir um ponto do mapa. */
+export async function localizarPonto(termo: unknown): Promise<{nome: string; lat: number; lng: number}[]> {
+  if (typeof termo !== "string" || !termo.trim() || termo.length > 160) throw new ErroPlanner("Escreve o nome do local a procurar.");
+  const url = new URL("https://nominatim.openstreetmap.org/search");
+  url.search = new URLSearchParams({q: termo.trim(), format: "jsonv2", limit: "6", "accept-language": "pt-PT"}).toString();
+  const r = await fetch(url, {headers: {"User-Agent": AGENTE}, signal: AbortSignal.timeout(12_000)}).catch(() => null);
+  if (!r?.ok) throw new ErroPlanner("Não foi possível procurar o local. Tenta novamente daqui a pouco.", 502);
+  const lista = await r.json() as {display_name?: string; lat?: string; lon?: string}[];
+  return lista.flatMap(l => {
+    const lat = Number(l.lat), lng = Number(l.lon);
+    return Number.isFinite(lat) && Number.isFinite(lng) && l.display_name ? [{nome: l.display_name.slice(0, 160), lat, lng}] : [];
+  });
 }
 
 export function erroPlannerParaResposta(erro: unknown): {mensagem: string; status: number} | null {

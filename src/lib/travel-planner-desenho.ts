@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createCanvas, GlobalFonts, loadImage, type Image, type SKRSContext2D } from "@napi-rs/canvas";
+import sharp from "sharp";
 import { arcoVoo, desenharFundoMapa, distanciaKm, enquadrar, noMapa, type Ponto } from "./travel-planner-mapas";
 import { coresPlanner, dataPlanner, diasDaViagem, misturar, somarDiasPlanner, type CoresPlanner, type DicaPlanner, type MarcaPlanner, type TemaDica, type TravelPlanner } from "./travel-planner";
 
@@ -28,12 +29,12 @@ function logo(): Promise<Image | null> {
   return logoCache;
 }
 
-interface Tema { fundo: string; cartao: string; titulo: (t: number) => string; maiusculas: boolean; faixa: boolean; c: CoresPlanner }
-function tema(estilo: TravelPlanner["estilo"], marca: MarcaPlanner): Tema {
+interface Tema { escala: number; fundo: string; cartao: string; titulo: (t: number) => string; maiusculas: boolean; faixa: boolean; c: CoresPlanner }
+function tema(estilo: TravelPlanner["estilo"], marca: MarcaPlanner, escala: number): Tema {
   const c = coresPlanner(marca);
-  if (estilo === "moderno") return {fundo: "#ffffff", cartao: misturar(marca.escura, 0.95), titulo: t => `${t}px PoppinsBold`, maiusculas: true, faixa: true, c};
-  if (estilo === "natural") return {fundo: misturar(marca.principal, 0.95), cartao: "#ffffff", titulo: t => `${t}px Playfair`, maiusculas: false, faixa: false, c};
-  return {fundo: "#ffffff", cartao: c.creme, titulo: t => `${t}px Playfair`, maiusculas: false, faixa: false, c};
+  if (estilo === "moderno") return {escala, fundo: "#ffffff", cartao: misturar(marca.escura, 0.95), titulo: t => `${t}px PoppinsBold`, maiusculas: true, faixa: true, c};
+  if (estilo === "natural") return {escala, fundo: misturar(marca.principal, 0.95), cartao: "#ffffff", titulo: t => `${t}px Playfair`, maiusculas: false, faixa: false, c};
+  return {escala, fundo: "#ffffff", cartao: c.creme, titulo: t => `${t}px Playfair`, maiusculas: false, faixa: false, c};
 }
 
 // ---------- utilitários de desenho ----------
@@ -70,11 +71,29 @@ function alturaParagrafo(ctx: SKRSContext2D, texto: string, largura: number, alt
   return Math.min(linhas(ctx, texto, largura).length, maxLinhas) * altura;
 }
 
-function cobrir(ctx: SKRSContext2D, img: Image, x: number, y: number, w: number, h: number, raio = 0) {
-  const escala = Math.max(w / img.width, h / img.height), iw = img.width * escala, ih = img.height * escala;
+/** Uma fotografia com o enquadramento escolhido pelo consultor. */
+export interface FotoDesenho { img: Image; foco: {x: number; y: number}; inteira: boolean }
+
+/**
+ * Enche a área com a fotografia, cortando o que sobra à volta do ponto de
+ * foco. Com "inteira", mostra a fotografia toda, sobre uma versão desfocada
+ * dela própria a encher o espaço.
+ */
+function cobrir(ctx: SKRSContext2D, f: FotoDesenho, x: number, y: number, w: number, h: number, raio = 0) {
+  const img = f.img, escala = Math.max(w / img.width, h / img.height), iw = img.width * escala, ih = img.height * escala;
   ctx.save();
   ctx.beginPath(); ctx.roundRect(x, y, w, h, raio); ctx.clip();
-  ctx.drawImage(img, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
+  if (f.inteira) {
+    ctx.filter = "blur(28px) brightness(0.8)";
+    ctx.drawImage(img, x + (w - iw * 1.1) / 2, y + (h - ih * 1.1) / 2, iw * 1.1, ih * 1.1);
+    ctx.filter = "none";
+    const c = Math.min(w / img.width, h / img.height), cw = img.width * c, ch = img.height * c;
+    ctx.drawImage(img, x + (w - cw) / 2, y + (h - ch) / 2, cw, ch);
+  } else {
+    const limitar = (v: number, min: number) => Math.min(0, Math.max(min, v));
+    const ox = limitar(w / 2 - f.foco.x * iw, w - iw), oy = limitar(h / 2 - f.foco.y * ih, h - ih);
+    ctx.drawImage(img, x + ox, y + oy, iw, ih);
+  }
   ctx.restore();
 }
 
@@ -85,7 +104,8 @@ function retangulo(ctx: SKRSContext2D, x: number, y: number, w: number, h: numbe
 }
 
 function sombra(ctx: SKRSContext2D, ativa: boolean) {
-  ctx.shadowColor = ativa ? "rgba(0,0,0,0.12)" : "transparent"; ctx.shadowBlur = ativa ? 24 : 0; ctx.shadowOffsetY = ativa ? 6 : 0;
+  const e = ctx.getTransform().a;
+  ctx.shadowColor = ativa ? "rgba(0,0,0,0.12)" : "transparent"; ctx.shadowBlur = ativa ? 24 * e : 0; ctx.shadowOffsetY = ativa ? 6 * e : 0;
 }
 
 /** Placeholder quando não há fotografia: gradiente verde-oliva com o nome do local. */
@@ -179,7 +199,9 @@ function cabecalho(ctx: SKRSContext2D, t: Tema, etiqueta: string, titulo: string
 }
 
 function novaPagina(t: Tema) {
-  const canvas = createCanvas(LARGURA, ALTURA), ctx = canvas.getContext("2d");
+  // Desenha em coordenadas A4 a 150 ppp; a escala dá a resolução final (2 = 300 ppp, para impressão).
+  const canvas = createCanvas(Math.round(LARGURA * t.escala), Math.round(ALTURA * t.escala)), ctx = canvas.getContext("2d");
+  ctx.scale(t.escala, t.escala);
   ctx.fillStyle = t.fundo; ctx.fillRect(0, 0, LARGURA, ALTURA);
   return {canvas, ctx};
 }
@@ -195,8 +217,12 @@ function pastilha(ctx: SKRSContext2D, texto: string, x: number, y: number, fundo
 
 // ---------- páginas ----------
 
-export interface ImagensPlanner { capa: Image | null; hotel: Image | null; dias: (Image | null)[] }
-export interface DadosDesenho { p: TravelPlanner; marca: MarcaPlanner; consultor: {nome: string; email: string} | null; imagens: ImagensPlanner }
+export interface ImagensPlanner { capa: FotoDesenho | null; hotel: FotoDesenho | null; dias: (FotoDesenho | null)[] }
+export interface DadosDesenho {
+  p: TravelPlanner; marca: MarcaPlanner; consultor: {nome: string; email: string} | null; imagens: ImagensPlanner;
+  /** 2 para o PDF (300 ppp); menos para a pré-visualização no ecrã. */
+  escala?: number;
+}
 
 function capa(d: DadosDesenho, t: Tema, img: Image | null) {
   const {p} = d, {canvas, ctx} = novaPagina(t);
@@ -306,7 +332,7 @@ async function viagem(d: DadosDesenho, t: Tema, img: Image | null, n: number) {
     const rotas = voosComCoords.filter((v, i, todos) => todos.findIndex(o => o.origem === v.destino && o.destino === v.origem) >= i || v.sentido === "ida");
     const arcos = rotas.flatMap(v => [arcoVoo({lat: v.origemLat!, lng: v.origemLng!}, {lat: v.destinoLat!, lng: v.destinoLng!})]);
     const e = enquadrar([...pontos, ...arcos.flat()], area.w, area.h, 0.14, 9);
-    await desenharFundoMapa(ctx, area, e, 24);
+    await desenharFundoMapa(ctx, area, e, 24, t.escala >= 1.5 ? 2 : 1);
     ctx.save(); ctx.beginPath(); ctx.roundRect(area.x, area.y, area.w, area.h, 24); ctx.clip();
     for (const arco of arcos) {
       const pts = arco.map(q => noMapa(q, area, e));
@@ -374,7 +400,7 @@ async function alojamento(d: DadosDesenho, t: Tema, img: Image | null, n: number
     const pontos = unicos.map(l => ({lat: l.lat!, lng: l.lng!}));
     if (p.extras.destinoLat !== null && p.extras.destinoLng !== null && unicos.length === 1) pontos.push({lat: p.extras.destinoLat, lng: p.extras.destinoLng});
     const e = enquadrar(pontos.length > 1 ? pontos : [...pontos, {lat: pontos[0]!.lat + 0.03, lng: pontos[0]!.lng + 0.03}, {lat: pontos[0]!.lat - 0.03, lng: pontos[0]!.lng - 0.03}], area.w, area.h, 0.16, 13);
-    await desenharFundoMapa(ctx, area, e, 24);
+    await desenharFundoMapa(ctx, area, e, 24, t.escala >= 1.5 ? 2 : 1);
     ctx.save(); ctx.beginPath(); ctx.roundRect(area.x, area.y, area.w, area.h, 24); ctx.clip();
     // Afasta pinos que ficariam uns em cima dos outros (locais muito próximos).
     const posicoes: {x: number; y: number}[] = [];
@@ -615,12 +641,15 @@ function contactos(d: DadosDesenho, t: Tema, img: Image | null, n: number) {
 /** Todas as páginas, como JPEG. */
 export async function desenharPlanner(d: DadosDesenho): Promise<Buffer[]> {
   registarFontes();
-  const t = tema(d.p.estilo, d.marca), img = await logo();
+  const t = tema(d.p.estilo, d.marca, d.escala ?? 2), img = await logo();
   const paginas = [capa(d, t, img)];
   paginas.push(await viagem(d, t, img, paginas.length + 1));
   paginas.push(await alojamento(d, t, img, paginas.length + 1));
   if (d.p.dias.length) paginas.push(...paginasRoteiro(d, t, img, paginas.length + 1));
   if (d.p.dicas.some(x => x.texto) || d.p.extras.clima.length) paginas.push(...paginasDicas(d, t, img, paginas.length + 1));
   paginas.push(contactos(d, t, img, paginas.length + 1));
-  return Promise.all(paginas.map(c => c.encode("jpeg", 88)));
+  // Sem subamostragem de cor: o texto fica nítido no JPEG.
+  return Promise.all(paginas.map(async c => t.escala >= 1.5
+    ? sharp(await c.encode("png")).jpeg({quality: 86, chromaSubsampling: "4:4:4", mozjpeg: true}).toBuffer()
+    : c.encode("jpeg", 82)));
 }

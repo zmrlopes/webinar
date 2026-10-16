@@ -31,6 +31,26 @@ async function comprimirFoto(ficheiro: File): Promise<string> {
   throw new Error("Esta fotografia é demasiado grande. Experimenta outra.");
 }
 
+/** Clicar na fotografia escolhe o ponto que fica sempre à vista quando é cortada. */
+function EnquadrarFoto({foto, alterar}: {foto: FotoPlanner; alterar: (f: FotoPlanner) => void}) {
+  const foco = foto.foco ?? {x: 0.5, y: 0.5};
+  return <div className={css.enquadrar}>
+    <p className={css.ajuda}>Toca na parte mais importante da fotografia: é essa que fica sempre visível quando a fotografia tem de ser cortada.</p>
+    <div className={css.enquadrarImagem} style={foto.inteira ? {opacity: 0.5} : undefined}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={foto.url} alt="Escolher o ponto de foco" onClick={e => {
+        const caixa = e.currentTarget.getBoundingClientRect();
+        alterar({...foto, inteira: false, foco: {x: Math.min(1, Math.max(0, (e.clientX - caixa.left) / caixa.width)), y: Math.min(1, Math.max(0, (e.clientY - caixa.top) / caixa.height))}});
+      }} />
+      <span className={css.focoPonto} style={{left: `${foco.x * 100}%`, top: `${foco.y * 100}%`}} aria-hidden="true" />
+    </div>
+    <div className={css.acoes}>
+      <label className={css.confirmar}><input type="checkbox" checked={foto.inteira === true} onChange={e => alterar({...foto, inteira: e.target.checked})} /> Mostrar a fotografia inteira, sem cortes</label>
+      <button type="button" onClick={() => alterar({...foto, foco: {x: 0.5, y: 0.5}, inteira: false})}>Centrar</button>
+    </div>
+  </div>;
+}
+
 function Miniatura({foto, legenda}: {foto: FotoPlanner | null; legenda: string}) {
   // eslint-disable-next-line @next/next/no-img-element
   return foto ? <img className={css.miniatura} src={foto.url} alt={legenda} /> : <span className={css.miniaturaVazia}>Sem fotografia</span>;
@@ -109,6 +129,12 @@ export function TravelPlannerNovaArea({email}: {email: string}) {
   const [aviso, setAviso] = useState("");
   const [propostas, setPropostas] = useState<DadosReserva[]>([]);
   const [fotos, setFotos] = useState<{alvo: AlvoFoto; lista: Foto[]} | null>(null);
+  const [enquadrar, setEnquadrar] = useState<AlvoFoto | null>(null);
+  const [previa, setPrevia] = useState<{paginas: string[]; assinatura: string} | null>(null);
+  const [aGerarPrevia, setAGerarPrevia] = useState(false);
+  const [erroPrevia, setErroPrevia] = useState("");
+  const [paginaAberta, setPaginaAberta] = useState<number | null>(null);
+  const [ponto, setPonto] = useState<{dia: number; termo: string; resultados: {nome: string; lat: number; lng: number}[] | null} | null>(null);
 
   async function pedir<T>(acao: string, extra: Record<string, unknown> = {}): Promise<T> {
     const r = await fetch(API, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({email, acao, ...extra})});
@@ -138,8 +164,30 @@ export function TravelPlannerNovaArea({email}: {email: string}) {
     setP(c.planner);
     return c.planner;
   }
+  // O que muda o desenho: o planner e as cores. Serve para saber se a pré-visualização está desatualizada.
+  const assinatura = (x: TravelPlanner | null) => JSON.stringify([x && {...x, atualizadoEm: undefined}, marca]);
+  async function gerarPrevia(atual = p) {
+    if (!atual) return;
+    setAGerarPrevia(true); setErroPrevia("");
+    try {
+      const c = await pedir<{paginas: string[]}>("previsualizar", {planner: atual});
+      setPrevia({paginas: c.paginas, assinatura: assinatura(atual)});
+    } catch (e) { setErroPrevia(e instanceof Error ? e.message : "Não foi possível criar a pré-visualização."); }
+    finally { setAGerarPrevia(false); }
+  }
+  function procurarPonto(dia: number, termo: string) {
+    void executar("A procurar o local…", async () => {
+      const c = await pedir<{locais: {nome: string; lat: number; lng: number}[]}>("localizar", {termo});
+      setPonto({dia, termo, resultados: c.locais});
+    });
+  }
+  const definirPonto = (dia: number, lat: number | null, lng: number | null) => setP(atual => atual && {...atual, dias: atual.dias.map((d, j) => j === dia ? {...d, lat, lng} : d)});
+
   function irPara(proximo: Passo) {
-    void executar("A guardar…", async () => { await guardar(); setPasso(proximo); });
+    void executar("A guardar…", async () => {
+      const guardado = await guardar(); setPasso(proximo);
+      if (proximo === "entregar" && guardado && previa?.assinatura !== assinatura(guardado)) void gerarPrevia(guardado);
+    });
   }
 
   const alterarViagem = (campo: keyof TravelPlanner["viagem"], valor: string) => setP(atual => atual && {...atual, viagem: {...atual.viagem,
@@ -175,8 +223,10 @@ export function TravelPlannerNovaArea({email}: {email: string}) {
       <div className={css.acoes}>
         <button type="button" onClick={() => procurar(alvo)}>Trocar</button>
         <label className={css.botaoFicheiro}>Carregar minha<input type="file" accept="image/*" onChange={e => carregar(alvo, e)} /></label>
+        {fotoDe(alvo) && <button type="button" aria-expanded={enquadrar === alvo} onClick={() => setEnquadrar(enquadrar === alvo ? null : alvo)}>Enquadrar</button>}
         {fotoDe(alvo) && <button type="button" className={css.remover} onClick={() => definirFoto(alvo, null)}>Retirar</button>}
       </div>
+      {enquadrar === alvo && fotoDe(alvo) && <EnquadrarFoto foto={fotoDe(alvo)!} alterar={f => definirFoto(alvo, f)} />}
       {fotos?.alvo === alvo && !!fotos.lista.length && <div className={css.fotos}>{fotos.lista.map(f => <button type="button" key={f.url} aria-pressed={fotoDe(alvo)?.url === f.url}
         className={fotoDe(alvo)?.url === f.url ? css.fotoAtiva : css.foto} onClick={() => { definirFoto(alvo, {url: f.url, credito: f.credito}); setFotos(null); }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -376,6 +426,30 @@ export function TravelPlannerNovaArea({email}: {email: string}) {
       </>}
 
       {passo === "entregar" && <>
+        <div className={css.tituloLinha}>
+          <h3>Pré-visualização</h3>
+          <button type="button" className={previa && previa.assinatura !== assinatura(p) ? css.primario : undefined} disabled={aGerarPrevia} onClick={() => void gerarPrevia()}>
+            {aGerarPrevia ? "A criar…" : previa ? "Atualizar pré-visualização" : "Ver pré-visualização"}</button>
+        </div>
+        {previa && previa.assinatura !== assinatura(p) && !aGerarPrevia && <p className={css.ajuda}>Fizeste alterações. Carrega em “Atualizar pré-visualização” para as ver.</p>}
+        {erroPrevia && <p className={css.erro}>{erroPrevia}</p>}
+        {aGerarPrevia && !previa && <p className={css.estado}>A desenhar as páginas… pode demorar alguns segundos.</p>}
+        {previa && <div className={css.previaPaginas} aria-busy={aGerarPrevia}>{previa.paginas.map((src, i) => <button type="button" key={i} onClick={() => setPaginaAberta(i)} aria-label={`Abrir página ${i + 1}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={src} alt={`Página ${i + 1}`} /><span>{i + 1}</span></button>)}</div>}
+        {previa && paginaAberta !== null && <div className={css.paginaAberta} role="dialog" aria-modal="true" aria-label={`Página ${paginaAberta + 1}`} onClick={() => setPaginaAberta(null)}>
+          <div onClick={e => e.stopPropagation()}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={previa.paginas[paginaAberta]} alt={`Página ${paginaAberta + 1}`} />
+            <div className={css.acoes}>
+              <button type="button" disabled={paginaAberta === 0} onClick={() => setPaginaAberta(paginaAberta - 1)}>← Anterior</button>
+              <span>{paginaAberta + 1} / {previa.paginas.length}</span>
+              <button type="button" disabled={paginaAberta === previa.paginas.length - 1} onClick={() => setPaginaAberta(paginaAberta + 1)}>Seguinte →</button>
+              <button type="button" className={css.primario} onClick={() => setPaginaAberta(null)}>Fechar</button>
+            </div>
+          </div>
+        </div>}
+
         <div className={css.tituloLinha}><h3>Cores</h3>{botaoCores}</div>
         {editorCores}
         <h3>Estilo</h3>
@@ -387,6 +461,27 @@ export function TravelPlannerNovaArea({email}: {email: string}) {
         {linhaFoto("capa", "Capa")}
         {(p.viagem.hotel || p.fotoHotel) && linhaFoto("hotel", p.viagem.hotel ? `Hotel · ${p.viagem.hotel}` : "Hotel")}
         {p.dias.map((d, i) => linhaFoto(i, `Dia ${i + 1}${d.local ? ` · ${d.local}` : d.titulo ? ` · ${d.titulo}` : ""}`))}
+
+        <h3>Pontos no mapa</h3>
+        <p className={css.ajuda}>Cada dia com local aparece numerado no mapa da viagem. Se um ponto estiver no sítio errado, procura-o de novo; se não o quiseres no mapa, retira-o.</p>
+        {p.dias.map((d, i) => <div key={i} className={css.ponto}>
+          <span className={d.lat !== null ? css.pontoNoMapa : css.pontoFora}>{i + 1}</span>
+          <div><strong>{d.local || `Dia ${i + 1} sem local`}</strong><small>{d.lat !== null && d.lng !== null ? `No mapa · ${d.lat.toFixed(4)}, ${d.lng.toFixed(4)}` : "Fora do mapa"}</small></div>
+          <div className={css.acoes}>
+            <button type="button" onClick={() => setPonto(ponto?.dia === i ? null : {dia: i, termo: [d.local, p.viagem.destino.split(",")[0]].filter(Boolean).join(", "), resultados: null})}>{d.lat !== null ? "Corrigir" : "Pôr no mapa"}</button>
+            {d.lat !== null && <button type="button" className={css.remover} onClick={() => definirPonto(i, null, null)}>Retirar do mapa</button>}
+          </div>
+          {ponto?.dia === i && <div className={css.pontoProcura}>
+            <div className={css.acoes}>
+              <input value={ponto.termo} aria-label="Local a procurar" onChange={e => setPonto({...ponto, termo: e.target.value})} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); procurarPonto(i, ponto.termo); } }} />
+              <button type="button" className={css.primario} onClick={() => procurarPonto(i, ponto.termo)}>Procurar</button>
+            </div>
+            {ponto.resultados && !ponto.resultados.length && <p className={css.ajuda}>Não encontrámos. Experimenta outro nome, por exemplo com a cidade.</p>}
+            {ponto.resultados?.map((l, k) => <button type="button" key={k} className={css.resultado} onClick={() => {
+              setP({...p, dias: p.dias.map((x, j) => j === i ? {...x, lat: l.lat, lng: l.lng, local: x.local || l.nome.split(",")[0]!} : x)}); setPonto(null);
+            }}>{l.nome}</button>)}
+          </div>}
+        </div>)}
 
         <h3>Descarregar</h3>
         {pendentes.length > 0

@@ -29,7 +29,13 @@ export const TEMAS_DICA: Record<TemaDica, string> = {
 export const TEMAS_SENSIVEIS: TemaDica[] = ["documentos", "saude"];
 
 /** Fotografia do Wikimedia (url https) ou carregada pelo consultor (data:image/jpeg). */
-export interface FotoPlanner { url: string; credito: string }
+export interface FotoPlanner {
+  url: string; credito: string;
+  /** Ponto da fotografia que fica sempre à vista quando é cortada (0 a 1; o centro é 0,5). */
+  foco?: {x: number; y: number};
+  /** Mostrar a fotografia inteira, sem cortes, sobre um fundo desfocado. */
+  inteira?: boolean;
+}
 export interface DiaPlanner {
   titulo: string; manha: string; tarde: string; noite: string;
   /** Local principal do dia — dá o pino no mapa e a pesquisa da fotografia. */
@@ -124,9 +130,10 @@ const hora = (x: unknown) => { const t = texto(x, 5); return /^\d{1,2}:\d{2}$/.t
 
 export function validarFoto(v: unknown): FotoPlanner | null {
   const f = objeto(v), url = typeof f.url === "string" ? f.url : "";
-  if (FOTO_WIKIMEDIA.test(url) && url.length < 2000) return {url, credito: texto(f.credito, 200)};
-  if (/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(url) && url.length <= MAX_FOTO_CARREGADA) return {url, credito: texto(f.credito, 200)};
-  return null;
+  const valida = (FOTO_WIKIMEDIA.test(url) && url.length < 2000) || (/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(url) && url.length <= MAX_FOTO_CARREGADA);
+  if (!valida) return null;
+  const foco = objeto(f.foco), fx = numero(foco.x, 0, 1), fy = numero(foco.y, 0, 1);
+  return {url, credito: texto(f.credito, 200), ...(fx !== null && fy !== null ? {foco: {x: fx, y: fy}} : {}), ...(f.inteira === true ? {inteira: true} : {})};
 }
 
 export function validarDia(v: unknown): DiaPlanner {

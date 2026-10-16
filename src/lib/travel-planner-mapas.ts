@@ -43,17 +43,20 @@ export function enquadrar(pontos: Ponto[], largura: number, altura: number, marg
 }
 
 /** Desenha o fundo do mapa na área (x, y, largura, altura), suavizado para combinar com a marca. */
-export async function desenharFundoMapa(ctx: SKRSContext2D, area: {x: number; y: number; w: number; h: number}, e: Enquadramento, raio = 0): Promise<boolean> {
-  const x0 = Math.floor(e.origemX / TAMANHO), y0 = Math.floor(e.origemY / TAMANHO);
-  const x1 = Math.floor((e.origemX + area.w) / TAMANHO), y1 = Math.floor((e.origemY + area.h) / TAMANHO);
+export async function desenharFundoMapa(ctx: SKRSContext2D, area: {x: number; y: number; w: number; h: number}, e: Enquadramento, raio = 0, densidade: 1 | 2 = 1): Promise<boolean> {
+  // Com densidade 2, cada mosaico do nível seguinte ocupa meio mosaico no desenho: mapa nítido a 300 ppp.
+  const z = e.z + (densidade - 1), ox = e.origemX * densidade, oy = e.origemY * densidade, lado = TAMANHO / densidade;
+  const x0 = Math.floor(ox / TAMANHO), y0 = Math.floor(oy / TAMANHO);
+  const x1 = Math.floor((ox + area.w * densidade) / TAMANHO), y1 = Math.floor((oy + area.h * densidade) / TAMANHO);
   const pedidos: Promise<{img: Image | null; tx: number; ty: number}>[] = [];
-  for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) pedidos.push(mosaico(e.z, tx, ty).then(img => ({img, tx, ty})));
+  for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) pedidos.push(mosaico(z, tx, ty).then(img => ({img, tx, ty})));
   const mosaicos = await Promise.all(pedidos);
   ctx.save();
   ctx.beginPath(); ctx.roundRect(area.x, area.y, area.w, area.h, raio); ctx.clip();
   ctx.fillStyle = "#e8ebe0"; ctx.fillRect(area.x, area.y, area.w, area.h);
   ctx.filter = "saturate(0.45) brightness(1.04)";
-  for (const m of mosaicos) if (m.img) ctx.drawImage(m.img, area.x + m.tx * TAMANHO - e.origemX, area.y + m.ty * TAMANHO - e.origemY, TAMANHO, TAMANHO);
+  // Meio píxel de sobreposição: sem ele notam-se linhas finas entre mosaicos.
+  for (const m of mosaicos) if (m.img) ctx.drawImage(m.img, area.x + (m.tx * TAMANHO - ox) / densidade - 0.25, area.y + (m.ty * TAMANHO - oy) / densidade - 0.25, lado + 0.5, lado + 0.5);
   ctx.filter = "none";
   ctx.fillStyle = "rgba(255,255,255,0.12)"; ctx.fillRect(area.x, area.y, area.w, area.h);
   // Atribuição obrigatória do OpenStreetMap.

@@ -128,3 +128,30 @@
   .cor { grid-template-columns: 44px 1fr; }
   .cor input[type="text"] { grid-column: 2; }
 }
+.previaPaginas { display: flex; gap: 12px; overflow-x: auto; padding: 4px 2px 12px; scroll-snap-type: x mandatory; }
+.previaPaginas[aria-busy="true"] { opacity: .55; }
+.planner .previaPaginas button { position: relative; flex: 0 0 auto; width: 190px; padding: 0; border: 1px solid #d8ddc5; border-radius: 6px; overflow: hidden; background: #fff; scroll-snap-align: start; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.previaPaginas img { display: block; width: 100%; height: auto; }
+.previaPaginas span { position: absolute; right: 6px; bottom: 6px; min-width: 22px; padding: 2px 6px; border-radius: 999px; background: rgba(0,0,0,.65); color: #fff; font-size: .75rem; }
+.paginaAberta { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 16px; background: rgba(0,0,0,.75); }
+.paginaAberta > div { display: flex; flex-direction: column; gap: 10px; max-height: 100%; }
+.paginaAberta img { max-width: min(92vw, 760px); max-height: calc(100vh - 110px); object-fit: contain; border-radius: 4px; background: #fff; }
+.paginaAberta .acoes { justify-content: center; align-items: center; color: #fff; }
+.enquadrar { grid-column: 1 / -1; padding: 8px 0; }
+.enquadrarImagem { position: relative; display: inline-block; max-width: 100%; line-height: 0; }
+.enquadrarImagem img { max-width: min(100%, 520px); max-height: 340px; border-radius: 8px; cursor: crosshair; }
+.focoPonto { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 0 2px #000, inset 0 0 0 2px #000; pointer-events: none; }
+.ponto { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 8px 12px; padding: 10px 0; border-bottom: 1px solid #eae7de; }
+.ponto strong { display: block; font-size: .92rem; }
+.ponto small { display: block; color: #6b6a63; font-size: .78rem; }
+.pontoNoMapa, .pontoFora { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; font-weight: 700; font-size: .85rem; }
+.pontoNoMapa { background: #4b5320; color: #fff; }
+.pontoFora { background: #f5f6ef; color: #6b6a63; border: 1px dashed #bfc4ac; }
+.pontoProcura { grid-column: 1 / -1; display: grid; gap: 6px; }
+.pontoProcura input { flex: 1 1 220px; min-height: 40px; padding: 8px 10px; border: 1px solid #bfc4ac; border-radius: 8px; font: inherit; font-size: 16px; }
+.planner .resultado { text-align: left; font-weight: 400; color: #000; border-color: #d8ddc5; }
+@media (max-width: 600px) {
+  .ponto { grid-template-columns: 34px 1fr; }
+  .ponto > .acoes { grid-column: 1 / -1; }
+  .planner .previaPaginas button { width: 150px; }
+}

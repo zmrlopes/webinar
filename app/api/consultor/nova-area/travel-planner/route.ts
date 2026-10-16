@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ErroPlanner, plannerVazio } from "@/lib/travel-planner";
-import { abrirPlanner, apagarPlanner, erroPlannerParaResposta, gerarRoteiroPlanner, guardarMarca, guardarPlanner, listarPlanners, obterMarca, novoIdPlanner, pdfPlanner, procurarFotos } from "@/lib/travel-planner-servidor";
+import { abrirPlanner, apagarPlanner, erroPlannerParaResposta, gerarRoteiroPlanner, guardarMarca, guardarPlanner, listarPlanners, obterMarca, localizarPonto, novoIdPlanner, pdfPlanner, previsualizarPlanner, procurarFotos } from "@/lib/travel-planner-servidor";
 import { acessoReservas, lerBytesReserva } from "@/lib/reservas-servidor";
 
 export const runtime = "nodejs";
@@ -23,6 +23,8 @@ export async function POST(request: Request): Promise<Response> {
       case "guardar-marca": return resposta({marca: await guardarMarca(email, corpo.marca)});
       case "apagar": await apagarPlanner(email, corpo.id); return resposta({ok: true});
       case "gerar": return resposta(await gerarRoteiroPlanner(email, corpo.planner));
+      case "previsualizar": return resposta({paginas: await previsualizarPlanner(email, corpo.planner)});
+      case "localizar": return resposta({locais: await localizarPonto(corpo.termo)});
       case "fotografias": return resposta({fotografias: await procurarFotos(corpo.termo)});
       case "pdf": {
         const {bytes: pdf, nome} = await pdfPlanner(email, corpo.id);
