@@ -21,6 +21,7 @@ import { TestemunhosNovaArea } from "./testemunhos";
 import { CalculadorasNovaArea } from "./calculadoras";
 import { CoreRankNovaArea } from "./core-rank";
 import { ReservasNovaArea } from "./reservas";
+import { TravelPlannerNovaArea } from "./travel-planner";
 import { limparPrimeirosPassos } from "@/lib/primeiros-passos";
 
 const CHAVE_PROGRESSO = "consultor-nova-area:primeiros-passos:v1";
@@ -84,7 +85,7 @@ export default function NovaAreaConsultor() {
   const [aInscrever, setAInscrever] = useState(false);
   const [erroSessao, setErroSessao] = useState("");
   const [inscrito, setInscrito] = useState(false);
-  const [seccao, setSeccao] = useState<"inicio" | "comeca-aqui" | "calendario" | "leads" | "tarefas-equipa" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "testemunhos" | "documentos" | "eventos-presenciais" | "calculadoras" | "core-rank" | "reservas">("inicio");
+  const [seccao, setSeccao] = useState<"inicio" | "comeca-aqui" | "calendario" | "leads" | "tarefas-equipa" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "testemunhos" | "documentos" | "eventos-presenciais" | "calculadoras" | "core-rank" | "reservas" | "travel-planner">("inicio");
   const [reservasAberto, setReservasAberto] = useState(false);
   const [coreAberto, setCoreAberto] = useState(false);
   const [abrirRelatoriosCore, setAbrirRelatoriosCore] = useState(0);
@@ -305,8 +306,9 @@ export default function NovaAreaConsultor() {
                 <button type="button" className={seccao === "calculadoras" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calculadoras")} aria-current={seccao === "calculadoras" ? "page" : undefined} aria-controls="conteudo-nova-area">Calculadoras</button>
                 <button type="button" className={seccao === "core-rank" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("core-rank")} aria-current={seccao === "core-rank" ? "page" : undefined} aria-controls="conteudo-nova-area">Core Rank</button>
               </GrupoMenu>
-              <GrupoMenu titulo="Reservas" ativo={seccao === "reservas"}>
+              <GrupoMenu titulo="Reservas" ativo={seccao === "reservas" || seccao === "travel-planner"}>
                 <button type="button" className={seccao === "reservas" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("reservas")} aria-current={seccao === "reservas" ? "page" : undefined} aria-controls="conteudo-nova-area">Criar templates</button>
+                <button type="button" className={seccao === "travel-planner" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("travel-planner")} aria-current={seccao === "travel-planner" ? "page" : undefined} aria-controls="conteudo-nova-area">Travel planner</button>
               </GrupoMenu>
               <GrupoMenu titulo="Formação" ativo={seccao === "proximas-formacoes" || seccao === "formacoes-gravadas" || seccao === "testemunhos" || seccao === "documentos"}>
                 <button type="button" className={seccao === "proximas-formacoes" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("proximas-formacoes")} aria-current={seccao === "proximas-formacoes" ? "page" : undefined} aria-controls="conteudo-nova-area">Próximas formações</button>
@@ -381,6 +383,7 @@ export default function NovaAreaConsultor() {
             {seccao === "calendario" && <CalendarioConsultor email={email} nome={dados.nome} />}
             {seccao === "calculadoras" && <CalculadorasNovaArea />}
             {reservasAberto && <div hidden={seccao !== "reservas"}><ReservasNovaArea email={email} /></div>}
+            {seccao === "travel-planner" && <TravelPlannerNovaArea email={email} />}
             {coreAberto && <div hidden={seccao !== "core-rank"}><CoreRankNovaArea email={email} nome={dados.nome} abrirRelatorios={abrirRelatoriosCore} /></div>}
             {seccao === "tarefas-equipa" && <TarefasIniciaisEquipa membros={dados.equipaPrimeirosPassos} />}
             {seccao === "proximo-webinar" && <ProximoWebinar webinar={dados.proximoWebinar} email={email} aoInscrever={() => setDados(atual => atual?.proximoWebinar ? { ...atual, proximoWebinar: { ...atual.proximoWebinar, inscrito: true } } : atual)} />}

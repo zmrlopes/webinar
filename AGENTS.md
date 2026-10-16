@@ -77,3 +77,11 @@ Por indicação explícita do utilizador, a primeira publicação de cada nova
 formação gravada envia automaticamente uma notificação push aos consultores
 ativos com painel e notificações ativadas. Editar, ocultar e voltar a publicar
 a mesma gravação não repete o aviso. As falhas são retomadas pela fila automática.
+
+Por indicação explícita do utilizador, Reservas → Travel planner fica publicado
+apenas na nova área da conta de teste, com o mesmo acesso de Reservas
+(`acessoReservas`). Parte de uma proposta (PDF de orçamento ou à mão), pergunta
+o perfil da viagem e a IA propõe roteiro e dicas que o consultor edita; as
+dicas de documentos, saúde e emergência têm de ser confirmadas antes do PDF.
+Fases seguintes já pedidas: link web para o cliente (expira 30 dias após o
+regresso) e imagens 9:16 (capa + 1 por dia + resumo).
