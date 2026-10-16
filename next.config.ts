@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
   // isto, a pasta migrations/ não ia parar ao pacote da função e o botão
   // falhava em produção com "pasta não encontrada".
   outputFileTracingIncludes: {
+    "/api/consultor/nova-area/reservas/imagem": ["./public/icligo-logo.png", "./public/fonts/Poppins-*.ttf"],
     "/admin/migrar": ["./migrations/**/*"],
     "/api/admin/migrar": ["./migrations/**/*"],
     // O travel planner desenha as páginas com estas fontes e o logótipo, lidos do disco.

@@ -8,6 +8,8 @@ import { AjustesReserva } from "./reservas-ajustes";
 import { FONTES_RESERVA } from "@/lib/reservas-fontes";
 import { legendaMaterialReserva, novoModeloBaseReserva } from "@/lib/reservas-modelos";
 import css from "./reservas.module.css";
+import imagemCss from "./reservas-imagem.module.css";
+import { CriarPublicacaoImagem } from "./reservas-imagem";
 
 const API = "/api/consultor/nova-area/reservas";
 const CAMPOS: Record<CampoReserva, string> = {livre: "Texto livre", destino: "Destino", frase: "Frase promocional", partida: "Cidade de partida", datas: "Datas", ida: "Data de ida", regresso: "Data de regresso", noites: "Número de noites", viajantes: "Número de viajantes", voo: "Voo", preco: "Preço por pessoa", total: "Preço total", hotel: "Nome do hotel", quarto: "Quarto", regime: "Regime alimentar", bagagem: "Bagagem", transfer: "Transfer", condicoes: "Condições"};
@@ -20,6 +22,10 @@ function Campo({titulo, valor, alterar, tipo = "text"}: {titulo: string; valor: 
 }
 
 export function ReservasNovaArea({email}: {email: string}) {
+  const [anteriores, setAnteriores] = useState(false);
+  return <><CriarPublicacaoImagem key={email} email={email}/><details className={imagemCss.anteriores} onToggle={e => setAnteriores(e.currentTarget.open)}><summary>Editor e materiais anteriores</summary>{anteriores && <EditorReservasAnterior key={email} email={email}/>}</details></>;
+}
+function EditorReservasAnterior({email}: {email: string}) {
   const [aba, setAba] = useState<"orcamento" | "criar" | "modelos" | "historico">("orcamento");
   const [material, setMaterial] = useState<MaterialReserva>(() => novoMaterialReserva());
   const [registo, setRegisto] = useState<{id: string; tipo: "modelo" | "material"} | null>(null);

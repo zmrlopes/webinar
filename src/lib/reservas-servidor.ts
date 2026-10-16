@@ -49,7 +49,7 @@ export async function apagarReserva(email: string, valor: unknown) {
   await db().query("delete from dashboard_config where chave = $1", [prefixo(email) + idReserva(valor)]);
 }
 
-async function limitarIA(email: string) {
+export async function limitarIA(email: string) {
   const janela = Math.floor(Date.now() / 600_000);
   const {rows} = await db().query(`insert into dashboard_config (chave, valor) values ($1, jsonb_build_object('janela',$2::bigint,'pedidos',1))
     on conflict (chave) do update set valor = case when (dashboard_config.valor->>'janela')::bigint = $2

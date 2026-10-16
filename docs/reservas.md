@@ -2,7 +2,21 @@
 
 Disponível no painel direito de `/consultor/nova-area`, exclusivamente para o email de teste definido em `src/lib/demo.ts`. A API verifica a mesma restrição e a existência do membro na equipa. A área atual não foi alterada.
 
-A entrada principal é **Criar com orçamento**, em três passos: carregar a proposta PDF e confirmar os dados/hotel, escolher o modelo, e acrescentar uma frase opcional antes de gerar.
+A entrada principal é **Criar publicação**, em três passos: guardar/selecionar a referência completa, carregar a proposta PDF e confirmar os dados/hotel, gerar a imagem. A referência pode ser uma exportação PNG/JPG/WebP completa do Canva (até 15 MB antes da preparação no navegador). Não se pede base limpa nem posicionamento de campos. A análise visual cria uma descrição do estilo uma vez; o gerador recebe sempre a imagem de referência original, além dessa descrição e dos textos confirmados. Esta implementação segue o fluxo observado no TripNov, sem presumir o modelo ou os prompts internos desse serviço.
+
+O gerador usa `/v1/images/edits`, `OPENAI_API_KEY` e `RESERVAS_IMAGE_MODEL` (por defeito `gpt-image-2.5-sunburst`). Precisa de um modelo que suporte dimensões flexíveis. A [documentação oficial da API de imagens](https://developers.openai.com/api/reference/resources/images/methods/edit) define as dimensões em múltiplos de 16: o servidor pede 1008 × 1792 (9:16) ou 1024 × 1280 (4:5), valida a proporção e normaliza para 1080 × 1920 ou 1080 × 1350, sem recortar nem deformar. A marca oficial é composta no servidor com o logótipo local e fontes Poppins locais. Estes ficheiros são incluídos no pacote da função na Vercel.
+
+As imagens são finais, sem caixas/fontes editáveis individualmente. **Criar versão com este ajuste** envia a referência original e a versão atual, mantendo os dados confirmados. Cada versão é guardada automaticamente. Uma verificação visual separada confere os textos; os avisos ficam guardados e podem originar um pedido de correção. A verificação é auxiliar, não uma garantia de ausência de erros. A descarga exige confirmação visual do utilizador. A geração procura reproduzir a composição, mas não promete identidade píxel a píxel; imagens de destinos geradas são identificadas como ilustrações no painel de revisão.
+
+A API `/api/consultor/nova-area/reservas/imagem` aplica `acessoReservas` a todas as ações. As referências, a descrição do estilo, os dados e as imagens vivem em `dashboard_config` com prefixo `reservas:imagem:v1:<email>:`. A listagem só lê metadados/miniaturas, até 100 registos recentes. Os modelos não contêm dados importados do PDF. A geração recebe apenas os dados de viagem confirmados; nunca recebe o PDF com dados pessoais dos clientes. Não há migração nem publicação automática nas redes sociais.
+
+O UUID do pedido é inserido antes da chamada paga: repetir esse UUID recupera o mesmo registo, mesmo em caso de falha. Não há repetição automática da geração. A chamada tem limite de 210 segundos, dentro dos 300 da função. O resultado pode ser recuperado no histórico após uma perda de ligação; pedidos que continuem pendentes após seis minutos são apresentados como interrompidos. As verificações são pedidos separados para não exceder o tempo da geração. As ações partilham o limite de IA de Reservas. Uma referência usada em publicações não pode ser apagada antes dessas publicações.
+
+Verificação do fluxo novo: `npm run test:reservas-imagem`. Os testes simulam fornecedor e base de dados, cobrindo isolamento, acesso, validação de ficheiros/dados, imagem de referência enviada, marca, formatos, versões, falhas e idempotência. O ensaio real com o orçamento iCliGo foi executado separadamente, sem inserir dados na base de dados de produção.
+
+## Editor e materiais anteriores
+
+O percurso anterior continua disponível neste separador recolhido. A sua entrada é **Criar com orçamento**, em três passos: carregar a proposta PDF e confirmar os dados/hotel, escolher o modelo, e acrescentar uma frase opcional antes de gerar.
 
 **Criar modelo do Canva** configura uma base fixa privada. Exportar do Canva uma cópia sem os textos que mudam entre viagens; manter o fundo e a decoração. Carregar preferencialmente PNG a 1080 × 1920 ou 1080 × 1350, até 1,5 MB. O formato é inferido; imagens com outras proporções são rejeitadas. PNGs nestas dimensões e dentro do limite são conservados sem recompressão; exportações proporcionais são normalizadas sem recorte. JPG/WebP também são aceites, mas a conversão para PNG tem de caber no limite.
 

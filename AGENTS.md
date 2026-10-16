@@ -62,6 +62,14 @@ editáveis, mas o logótipo e nome iCliGo ficam protegidos. A importação de
 propostas PDF, os modelos e o histórico seguem a mesma restrição na API.
 Publicar Reservas para os restantes consultores requer nova instrução explícita.
 
+Por indicação explícita do utilizador, Criar templates passa a abrir o fluxo
+de referência completa → orçamento confirmado → publicação gerada por IA.
+Cada referência e cada versão ficam privadas por consultor; os ajustes são
+pedidos por texto e geram uma nova imagem. Não pedir uma base limpa nem
+posicionar campos neste fluxo. O editor antigo continua em “Editor e materiais
+anteriores”. A marca iCliGo é aplicada pelo servidor e permanece protegida.
+Este fluxo e a respetiva API continuam exclusivos da conta de teste.
+
 Por indicação explícita do utilizador, o card de entrada no grupo WhatsApp
 Welcome Aboard também aparece nos Avisos da área atual (`/consultor`) para
 os consultores da equipa, com o mesmo convite definido em

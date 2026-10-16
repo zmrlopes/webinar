@@ -10,12 +10,13 @@ const API = "/api/consultor/nova-area/reservas";
 const euros = (n: number | null) => n === null ? "Por confirmar" : `${new Intl.NumberFormat("pt-PT",{maximumFractionDigits:2}).format(n)} €`;
 type Foto = {titulo: string; url: string; credito: string; origem: string};
 type ModeloGuardado = {id:string;material:MaterialReserva};
-export function CriarReservaOrcamento({email,ia,ocupado,onOcupado,onGerar,modelos,modeloParaUsar,onConfigurar}: {email:string;ia:boolean;ocupado:string;onOcupado:(v:string)=>void;onGerar:(m:MaterialReserva)=>void;modelos:ResumoReserva[];modeloParaUsar:ModeloGuardado|null;onConfigurar:()=>void}) {
+export function CriarReservaOrcamento({email,ia,ocupado,onOcupado,onGerar,modelos,modeloParaUsar,onConfigurar,onConfirmarDados,dadosParaRever}: {email:string;ia:boolean;ocupado:string;onOcupado:(v:string)=>void;onGerar:(m:MaterialReserva)=>void;modelos:ResumoReserva[];modeloParaUsar:ModeloGuardado|null;onConfigurar:()=>void;onConfirmarDados?:(dados:DadosReserva)=>void;dadosParaRever?:DadosReserva|null}) {
   const [passo,setPasso] = useState<1|2|3>(1);
   const [dados,setDados] = useState<DadosReserva>(()=>({...dadosReservaVazios(),condicoes:""}));
   const [propostas,setPropostas] = useState<DadosReserva[]>([]), [proposta,setProposta] = useState(0), [hotel,setHotel] = useState(0);
   const [ficheiros,setFicheiros] = useState<string[]>([]), [avisos,setAvisos] = useState<string[]>([]), [erro,setErro] = useState("");
   const [manual,setManual] = useState(false), [confirmado,setConfirmado] = useState(false);
+  useEffect(()=>{if(dadosParaRever){setDados(structuredClone(dadosParaRever));setHotel(0);setManual(true);setConfirmado(false);}},[dadosParaRever]);
   const [formato,setFormato] = useState<FormatoReserva>("story"), [estilo,setEstilo] = useState<EstiloReserva>("elegante");
   const [foto,setFoto] = useState<FotografiaModeloReserva | null>(null);
   const [desenho,setDesenho] = useState<"guardado"|"referencia"|"modelo">("guardado");
@@ -58,7 +59,7 @@ export function CriarReservaOrcamento({email,ia,ocupado,onOcupado,onGerar,modelo
   }
   function continuar() {
     setErro("");
-    try {validarDadosReserva(dados);if(!dados.destino.trim())throw new Error("Confirma o destino da viagem.");if(preco===null)throw new Error("Confirma o preço por pessoa, ou o total e o número de viajantes.");if(!confirmado)throw new Error("Confirma os dados do orçamento para continuar.");setPasso(2);}catch(e){setErro(e instanceof Error?e.message:"Revê os dados.");}
+    try {validarDadosReserva(dados);if(!dados.destino.trim())throw new Error("Confirma o destino da viagem.");if(preco===null)throw new Error("Confirma o preço por pessoa, ou o total e o número de viajantes.");if(!confirmado)throw new Error("Confirma os dados do orçamento para continuar.");if(onConfirmarDados){onConfirmarDados({...dados,hoteis:[dados.hoteis[hotel]!]});return;}setPasso(2);}catch(e){setErro(e instanceof Error?e.message:"Revê os dados.");}
   }
   async function carregarFoto(e:ChangeEvent<HTMLInputElement>) {const f=e.target.files?.[0];e.target.value="";if(f)await fazer("A preparar a fotografia…",async()=>setFoto({imagem:await comprimirImagemReserva(f)}));}
   async function carregarReferencia(e:ChangeEvent<HTMLInputElement>) {
@@ -113,7 +114,7 @@ export function CriarReservaOrcamento({email,ia,ocupado,onOcupado,onGerar,modelo
   function campo(titulo:string,chave:"destino"|"partida"|"ida"|"regresso"|"bagagem"|"transfer",tipo="text") {return <label className={css.campo}><span>{titulo}</span><input type={tipo} value={dados[chave]} onChange={e=>alterar(chave,e.target.value)} /></label>;}
   const h=dados.hoteis[hotel]!;
   return <div className={css.assistente}>
-    <ol className={css.passos} aria-label="Criar template a partir de orçamento">{["Orçamento","Formato e referência","Texto e gerar"].map((nome,i)=><li key={nome} aria-current={passo===i+1?"step":undefined} data-completo={passo>i+1}><span>{i+1}</span><strong>{nome}</strong></li>)}</ol>
+    {!onConfirmarDados&&<ol className={css.passos} aria-label="Criar template a partir de orçamento">{["Orçamento","Formato e referência","Texto e gerar"].map((nome,i)=><li key={nome} aria-current={passo===i+1?"step":undefined} data-completo={passo>i+1}><span>{i+1}</span><strong>{nome}</strong></li>)}</ol>}
     {erro&&<p role="alert" className={css.erro}>{erro}</p>}
     <fieldset disabled={!!ocupado} className={css.editorCompleto}>
       <input ref={pdfInput} className={css.inputOculto} type="file" accept="application/pdf,.pdf" multiple onChange={e=>void importar(e)} aria-label="Orçamentos PDF para gerar template" />
