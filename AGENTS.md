@@ -85,3 +85,10 @@ o perfil da viagem e a IA propõe roteiro e dicas que o consultor edita; as
 dicas de documentos, saúde e emergência têm de ser confirmadas antes do PDF.
 Fases seguintes já pedidas: link web para o cliente (expira 30 dias após o
 regresso) e imagens 9:16 (capa + 1 por dia + resumo).
+
+Por indicação explícita do utilizador, cada consultor escolhe as cores dos
+seus travel planners (principal, destaque e escura, com paletas sugeridas),
+guardadas por consultor e aplicadas a todos os seus PDFs. É uma exceção à
+regra das cores da marca, limitada aos documentos do travel planner; o
+logótipo e o nome iCliGo mantêm-se protegidos e a área de consultor continua
+com as cores da marca. O texto sobre cada cor ajusta-se para se ler bem.

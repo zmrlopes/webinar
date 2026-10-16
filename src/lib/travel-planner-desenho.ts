@@ -2,15 +2,16 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createCanvas, GlobalFonts, loadImage, type Image, type SKRSContext2D } from "@napi-rs/canvas";
 import { arcoVoo, desenharFundoMapa, distanciaKm, enquadrar, noMapa, type Ponto } from "./travel-planner-mapas";
-import { dataPlanner, diasDaViagem, somarDiasPlanner, type DicaPlanner, type TemaDica, type TravelPlanner } from "./travel-planner";
+import { coresPlanner, dataPlanner, diasDaViagem, misturar, somarDiasPlanner, type CoresPlanner, type DicaPlanner, type MarcaPlanner, type TemaDica, type TravelPlanner } from "./travel-planner";
 
 /**
  * Desenha cada página do travel planner como imagem A4 (150 ppp). O PDF
- * junta depois as páginas. Cores da marca: branco, preto e verde-oliva.
+ * junta depois as páginas. As cores são as escolhidas pelo consultor (por
+ * omissão, as da marca: verde-oliva, dourado e preto); o logótipo iCliGo não muda.
  */
 export const LARGURA = 1240, ALTURA = 1754;
 const M = 92;
-const OLIVA = "#4b5320", OLIVA_CLARO = "#e9ecdc", CREME = "#f5f6ef", PRETO = "#111111", CINZA = "#6b6a63", DOURADO = "#c9971c", LINHA = "#e2e4d6";
+const TINTA = "#111111", CINZA = "#6b6a63", LINHA = "#e2e4d6";
 
 let fontesProntas = false;
 function registarFontes() {
@@ -27,11 +28,12 @@ function logo(): Promise<Image | null> {
   return logoCache;
 }
 
-interface Tema { fundo: string; cartao: string; titulo: (t: number) => string; maiusculas: boolean; faixa: boolean }
-function tema(estilo: TravelPlanner["estilo"]): Tema {
-  if (estilo === "moderno") return {fundo: "#ffffff", cartao: "#f4f4f2", titulo: t => `${t}px PoppinsBold`, maiusculas: true, faixa: true};
-  if (estilo === "natural") return {fundo: "#f7f6f0", cartao: "#ffffff", titulo: t => `${t}px Playfair`, maiusculas: false, faixa: false};
-  return {fundo: "#ffffff", cartao: CREME, titulo: t => `${t}px Playfair`, maiusculas: false, faixa: false};
+interface Tema { fundo: string; cartao: string; titulo: (t: number) => string; maiusculas: boolean; faixa: boolean; c: CoresPlanner }
+function tema(estilo: TravelPlanner["estilo"], marca: MarcaPlanner): Tema {
+  const c = coresPlanner(marca);
+  if (estilo === "moderno") return {fundo: "#ffffff", cartao: misturar(marca.escura, 0.95), titulo: t => `${t}px PoppinsBold`, maiusculas: true, faixa: true, c};
+  if (estilo === "natural") return {fundo: misturar(marca.principal, 0.95), cartao: "#ffffff", titulo: t => `${t}px Playfair`, maiusculas: false, faixa: false, c};
+  return {fundo: "#ffffff", cartao: c.creme, titulo: t => `${t}px Playfair`, maiusculas: false, faixa: false, c};
 }
 
 // ---------- utilitários de desenho ----------
@@ -87,11 +89,11 @@ function sombra(ctx: SKRSContext2D, ativa: boolean) {
 }
 
 /** Placeholder quando não há fotografia: gradiente verde-oliva com o nome do local. */
-function semFoto(ctx: SKRSContext2D, x: number, y: number, w: number, h: number, raio: number, legenda: string) {
+function semFoto(ctx: SKRSContext2D, t: Tema, x: number, y: number, w: number, h: number, raio: number, legenda: string) {
   ctx.save();
   ctx.beginPath(); ctx.roundRect(x, y, w, h, raio); ctx.clip();
   const g = ctx.createLinearGradient(x, y, x + w, y + h);
-  g.addColorStop(0, "#5e6829"); g.addColorStop(1, "#2f3413");
+  g.addColorStop(0, t.c.principal); g.addColorStop(1, t.c.principalEscuro);
   ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
   ctx.globalAlpha = 0.08;
   for (let i = -h; i < w; i += 46) { ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.moveTo(x + i, y + h); ctx.lineTo(x + i + h, y); ctx.lineTo(x + i + h + 18, y); ctx.lineTo(x + i + 18, y + h); ctx.fill(); }
@@ -165,14 +167,14 @@ function rodape(ctx: SKRSContext2D, p: TravelPlanner, n: number, img: Image | nu
 function cabecalho(ctx: SKRSContext2D, t: Tema, etiqueta: string, titulo: string, y = M): number {
   ctx.textBaseline = "alphabetic"; ctx.textAlign = "left";
   if (t.faixa) {
-    retangulo(ctx, M, y, LARGURA - 2 * M, 104, 0, PRETO);
-    ctx.fillStyle = "#c8cf9e"; ctx.font = "18px PoppinsBold"; ctx.fillText(etiqueta.toUpperCase(), M + 34, y + 38);
-    ctx.fillStyle = "#fff"; ctx.font = t.titulo(40); ctx.fillText(titulo.toUpperCase(), M + 34, y + 84, LARGURA - 2 * M - 68);
+    retangulo(ctx, M, y, LARGURA - 2 * M, 104, 0, t.c.escura);
+    ctx.fillStyle = t.c.sobreEscura; ctx.globalAlpha = 0.75; ctx.font = "18px PoppinsBold"; ctx.fillText(etiqueta.toUpperCase(), M + 34, y + 38); ctx.globalAlpha = 1;
+    ctx.fillStyle = t.c.sobreEscura; ctx.font = t.titulo(40); ctx.fillText(titulo.toUpperCase(), M + 34, y + 84, LARGURA - 2 * M - 68);
     return y + 140;
   }
-  ctx.fillStyle = OLIVA; ctx.font = "18px PoppinsBold"; ctx.fillText(etiqueta.toUpperCase(), M, y + 22);
-  ctx.fillStyle = PRETO; ctx.font = t.titulo(58); ctx.fillText(titulo, M, y + 90, LARGURA - 2 * M);
-  ctx.fillStyle = OLIVA; ctx.fillRect(M, y + 112, 70, 5);
+  ctx.fillStyle = t.c.principalTexto; ctx.font = "18px PoppinsBold"; ctx.fillText(etiqueta.toUpperCase(), M, y + 22);
+  ctx.fillStyle = TINTA; ctx.font = t.titulo(58); ctx.fillText(titulo, M, y + 90, LARGURA - 2 * M);
+  ctx.fillStyle = t.c.principal; ctx.fillRect(M, y + 112, 70, 5);
   return y + 150;
 }
 
@@ -194,17 +196,17 @@ function pastilha(ctx: SKRSContext2D, texto: string, x: number, y: number, fundo
 // ---------- páginas ----------
 
 export interface ImagensPlanner { capa: Image | null; hotel: Image | null; dias: (Image | null)[] }
-export interface DadosDesenho { p: TravelPlanner; consultor: {nome: string; email: string} | null; imagens: ImagensPlanner }
+export interface DadosDesenho { p: TravelPlanner; marca: MarcaPlanner; consultor: {nome: string; email: string} | null; imagens: ImagensPlanner }
 
 function capa(d: DadosDesenho, t: Tema, img: Image | null) {
   const {p} = d, {canvas, ctx} = novaPagina(t);
-  const natural = p.estilo === "natural", alturaFoto = natural ? ALTURA * 0.6 : ALTURA;
+  const natural = p.estilo === "natural", sobreCapa = natural ? t.c.sobrePrincipal : "#ffffff", vidro = sobreCapa === "#ffffff" ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.08)", alturaFoto = natural ? ALTURA * 0.6 : ALTURA;
   if (d.imagens.capa) cobrir(ctx, d.imagens.capa, 0, 0, LARGURA, alturaFoto);
-  else semFoto(ctx, 0, 0, LARGURA, alturaFoto, 0, "");
-  if (natural) { ctx.fillStyle = OLIVA; ctx.fillRect(0, alturaFoto, LARGURA, ALTURA - alturaFoto); }
+  else semFoto(ctx, t, 0, 0, LARGURA, alturaFoto, 0, "");
+  if (natural) { ctx.fillStyle = t.c.principal; ctx.fillRect(0, alturaFoto, LARGURA, ALTURA - alturaFoto); }
   else {
     const g = ctx.createLinearGradient(0, ALTURA * 0.35, 0, ALTURA);
-    g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(0.55, p.estilo === "moderno" ? "rgba(0,0,0,0.78)" : "rgba(20,24,8,0.7)"); g.addColorStop(1, p.estilo === "moderno" ? "rgba(0,0,0,0.95)" : "rgba(20,24,8,0.92)");
+    g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(0.55, p.estilo === "moderno" ? t.c.escuraA78 : t.c.capaA70); g.addColorStop(1, p.estilo === "moderno" ? t.c.escuraA95 : t.c.capaA92);
     ctx.fillStyle = g; ctx.fillRect(0, 0, LARGURA, ALTURA);
     const topo = ctx.createLinearGradient(0, 0, 0, 260); topo.addColorStop(0, "rgba(0,0,0,0.35)"); topo.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = topo; ctx.fillRect(0, 0, LARGURA, 260);
@@ -216,58 +218,59 @@ function capa(d: DadosDesenho, t: Tema, img: Image | null) {
   ctx.fillText("TRAVEL PLANNER", LARGURA - M, 116); ctx.textAlign = "left";
 
   let y = natural ? alturaFoto + 110 : ALTURA - 640;
-  ctx.fillStyle = natural ? "#dfe4c4" : "#d9dfb0"; ctx.font = "22px PoppinsBold"; ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = natural ? sobreCapa : t.c.suave; ctx.globalAlpha = natural ? 0.8 : 1; ctx.font = "22px PoppinsBold"; ctx.textBaseline = "alphabetic";
   ctx.fillText(p.perfil.tipo ? `A VIAGEM DE SONHO · ${p.perfil.tipo.toUpperCase()}` : "A VOSSA PRÓXIMA AVENTURA", M, y);
-  y += 30;
-  ctx.fillStyle = "#ffffff"; ctx.font = t.titulo(p.viagem.destino.length > 18 ? 104 : 136);
+  y += 30; ctx.globalAlpha = 1;
+  ctx.fillStyle = sobreCapa; ctx.font = t.titulo(p.viagem.destino.length > 18 ? 104 : 136);
   const destino = t.maiusculas ? p.viagem.destino.toUpperCase() : p.viagem.destino;
   for (const l of linhas(ctx, destino, LARGURA - 2 * M).slice(0, 2)) { y += p.viagem.destino.length > 18 ? 112 : 140; ctx.fillText(l, M, y); }
   y += 46;
   const total = diasDaViagem(p.viagem.ida, p.viagem.regresso);
   let x = M;
-  if (p.viagem.ida && p.viagem.regresso) x += pastilha(ctx, `${dataPlanner(p.viagem.ida, {day: "numeric", month: "short"})} – ${dataPlanner(p.viagem.regresso, {day: "numeric", month: "short", year: "numeric"})}`, x, y, "rgba(255,255,255,0.16)", "#ffffff", "calendario") + 14;
-  if (total) x += pastilha(ctx, `${total} dias`, x, y, "rgba(255,255,255,0.16)", "#ffffff", "estrela") + 14;
-  if (p.viagem.viajantes) pastilha(ctx, `${p.viagem.viajantes} viajante${p.viagem.viajantes > 1 ? "s" : ""}`, x, y, "rgba(255,255,255,0.16)", "#ffffff", "pessoas");
+  if (p.viagem.ida && p.viagem.regresso) x += pastilha(ctx, `${dataPlanner(p.viagem.ida, {day: "numeric", month: "short"})} – ${dataPlanner(p.viagem.regresso, {day: "numeric", month: "short", year: "numeric"})}`, x, y, vidro, sobreCapa, "calendario") + 14;
+  if (total) x += pastilha(ctx, `${total} dias`, x, y, vidro, sobreCapa, "estrela") + 14;
+  if (p.viagem.viajantes) pastilha(ctx, `${p.viagem.viajantes} viajante${p.viagem.viajantes > 1 ? "s" : ""}`, x, y, vidro, sobreCapa, "pessoas");
 
-  ctx.fillStyle = "rgba(255,255,255,0.35)"; ctx.fillRect(M, ALTURA - 190, LARGURA - 2 * M, 1.5);
-  ctx.fillStyle = "#ffffff"; ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = sobreCapa; ctx.globalAlpha = 0.35; ctx.fillRect(M, ALTURA - 190, LARGURA - 2 * M, 1.5); ctx.globalAlpha = 1;
+  ctx.fillStyle = sobreCapa; ctx.textBaseline = "alphabetic";
   if (d.consultor) {
-    ctx.font = "18px Poppins"; ctx.fillStyle = "rgba(255,255,255,0.8)"; ctx.fillText("Preparado com carinho por", M, ALTURA - 140);
-    ctx.font = "30px PoppinsBold"; ctx.fillStyle = "#fff"; ctx.fillText(d.consultor.nome, M, ALTURA - 100);
+    ctx.font = "18px Poppins"; ctx.fillStyle = sobreCapa; ctx.globalAlpha = 0.8; ctx.fillText("Preparado com carinho por", M, ALTURA - 140); ctx.globalAlpha = 1;
+    ctx.font = "30px PoppinsBold"; ctx.fillStyle = sobreCapa; ctx.fillText(d.consultor.nome, M, ALTURA - 100);
   }
-  if (p.foto?.credito) { ctx.font = "13px Poppins"; ctx.fillStyle = "rgba(255,255,255,0.65)"; ctx.textAlign = "right"; ctx.fillText(`Fotografia: ${p.foto.credito}`.slice(0, 90), LARGURA - M, ALTURA - 104); ctx.textAlign = "left"; }
+  if (p.foto?.credito) { ctx.font = "13px Poppins"; ctx.fillStyle = sobreCapa === "#ffffff" ? "rgba(255,255,255,0.65)" : "rgba(0,0,0,0.55)"; ctx.textAlign = "right"; ctx.fillText(`Fotografia: ${p.foto.credito}`.slice(0, 90), LARGURA - M, ALTURA - 104); ctx.textAlign = "left"; }
   return canvas;
 }
 
-function cartaoEmbarque(ctx: SKRSContext2D, v: TravelPlanner["voos"][number], x: number, y: number, w: number, h: number) {
+function cartaoEmbarque(ctx: SKRSContext2D, t: Tema, v: TravelPlanner["voos"][number], x: number, y: number, w: number, h: number) {
   sombra(ctx, true); retangulo(ctx, x, y, w, h, 22, "#ffffff"); sombra(ctx, false);
   const stub = 190, corpo = w - stub;
   // Talão lateral verde-oliva com o sentido.
   ctx.save(); ctx.beginPath(); ctx.roundRect(x + corpo, y, stub, h, [0, 22, 22, 0]); ctx.clip();
-  ctx.fillStyle = v.sentido === "ida" ? OLIVA : PRETO; ctx.fillRect(x + corpo, y, stub, h); ctx.restore();
-  ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  icone(ctx, "aviao", x + corpo + stub / 2, y + h / 2 - 30, 40, "#ffffff");
+  const sobre = v.sentido === "ida" ? t.c.sobrePrincipal : t.c.sobreEscura;
+  ctx.fillStyle = v.sentido === "ida" ? t.c.principal : t.c.escura; ctx.fillRect(x + corpo, y, stub, h); ctx.restore();
+  ctx.fillStyle = sobre; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  icone(ctx, "aviao", x + corpo + stub / 2, y + h / 2 - 30, 40, sobre);
   ctx.font = "26px PoppinsBold"; ctx.fillText(v.sentido === "ida" ? "IDA" : "VOLTA", x + corpo + stub / 2, y + h / 2 + 22);
   if (v.data) { ctx.font = "17px Poppins"; ctx.fillText(dataPlanner(v.data, {day: "numeric", month: "short"}), x + corpo + stub / 2, y + h / 2 + 52); }
   // Picotado e entalhes.
-  ctx.strokeStyle = "#cfd3bd"; ctx.setLineDash([8, 8]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + corpo, y + 18); ctx.lineTo(x + corpo, y + h - 18); ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle = t.c.linhaSuave; ctx.setLineDash([8, 8]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + corpo, y + 18); ctx.lineTo(x + corpo, y + h - 18); ctx.stroke(); ctx.setLineDash([]);
   // Origem → destino.
   const esq = x + 44, dir = x + corpo - 44;
   ctx.textAlign = "left"; ctx.fillStyle = CINZA; ctx.font = "17px PoppinsBold"; ctx.textBaseline = "alphabetic";
   ctx.fillText([v.companhia, v.numero].filter(Boolean).join(" · ").toUpperCase() || "VOO", esq, y + 44);
-  ctx.fillStyle = PRETO; ctx.font = "64px PoppinsBold"; ctx.fillText(v.origem || "—", esq, y + 122);
+  ctx.fillStyle = TINTA; ctx.font = "64px PoppinsBold"; ctx.fillText(v.origem || "—", esq, y + 122);
   ctx.textAlign = "right"; ctx.fillText(v.destino || "—", dir, y + 122);
   ctx.font = "19px Poppins"; ctx.fillStyle = CINZA;
   ctx.textAlign = "left"; ctx.fillText(v.origemCidade, esq, y + 152, 220);
   ctx.textAlign = "right"; ctx.fillText(v.destinoCidade, dir, y + 152, 220);
-  ctx.font = "30px PoppinsBold"; ctx.fillStyle = OLIVA;
+  ctx.font = "30px PoppinsBold"; ctx.fillStyle = t.c.principalTexto;
   ctx.textAlign = "left"; if (v.partida) ctx.fillText(v.partida, esq, y + h - 30);
   ctx.textAlign = "right"; if (v.chegada) ctx.fillText(v.chegada, dir, y + h - 30);
   // Linha do voo.
   const meioY = y + 100, a = esq + 200, b = dir - 200;
-  ctx.strokeStyle = "#c7ccb0"; ctx.lineWidth = 3; ctx.setLineDash([2, 10]); ctx.beginPath(); ctx.moveTo(a, meioY); ctx.lineTo(b, meioY); ctx.stroke(); ctx.setLineDash([]);
-  ctx.beginPath(); ctx.arc((a + b) / 2, meioY, 30, 0, Math.PI * 2); ctx.fillStyle = OLIVA_CLARO; ctx.fill();
-  icone(ctx, "aviao", (a + b) / 2, meioY, 34, OLIVA);
+  ctx.strokeStyle = t.c.linhaSuave; ctx.lineWidth = 3; ctx.setLineDash([2, 10]); ctx.beginPath(); ctx.moveTo(a, meioY); ctx.lineTo(b, meioY); ctx.stroke(); ctx.setLineDash([]);
+  ctx.beginPath(); ctx.arc((a + b) / 2, meioY, 30, 0, Math.PI * 2); ctx.fillStyle = t.c.suave; ctx.fill();
+  icone(ctx, "aviao", (a + b) / 2, meioY, 34, t.c.principalTexto);
   ctx.textAlign = "left";
 }
 
@@ -287,9 +290,9 @@ async function viagem(d: DadosDesenho, t: Tema, img: Image | null, n: number) {
   tiles.forEach(([ic, valor, rotulo], i) => {
     const x = M + i * (tw + 24);
     retangulo(ctx, x, y, tw, 150, 22, t.cartao);
-    ctx.beginPath(); ctx.arc(x + 48, y + 52, 28, 0, Math.PI * 2); ctx.fillStyle = OLIVA; ctx.fill();
-    icone(ctx, ic, x + 48, y + 52, 28, "#fff");
-    ctx.fillStyle = PRETO; ctx.font = "50px PoppinsBold"; ctx.textBaseline = "alphabetic"; ctx.textAlign = "left";
+    ctx.beginPath(); ctx.arc(x + 48, y + 52, 28, 0, Math.PI * 2); ctx.fillStyle = t.c.principal; ctx.fill();
+    icone(ctx, ic, x + 48, y + 52, 28, t.c.sobrePrincipal);
+    ctx.fillStyle = TINTA; ctx.font = "50px PoppinsBold"; ctx.textBaseline = "alphabetic"; ctx.textAlign = "left";
     ctx.fillText(valor, x + 28, y + 128, tw - 40);
     ctx.fillStyle = CINZA; ctx.font = "18px Poppins"; ctx.fillText(rotulo, x + 96, y + 60, tw - 110);
   });
@@ -307,33 +310,33 @@ async function viagem(d: DadosDesenho, t: Tema, img: Image | null, n: number) {
     ctx.save(); ctx.beginPath(); ctx.roundRect(area.x, area.y, area.w, area.h, 24); ctx.clip();
     for (const arco of arcos) {
       const pts = arco.map(q => noMapa(q, area, e));
-      ctx.strokeStyle = "rgba(75,83,32,0.25)"; ctx.lineWidth = 14; ctx.beginPath(); pts.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.stroke();
-      ctx.strokeStyle = OLIVA; ctx.lineWidth = 5; ctx.setLineDash([16, 10]); ctx.beginPath(); pts.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.stroke(); ctx.setLineDash([]);
+      ctx.strokeStyle = t.c.principalA25; ctx.lineWidth = 14; ctx.beginPath(); pts.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.stroke();
+      ctx.strokeStyle = t.c.principal; ctx.lineWidth = 5; ctx.setLineDash([16, 10]); ctx.beginPath(); pts.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.stroke(); ctx.setLineDash([]);
       const meio = pts[Math.floor(pts.length / 2)]!, antes = pts[Math.floor(pts.length / 2) - 1]!;
       ctx.save(); ctx.translate(meio.x, meio.y); ctx.rotate(Math.atan2(meio.y - antes.y, meio.x - antes.x));
       ctx.beginPath(); ctx.arc(0, 0, 30, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill();
-      icone(ctx, "aviao", 0, 0, 38, OLIVA); ctx.restore();
+      icone(ctx, "aviao", 0, 0, 38, t.c.principalTexto); ctx.restore();
     }
     const vistos = new Set<string>();
     for (const v of voosComCoords) for (const [codigo, cidade, lat, lng] of [[v.origem, v.origemCidade, v.origemLat, v.origemLng], [v.destino, v.destinoCidade, v.destinoLat, v.destinoLng]] as const) {
       if (vistos.has(codigo)) continue; vistos.add(codigo);
       const q = noMapa({lat: lat!, lng: lng!}, area, e);
-      ctx.beginPath(); ctx.arc(q.x, q.y, 13, 0, Math.PI * 2); ctx.fillStyle = PRETO; ctx.fill();
+      ctx.beginPath(); ctx.arc(q.x, q.y, 13, 0, Math.PI * 2); ctx.fillStyle = t.c.escura; ctx.fill();
       ctx.beginPath(); ctx.arc(q.x, q.y, 5, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill();
       const rotulo = `${codigo}${cidade ? ` · ${cidade}` : ""}`;
       ctx.font = "21px PoppinsBold"; const w = ctx.measureText(rotulo).width + 28;
       const lx = Math.min(Math.max(q.x - w / 2, area.x + 10), area.x + area.w - w - 10), ly = q.y + 22 + 44 > area.y + area.h ? q.y - 66 : q.y + 22;
       sombra(ctx, true); retangulo(ctx, lx, ly, w, 44, 22, "#fff"); sombra(ctx, false);
-      ctx.fillStyle = PRETO; ctx.textBaseline = "middle"; ctx.textAlign = "left"; ctx.fillText(rotulo, lx + 14, ly + 23);
+      ctx.fillStyle = TINTA; ctx.textBaseline = "middle"; ctx.textAlign = "left"; ctx.fillText(rotulo, lx + 14, ly + 23);
     }
     ctx.restore();
     y += area.h + 30;
   }
-  for (const v of cartoes) { cartaoEmbarque(ctx, v, M, y, LARGURA - 2 * M, alturaCartao); y += alturaCartao + 24; }
+  for (const v of cartoes) { cartaoEmbarque(ctx, t, v, M, y, LARGURA - 2 * M, alturaCartao); y += alturaCartao + 24; }
   if (!cartoes.length && p.viagem.voo) {
     ctx.font = "22px Poppins"; const h = alturaParagrafo(ctx, p.viagem.voo, LARGURA - 2 * M - 120, 34, 8) + 60;
-    retangulo(ctx, M, y, LARGURA - 2 * M, h, 22, t.cartao); icone(ctx, "aviao", M + 50, y + 46, 36, OLIVA);
-    ctx.fillStyle = PRETO; paragrafo(ctx, p.viagem.voo, M + 96, y + 30, LARGURA - 2 * M - 120, 34, 8);
+    retangulo(ctx, M, y, LARGURA - 2 * M, h, 22, t.cartao); icone(ctx, "aviao", M + 50, y + 46, 36, t.c.principal);
+    ctx.fillStyle = TINTA; paragrafo(ctx, p.viagem.voo, M + 96, y + 30, LARGURA - 2 * M - 120, 34, 8);
   }
   rodape(ctx, p, n, img);
   return canvas;
@@ -346,17 +349,17 @@ async function alojamento(d: DadosDesenho, t: Tema, img: Image | null, n: number
     const h = 470, fotoW = 520;
     sombra(ctx, true); retangulo(ctx, M, y, LARGURA - 2 * M, h, 26, "#ffffff"); sombra(ctx, false);
     const foto = d.imagens.hotel ?? d.imagens.capa;
-    if (foto) cobrir(ctx, foto, M, y, fotoW, h, 26); else semFoto(ctx, M, y, fotoW, h, 26, p.viagem.destino);
+    if (foto) cobrir(ctx, foto, M, y, fotoW, h, 26); else semFoto(ctx, t, M, y, fotoW, h, 26, p.viagem.destino);
     let ty = y + 50; const tx = M + fotoW + 44, tw = LARGURA - 2 * M - fotoW - 80;
     if (p.viagem.hotel) {
-      ctx.fillStyle = OLIVA; ctx.font = "17px PoppinsBold"; ctx.textBaseline = "alphabetic"; ctx.fillText("ALOJAMENTO", tx, ty); ty += 16;
-      ctx.fillStyle = PRETO; ctx.font = t.titulo(40); ty += paragrafo(ctx, p.viagem.hotel, tx, ty, tw, 48, 3) + 20;
+      ctx.fillStyle = t.c.principalTexto; ctx.font = "17px PoppinsBold"; ctx.textBaseline = "alphabetic"; ctx.fillText("ALOJAMENTO", tx, ty); ty += 16;
+      ctx.fillStyle = TINTA; ctx.font = t.titulo(40); ty += paragrafo(ctx, p.viagem.hotel, tx, ty, tw, 48, 3) + 20;
     }
     for (const [ic, valor] of [["hotel", p.viagem.quarto], ["estrela", p.viagem.regime], ["transfer", p.viagem.transfer], ["mala", p.viagem.bagagem]] as [Icone, string][]) {
       if (!valor || ty > y + h - 60) continue;
-      ctx.beginPath(); ctx.arc(tx + 22, ty + 20, 22, 0, Math.PI * 2); ctx.fillStyle = OLIVA_CLARO; ctx.fill();
-      icone(ctx, ic, tx + 22, ty + 20, 24, OLIVA);
-      ctx.fillStyle = PRETO; ctx.font = "21px Poppins";
+      ctx.beginPath(); ctx.arc(tx + 22, ty + 20, 22, 0, Math.PI * 2); ctx.fillStyle = t.c.suave; ctx.fill();
+      icone(ctx, ic, tx + 22, ty + 20, 24, t.c.principalTexto);
+      ctx.fillStyle = TINTA; ctx.font = "21px Poppins";
       ty += Math.max(46, paragrafo(ctx, valor, tx + 60, ty + 6, tw - 60, 30, 2) + 16);
     }
     y += h + 50;
@@ -365,7 +368,7 @@ async function alojamento(d: DadosDesenho, t: Tema, img: Image | null, n: number
   const locais = d.p.dias.map((dia, i) => ({dia: i + 1, nome: dia.local, lat: dia.lat, lng: dia.lng})).filter(l => l.nome && l.lat !== null && l.lng !== null);
   const unicos = locais.filter((l, i) => locais.findIndex(o => o.nome.toLowerCase() === l.nome.toLowerCase()) === i);
   if (unicos.length) {
-    ctx.fillStyle = OLIVA; ctx.font = "18px PoppinsBold"; ctx.textBaseline = "alphabetic"; ctx.fillText("O MAPA DA VIAGEM", M, y); y += 20;
+    ctx.fillStyle = t.c.principalTexto; ctx.font = "18px PoppinsBold"; ctx.textBaseline = "alphabetic"; ctx.fillText("O MAPA DA VIAGEM", M, y); y += 20;
     const legendaH = Math.ceil(unicos.length / 2) * 46 + 20;
     const area = {x: M, y, w: LARGURA - 2 * M, h: Math.max(380, ALTURA - 140 - y - legendaH - 20)};
     const pontos = unicos.map(l => ({lat: l.lat!, lng: l.lng!}));
@@ -380,21 +383,21 @@ async function alojamento(d: DadosDesenho, t: Tema, img: Image | null, n: number
       while (posicoes.some(o => Math.hypot(o.x - q.x, o.y - q.y) < 46)) q.x += 46;
       posicoes.push(q);
     }
-    ctx.strokeStyle = "rgba(75,83,32,0.55)"; ctx.lineWidth = 4; ctx.setLineDash([10, 10]); ctx.beginPath(); posicoes.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle = t.c.principalA55; ctx.lineWidth = 4; ctx.setLineDash([10, 10]); ctx.beginPath(); posicoes.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.stroke(); ctx.setLineDash([]);
     posicoes.forEach((q, i) => {
       sombra(ctx, true);
-      ctx.beginPath(); ctx.arc(q.x, q.y - 34, 26, Math.PI * 0.78, Math.PI * 2.22); ctx.lineTo(q.x, q.y); ctx.closePath(); ctx.fillStyle = OLIVA; ctx.fill();
+      ctx.beginPath(); ctx.arc(q.x, q.y - 34, 26, Math.PI * 0.78, Math.PI * 2.22); ctx.lineTo(q.x, q.y); ctx.closePath(); ctx.fillStyle = t.c.principal; ctx.fill();
       sombra(ctx, false);
       ctx.beginPath(); ctx.arc(q.x, q.y - 34, 18, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill();
-      ctx.fillStyle = OLIVA; ctx.font = "20px PoppinsBold"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(String(i + 1), q.x, q.y - 33); ctx.textAlign = "left";
+      ctx.fillStyle = t.c.principalTexto; ctx.font = "20px PoppinsBold"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(String(i + 1), q.x, q.y - 33); ctx.textAlign = "left";
     });
     ctx.restore();
     y += area.h + 26;
     unicos.forEach((l, i) => {
       const col = i % 2, x = M + col * ((LARGURA - 2 * M) / 2), ly = y + Math.floor(i / 2) * 46;
-      ctx.beginPath(); ctx.arc(x + 17, ly + 17, 17, 0, Math.PI * 2); ctx.fillStyle = OLIVA; ctx.fill();
-      ctx.fillStyle = "#fff"; ctx.font = "17px PoppinsBold"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(String(i + 1), x + 17, ly + 18); ctx.textAlign = "left";
-      ctx.fillStyle = PRETO; ctx.font = "20px PoppinsBold"; ctx.fillText(l.nome, x + 48, ly + 18, (LARGURA - 2 * M) / 2 - 150);
+      ctx.beginPath(); ctx.arc(x + 17, ly + 17, 17, 0, Math.PI * 2); ctx.fillStyle = t.c.principal; ctx.fill();
+      ctx.fillStyle = t.c.sobrePrincipal; ctx.font = "17px PoppinsBold"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(String(i + 1), x + 17, ly + 18); ctx.textAlign = "left";
+      ctx.fillStyle = TINTA; ctx.font = "20px PoppinsBold"; ctx.fillText(l.nome, x + 48, ly + 18, (LARGURA - 2 * M) / 2 - 150);
       ctx.fillStyle = CINZA; ctx.font = "18px Poppins"; ctx.textAlign = "right"; ctx.fillText(`Dia ${locais.filter(o => o.nome.toLowerCase() === l.nome.toLowerCase()).map(o => o.dia).join(", ")}`, x + (LARGURA - 2 * M) / 2 - 30, ly + 18); ctx.textAlign = "left";
     });
   }
@@ -414,10 +417,10 @@ function cartaoDia(ctx: SKRSContext2D, d: DadosDesenho, t: Tema, i: number, y: n
   const {p} = d, dia = p.dias[i]!, w = LARGURA - 2 * M, h = alturaDia(ctx, dia, fotoH);
   sombra(ctx, true); retangulo(ctx, M, y, w, h, 26, "#ffffff"); sombra(ctx, false);
   const foto = d.imagens.dias[i];
-  if (foto) cobrir(ctx, foto, M, y, w, fotoH, 26); else semFoto(ctx, M, y, w, fotoH, 26, dia.local || p.viagem.destino);
+  if (foto) cobrir(ctx, foto, M, y, w, fotoH, 26); else semFoto(ctx, t, M, y, w, fotoH, 26, dia.local || p.viagem.destino);
   // Etiqueta "DIA X" sobre a fotografia.
-  retangulo(ctx, M + 28, y + 28, 150, 104, 18, p.estilo === "moderno" ? PRETO : OLIVA);
-  ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+  retangulo(ctx, M + 28, y + 28, 150, 104, 18, p.estilo === "moderno" ? t.c.escura : t.c.principal);
+  ctx.fillStyle = p.estilo === "moderno" ? t.c.sobreEscura : t.c.sobrePrincipal; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
   ctx.font = "18px PoppinsBold"; ctx.fillText("DIA", M + 103, y + 62);
   ctx.font = "50px PoppinsBold"; ctx.fillText(String(i + 1), M + 103, y + 116);
   ctx.textAlign = "left";
@@ -425,19 +428,19 @@ function cartaoDia(ctx: SKRSContext2D, d: DadosDesenho, t: Tema, i: number, y: n
   if (data) {
     ctx.font = "19px PoppinsBold"; const dw = ctx.measureText(data).width + 36;
     retangulo(ctx, M + w - dw - 28, y + 28, dw, 46, 23, "rgba(255,255,255,0.92)");
-    ctx.fillStyle = PRETO; ctx.textBaseline = "middle"; ctx.fillText(data, M + w - dw - 10, y + 52);
+    ctx.fillStyle = TINTA; ctx.textBaseline = "middle"; ctx.fillText(data, M + w - dw - 10, y + 52);
   }
   let ty = y + fotoH + 36;
-  ctx.fillStyle = PRETO; ctx.font = t.titulo(42); ctx.textBaseline = "top";
+  ctx.fillStyle = TINTA; ctx.font = t.titulo(42); ctx.textBaseline = "top";
   ctx.fillText(t.maiusculas ? (dia.titulo || `Dia ${i + 1}`).toUpperCase() : dia.titulo || `Dia ${i + 1}`, M + 40, ty, w - 80);
-  if (dia.local) { ctx.font = "19px Poppins"; ctx.fillStyle = OLIVA; icone(ctx, "pin", M + 52, ty + 76, 22, OLIVA); ctx.fillText(dia.local, M + 72, ty + 64, w - 120); }
+  if (dia.local) { ctx.font = "19px Poppins"; ctx.fillStyle = t.c.principalTexto; icone(ctx, "pin", M + 52, ty + 76, 22, t.c.principalTexto); ctx.fillText(dia.local, M + 72, ty + 64, w - 120); }
   ty += 100;
   for (const [k, rotulo, ic] of MOMENTOS) {
     if (!dia[k]) continue;
-    ctx.beginPath(); ctx.arc(M + 72, ty + 26, 30, 0, Math.PI * 2); ctx.fillStyle = OLIVA_CLARO; ctx.fill();
-    icone(ctx, ic, M + 72, ty + 26, 30, OLIVA);
-    ctx.fillStyle = OLIVA; ctx.font = "17px PoppinsBold"; ctx.textBaseline = "top"; ctx.fillText(rotulo.toUpperCase(), M + 124, ty);
-    ctx.fillStyle = PRETO; ctx.font = "21px Poppins";
+    ctx.beginPath(); ctx.arc(M + 72, ty + 26, 30, 0, Math.PI * 2); ctx.fillStyle = t.c.suave; ctx.fill();
+    icone(ctx, ic, M + 72, ty + 26, 30, t.c.principalTexto);
+    ctx.fillStyle = t.c.principalTexto; ctx.font = "17px PoppinsBold"; ctx.textBaseline = "top"; ctx.fillText(rotulo.toUpperCase(), M + 124, ty);
+    ctx.fillStyle = TINTA; ctx.font = "21px Poppins";
     ty += Math.max(70, paragrafo(ctx, dia[k], M + 124, ty + 26, w - 210, 31, 5) + 24) ;
   }
   return h;
@@ -469,7 +472,7 @@ const MESES = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
 function grafClima(ctx: SKRSContext2D, p: TravelPlanner, x: number, y: number, w: number, h: number, t: Tema) {
   retangulo(ctx, x, y, w, h, 24, t.cartao);
-  ctx.fillStyle = OLIVA; ctx.font = "17px PoppinsBold"; ctx.textBaseline = "alphabetic"; ctx.textAlign = "left";
+  ctx.fillStyle = t.c.principalTexto; ctx.font = "17px PoppinsBold"; ctx.textBaseline = "alphabetic"; ctx.textAlign = "left";
   ctx.fillText("CLIMA AO LONGO DO ANO", x + 34, y + 46);
   const mesesViagem = new Set<number>();
   if (p.viagem.ida) { mesesViagem.add(Number(p.viagem.ida.slice(5, 7)) - 1); if (p.viagem.regresso) mesesViagem.add(Number(p.viagem.regresso.slice(5, 7)) - 1); }
@@ -477,7 +480,7 @@ function grafClima(ctx: SKRSContext2D, p: TravelPlanner, x: number, y: number, w
   const viagem = [...mesesViagem].map(m => clima[m]!).filter(Boolean);
   if (viagem.length) {
     const max = Math.round(viagem.reduce((s, c) => s + c.max, 0) / viagem.length), min = Math.round(viagem.reduce((s, c) => s + c.min, 0) / viagem.length);
-    ctx.textAlign = "right"; ctx.fillStyle = PRETO; ctx.font = "34px PoppinsBold"; ctx.fillText(`${max}° / ${min}°`, x + w - 34, y + 52);
+    ctx.textAlign = "right"; ctx.fillStyle = TINTA; ctx.font = "34px PoppinsBold"; ctx.fillText(`${max}° / ${min}°`, x + w - 34, y + 52);
     ctx.font = "16px Poppins"; ctx.fillStyle = CINZA; ctx.fillText("média durante a viagem", x + w - 34, y + 76); ctx.textAlign = "left";
   }
   // Colunas da mínima à máxima, numa escala que começa abaixo da mínima do ano — as diferenças entre meses ficam visíveis.
@@ -486,25 +489,25 @@ function grafClima(ctx: SKRSContext2D, p: TravelPlanner, x: number, y: number, w
   const yDe = (v: number) => gy + gh - (v - base) / (topo - base) * gh;
   clima.forEach((c, m) => {
     const cx = gx + m * coluna + coluna / 2, destaque = mesesViagem.has(m);
-    if (destaque) retangulo(ctx, gx + m * coluna + 3, gy - 34, coluna - 6, gh + 84, 14, "rgba(201,151,28,0.16)");
-    retangulo(ctx, cx - 17, yDe(c.max), 34, gy + gh - yDe(c.max), 10, destaque ? DOURADO : "#c9cfac");
-    retangulo(ctx, cx - 17, yDe(c.min), 34, gy + gh - yDe(c.min), 10, destaque ? "#9c7414" : "#9aa278");
-    ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; ctx.fillStyle = destaque ? PRETO : CINZA; ctx.font = destaque ? "17px PoppinsBold" : "16px Poppins";
+    if (destaque) retangulo(ctx, gx + m * coluna + 3, gy - 34, coluna - 6, gh + 84, 14, t.c.destaqueFundo);
+    retangulo(ctx, cx - 17, yDe(c.max), 34, gy + gh - yDe(c.max), 10, destaque ? t.c.destaque : t.c.barraMax);
+    retangulo(ctx, cx - 17, yDe(c.min), 34, gy + gh - yDe(c.min), 10, destaque ? t.c.destaqueEscuro : t.c.barraMin);
+    ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; ctx.fillStyle = destaque ? TINTA : CINZA; ctx.font = destaque ? "17px PoppinsBold" : "16px Poppins";
     ctx.fillText(`${Math.round(c.max)}°`, cx, yDe(c.max) - 10);
     ctx.font = destaque ? "17px PoppinsBold" : "16px PoppinsBold"; ctx.fillText(MESES[m]!, cx, gy + gh + 34);
   });
   ctx.textAlign = "left";
-  retangulo(ctx, x + 34, y + h - 38, 18, 18, 4, "#c9cfac"); retangulo(ctx, x + 196, y + h - 38, 18, 18, 4, "#9aa278");
+  retangulo(ctx, x + 34, y + h - 38, 18, 18, 4, t.c.barraMax); retangulo(ctx, x + 196, y + h - 38, 18, 18, 4, t.c.barraMin);
   ctx.font = "15px Poppins"; ctx.fillStyle = CINZA; ctx.textBaseline = "middle";
   ctx.fillText("máxima", x + 60, y + h - 28); ctx.fillText("mínima", x + 222, y + h - 28);
   ctx.textAlign = "right"; ctx.fillText("Temperaturas médias aproximadas", x + w - 34, y + h - 28); ctx.textAlign = "left";
 }
 
-function relogios(ctx: SKRSContext2D, fuso: number, x: number, y: number) {
+function relogios(ctx: SKRSContext2D, t: Tema, fuso: number, x: number, y: number) {
   const desenhar = (cx: number, horas: number, rotulo: string) => {
-    ctx.beginPath(); ctx.arc(cx, y, 40, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill(); ctx.strokeStyle = OLIVA; ctx.lineWidth = 4; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, y, 40, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill(); ctx.strokeStyle = t.c.principal; ctx.lineWidth = 4; ctx.stroke();
     const ah = ((horas % 12) / 12) * Math.PI * 2 - Math.PI / 2;
-    ctx.strokeStyle = PRETO; ctx.lineWidth = 5; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(cx, y); ctx.lineTo(cx + Math.cos(ah) * 22, y + Math.sin(ah) * 22); ctx.stroke();
+    ctx.strokeStyle = TINTA; ctx.lineWidth = 5; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(cx, y); ctx.lineTo(cx + Math.cos(ah) * 22, y + Math.sin(ah) * 22); ctx.stroke();
     ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx, y); ctx.lineTo(cx, y - 32); ctx.stroke();
     ctx.fillStyle = CINZA; ctx.font = "15px PoppinsBold"; ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillText(rotulo, cx, y + 50); ctx.textAlign = "left";
   };
@@ -517,10 +520,10 @@ function cartaoDica(ctx: SKRSContext2D, dica: DicaPlanner, x: number, y: number,
   ctx.font = "19px Poppins";
   const h = 110 + alturaParagrafo(ctx, dica.texto, w - 60, 29, 14) + 20;
   if (!desenhar) return h;
-  retangulo(ctx, x, y, w, h, 22, dica.sensivel ? "#fdf8ea" : t.cartao, dica.sensivel ? DOURADO : undefined);
-  ctx.beginPath(); ctx.arc(x + 54, y + 52, 28, 0, Math.PI * 2); ctx.fillStyle = dica.sensivel ? DOURADO : OLIVA; ctx.fill();
-  icone(ctx, ICONE_DICA[dica.tema], x + 54, y + 52, 28, "#fff");
-  ctx.fillStyle = PRETO; ctx.font = "22px PoppinsBold"; ctx.textBaseline = "middle"; ctx.textAlign = "left";
+  retangulo(ctx, x, y, w, h, 22, dica.sensivel ? t.c.destaqueSuave : t.cartao, dica.sensivel ? t.c.destaque : undefined);
+  ctx.beginPath(); ctx.arc(x + 54, y + 52, 28, 0, Math.PI * 2); ctx.fillStyle = dica.sensivel ? t.c.destaque : t.c.principal; ctx.fill();
+  icone(ctx, ICONE_DICA[dica.tema], x + 54, y + 52, 28, dica.sensivel ? t.c.sobreDestaque : t.c.sobrePrincipal);
+  ctx.fillStyle = TINTA; ctx.font = "22px PoppinsBold"; ctx.textBaseline = "middle"; ctx.textAlign = "left";
   paragrafo(ctx, dica.titulo, x + 98, y + 40, w - 120, 26, 2);
   ctx.font = "19px Poppins"; ctx.fillStyle = "#2a2a2a";
   paragrafo(ctx, dica.texto, x + 30, y + 100, w - 60, 29, 14);
@@ -546,11 +549,11 @@ function paginasDicas(d: DadosDesenho, t: Tema, img: Image | null, primeiro: num
         const cw = larguraInfo / Math.max(1, info.length);
         info.forEach(([ic, rotulo, valor], i) => {
           const x = M + i * cw + 30;
-          ctx.beginPath(); ctx.arc(x + 26, topo + 75, 26, 0, Math.PI * 2); ctx.fillStyle = OLIVA; ctx.fill(); icone(ctx, ic, x + 26, topo + 75, 26, "#fff");
+          ctx.beginPath(); ctx.arc(x + 26, topo + 75, 26, 0, Math.PI * 2); ctx.fillStyle = t.c.principal; ctx.fill(); icone(ctx, ic, x + 26, topo + 75, 26, t.c.sobrePrincipal);
           ctx.fillStyle = CINZA; ctx.font = "15px PoppinsBold"; ctx.textBaseline = "alphabetic"; ctx.fillText(rotulo.toUpperCase(), x + 66, topo + 66);
-          ctx.fillStyle = PRETO; ctx.font = "21px PoppinsBold"; paragrafo(ctx, valor, x + 66, topo + 74, cw - 100, 26, 2);
+          ctx.fillStyle = TINTA; ctx.font = "21px PoppinsBold"; paragrafo(ctx, valor, x + 66, topo + 74, cw - 100, 26, 2);
         });
-        if (temFuso) relogios(ctx, p.extras.fuso!, LARGURA - M - 220, topo + 62);
+        if (temFuso) relogios(ctx, t, p.extras.fuso!, LARGURA - M - 220, topo + 62);
         topo += 180;
       }
       if (p.extras.clima.length === 12) { grafClima(ctx, p, M, topo, LARGURA - 2 * M, 380, t); topo += 410; }
@@ -574,19 +577,19 @@ function contactos(d: DadosDesenho, t: Tema, img: Image | null, n: number) {
   let y = cabecalho(ctx, t, "Estamos sempre convosco", "Contactos");
   if (d.consultor) {
     sombra(ctx, true); retangulo(ctx, M, y, LARGURA - 2 * M, 230, 26, "#ffffff"); sombra(ctx, false);
-    ctx.beginPath(); ctx.arc(M + 110, y + 115, 72, 0, Math.PI * 2); ctx.fillStyle = OLIVA; ctx.fill();
-    ctx.fillStyle = "#fff"; ctx.font = "58px PoppinsBold"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.beginPath(); ctx.arc(M + 110, y + 115, 72, 0, Math.PI * 2); ctx.fillStyle = t.c.principal; ctx.fill();
+    ctx.fillStyle = t.c.sobrePrincipal; ctx.font = "58px PoppinsBold"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText(d.consultor.nome.split(/\s+/).filter(Boolean).slice(0, 2).map(s => s[0]).join("").toUpperCase(), M + 110, y + 118); ctx.textAlign = "left";
-    ctx.fillStyle = OLIVA; ctx.font = "17px PoppinsBold"; ctx.textBaseline = "alphabetic"; ctx.fillText("O VOSSO CONSULTOR DE VIAGENS", M + 220, y + 74);
-    ctx.fillStyle = PRETO; ctx.font = t.titulo(44); ctx.fillText(d.consultor.nome, M + 220, y + 128, LARGURA - 2 * M - 260);
-    icone(ctx, "email", M + 236, y + 172, 26, OLIVA); ctx.font = "22px Poppins"; ctx.fillStyle = "#333"; ctx.fillText(d.consultor.email, M + 266, y + 180);
+    ctx.fillStyle = t.c.principalTexto; ctx.font = "17px PoppinsBold"; ctx.textBaseline = "alphabetic"; ctx.fillText("O VOSSO CONSULTOR DE VIAGENS", M + 220, y + 74);
+    ctx.fillStyle = TINTA; ctx.font = t.titulo(44); ctx.fillText(d.consultor.nome, M + 220, y + 128, LARGURA - 2 * M - 260);
+    icone(ctx, "email", M + 236, y + 172, 26, t.c.principalTexto); ctx.font = "22px Poppins"; ctx.fillStyle = "#333"; ctx.fillText(d.consultor.email, M + 266, y + 180);
     y += 270;
   }
   if (p.emergencia.texto) {
     ctx.font = "21px Poppins"; const h = alturaParagrafo(ctx, p.emergencia.texto, LARGURA - 2 * M - 80, 32, 10) + 120;
-    retangulo(ctx, M, y, LARGURA - 2 * M, h, 24, "#fdf8ea", DOURADO);
-    ctx.beginPath(); ctx.arc(M + 58, y + 56, 28, 0, Math.PI * 2); ctx.fillStyle = DOURADO; ctx.fill(); icone(ctx, "telefone", M + 58, y + 56, 28, "#fff");
-    ctx.fillStyle = PRETO; ctx.font = "24px PoppinsBold"; ctx.textBaseline = "middle"; ctx.fillText("Emergência no destino", M + 104, y + 56);
+    retangulo(ctx, M, y, LARGURA - 2 * M, h, 24, t.c.destaqueSuave, t.c.destaque);
+    ctx.beginPath(); ctx.arc(M + 58, y + 56, 28, 0, Math.PI * 2); ctx.fillStyle = t.c.destaque; ctx.fill(); icone(ctx, "telefone", M + 58, y + 56, 28, t.c.sobreDestaque);
+    ctx.fillStyle = TINTA; ctx.font = "24px PoppinsBold"; ctx.textBaseline = "middle"; ctx.fillText("Emergência no destino", M + 104, y + 56);
     ctx.font = "21px Poppins"; paragrafo(ctx, p.emergencia.texto, M + 40, y + 102, LARGURA - 2 * M - 80, 32, 10);
     y += h + 30;
   }
@@ -598,7 +601,7 @@ function contactos(d: DadosDesenho, t: Tema, img: Image | null, n: number) {
     // Uma fotografia do meio da viagem; a da capa já abriu o documento.
     const comFoto = d.imagens.dias.filter(Boolean);
     const foto = comFoto[Math.floor(comFoto.length / 2)] ?? d.imagens.capa;
-    if (foto) cobrir(ctx, foto, M, fotoY, LARGURA - 2 * M, fotoH, 26); else semFoto(ctx, M, fotoY, LARGURA - 2 * M, fotoH, 26, "");
+    if (foto) cobrir(ctx, foto, M, fotoY, LARGURA - 2 * M, fotoH, 26); else semFoto(ctx, t, M, fotoY, LARGURA - 2 * M, fotoH, 26, "");
     ctx.save(); ctx.beginPath(); ctx.roundRect(M, fotoY, LARGURA - 2 * M, fotoH, 26); ctx.clip();
     const g = ctx.createLinearGradient(0, fotoY, 0, fotoY + fotoH); g.addColorStop(0.3, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,0.65)");
     ctx.fillStyle = g; ctx.fillRect(M, fotoY, LARGURA - 2 * M, fotoH); ctx.restore();
@@ -612,7 +615,7 @@ function contactos(d: DadosDesenho, t: Tema, img: Image | null, n: number) {
 /** Todas as páginas, como JPEG. */
 export async function desenharPlanner(d: DadosDesenho): Promise<Buffer[]> {
   registarFontes();
-  const t = tema(d.p.estilo), img = await logo();
+  const t = tema(d.p.estilo, d.marca), img = await logo();
   const paginas = [capa(d, t, img)];
   paginas.push(await viagem(d, t, img, paginas.length + 1));
   paginas.push(await alojamento(d, t, img, paginas.length + 1));

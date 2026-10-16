@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { db, fecharDb } from "../src/lib/db";
-import { diasDaViagem, diaVazio, pendentesPlanner, plannerVazio, validarPlanner, type TravelPlanner } from "../src/lib/travel-planner";
+import { coresPlanner, diasDaViagem, diaVazio, MARCA_PADRAO, pendentesPlanner, plannerVazio, textoSobre, validarMarca, validarPlanner, type TravelPlanner } from "../src/lib/travel-planner";
 import { abrirPlanner, apagarPlanner, gerarRoteiroPlanner, guardarPlanner, listarPlanners, pdfPlanner, procurarFotos } from "../src/lib/travel-planner-servidor";
 
 
@@ -17,6 +17,9 @@ const email = "planner-teste@example.test";
 const id = "00000000-0000-4000-8000-0000000000aa";
 
 assert.equal(diasDaViagem("2026-11-10", "2026-11-14"), 5);
+assert.deepEqual(validarMarca({principal: "#ABCDEF", destaque: "vermelho", escura: 3}), {...MARCA_PADRAO, principal: "#abcdef"}, "Cores inválidas voltam às da marca");
+assert.equal(textoSobre("#f4d03f"), "#111111"); assert.equal(textoSobre("#4b5320"), "#ffffff");
+assert.notEqual(coresPlanner({...MARCA_PADRAO, principal: "#f4d03f"}).principalTexto, "#f4d03f", "Cor principal clara escurece no texto");
 assert.equal(diasDaViagem("2026-11-14", "2026-11-10"), null);
 assert.throws(() => validarPlanner({id: "x"}));
 const limpo = validarPlanner({...plannerVazio(id), estilo: "outro", viagem: {destino: " Lisboa ", ida: "ontem", viajantes: -2},

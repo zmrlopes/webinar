@@ -89,3 +89,42 @@
   .linhaFoto .acoes { grid-column: 1 / -1; }
   .miniatura, .miniaturaVazia { width: 80px; height: 56px; }
 }
+.barraCores { margin: -6px 0 16px; }
+.planner .botaoCores { display: inline-flex; align-items: center; gap: 10px; }
+.botaoCores span, .paletas span { display: inline-flex; }
+.botaoCores i, .paletas i { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #fff; margin-left: -5px; box-shadow: 0 0 0 1px #d8ddc5; }
+.botaoCores i:first-child, .paletas i:first-child { margin-left: 0; }
+.cores { border: 1px solid #d8ddc5; border-radius: 14px; padding: 6px 18px 18px; margin: 0 0 18px; background: #fafaf7; }
+.paletas { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.planner .paletas button { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; border-color: #d8ddc5; color: #000; font-weight: 500; }
+.planner .paletas button[aria-pressed="true"] { border: 2px solid #000; }
+.coresGrelha { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; }
+.cor { display: grid; grid-template-columns: 52px 1fr 96px; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #eae7de; }
+.cor input[type="color"] { width: 52px; height: 52px; padding: 0; border: 1px solid #bfc4ac; border-radius: 10px; background: none; cursor: pointer; }
+.cor strong { display: block; font-size: .92rem; }
+.cor small { display: block; color: #6b6a63; font-size: .78rem; line-height: 1.35; }
+.cor input[type="text"] { box-sizing: border-box; width: 100%; padding: 8px; border: 1px solid #bfc4ac; border-radius: 8px; font: inherit; font-size: 15px; text-transform: lowercase; }
+.previa { display: grid; grid-template-columns: 1fr 1.2fr; gap: 8px; padding: 10px; border-radius: 12px; background: #e9e8e2; }
+.previaCapa, .previaPagina { aspect-ratio: 1 / 1.414; border-radius: 6px; overflow: hidden; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+.previaCapa { display: flex; flex-direction: column; justify-content: flex-end; padding: 8px; color: #fff; }
+.previaCapa small { font-size: 6px; font-weight: 700; letter-spacing: .04em; }
+.previaCapa strong { font-family: Georgia, serif; font-size: 18px; font-weight: 400; }
+.previaMarca { position: absolute; top: 8px; left: 8px; background: #fff; color: #ff6b4a; font-weight: 800; font-size: 8px; padding: 2px 6px; border-radius: 4px; }
+.previaPagina { background: #fff; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.previaFaixa { font-size: 7px; font-weight: 800; padding: 5px 6px; }
+.previaTiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.previaTiles span { display: flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 800; padding: 5px; border-radius: 4px; }
+.previaTiles i { width: 8px; height: 8px; border-radius: 50%; }
+.previaCartao { display: flex; justify-content: space-between; align-items: stretch; border-radius: 5px; box-shadow: 0 1px 4px rgba(0,0,0,.15); overflow: hidden; font-size: 9px; font-weight: 800; }
+.previaCartao span { padding: 8px 6px; }
+.previaCartao b { display: grid; place-items: center; padding: 0 8px; font-size: 7px; }
+.previaLinha { display: flex; gap: 6px; align-items: center; }
+.previaLinha b { font-size: 7px; padding: 5px 6px; border-radius: 4px; }
+.previaLinha span { display: flex; align-items: center; gap: 4px; font-size: 7px; padding: 4px 6px; border: 1px solid; border-radius: 4px; }
+.previaLinha i { width: 7px; height: 7px; border-radius: 50%; }
+@media (max-width: 700px) {
+  .coresGrelha { grid-template-columns: 1fr; }
+  .previa { max-width: 320px; }
+  .cor { grid-template-columns: 44px 1fr; }
+  .cor input[type="text"] { grid-column: 2; }
+}

@@ -8,8 +8,8 @@ import { ErroReserva } from "./reservas";
 import { chamarIAReservas } from "./reservas-servidor";
 import { desenharPlanner } from "./travel-planner-desenho";
 import {
-  diasDaViagem, ErroPlanner, FOTO_WIKIMEDIA, MAX_DIAS_PLANNER, pendentesPlanner, RITMOS_PLANNER, TEMAS_DICA, validarDia, validarDica, validarExtras, validarPlanner, validarVoo,
-  type DiaPlanner, type DicaPlanner, type ExtrasPlanner, type FotoPlanner, type ResumoPlanner, type TravelPlanner, type VooPlanner,
+  diasDaViagem, ErroPlanner, FOTO_WIKIMEDIA, MARCA_PADRAO, validarMarca, MAX_DIAS_PLANNER, pendentesPlanner, RITMOS_PLANNER, TEMAS_DICA, validarDia, validarDica, validarExtras, validarPlanner, validarVoo,
+  type DiaPlanner, type DicaPlanner, type ExtrasPlanner, type FotoPlanner, type MarcaPlanner, type ResumoPlanner, type TravelPlanner, type VooPlanner,
 } from "./travel-planner";
 
 // O email fica entre ":" na chave, como em Reservas — a mudança de email no admin leva estes registos.
@@ -50,6 +50,19 @@ export async function apagarPlanner(email: string, id: unknown): Promise<void> {
 }
 
 export const novoIdPlanner = () => randomUUID();
+
+// As cores do consultor valem para todos os seus planners.
+const chaveMarca = (email: string) => `travel-planner:v1:${email}:marca`;
+export async function obterMarca(email: string): Promise<MarcaPlanner> {
+  const {rows} = await db().query<{valor: unknown}>("select valor from dashboard_config where chave = $1", [chaveMarca(email)]);
+  return rows[0] ? validarMarca(rows[0].valor) : MARCA_PADRAO;
+}
+export async function guardarMarca(email: string, valor: unknown): Promise<MarcaPlanner> {
+  const marca = validarMarca(valor);
+  await db().query(`insert into dashboard_config (chave, valor) values ($1, $2::jsonb)
+    on conflict (chave) do update set valor = excluded.valor, atualizado_em = now()`, [chaveMarca(email), JSON.stringify(marca)]);
+  return marca;
+}
 
 // ---------- fotografias ----------
 
@@ -198,9 +211,9 @@ export async function pdfPlanner(email: string, id: unknown): Promise<{bytes: Ui
   const pendentes = pendentesPlanner(p);
   if (pendentes.length) throw new ErroPlanner(`Antes de descarregar, confirma: ${pendentes.join(", ")}.`, 409);
   if (!p.viagem.destino) throw new ErroPlanner("Indica o destino da viagem.");
-  const membro = await buscarMembroEquipa(email);
+  const [membro, marca] = await Promise.all([buscarMembroEquipa(email), obterMarca(email)]);
   const [capa, hotel, ...dias] = await Promise.all([imagemDe(p.foto), imagemDe(p.fotoHotel), ...p.dias.map(d => imagemDe(d.foto))]);
-  const paginas = await desenharPlanner({p, consultor: membro ? {nome: membro.nome, email} : null, imagens: {capa, hotel, dias}});
+  const paginas = await desenharPlanner({p, marca, consultor: membro ? {nome: membro.nome, email} : null, imagens: {capa, hotel, dias}});
 
   const pdf = await PDFDocument.create();
   pdf.setTitle(`${p.viagem.destino} · Travel planner`); pdf.setAuthor("iCliGo travel partners"); pdf.setLanguage("pt-PT");

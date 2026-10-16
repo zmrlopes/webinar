@@ -6,6 +6,7 @@ import {
   dataPlanner, diasDaViagem, diaVazio, ESTILOS_PLANNER, INTERESSES_PLANNER, MAX_DIAS_PLANNER, MAX_FOTO_CARREGADA, pendentesPlanner, RITMOS_PLANNER, TIPOS_VIAGEM, vooVazio,
   type DiaPlanner, type FotoPlanner, type ResumoPlanner, type TravelPlanner, type VooPlanner,
 } from "@/lib/travel-planner";
+import { coresPlanner, MARCA_PADRAO, PALETAS_PLANNER, validarMarca, type MarcaPlanner } from "@/lib/travel-planner";
 import css from "./travel-planner.module.css";
 
 const API = "/api/consultor/nova-area/travel-planner";
@@ -45,8 +46,61 @@ function Chip({ativo, onClick, children}: {ativo: boolean; onClick: () => void; 
   return <button type="button" className={ativo ? css.chipAtivo : css.chip} aria-pressed={ativo} onClick={onClick}>{children}</button>;
 }
 
+/** Pré-visualização das cores: capa, números, etiqueta de dia e cartão de embarque em miniatura. */
+function Previsualizacao({marca}: {marca: MarcaPlanner}) {
+  const c = coresPlanner(marca);
+  return <div className={css.previa} aria-hidden="true">
+    <div className={css.previaCapa} style={{background: `linear-gradient(180deg, #8fa7b5 0%, #6b8a6a 45%, ${c.capaA92} 100%)`}}>
+      <span className={css.previaMarca}>icligo</span>
+      <small style={{color: c.suave}}>A VOSSA PRÓXIMA AVENTURA</small>
+      <strong>Funchal</strong>
+    </div>
+    <div className={css.previaPagina}>
+      <div className={css.previaFaixa} style={{background: c.escura, color: c.sobreEscura}}>A VOSSA VIAGEM</div>
+      <div className={css.previaTiles}>{["4", "3", "2"].map(n => <span key={n} style={{background: c.creme}}><i style={{background: c.principal}} />{n}</span>)}</div>
+      <div className={css.previaCartao}><span>LIS ✈ FNC</span><b style={{background: c.principal, color: c.sobrePrincipal}}>IDA</b></div>
+      <div className={css.previaLinha}>
+        <b style={{background: c.principal, color: c.sobrePrincipal}}>DIA 1</b>
+        <span style={{background: c.destaqueSuave, borderColor: c.destaque}}><i style={{background: c.destaque}} />A confirmar</span>
+      </div>
+    </div>
+  </div>;
+}
+
+function EditorCores({marca, aoGuardar, aoFechar, ocupado}: {marca: MarcaPlanner; aoGuardar: (m: MarcaPlanner) => void; aoFechar: () => void; ocupado: boolean}) {
+  const [rascunho, setRascunho] = useState(marca);
+  const invalida = Object.values(rascunho).some(v => !/^#[0-9a-f]{6}$/i.test(v));
+  const campos: [keyof MarcaPlanner, string, string][] = [
+    ["principal", "Cor principal", "Ícones, etiquetas dos dias, cartão da ida, traços."],
+    ["destaque", "Cor de destaque", "Avisos importantes e meses da viagem no gráfico do clima."],
+    ["escura", "Cor escura", "Faixas dos títulos (estilo Moderno), cartão da volta, pinos."],
+  ];
+  return <section className={css.cores} aria-labelledby="cores-titulo">
+    <div className={css.tituloLinha}><h3 id="cores-titulo">As minhas cores</h3><button type="button" onClick={aoFechar}>Fechar</button></div>
+    <p className={css.ajuda}>Valem para todos os teus travel planners. O logótipo iCliGo mantém-se sempre igual.</p>
+    <div className={css.paletas}>{PALETAS_PLANNER.map(pl => <button type="button" key={pl.nome} onClick={() => setRascunho(pl.marca)}
+      aria-pressed={pl.marca.principal === rascunho.principal && pl.marca.destaque === rascunho.destaque && pl.marca.escura === rascunho.escura}>
+      <span>{[pl.marca.principal, pl.marca.destaque, pl.marca.escura].map(cor => <i key={cor} style={{background: cor}} />)}</span>{pl.nome}</button>)}</div>
+    <div className={css.coresGrelha}>
+      <div>{campos.map(([k, titulo, ajuda]) => <label key={k} className={css.cor}>
+        <input type="color" value={rascunho[k]} onChange={e => setRascunho({...rascunho, [k]: e.target.value})} />
+        <span><strong>{titulo}</strong><small>{ajuda}</small></span>
+        <input type="text" value={rascunho[k]} maxLength={7} aria-label={`${titulo} (código)`} onChange={e => setRascunho({...rascunho, [k]: e.target.value})} />
+      </label>)}</div>
+      <Previsualizacao marca={validarMarca(rascunho)} />
+    </div>
+    {invalida && <p className={css.erro}>Escreve cada código de cor no formato #RRGGBB (por exemplo, #4b5320).</p>}
+    <div className={css.rodape}>
+      <button type="button" disabled={ocupado} onClick={() => setRascunho(MARCA_PADRAO)}>Repor cores iCliGo</button>
+      <button type="button" className={css.primario} disabled={ocupado || invalida} onClick={() => aoGuardar(validarMarca(rascunho))}>Guardar as minhas cores</button>
+    </div>
+  </section>;
+}
+
 export function TravelPlannerNovaArea({email}: {email: string}) {
   const [lista, setLista] = useState<ResumoPlanner[] | null>(null);
+  const [marca, setMarca] = useState<MarcaPlanner>(MARCA_PADRAO);
+  const [editarCores, setEditarCores] = useState(false);
   const [ia, setIa] = useState(false);
   const [p, setP] = useState<TravelPlanner | null>(null);
   const [passo, setPasso] = useState<Passo>("proposta");
@@ -67,11 +121,16 @@ export function TravelPlannerNovaArea({email}: {email: string}) {
     try { await tarefa(); } catch (e) { setErro(e instanceof Error ? e.message : "Falha de ligação. Tenta novamente."); } finally { setOcupado(""); }
   }
   async function carregarLista() {
-    const c = await pedir<{planners: ResumoPlanner[]; ia: boolean}>("listar");
-    setLista(c.planners); setIa(c.ia);
+    const c = await pedir<{planners: ResumoPlanner[]; ia: boolean; marca: MarcaPlanner}>("listar");
+    setLista(c.planners); setIa(c.ia); setMarca(c.marca);
   }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { void executar("A carregar…", carregarLista); }, []);
+
+  const editorCores = editarCores && <EditorCores marca={marca} ocupado={!!ocupado} aoFechar={() => setEditarCores(false)}
+    aoGuardar={m => void executar("A guardar as cores…", async () => { const c = await pedir<{marca: MarcaPlanner}>("guardar-marca", {marca: m}); setMarca(c.marca); setEditarCores(false); setAviso("Cores guardadas. Os próximos PDFs já saem com elas."); })} />;
+  const botaoCores = <button type="button" className={css.botaoCores} onClick={() => setEditarCores(!editarCores)}>
+    <span>{[marca.principal, marca.destaque, marca.escura].map(cor => <i key={cor} style={{background: cor}} />)}</span>As minhas cores</button>;
 
   async function guardar(atual = p): Promise<TravelPlanner | null> {
     if (!atual) return null;
@@ -178,6 +237,9 @@ export function TravelPlannerNovaArea({email}: {email: string}) {
         <div><h2>Travel planner</h2><p>Transforma a proposta reservada num guia da viagem para o cliente: resumo, roteiro dia a dia, dicas e contactos.</p></div>
         <button type="button" className={css.primario} disabled={!!ocupado} onClick={() => void executar("A preparar…", async () => { const c = await pedir<{planner: TravelPlanner}>("novo"); setP(c.planner); setPasso("proposta"); setFotos(null); })}>Novo travel planner</button>
       </div>
+      <div className={css.barraCores}>{botaoCores}</div>
+      {aviso && <p className={css.sucesso} role="status">{aviso}</p>}
+      {editorCores}
       {erro && <p className={css.erro} role="alert">{erro}</p>}
       {ocupado && <p className={css.estado} role="status">{ocupado}</p>}
       {lista && !lista.length && <div className={css.vazio}><strong>Ainda não criaste nenhum travel planner.</strong><p>Começa com o PDF do orçamento ou com os dados da reserva escritos à mão.</p></div>}
@@ -314,6 +376,8 @@ export function TravelPlannerNovaArea({email}: {email: string}) {
       </>}
 
       {passo === "entregar" && <>
+        <div className={css.tituloLinha}><h3>Cores</h3>{botaoCores}</div>
+        {editorCores}
         <h3>Estilo</h3>
         <div className={css.estilos}>{ESTILOS_PLANNER.map(e => <button type="button" key={e.id} aria-pressed={p.estilo === e.id} className={p.estilo === e.id ? css.estiloAtivo : css.estilo} onClick={() => setP({...p, estilo: e.id})}>
           <span className={css[`amostra_${e.id}`]} aria-hidden="true" /><strong>{e.nome}</strong><small>{e.descricao}</small></button>)}</div>

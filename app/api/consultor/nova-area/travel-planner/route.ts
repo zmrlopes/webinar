@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ErroPlanner, plannerVazio } from "@/lib/travel-planner";
-import { abrirPlanner, apagarPlanner, erroPlannerParaResposta, gerarRoteiroPlanner, guardarPlanner, listarPlanners, novoIdPlanner, pdfPlanner, procurarFotos } from "@/lib/travel-planner-servidor";
+import { abrirPlanner, apagarPlanner, erroPlannerParaResposta, gerarRoteiroPlanner, guardarMarca, guardarPlanner, listarPlanners, obterMarca, novoIdPlanner, pdfPlanner, procurarFotos } from "@/lib/travel-planner-servidor";
 import { acessoReservas, lerBytesReserva } from "@/lib/reservas-servidor";
 
 export const runtime = "nodejs";
@@ -16,10 +16,11 @@ export async function POST(request: Request): Promise<Response> {
     catch { throw new ErroPlanner("Pedido inválido."); }
     const email = await acessoReservas(corpo.email);
     switch (corpo.acao) {
-      case "listar": return resposta({planners: await listarPlanners(email), ia: !!(process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY)});
+      case "listar": return resposta({planners: await listarPlanners(email), marca: await obterMarca(email), ia: !!(process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY)});
       case "novo": return resposta({planner: plannerVazio(novoIdPlanner())});
       case "abrir": return resposta({planner: await abrirPlanner(email, corpo.id)});
       case "guardar": return resposta({planner: await guardarPlanner(email, corpo.planner)});
+      case "guardar-marca": return resposta({marca: await guardarMarca(email, corpo.marca)});
       case "apagar": await apagarPlanner(email, corpo.id); return resposta({ok: true});
       case "gerar": return resposta(await gerarRoteiroPlanner(email, corpo.planner));
       case "fotografias": return resposta({fotografias: await procurarFotos(corpo.termo)});

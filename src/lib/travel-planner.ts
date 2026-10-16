@@ -187,3 +187,60 @@ export function validarPlanner(v: unknown): TravelPlanner {
     fotoHotel: validarFoto(p.fotoHotel),
   };
 }
+
+// ---------- cores do consultor ----------
+
+/** As cores que cada consultor escolhe para os seus planners. O logótipo iCliGo não muda. */
+export interface MarcaPlanner { principal: string; destaque: string; escura: string }
+export const MARCA_PADRAO: MarcaPlanner = {principal: "#4b5320", destaque: "#c9971c", escura: "#111111"};
+export const PALETAS_PLANNER: {nome: string; marca: MarcaPlanner}[] = [
+  {nome: "iCliGo", marca: MARCA_PADRAO},
+  {nome: "Oceano", marca: {principal: "#0f5c7a", destaque: "#f2a33a", escura: "#0b2733"}},
+  {nome: "Tropical", marca: {principal: "#0f7a5c", destaque: "#ff7a59", escura: "#123029"}},
+  {nome: "Romântico", marca: {principal: "#9c3d54", destaque: "#d9a441", escura: "#2b1219"}},
+  {nome: "Elegante", marca: {principal: "#1f2a44", destaque: "#c5a46d", escura: "#0d1220"}},
+  {nome: "Terra", marca: {principal: "#a0522d", destaque: "#e0b13a", escura: "#2e1a10"}},
+];
+
+const HEX = /^#[0-9a-f]{6}$/i;
+export function validarMarca(v: unknown): MarcaPlanner {
+  const m = (v && typeof v === "object" ? v : {}) as Record<string, unknown>;
+  const cor = (x: unknown, omissao: string) => typeof x === "string" && HEX.test(x.trim()) ? x.trim().toLowerCase() : omissao;
+  return {principal: cor(m.principal, MARCA_PADRAO.principal), destaque: cor(m.destaque, MARCA_PADRAO.destaque), escura: cor(m.escura, MARCA_PADRAO.escura)};
+}
+
+function rgbDe(hex: string): [number, number, number] {
+  return [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)) as [number, number, number];
+}
+/** Mistura com branco (fator > 0) ou preto (fator < 0). */
+export function misturar(hex: string, fator: number): string {
+  const alvo = fator >= 0 ? 255 : 0, f = Math.abs(fator);
+  return `#${rgbDe(hex).map(c => Math.round(c + (alvo - c) * f).toString(16).padStart(2, "0")).join("")}`;
+}
+export function comAlfa(hex: string, alfa: number): string {
+  const [r, g, b] = rgbDe(hex);
+  return `rgba(${r},${g},${b},${alfa})`;
+}
+/** Branco ou preto, o que se lê melhor em cima desta cor. */
+export function textoSobre(hex: string): string {
+  const [r, g, b] = rgbDe(hex).map(c => { const s = c / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; });
+  return 0.2126 * r! + 0.7152 * g! + 0.0722 * b! > 0.4 ? "#111111" : "#ffffff";
+}
+
+/** Todas as tonalidades usadas no desenho, calculadas a partir das três cores do consultor. */
+export function coresPlanner(m: MarcaPlanner) {
+  return {
+    principal: m.principal, destaque: m.destaque, escura: m.escura,
+    suave: misturar(m.principal, 0.85), creme: misturar(m.principal, 0.93), linhaSuave: misturar(m.principal, 0.7),
+    principalEscuro: misturar(m.principal, -0.4),
+    /** Para texto e ícones em fundo claro: uma cor principal clara (ex.: amarelo) escurece para se ler. */
+    principalTexto: textoSobre(m.principal) === "#ffffff" ? m.principal : misturar(m.principal, -0.55),
+    principalA25: comAlfa(m.principal, 0.25), principalA55: comAlfa(m.principal, 0.55),
+    destaqueSuave: misturar(m.destaque, 0.9), destaqueFundo: comAlfa(m.destaque, 0.16), destaqueEscuro: misturar(m.destaque, -0.3),
+    barraMax: misturar(m.principal, 0.6), barraMin: misturar(m.principal, 0.3),
+    capaA70: comAlfa(misturar(m.principal, -0.7), 0.7), capaA92: comAlfa(misturar(m.principal, -0.7), 0.92),
+    escuraA78: comAlfa(m.escura, 0.78), escuraA95: comAlfa(m.escura, 0.95),
+    sobrePrincipal: textoSobre(m.principal), sobreDestaque: textoSobre(m.destaque), sobreEscura: textoSobre(m.escura),
+  };
+}
+export type CoresPlanner = ReturnType<typeof coresPlanner>;
