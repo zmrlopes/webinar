@@ -1,4 +1,4 @@
-import { elementoReserva, marcaReserva, precoPessoaReserva, validarMaterialReserva, type CampoReserva, type DadosReserva, type ElementoReserva, type FormatoReserva, type MaterialReserva } from "./reservas";
+import { dimensoesReserva, elementoReserva, marcaReserva, precoPessoaReserva, validarMaterialReserva, type CampoReserva, type DadosReserva, type ElementoReserva, type FormatoReserva, type MaterialReserva } from "./reservas";
 
 export const ESTILOS_RESERVA = [{id:"elegante", nome:"Elegante", descricao:"Fotografia em destaque, cartão claro e preço central."}, {id:"fotografico", nome:"Fotográfico", descricao:"Imagem de fundo, título amplo e informação sobreposta."}] as const;
 export type EstiloReserva = typeof ESTILOS_RESERVA[number]["id"];
@@ -16,6 +16,12 @@ export function preencherReferenciaReserva(modelo: MaterialReserva, dados: Dados
     ...(e.campo!=="livre"?{texto:""}:{}),
     ...(e.tipo==="foto"&&fotografia?{imagem:fotografia.imagem,credito:fotografia.credito,origem:fotografia.origem,recorte:undefined}:{}),
   }));
+  // O renderer coloca os créditos nos últimos 28 px. Reserva esse rodapé
+  // sem cortar preços/textos de referências que ocupam toda a altura.
+  if(m.elementos.some(e=>e.credito)) {
+    const escala=(dimensoesReserva(m.formato).altura-32)/dimensoesReserva(m.formato).altura;
+    m.elementos=m.elementos.map(e=>({...e,y:e.y*escala,h:Math.max(.5,e.h*escala)}));
+  }
   return validarMaterialReserva(m);
 }
 

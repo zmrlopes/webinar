@@ -53,6 +53,8 @@ async function main() {
   assert.equal(comReferencia.elementos.find(e=>e.campo==="preco")!.texto,"");
   assert.equal(comReferencia.elementos.filter(e=>e.tipo==="marca").length,1);
   assert.deepEqual(referenciaModelo,antesReferencia);assert.deepEqual(dadosModelo,antesModelo);
+  const precoNaBase=structuredClone(referenciaModelo);Object.assign(precoNaBase.elementos.find(e=>e.campo==="preco")!,{y:97,h:3});
+  for(const formato of ["feed","story"] as const){const creditado=preencherReferenciaReserva({...precoNaBase,formato},dadosModelo,0,{imagem:"data:image/png;base64,cHJvcHJpYQ==",credito:"Autor · CC0"});const e=creditado.elementos.find(e=>e.campo==="preco")!,altura=formato==="feed"?1350:1920;assert((e.y+e.h)/100*altura<=altura-28,"O rodapé da fotografia não tapa o preço da referência");}
   const variasOpcoes=preencherReferenciaReserva({...referenciaModelo,maxHoteis:2},dadosModelo,1);
   assert.deepEqual(variasOpcoes.dados.hoteis.map(h=>h.nome),["Hotel B","Hotel A"]);
   assert.throws(()=>comporModeloReserva(dadosModelo,"story","elegante",{imagem:""}),/fotografia/);
