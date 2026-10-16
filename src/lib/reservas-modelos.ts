@@ -4,6 +4,21 @@ export const ESTILOS_RESERVA = [{id:"elegante", nome:"Elegante", descricao:"Foto
 export type EstiloReserva = typeof ESTILOS_RESERVA[number]["id"];
 export interface FotografiaModeloReserva {imagem: string; credito?: string; origem?: string}
 
+/** Preenche o desenho analisado sem substituir as suas posições, cores ou fontes. */
+export function preencherReferenciaReserva(modelo: MaterialReserva, dados: DadosReserva, hotel = 0, fotografia?: FotografiaModeloReserva | null): MaterialReserva {
+  if (!dados.hoteis[hotel]) throw new Error("Escolhe uma opção de hotel do orçamento.");
+  const m = structuredClone(modelo);
+  const opcoes = [dados.hoteis[hotel]!, ...dados.hoteis.filter((_,i)=>i!==hotel)].slice(0,m.maxHoteis);
+  m.dados = {...structuredClone(dados),hoteis:structuredClone(opcoes)};
+  m.nome = `${dados.destino} · ${opcoes[0]!.nome || "Viagem"}`.slice(0,120);
+  m.elementos = m.elementos.map(e=>({
+    ...e,
+    ...(e.campo!=="livre"?{texto:""}:{}),
+    ...(e.tipo==="foto"&&fotografia?{imagem:fotografia.imagem,credito:fotografia.credito,origem:fotografia.origem,recorte:undefined}:{}),
+  }));
+  return validarMaterialReserva(m);
+}
+
 /** Compõe dados confirmados em layouts estáveis; não precisa de reconstruir uma imagem. */
 export function comporModeloReserva(dados: DadosReserva, formato: FormatoReserva, estilo: EstiloReserva, fotografia: FotografiaModeloReserva, hotel = 0): MaterialReserva {
   const opcao = dados.hoteis[hotel];
@@ -61,6 +76,7 @@ export function comporModeloReserva(dados: DadosReserva, formato: FormatoReserva
 }
 
 export function legendaMaterialReserva(m: MaterialReserva): string {
-  const d=m.dados,h=d.hoteis[0],preco=h?precoPessoaReserva(d,h):null;
-  return [d.destino,d.frase,[d.ida,d.regresso].filter(Boolean).map(v=>v.split("-").reverse().join("/")).join(" — "),h?.nome,h?.regime,d.partida?`Partida: ${d.partida}`:"",preco===null?"":`Desde ${new Intl.NumberFormat("pt-PT",{maximumFractionDigits:2}).format(preco)} € por pessoa`,d.bagagem,d.transfer,d.condicoes,"Pede o teu orçamento personalizado."].filter(Boolean).join("\n");
+  const d=m.dados;
+  const opcoes=d.hoteis.flatMap(h=>{const preco=precoPessoaReserva(d,h);return [h.nome,h.regime,preco===null?"":`Desde ${new Intl.NumberFormat("pt-PT",{maximumFractionDigits:2}).format(preco)} € por pessoa`];});
+  return [d.destino,d.frase,[d.ida,d.regresso].filter(Boolean).map(v=>v.split("-").reverse().join("/")).join(" — "),...opcoes,d.partida?`Partida: ${d.partida}`:"",d.bagagem,d.transfer,d.condicoes,"Pede o teu orçamento personalizado."].filter(Boolean).join("\n");
 }

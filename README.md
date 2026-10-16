@@ -33,7 +33,9 @@ Testes com tabelas temporárias: `node --import tsx scripts/testes-formacoes-gra
 ### Importação de propostas MyOffice nos templates
 
 Reservas abre em **Criar com orçamento**: PDF → confirmação dos dados e hotel →
-formato/estilo → template preenchido. Inclui os estilos Elegante e Fotográfico,
+formato/referência → template preenchido. Permite carregar uma referência própria
+no passo 2, pré-visualizar e trocar a imagem, seguindo o desenho com os dados do PDF.
+Em alternativa, inclui os estilos Elegante e Fotográfico,
 em Story e Feed, fotografia automática do destino ou própria e texto para copiar.
 O resultado permite editar o desenho, guardar e descarregar o PNG. As restantes
 opções do orçamento continuam no assistente. O editor de referências mantém-se

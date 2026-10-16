@@ -60,14 +60,14 @@ export function ReservasNovaArea({email}: {email: string}) {
     const sequencia = ++previewSequencia.current;
     const timer = setTimeout(async () => {
       try {
-        const auxiliar = document.createElement("canvas"); await desenharReserva(auxiliar, material);
+        const auxiliar = document.createElement("canvas"); await desenharReserva(auxiliar, material, !resultadoSimples);
         if (sequencia !== previewSequencia.current || !canvas.current) return;
         canvas.current.width = auxiliar.width; canvas.current.height = auxiliar.height; canvas.current.getContext("2d")?.drawImage(auxiliar, 0, 0);
         setErroPreview("");
       } catch (e) {if (sequencia === previewSequencia.current) setErroPreview(e instanceof Error ? e.message : "Não foi possível mostrar a pré-visualização.");}
     }, 100);
     return () => clearTimeout(timer);
-  }, [material, aba]);
+  }, [material, aba, resultadoSimples]);
   useEffect(() => {
     if (!alterado) return;
     const proteger = (e: BeforeUnloadEvent) => {e.preventDefault(); e.returnValue = "";};

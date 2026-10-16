@@ -84,6 +84,11 @@
 .vazio strong { color: var(--oliva); font-size: 15px; }
 .vazio p { color: #707467; font-size: 13px; }
 .assistente { margin-top: 24px; max-width: 1000px; }
+.referenciaOrcamento { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; padding: 22px; margin: 20px 0; border: 1px dashed #b7c09f; border-radius: 14px; background: #fafbf6; }
+.referenciaOrcamento > img { width: 140px; max-height: 220px; object-fit: contain; border-radius: 8px; }
+.referenciaOrcamento > div { flex: 1; min-width: 180px; overflow-wrap: anywhere; }
+.referenciaOrcamento h3 { margin-top: 0; font-size: 15px; }
+.assistente .acoes button[aria-pressed="true"] { background: #edf0df; border-color: var(--oliva); }
 .passos { list-style: none; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; padding: 0; margin: 0 0 28px; }
 .passos li { display: flex; align-items: center; gap: 10px; color: #86897d; font-size: 12px; border-bottom: 2px solid #e6e9df; padding-bottom: 16px; }
 .passos li > span { display: grid; place-items: center; height: 30px; width: 30px; flex: none; border: 1px solid #dce1cf; border-radius: 50%; background: #fafbf7; }

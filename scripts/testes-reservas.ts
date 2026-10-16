@@ -6,7 +6,7 @@ import { db, fecharDb } from "../src/lib/db";
 import { EMAIL_PAINEL_DEMONSTRACAO } from "../src/lib/demo";
 import { abrirReserva, analisarReferenciaReserva, chamarIAReservas, descarregarFotoReserva, fotografiasReserva, guardarReserva, importarPDFReserva, listarReservas } from "../src/lib/reservas-servidor";
 import { aPartirDoModeloReserva, dadosReservaVazios, elementoReserva, hotelVazio, manterFotografiasReserva, novoMaterialReserva, precoPessoaReserva, textoElementoReserva, validarDadosReserva, validarMaterialReserva } from "../src/lib/reservas";
-import { comporModeloReserva, legendaMaterialReserva } from "../src/lib/reservas-modelos";
+import { comporModeloReserva, legendaMaterialReserva, preencherReferenciaReserva } from "../src/lib/reservas-modelos";
 
 async function main() {
   const material = novoMaterialReserva();
@@ -42,6 +42,19 @@ async function main() {
     assert.match(textoElementoReserva(ePreco,composto.dados),/999/); assert.match(legendaMaterialReserva(composto),/999/);
   }
   assert.deepEqual(dadosModelo,antesModelo,"Gerar um template conserva todas as opções do orçamento original");
+  const referenciaModelo=novoMaterialReserva("feed");referenciaModelo.referencia="data:image/png;base64,aGVsbG8=";
+  referenciaModelo.elementos.find(e=>e.campo==="preco")!.texto="9999 €";
+  const antesReferencia=structuredClone(referenciaModelo);
+  const comReferencia=preencherReferenciaReserva(referenciaModelo,dadosModelo,1,{imagem:"data:image/png;base64,cHJvcHJpYQ=="});
+  assert.equal(comReferencia.formato,"feed");assert.equal(comReferencia.referencia,referenciaModelo.referencia);
+  assert.equal(comReferencia.dados.hoteis[0]!.nome,"Hotel B");assert.equal(comReferencia.dados.hoteis[0]!.total,2600);
+  for(const e of comReferencia.elementos){const original=referenciaModelo.elementos.find(v=>v.id===e.id)!;assert.deepEqual([e.x,e.y,e.w,e.h,e.cor,e.fonte],[original.x,original.y,original.w,original.h,original.cor,original.fonte],"Preencher conserva o desenho analisado");}
+  assert.equal(comReferencia.elementos.find(e=>e.tipo==="foto")!.imagem,"data:image/png;base64,cHJvcHJpYQ==");
+  assert.equal(comReferencia.elementos.find(e=>e.campo==="preco")!.texto,"");
+  assert.equal(comReferencia.elementos.filter(e=>e.tipo==="marca").length,1);
+  assert.deepEqual(referenciaModelo,antesReferencia);assert.deepEqual(dadosModelo,antesModelo);
+  const variasOpcoes=preencherReferenciaReserva({...referenciaModelo,maxHoteis:2},dadosModelo,1);
+  assert.deepEqual(variasOpcoes.dados.hoteis.map(h=>h.nome),["Hotel B","Hotel A"]);
   assert.throws(()=>comporModeloReserva(dadosModelo,"story","elegante",{imagem:""}),/fotografia/);
   assert.throws(()=>comporModeloReserva(dadosModelo,"story","elegante",{imagem:"data:image/png;base64,aGVsbG8="},5),/hotel/);
   const exemplo = {...campo, campo: "preco" as const, hotel: 0, texto: "927€"};
