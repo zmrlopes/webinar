@@ -250,15 +250,21 @@ export async function pdfPlanner(email: string, id: unknown): Promise<{bytes: Ui
 /** Procura um local no OpenStreetMap (Nominatim), para corrigir um ponto do mapa. */
 export async function localizarPonto(termo: unknown): Promise<{nome: string; lat: number; lng: number}[]> {
   if (typeof termo !== "string" || !termo.trim() || termo.length > 160) throw new ErroPlanner("Escreve o nome do local a procurar.");
-  const url = new URL("https://nominatim.openstreetmap.org/search");
-  url.search = new URLSearchParams({q: termo.trim(), format: "jsonv2", limit: "6", "accept-language": "pt-PT"}).toString();
-  const r = await fetch(url, {headers: {"User-Agent": AGENTE}, signal: AbortSignal.timeout(12_000)}).catch(() => null);
-  if (!r?.ok) throw new ErroPlanner("Não foi possível procurar o local. Tenta novamente daqui a pouco.", 502);
-  const lista = await r.json() as {display_name?: string; lat?: string; lon?: string}[];
-  return lista.flatMap(l => {
-    const lat = Number(l.lat), lng = Number(l.lon);
-    return Number.isFinite(lat) && Number.isFinite(lng) && l.display_name ? [{nome: l.display_name.slice(0, 160), lat, lng}] : [];
-  });
+  const procurar = async (q: string) => {
+    const url = new URL("https://nominatim.openstreetmap.org/search");
+    url.search = new URLSearchParams({q, format: "jsonv2", limit: "6", "accept-language": "pt-PT"}).toString();
+    const r = await fetch(url, {headers: {"User-Agent": AGENTE}, signal: AbortSignal.timeout(12_000)}).catch(() => null);
+    if (!r?.ok) throw new ErroPlanner("Não foi possível procurar o local. Tenta novamente daqui a pouco.", 502);
+    const lista = await r.json() as {display_name?: string; lat?: string; lon?: string}[];
+    return lista.flatMap(l => {
+      const lat = Number(l.lat), lng = Number(l.lon);
+      return Number.isFinite(lat) && Number.isFinite(lng) && l.display_name ? [{nome: l.display_name.slice(0, 160), lat, lng}] : [];
+    });
+  };
+  // A partir do servidor do site, nomes acentuados ("Girão") às vezes não devolvem nada; sem acentos encontram.
+  const encontrados = await procurar(termo.trim());
+  const semAcentos = termo.trim().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+  return encontrados.length || semAcentos === termo.trim() ? encontrados : procurar(semAcentos);
 }
 
 export function erroPlannerParaResposta(erro: unknown): {mensagem: string; status: number} | null {
