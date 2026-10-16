@@ -261,10 +261,9 @@ export async function localizarPonto(termo: unknown): Promise<{nome: string; lat
       return Number.isFinite(lat) && Number.isFinite(lng) && l.display_name ? [{nome: l.display_name.slice(0, 160), lat, lng}] : [];
     });
   };
-  // A partir do servidor do site, nomes acentuados ("Girão") às vezes não devolvem nada; sem acentos encontram.
-  const encontrados = await procurar(termo.trim());
-  const semAcentos = termo.trim().normalize("NFD").replace(/\p{Diacritic}/gu, "");
-  return encontrados.length || semAcentos === termo.trim() ? encontrados : procurar(semAcentos);
+  // A partir do servidor do site, o Nominatim perde as letras acentuadas ("Évora" chega como "vora").
+  // Sem acentos encontra o mesmo local, por isso a pesquisa vai sempre sem eles.
+  return procurar(termo.trim().normalize("NFD").replace(/\p{Diacritic}/gu, ""));
 }
 
 export function erroPlannerParaResposta(erro: unknown): {mensagem: string; status: number} | null {
