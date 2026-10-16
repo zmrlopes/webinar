@@ -70,3 +70,22 @@
   .painel { padding: 4px 14px 16px; }
   .rodape button { flex: 1 1 auto; }
 }
+.campo select { display: block; box-sizing: border-box; width: 100%; min-height: 42px; padding: 8px 10px; border: 1px solid #bfc4ac; border-radius: 8px; background: #fff; color: #000; font: inherit; font-size: 16px; font-weight: 400; }
+.voo { border: 1px solid #eae7de; border-radius: 12px; padding: 12px 14px 2px; margin-bottom: 12px; background: #fafaf7; }
+.voo .tituloLinha { margin-bottom: 10px; }
+.voo .remover { min-height: 32px; padding: 4px 10px; font-size: .8rem; }
+.grelhaVoo { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0 12px; }
+.linhaFoto { display: grid; grid-template-columns: 96px 1fr auto; align-items: center; gap: 8px 14px; padding: 10px 0; border-bottom: 1px solid #eae7de; }
+.linhaFoto > div:nth-child(2) { min-width: 0; }
+.linhaFoto strong { display: block; font-size: .92rem; }
+.linhaFoto small { display: block; color: #6b6a63; font-size: .75rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.linhaFoto .fotos { grid-column: 1 / -1; }
+.miniatura, .miniaturaVazia { width: 96px; height: 64px; border-radius: 8px; object-fit: cover; display: block; }
+.miniaturaVazia { display: grid; place-items: center; background: #f5f6ef; border: 1px dashed #bfc4ac; color: #6b6a63; font-size: .7rem; text-align: center; }
+.botaoFicheiro { position: relative; display: inline-flex; align-items: center; min-height: 40px; padding: 8px 14px; border: 1px solid #4b5320; border-radius: 8px; background: #fff; color: #4b5320; font-size: .9rem; font-weight: 600; cursor: pointer; }
+.botaoFicheiro input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+@media (max-width: 600px) {
+  .linhaFoto { grid-template-columns: 80px 1fr; }
+  .linhaFoto .acoes { grid-column: 1 / -1; }
+  .miniatura, .miniaturaVazia { width: 80px; height: 56px; }
+}

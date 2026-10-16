@@ -14,7 +14,11 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/admin/migrar": ["./migrations/**/*"],
     "/api/admin/migrar": ["./migrations/**/*"],
+    // O travel planner desenha as páginas com estas fontes e o logótipo, lidos do disco.
+    "/api/consultor/nova-area/travel-planner": ["./public/fonts/Poppins-*.ttf", "./public/fonts/PlayfairDisplay-Variable.ttf", "./public/icligo-logo.png"],
   },
+  // Binário nativo de desenho (canvas); não pode ser empacotado.
+  serverExternalPackages: ["@napi-rs/canvas"],
 };
 
 export default nextConfig;

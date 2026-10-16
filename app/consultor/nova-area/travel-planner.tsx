@@ -3,8 +3,8 @@
 import { useEffect, useState, type ChangeEvent, type ReactNode } from "react";
 import type { DadosReserva } from "@/lib/reservas";
 import {
-  dataPlanner, diasDaViagem, ESTILOS_PLANNER, INTERESSES_PLANNER, MAX_DIAS_PLANNER, pendentesPlanner, RITMOS_PLANNER, TIPOS_VIAGEM,
-  type DiaPlanner, type ResumoPlanner, type TravelPlanner,
+  dataPlanner, diasDaViagem, diaVazio, ESTILOS_PLANNER, INTERESSES_PLANNER, MAX_DIAS_PLANNER, MAX_FOTO_CARREGADA, pendentesPlanner, RITMOS_PLANNER, TIPOS_VIAGEM, vooVazio,
+  type DiaPlanner, type FotoPlanner, type ResumoPlanner, type TravelPlanner, type VooPlanner,
 } from "@/lib/travel-planner";
 import css from "./travel-planner.module.css";
 
@@ -13,6 +13,27 @@ const API_RESERVAS = "/api/consultor/nova-area/reservas";
 type Passo = "proposta" | "perfil" | "roteiro" | "entregar";
 const PASSOS: [Passo, string][] = [["proposta", "1. Proposta"], ["perfil", "2. Perfil"], ["roteiro", "3. Roteiro e dicas"], ["entregar", "4. Entregar"]];
 interface Foto { titulo: string; url: string; credito: string }
+/** Onde vai a fotografia escolhida: capa, hotel ou um dia do roteiro. */
+type AlvoFoto = "capa" | "hotel" | number;
+
+/** Reduz a fotografia do consultor para JPEG até 1600 px, para caber no registo. */
+async function comprimirFoto(ficheiro: File): Promise<string> {
+  const bitmap = await createImageBitmap(ficheiro);
+  for (const [lado, qualidade] of [[1600, 0.82], [1300, 0.75], [1000, 0.7]] as const) {
+    const escala = Math.min(1, lado / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * escala); canvas.height = Math.round(bitmap.height * escala);
+    canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const url = canvas.toDataURL("image/jpeg", qualidade);
+    if (url.length <= MAX_FOTO_CARREGADA) return url;
+  }
+  throw new Error("Esta fotografia é demasiado grande. Experimenta outra.");
+}
+
+function Miniatura({foto, legenda}: {foto: FotoPlanner | null; legenda: string}) {
+  // eslint-disable-next-line @next/next/no-img-element
+  return foto ? <img className={css.miniatura} src={foto.url} alt={legenda} /> : <span className={css.miniaturaVazia}>Sem fotografia</span>;
+}
 
 function Campo({titulo, valor, alterar, tipo = "text", grande = false}: {titulo: string; valor: string | number | null; alterar: (v: string) => void; tipo?: "text" | "date" | "number"; grande?: boolean}) {
   return <label className={css.campo}><span>{titulo}</span>{grande
@@ -33,7 +54,7 @@ export function TravelPlannerNovaArea({email}: {email: string}) {
   const [erro, setErro] = useState("");
   const [aviso, setAviso] = useState("");
   const [propostas, setPropostas] = useState<DadosReserva[]>([]);
-  const [fotos, setFotos] = useState<Foto[] | null>(null);
+  const [fotos, setFotos] = useState<{alvo: AlvoFoto; lista: Foto[]} | null>(null);
 
   async function pedir<T>(acao: string, extra: Record<string, unknown> = {}): Promise<T> {
     const r = await fetch(API, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({email, acao, ...extra})});
@@ -64,7 +85,45 @@ export function TravelPlannerNovaArea({email}: {email: string}) {
 
   const alterarViagem = (campo: keyof TravelPlanner["viagem"], valor: string) => setP(atual => atual && {...atual, viagem: {...atual.viagem,
     [campo]: campo === "viajantes" ? (valor ? Math.max(1, Math.round(Number(valor))) || null : null) : valor}});
-  const alterarDia = (i: number, campo: keyof DiaPlanner, valor: string) => setP(atual => atual && {...atual, dias: atual.dias.map((d, j) => j === i ? {...d, [campo]: valor} : d)});
+  const alterarDia = (i: number, campo: "titulo" | "manha" | "tarde" | "noite" | "local", valor: string) => setP(atual => atual && {...atual, dias: atual.dias.map((d, j) => j === i
+    // Mudar o local tira o pino do mapa: as coordenadas eram do local anterior.
+    ? {...d, [campo]: valor, ...(campo === "local" ? {lat: null, lng: null, pesquisa: valor} : {})} : d)});
+  const alterarVoo = (i: number, campo: keyof VooPlanner, valor: string) => setP(atual => atual && {...atual, voos: atual.voos.map((v, j) => j === i
+    ? {...v, [campo]: campo === "origem" || campo === "destino" ? valor.toUpperCase().slice(0, 4) : valor,
+      // Outro aeroporto: as coordenadas antigas deixam de servir para o mapa.
+      ...(campo === "origem" ? {origemLat: null, origemLng: null} : campo === "destino" ? {destinoLat: null, destinoLng: null} : {})} : v)});
+  const fotoDe = (alvo: AlvoFoto): FotoPlanner | null => !p ? null : alvo === "capa" ? p.foto : alvo === "hotel" ? p.fotoHotel : p.dias[alvo]?.foto ?? null;
+  const definirFoto = (alvo: AlvoFoto, foto: FotoPlanner | null) => setP(atual => !atual ? atual : alvo === "capa" ? {...atual, foto} : alvo === "hotel" ? {...atual, fotoHotel: foto}
+    : {...atual, dias: atual.dias.map((d, j) => j === alvo ? {...d, foto} : d)});
+  function procurar(alvo: AlvoFoto) {
+    if (!p) return;
+    const termo = alvo === "capa" ? p.viagem.destino.split(",")[0]! : alvo === "hotel" ? `${p.viagem.hotel} ${p.viagem.destino.split(",")[0]}` : p.dias[alvo]?.pesquisa || p.dias[alvo]?.local || p.viagem.destino;
+    void executar("A procurar fotografias…", async () => {
+      const c = await pedir<{fotografias: Foto[]}>("fotografias", {termo});
+      setFotos({alvo, lista: c.fotografias});
+      if (!c.fotografias.length) setAviso("Não encontrámos fotografias livres para este local. Podes carregar uma tua.");
+    });
+  }
+  function carregar(alvo: AlvoFoto, e: ChangeEvent<HTMLInputElement>) {
+    const ficheiro = e.target.files?.[0];
+    e.target.value = "";
+    if (ficheiro) void executar("A preparar a fotografia…", async () => definirFoto(alvo, {url: await comprimirFoto(ficheiro), credito: ""}));
+  }
+  function linhaFoto(alvo: AlvoFoto, titulo: string) {
+    return <div className={css.linhaFoto} key={String(alvo)}>
+      <Miniatura foto={fotoDe(alvo)} legenda={titulo} />
+      <div><strong>{titulo}</strong>{fotoDe(alvo)?.credito && <small>{fotoDe(alvo)!.credito}</small>}</div>
+      <div className={css.acoes}>
+        <button type="button" onClick={() => procurar(alvo)}>Trocar</button>
+        <label className={css.botaoFicheiro}>Carregar minha<input type="file" accept="image/*" onChange={e => carregar(alvo, e)} /></label>
+        {fotoDe(alvo) && <button type="button" className={css.remover} onClick={() => definirFoto(alvo, null)}>Retirar</button>}
+      </div>
+      {fotos?.alvo === alvo && !!fotos.lista.length && <div className={css.fotos}>{fotos.lista.map(f => <button type="button" key={f.url} aria-pressed={fotoDe(alvo)?.url === f.url}
+        className={fotoDe(alvo)?.url === f.url ? css.fotoAtiva : css.foto} onClick={() => { definirFoto(alvo, {url: f.url, credito: f.credito}); setFotos(null); }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={f.url} alt={f.titulo} loading="lazy" /></button>)}</div>}
+    </div>;
+  }
 
   function usarProposta(d: DadosReserva, hotel = 0) {
     const h = d.hoteis[hotel] ?? d.hoteis[0];
@@ -93,10 +152,10 @@ export function TravelPlannerNovaArea({email}: {email: string}) {
   function gerar() {
     if (!p) return;
     if (p.dias.some(d => d.manha || d.tarde || d.noite) && !window.confirm("Gerar de novo substitui o roteiro e as dicas atuais. Continuar?")) return;
-    void executar("A IA está a preparar o roteiro… pode demorar até um minuto.", async () => {
-      const c = await pedir<Pick<TravelPlanner, "dias" | "dicas"> & {emergencia: string}>("gerar", {planner: p});
-      await guardar({...p, dias: c.dias, dicas: c.dicas, emergencia: {texto: c.emergencia, confirmado: false}});
-      setAviso("Roteiro criado. Revê cada dia e confirma as secções marcadas “A confirmar”.");
+    void executar("A IA está a preparar o roteiro, os mapas e as fotografias… pode demorar até dois minutos.", async () => {
+      const c = await pedir<Pick<TravelPlanner, "dias" | "dicas" | "voos" | "extras" | "foto"> & {emergencia: string}>("gerar", {planner: p});
+      await guardar({...p, dias: c.dias, dicas: c.dicas, voos: c.voos, extras: c.extras, foto: c.foto, emergencia: {texto: c.emergencia, confirmado: false}});
+      setAviso("Roteiro criado, com voos, locais no mapa e fotografias. Revê tudo e confirma as secções marcadas “A confirmar”.");
     });
   }
 
@@ -193,19 +252,47 @@ export function TravelPlannerNovaArea({email}: {email: string}) {
         </div>
         {!total && <p className={css.ajuda}>Indica as datas de ida e regresso no passo 1 para a IA saber quantos dias tem a viagem.</p>}
         {!ia && <p className={css.ajuda}>A IA ainda não está configurada. Podes escrever os dias à mão.</p>}
+
+        {(p.voos.length > 0 || p.dias.length > 0) && <>
+          <h3>Voos (cartões de embarque)</h3>
+          <p className={css.ajuda}>Confirma os números de voo e as horas: aparecem nos cartões de embarque do PDF.</p>
+          {p.voos.map((v, i) => <article key={i} className={css.voo}>
+            <div className={css.tituloLinha}>
+              <strong>{v.sentido === "ida" ? "Ida" : "Volta"} · {v.origem || "?"} → {v.destino || "?"}</strong>
+              <button type="button" className={css.remover} onClick={() => setP({...p, voos: p.voos.filter((_, j) => j !== i)})}>Remover</button>
+            </div>
+            <div className={css.grelhaVoo}>
+              <label className={css.campo}><span>Sentido</span><select value={v.sentido} onChange={e => alterarVoo(i, "sentido", e.target.value)}><option value="ida">Ida</option><option value="volta">Volta</option></select></label>
+              <Campo titulo="Companhia" valor={v.companhia} alterar={x => alterarVoo(i, "companhia", x)} />
+              <Campo titulo="N.º do voo" valor={v.numero} alterar={x => alterarVoo(i, "numero", x)} />
+              <Campo titulo="Data" tipo="date" valor={v.data} alterar={x => alterarVoo(i, "data", x)} />
+              <Campo titulo="De (código)" valor={v.origem} alterar={x => alterarVoo(i, "origem", x)} />
+              <Campo titulo="Cidade" valor={v.origemCidade} alterar={x => alterarVoo(i, "origemCidade", x)} />
+              <Campo titulo="Partida" valor={v.partida} alterar={x => alterarVoo(i, "partida", x)} />
+              <Campo titulo="Para (código)" valor={v.destino} alterar={x => alterarVoo(i, "destino", x)} />
+              <Campo titulo="Cidade" valor={v.destinoCidade} alterar={x => alterarVoo(i, "destinoCidade", x)} />
+              <Campo titulo="Chegada" valor={v.chegada} alterar={x => alterarVoo(i, "chegada", x)} />
+            </div>
+          </article>)}
+          {p.voos.length < 6 && <button type="button" onClick={() => setP({...p, voos: [...p.voos, vooVazio(p.voos.some(v => v.sentido === "ida") ? "volta" : "ida")]})}>+ Acrescentar voo</button>}
+          <h3>Dias</h3>
+        </>}
         {p.dias.map((d, i) => <article key={i} className={css.dia}>
           <div className={css.tituloLinha}>
             <strong>Dia {i + 1}{p.viagem.ida ? ` · ${dataPlanner(new Date(Date.parse(`${p.viagem.ida}T12:00:00Z`) + i * 86_400_000).toISOString().slice(0, 10), {weekday: "short", day: "numeric", month: "short"})}` : ""}</strong>
             <button type="button" className={css.remover} onClick={() => setP({...p, dias: p.dias.filter((_, j) => j !== i)})}>Remover dia</button>
           </div>
-          <Campo titulo="Título do dia" valor={d.titulo} alterar={v => alterarDia(i, "titulo", v)} />
+          <div className={css.grelha}>
+            <Campo titulo="Título do dia" valor={d.titulo} alterar={v => alterarDia(i, "titulo", v)} />
+            <Campo titulo={d.lat !== null ? "Local principal (no mapa)" : "Local principal"} valor={d.local} alterar={v => alterarDia(i, "local", v)} />
+          </div>
           <div className={css.grelha3}>
             <Campo titulo="Manhã" grande valor={d.manha} alterar={v => alterarDia(i, "manha", v)} />
             <Campo titulo="Tarde" grande valor={d.tarde} alterar={v => alterarDia(i, "tarde", v)} />
             <Campo titulo="Noite" grande valor={d.noite} alterar={v => alterarDia(i, "noite", v)} />
           </div>
         </article>)}
-        {p.dias.length < MAX_DIAS_PLANNER && <button type="button" onClick={() => setP({...p, dias: [...p.dias, {titulo: "", manha: "", tarde: "", noite: ""}]})}>+ Acrescentar dia</button>}
+        {p.dias.length < MAX_DIAS_PLANNER && <button type="button" onClick={() => setP({...p, dias: [...p.dias, diaVazio()]})}>+ Acrescentar dia</button>}
 
         <h3>Dicas práticas</h3>
         {!p.dicas.length && <p className={css.ajuda}>As dicas aparecem aqui depois de gerar o roteiro com IA.</p>}
@@ -231,20 +318,16 @@ export function TravelPlannerNovaArea({email}: {email: string}) {
         <div className={css.estilos}>{ESTILOS_PLANNER.map(e => <button type="button" key={e.id} aria-pressed={p.estilo === e.id} className={p.estilo === e.id ? css.estiloAtivo : css.estilo} onClick={() => setP({...p, estilo: e.id})}>
           <span className={css[`amostra_${e.id}`]} aria-hidden="true" /><strong>{e.nome}</strong><small>{e.descricao}</small></button>)}</div>
 
-        <div className={css.tituloLinha}>
-          <h3>Fotografia da capa</h3>
-          <button type="button" disabled={!p.viagem.destino} onClick={() => void executar("A procurar fotografias…", async () => { const c = await pedir<{fotografias: Foto[]}>("fotografias", {destino: p.viagem.destino}); setFotos(c.fotografias); })}>Procurar fotografias de {p.viagem.destino || "destino"}</button>
-        </div>
-        {fotos && !fotos.length && <p className={css.ajuda}>Não encontrámos fotografias livres para este destino. O PDF sai sem fotografia na capa.</p>}
-        {!!fotos?.length && <div className={css.fotos}>{fotos.map(f => <button type="button" key={f.url} aria-pressed={p.foto?.url === f.url} className={p.foto?.url === f.url ? css.fotoAtiva : css.foto} onClick={() => setP({...p, foto: {url: f.url, credito: f.credito}})}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={f.url} alt={f.titulo} loading="lazy" /></button>)}</div>}
-        {p.foto && <p className={css.ajuda}>Fotografia escolhida · {p.foto.credito} <button type="button" className={css.ligacao} onClick={() => setP({...p, foto: null})}>Retirar</button></p>}
+        <h3>Fotografias</h3>
+        <p className={css.ajuda}>Escolhemos uma fotografia para a capa e para cada dia. Troca as que não gostares ou carrega as tuas (por exemplo, as do hotel).</p>
+        {linhaFoto("capa", "Capa")}
+        {(p.viagem.hotel || p.fotoHotel) && linhaFoto("hotel", p.viagem.hotel ? `Hotel · ${p.viagem.hotel}` : "Hotel")}
+        {p.dias.map((d, i) => linhaFoto(i, `Dia ${i + 1}${d.local ? ` · ${d.local}` : d.titulo ? ` · ${d.titulo}` : ""}`))}
 
         <h3>Descarregar</h3>
         {pendentes.length > 0
           ? <p className={css.erro}>Antes de entregar ao cliente, confirma no passo 3: {pendentes.join(", ")}.</p>
-          : <p className={css.ajuda}>O PDF inclui capa, resumo da viagem, roteiro, dicas e contactos, com o teu nome e email.</p>}
+          : <p className={css.ajuda}>O PDF inclui capa, mapa da rota com cartões de embarque, alojamento e mapa dos locais, roteiro com fotografias, dicas com gráfico do clima e contactos. Pode demorar até um minuto a criar.</p>}
         <div className={css.rodape}>
           <button type="button" onClick={() => irPara("roteiro")}>Anterior</button>
           <button type="button" className={css.primario} disabled={pendentes.length > 0} onClick={descarregarPDF}>Descarregar PDF</button>

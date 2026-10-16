@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ErroPlanner, plannerVazio } from "@/lib/travel-planner";
-import { abrirPlanner, apagarPlanner, erroPlannerParaResposta, gerarRoteiroPlanner, guardarPlanner, listarPlanners, novoIdPlanner, pdfPlanner } from "@/lib/travel-planner-servidor";
-import { acessoReservas, fotografiasReserva, lerBytesReserva } from "@/lib/reservas-servidor";
+import { abrirPlanner, apagarPlanner, erroPlannerParaResposta, gerarRoteiroPlanner, guardarPlanner, listarPlanners, novoIdPlanner, pdfPlanner, procurarFotos } from "@/lib/travel-planner-servidor";
+import { acessoReservas, lerBytesReserva } from "@/lib/reservas-servidor";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
@@ -10,7 +10,7 @@ export const maxDuration = 180;
 export async function POST(request: Request): Promise<Response> {
   const resposta = (valor: unknown) => NextResponse.json(valor, {headers: {"Cache-Control": "private, no-store"}});
   try {
-    const bytes = await lerBytesReserva(request.body, 400_000);
+    const bytes = await lerBytesReserva(request.body, 6_000_000);
     let corpo: Record<string, unknown>;
     try { corpo = JSON.parse(new TextDecoder().decode(bytes)); if (!corpo || typeof corpo !== "object" || Array.isArray(corpo)) throw new Error(); }
     catch { throw new ErroPlanner("Pedido inválido."); }
@@ -22,9 +22,9 @@ export async function POST(request: Request): Promise<Response> {
       case "guardar": return resposta({planner: await guardarPlanner(email, corpo.planner)});
       case "apagar": await apagarPlanner(email, corpo.id); return resposta({ok: true});
       case "gerar": return resposta(await gerarRoteiroPlanner(email, corpo.planner));
-      case "fotografias": return resposta({fotografias: await fotografiasReserva(corpo.destino)});
+      case "fotografias": return resposta({fotografias: await procurarFotos(corpo.termo)});
       case "pdf": {
-        const {bytes: pdf, nome} = await pdfPlanner(email, corpo.id, new URL(request.url).origin);
+        const {bytes: pdf, nome} = await pdfPlanner(email, corpo.id);
         return new Response(Buffer.from(pdf), {headers: {
           "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="${nome}"`, "Cache-Control": "private, no-store",
         }});

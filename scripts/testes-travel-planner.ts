@@ -9,9 +9,9 @@ import assert from "node:assert/strict";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { db, fecharDb } from "../src/lib/db";
-import { diasDaViagem, pendentesPlanner, plannerVazio, validarPlanner, type TravelPlanner } from "../src/lib/travel-planner";
-import { abrirPlanner, apagarPlanner, gerarRoteiroPlanner, guardarPlanner, listarPlanners, pdfPlanner } from "../src/lib/travel-planner-servidor";
-import { fotografiasReserva } from "../src/lib/reservas-servidor";
+import { diasDaViagem, diaVazio, pendentesPlanner, plannerVazio, validarPlanner, type TravelPlanner } from "../src/lib/travel-planner";
+import { abrirPlanner, apagarPlanner, gerarRoteiroPlanner, guardarPlanner, listarPlanners, pdfPlanner, procurarFotos } from "../src/lib/travel-planner-servidor";
+
 
 const email = "planner-teste@example.test";
 const id = "00000000-0000-4000-8000-0000000000aa";
@@ -30,8 +30,8 @@ const base: TravelPlanner = {
   viagem: {destino: "Funchal, Madeira", partida: "Lisboa", ida: "2026-11-10", regresso: "2026-11-13", voo: "TP1687 Lisboa 08:05 -> Funchal 09:50\nTP1688 Funchal 18:40 -> Lisboa 20:20",
     viajantes: 2, bagagem: "1 mala de 23 kg por pessoa", transfer: "Aeroporto - hotel - aeroporto", hotel: "Hotel Exemplo", quarto: "Duplo vista mar", regime: "Pequeno-almoço"},
   perfil: {tipo: "Casal", interesses: ["Natureza", "Gastronomia"], ritmo: "equilibrado", notas: "Aniversário de casamento no dia 2"},
-  dias: [{titulo: "Chegada", manha: "Voo e transfer.", tarde: "Passeio pela Zona Velha — ruas com portas pintadas, “arte” e café.", noite: "Jantar de espetada."},
-    {titulo: "Levadas", manha: "Levada dos Balcões.", tarde: "Ribeiro Frio.", noite: "Livre."}],
+  dias: [{...diaVazio(), titulo: "Chegada", manha: "Voo e transfer.", tarde: "Passeio pela Zona Velha — ruas com portas pintadas, “arte” e café.", noite: "Jantar de espetada."},
+    {...diaVazio(), titulo: "Levadas", manha: "Levada dos Balcões.", tarde: "Ribeiro Frio.", noite: "Livre."}],
   dicas: [{tema: "documentos", titulo: "Documentos", texto: "Cartão de cidadão válido.", sensivel: true, confirmado: false},
     {tema: "clima", titulo: "Clima", texto: "Ameno, levem um casaco leve. Ação, ç, ã, õ, € 20 → ok ✈", sensivel: false, confirmado: true}],
   emergencia: {texto: "112", confirmado: false}, foto: null,
@@ -41,7 +41,7 @@ try {
   await guardarPlanner(email, base);
   assert.equal((await listarPlanners(email))[0]?.destino, "Funchal, Madeira");
   assert.deepEqual(pendentesPlanner(await abrirPlanner(email, id)), ["Documentos", "Contactos de emergência"]);
-  await assert.rejects(pdfPlanner(email, id, "https://webinar.viajareviver.net"), /confirma/, "Não sai PDF com secções por confirmar");
+  await assert.rejects(pdfPlanner(email, id), /confirma/, "Não sai PDF com secções por confirmar");
 
   let planner: TravelPlanner = {...base, dicas: base.dicas.map(d => ({...d, confirmado: true})), emergencia: {texto: "112", confirmado: true}};
   if (process.env.COM_IA === "1") {
@@ -49,12 +49,14 @@ try {
     assert.equal(gerado.dias.length, 4, "Um dia por cada dia da viagem");
     assert(gerado.dicas.some(d => d.tema === "documentos" && d.sensivel && !d.confirmado), "Documentos vêm por confirmar");
     console.log("Roteiro IA:", JSON.stringify(gerado.dias.map(d => d.titulo)), `· ${gerado.dicas.length} dicas`);
-    planner = {...planner, dias: gerado.dias, dicas: gerado.dicas.map(d => ({...d, confirmado: true})), emergencia: {texto: gerado.emergencia, confirmado: true}};
+    assert(gerado.voos.length >= 2, "Voos estruturados para os cartões de embarque"); assert.equal(gerado.extras.clima.length, 12);
+    console.log("Voos:", gerado.voos.map(v => `${v.origem}-${v.destino} ${v.partida}`).join(", "), "· locais:", gerado.dias.map(d => d.local).join(", "), "· fotos:", gerado.dias.filter(d => d.foto).length);
+    planner = {...planner, ...gerado, dicas: gerado.dicas.map(d => ({...d, confirmado: true})), emergencia: {texto: gerado.emergencia, confirmado: true}};
   }
-  const fotos = await fotografiasReserva("Funchal").catch(() => []);
+  const fotos = await procurarFotos("Funchal").catch(() => []);
   for (const estilo of ["classico", "moderno", "natural"] as const) {
-    await guardarPlanner(email, {...planner, estilo, foto: fotos[0] ? {url: fotos[0].url, credito: fotos[0].credito} : null});
-    const {bytes, nome} = await pdfPlanner(email, id, "https://webinar.viajareviver.net");
+    await guardarPlanner(email, {...planner, estilo, foto: planner.foto ?? (fotos[0] ? {url: fotos[0].url, credito: fotos[0].credito} : null)});
+    const {bytes, nome} = await pdfPlanner(email, id);
     assert.equal(Buffer.from(bytes.subarray(0, 5)).toString(), "%PDF-");
     assert.equal(nome, "funchal-madeira-travel-planner.pdf");
     if (process.env.PASTA_PDF) writeFileSync(join(process.env.PASTA_PDF, `${estilo}.pdf`), bytes);

@@ -29,6 +29,7 @@
     "importar-documentos": "tsx scripts/importar-documentos.ts"
   },
   "dependencies": {
+    "@napi-rs/canvas": "^0.1.100",
     "@neondatabase/serverless": "^1.2.0",
     "@types/qrcode": "^1.5.6",
     "exceljs": "^4.4.0",

@@ -1,13 +1,15 @@
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
-import { PDFDocument, rgb, StandardFonts, type PDFFont, type PDFImage, type PDFPage, type RGB } from "pdf-lib";
+import { loadImage, type Image } from "@napi-rs/canvas";
+import { PDFDocument } from "pdf-lib";
 import { db } from "./db";
 import { buscarMembroEquipa } from "./equipa";
 import { ErroReserva } from "./reservas";
 import { chamarIAReservas } from "./reservas-servidor";
+import { desenharPlanner } from "./travel-planner-desenho";
 import {
-  dataPlanner, diasDaViagem, ErroPlanner, MAX_DIAS_PLANNER, pendentesPlanner, RITMOS_PLANNER, TEMAS_DICA, validarDia, validarDica, validarPlanner,
-  type DiaPlanner, type DicaPlanner, type ResumoPlanner, type TravelPlanner,
+  diasDaViagem, ErroPlanner, FOTO_WIKIMEDIA, MAX_DIAS_PLANNER, pendentesPlanner, RITMOS_PLANNER, TEMAS_DICA, validarDia, validarDica, validarExtras, validarPlanner, validarVoo,
+  type DiaPlanner, type DicaPlanner, type ExtrasPlanner, type FotoPlanner, type ResumoPlanner, type TravelPlanner, type VooPlanner,
 } from "./travel-planner";
 
 // O email fica entre ":" na chave, como em Reservas — a mudança de email no admin leva estes registos.
@@ -49,19 +51,98 @@ export async function apagarPlanner(email: string, id: unknown): Promise<void> {
 
 export const novoIdPlanner = () => randomUUID();
 
+// ---------- fotografias ----------
+
+const AGENTE = "iCliGoTravelPlanner/1.0 (+https://webinar.viajareviver.net)";
+const limparHTML = (s: unknown) => typeof s === "string" ? s.replace(/<[^>]*>/g, "").replace(/&[^;]+;/g, " ").replace(/\s+/g, " ").trim().slice(0, 120) : "";
+export interface FotoSugerida extends FotoPlanner { titulo: string }
+
+/**
+ * Fotografias do Wikimedia Commons com licença livre (domínio público, CC0,
+ * CC BY e CC BY-SA). O crédito do autor e a licença vão impressos junto à
+ * fotografia, como estas licenças pedem. Prefere imagens grandes e recentes,
+ * a cores, de paisagem.
+ */
+export async function procurarFotos(termo: unknown, quantas = 8): Promise<FotoSugerida[]> {
+  if (typeof termo !== "string" || !termo.trim() || termo.length > 160) throw new ErroPlanner("Indica o que procurar.");
+  const limpo = termo.replace(/["\\]/g, " ").trim();
+  const pesquisas = [`${limpo} incategory:Quality_images`, `${limpo} filetype:bitmap`];
+  type Pagina = {title: string; index?: number; imageinfo?: {thumburl?: string; width?: number; height?: number; mime?: string; extmetadata?: Record<string, {value?: string}>}[]};
+  const resultados = await Promise.allSettled(pesquisas.map(async pesquisa => {
+    const url = new URL("https://commons.wikimedia.org/w/api.php");
+    url.search = new URLSearchParams({action: "query", format: "json", generator: "search", gsrsearch: pesquisa, gsrnamespace: "6", gsrlimit: "30",
+      prop: "imageinfo", iiprop: "url|size|mime|extmetadata", iiurlwidth: "1600", iiextmetadatafilter: "LicenseShortName|Artist|DateTimeOriginal"}).toString();
+    const r = await fetch(url, {headers: {"User-Agent": AGENTE}, signal: AbortSignal.timeout(15_000)});
+    if (!r.ok) return [];
+    const corpo = await r.json() as {query?: {pages?: Record<string, Pagina>}};
+    return Object.values(corpo.query?.pages ?? {}).sort((a, b) => (a.index ?? 999) - (b.index ?? 999));
+  }));
+  const excluir = /map|mapa|flag|coat.of.arms|logo|locator|diagram|plan\b|satellite|ISS |landsat|sentinel|nasa|astronaut|from space|stamp|seal|portrait|document|scan|drawing|engraving|painting|sign\b|\d{3,4}s?\b.*(19[0-5]\d)/i;
+  const fotos = resultados.flatMap(r => r.status === "fulfilled" ? r.value : []).flatMap(p => {
+    const i = p.imageinfo?.[0], licenca = limparHTML(i?.extmetadata?.LicenseShortName?.value);
+    if (!i?.thumburl || !FOTO_WIKIMEDIA.test(i.thumburl) || i.mime !== "image/jpeg") return [];
+    if (!/^(CC0|Public domain|PD|CC BY(-SA)? [234]\.0|CC BY(-SA)? 2\.5)/i.test(licenca)) return [];
+    if ((i.width ?? 0) < 1400 || (i.width ?? 0) < (i.height ?? 0)) return [];
+    const ano = Number(limparHTML(i.extmetadata?.DateTimeOriginal?.value).match(/(19|20)\d{2}/)?.[0] ?? 0);
+    if (ano && ano < 1990) return [];
+    const titulo = p.title.replace(/^File:/, "").replace(/\.[a-z]+$/i, "");
+    if (excluir.test(titulo)) return [];
+    const autor = limparHTML(i.extmetadata?.Artist?.value).slice(0, 60) || "Wikimedia Commons";
+    return [{titulo, url: i.thumburl, credito: `${autor} · ${licenca} · Wikimedia Commons`}];
+  });
+  return [...new Map(fotos.map(f => [f.url, f])).values()].sort((a, b) => pontuacaoFoto(b.titulo) - pontuacaoFoto(a.titulo)).slice(0, quantas);
+}
+
+/** Paisagens e vistas primeiro; pormenores (plantas, estradas, azulejos, interiores) para o fim. */
+function pontuacaoFoto(titulo: string): number {
+  return (/vista|view|panorama|miradouro|mirador|viewpoint|beach|praia|playa|skyline|coast|costa|bay|ba[ií]a|sunset|p[oô]r do sol|landscape|paisagem/i.test(titulo) ? 2 : 0)
+    - (/echium|capsicum|flower|flor\b|plant|insect|road|estrada|interior|detail|pormenor|azulejo|tile|door|porta|window|janela/i.test(titulo) ? 2 : 0);
+}
+
+async function imagemDe(foto: FotoPlanner | null): Promise<Image | null> {
+  if (!foto) return null;
+  try {
+    let bytes: Buffer;
+    if (foto.url.startsWith("data:image/jpeg;base64,")) bytes = Buffer.from(foto.url.split(",", 2)[1]!, "base64");
+    else {
+      const u = new URL(foto.url);
+      if (u.protocol !== "https:" || !["upload.wikimedia.org", "thumb.wikimedia.org"].includes(u.hostname) || u.username || u.password || u.port) return null;
+      const r = await fetch(u, {headers: {"User-Agent": AGENTE}, redirect: "error", signal: AbortSignal.timeout(20_000)});
+      if (!r.ok || !/^image\/(jpeg|png|webp)/.test(r.headers.get("Content-Type") ?? "")) return null;
+      bytes = Buffer.from(await r.arrayBuffer());
+      if (bytes.length > 10_000_000) return null;
+    }
+    const jpeg = await sharp(bytes, {limitInputPixels: 40_000_000}).rotate().resize({width: 1600, height: 1600, fit: "inside", withoutEnlargement: true}).jpeg({quality: 84}).toBuffer();
+    return await loadImage(jpeg);
+  } catch { return null; }
+}
+
+// ---------- IA ----------
+
+const numeroOuNulo = {type: ["number", "null"]};
 const esquemaRoteiro = {
-  type: "object", additionalProperties: false, required: ["dias", "dicas", "emergencia"],
+  type: "object", additionalProperties: false, required: ["dias", "dicas", "emergencia", "voos", "extras"],
   properties: {
-    dias: {type: "array", items: {type: "object", additionalProperties: false, required: ["titulo", "manha", "tarde", "noite"],
-      properties: {titulo: {type: "string"}, manha: {type: "string"}, tarde: {type: "string"}, noite: {type: "string"}}}},
+    dias: {type: "array", items: {type: "object", additionalProperties: false, required: ["titulo", "manha", "tarde", "noite", "local", "lat", "lng", "pesquisa"],
+      properties: {titulo: {type: "string"}, manha: {type: "string"}, tarde: {type: "string"}, noite: {type: "string"}, local: {type: "string"}, lat: numeroOuNulo, lng: numeroOuNulo, pesquisa: {type: "string"}}}},
     dicas: {type: "array", items: {type: "object", additionalProperties: false, required: ["tema", "titulo", "texto"],
       properties: {tema: {type: "string", enum: Object.keys(TEMAS_DICA)}, titulo: {type: "string"}, texto: {type: "string"}}}},
     emergencia: {type: "string"},
+    voos: {type: "array", items: {type: "object", additionalProperties: false,
+      required: ["sentido", "data", "numero", "companhia", "origem", "origemCidade", "origemLat", "origemLng", "destino", "destinoCidade", "destinoLat", "destinoLng", "partida", "chegada"],
+      properties: {sentido: {type: "string", enum: ["ida", "volta"]}, data: {type: "string"}, numero: {type: "string"}, companhia: {type: "string"},
+        origem: {type: "string"}, origemCidade: {type: "string"}, origemLat: numeroOuNulo, origemLng: numeroOuNulo,
+        destino: {type: "string"}, destinoCidade: {type: "string"}, destinoLat: numeroOuNulo, destinoLng: numeroOuNulo, partida: {type: "string"}, chegada: {type: "string"}}}},
+    extras: {type: "object", additionalProperties: false, required: ["destinoLat", "destinoLng", "clima", "fuso", "moeda", "lingua", "tomada"],
+      properties: {destinoLat: numeroOuNulo, destinoLng: numeroOuNulo, fuso: numeroOuNulo, moeda: {type: "string"}, lingua: {type: "string"}, tomada: {type: "string"},
+        clima: {type: "array", items: {type: "object", additionalProperties: false, required: ["max", "min"], properties: {max: {type: "number"}, min: {type: "number"}}}}}},
   },
 };
 
-/** A IA propõe o roteiro dia a dia e as dicas; o consultor edita tudo depois. */
-export async function gerarRoteiroPlanner(email: string, valor: unknown): Promise<{dias: DiaPlanner[]; dicas: DicaPlanner[]; emergencia: string}> {
+export interface RoteiroGerado { dias: DiaPlanner[]; dicas: DicaPlanner[]; emergencia: string; voos: VooPlanner[]; extras: ExtrasPlanner; foto: FotoPlanner | null }
+
+/** A IA propõe o roteiro, as dicas e os dados para mapas e gráficos; o consultor edita tudo depois. */
+export async function gerarRoteiroPlanner(email: string, valor: unknown): Promise<RoteiroGerado> {
   const p = validarPlanner(valor);
   if (!p.viagem.destino) throw new ErroPlanner("Indica o destino antes de gerar o roteiro.");
   const total = diasDaViagem(p.viagem.ida, p.viagem.regresso);
@@ -71,237 +152,63 @@ export async function gerarRoteiroPlanner(email: string, valor: unknown): Promis
   const contexto = [
     `Destino: ${p.viagem.destino}`, `Partida de: ${p.viagem.partida || "não indicado"}`,
     `Datas: ${p.viagem.ida} a ${p.viagem.regresso} (${total} dias, o dia 1 é o da chegada e o dia ${total} é o do regresso)`,
-    `Voos: ${p.viagem.voo || "não indicado"}`, `Hotel: ${[p.viagem.hotel, p.viagem.regime].filter(Boolean).join(", ") || "não indicado"}`,
+    `Voos (texto da proposta): ${p.viagem.voo || "não indicado"}`, `Hotel: ${[p.viagem.hotel, p.viagem.regime].filter(Boolean).join(", ") || "não indicado"}`,
     `Transfer: ${p.viagem.transfer || "não indicado"}`, `Viajantes: ${p.viagem.viajantes ?? "não indicado"}`,
     `Tipo de viagem: ${p.perfil.tipo || "não indicado"}`, `Interesses: ${p.perfil.interesses.join(", ") || "não indicados"}`,
     `Ritmo: ${ritmo}`, `Notas do consultor: ${p.perfil.notas || "nenhuma"}`,
   ].join("\n");
-  const resposta = await chamarIAReservas(email, `És um consultor de viagens português a preparar o travel planner que o cliente recebe depois de reservar. Escreve em português de Portugal, tom caloroso e prático, tratando o cliente por "vocês".
-JSON {"dias":[{"titulo":"","manha":"","tarde":"","noite":""}],"dicas":[{"tema":"","titulo":"","texto":""}],"emergencia":""}.
-- dias: exatamente ${total} entradas, uma por dia, por ordem. titulo curto (ex.: "Chegada e primeiro passeio"). manha/tarde/noite com 1 a 3 frases cada. Tem em conta os horários dos voos e o tempo de transfer no primeiro e no último dia; usa o regime do hotel (ex.: tudo incluído → refeições no hotel). Ajusta ao tipo de viagem, interesses e ritmo. Deixa tempo livre num ritmo calmo.
-- Sugere atrações e zonas conhecidas e estáveis. Não inventes preços, horários, nomes de guias, nem serviços incluídos na reserva. Para restaurantes, sugere o tipo de cozinha e a zona, ou só lugares muito conhecidos.
-- dicas: uma por tema, para os temas documentos, saude, moeda, clima, tomadas, fuso, mala, gorjetas e transportes (pode acrescentar "outro"). Para documentos, saude e emergencia diz o que costuma ser exigido para cidadãos portugueses, sem certezas absolutas — o consultor vai confirmar.
-- emergencia: números de emergência do destino e onde fica a representação diplomática portuguesa mais próxima, em 2 a 4 linhas.`,
-    [{type: "input_text", text: contexto}], 9000, esquemaRoteiro);
-  if (!Array.isArray(resposta.dias) || !resposta.dias.length) throw new ErroPlanner("A IA não devolveu um roteiro utilizável. Tenta novamente.", 502);
-  const dias = resposta.dias.slice(0, total).map(validarDia);
-  while (dias.length < total) dias.push({titulo: "", manha: "", tarde: "", noite: ""});
-  const dicas = Array.isArray(resposta.dicas) ? resposta.dicas.slice(0, 12).map(d => validarDica({...(d as object), confirmado: false})) : [];
-  return {dias, dicas, emergencia: typeof resposta.emergencia === "string" ? resposta.emergencia.trim().slice(0, 1000) : ""};
+  const r = await chamarIAReservas(email, `És um consultor de viagens português a preparar o travel planner que o cliente recebe depois de reservar. Escreve em português de Portugal, tom caloroso e prático, tratando o cliente por "vocês".
+Devolve JSON com dias, dicas, emergencia, voos e extras.
+- dias: exatamente ${total} entradas, uma por dia, por ordem. titulo curto e apelativo (ex.: "Chegada e primeiro mergulho"). manha/tarde/noite com 1 a 2 frases cada. Tem em conta os horários dos voos e o transfer no primeiro e no último dia; usa o regime do hotel. Ajusta ao tipo de viagem, interesses e ritmo; num ritmo calmo deixa tempo livre.
+  local: o lugar principal do dia (ex.: "Cabo Girão"); lat/lng: as suas coordenadas decimais; pesquisa: termo curto em inglês para encontrar uma fotografia bonita desse lugar no Wikimedia Commons (ex.: "Cabo Girão Madeira").
+- Sugere atrações e zonas conhecidas e estáveis. Não inventes preços, horários de atrações, nomes de guias, nem serviços incluídos na reserva. Para restaurantes, sugere o tipo de cozinha e a zona, ou só lugares muito conhecidos.
+- dicas: uma por tema, para documentos, saude, moeda, clima, tomadas, fuso, mala, gorjetas e transportes. 2 a 3 frases cada. Para documentos e saude diz o que costuma ser exigido a cidadãos portugueses, sem certezas absolutas — o consultor vai confirmar.
+- emergencia: números de emergência do destino e a representação diplomática portuguesa mais próxima, em 2 a 4 linhas.
+- voos: um elemento por troço de voo que esteja no texto da proposta (ida e volta, incluindo escalas), com os códigos IATA dos aeroportos, cidade, coordenadas do aeroporto, número do voo, companhia, data YYYY-MM-DD e horas HH:MM. Se faltar um dado no texto, deixa vazio (não inventes números de voo nem horas). Se não houver texto de voos, devolve os troços prováveis entre a partida e o destino só com aeroportos e cidades.
+- extras: coordenadas do destino, temperaturas médias máxima e mínima de cada mês de janeiro a dezembro (12 entradas, °C), diferença horária em horas em relação a Lisboa na data da viagem, moeda (nome e código), língua, tipo de tomada e voltagem.`,
+    [{type: "input_text", text: contexto}], 14000, esquemaRoteiro);
+  if (!Array.isArray(r.dias) || !r.dias.length) throw new ErroPlanner("A IA não devolveu um roteiro utilizável. Tenta novamente.", 502);
+  const dias = r.dias.slice(0, total).map(validarDia);
+  while (dias.length < total) dias.push(validarDia({}));
+  const dicas = Array.isArray(r.dicas) ? r.dicas.slice(0, 12).map(d => validarDica({...(d as object), confirmado: false})) : [];
+  const voos = Array.isArray(r.voos) ? r.voos.slice(0, 6).map(validarVoo) : [];
+  const extras = validarExtras(r.extras);
+
+  // Uma fotografia por dia e uma para a capa, já escolhidas; o consultor pode trocar.
+  const usadas = new Set<string>();
+  const destinoCurto = p.viagem.destino.split(",")[0]!.trim();
+  const doDestino = await procurarFotos(destinoCurto, 12).catch(() => []);
+  // Sem uma boa fotografia do local, usa uma vista do destino ainda não usada.
+  const escolher = async (termo: string) => {
+    const fotos = termo === destinoCurto ? doDestino : await procurarFotos(termo, 8).catch(() => []);
+    const f = fotos.find(x => !usadas.has(x.url) && pontuacaoFoto(x.titulo) >= 0) ?? doDestino.find(x => !usadas.has(x.url) && pontuacaoFoto(x.titulo) >= 0);
+    if (f) usadas.add(f.url);
+    return f ? {url: f.url, credito: f.credito} : null;
+  };
+  const foto = p.foto ?? await escolher(destinoCurto);
+  for (const dia of dias) dia.foto ??= await escolher(dia.pesquisa || dia.local || destinoCurto);
+  return {dias, dicas, emergencia: typeof r.emergencia === "string" ? r.emergencia.trim().slice(0, 1000) : "", voos, extras, foto};
 }
 
 // ---------- PDF ----------
 
-const A4 = {w: 595.28, h: 841.89};
-const MARGEM = 48;
-const OLIVA = rgb(0x4b / 255, 0x53 / 255, 0x20 / 255), PRETO = rgb(0, 0, 0), BRANCO = rgb(1, 1, 1);
-const CINZA = rgb(0x6b / 255, 0x6a / 255, 0x63 / 255), CREME = rgb(0xf5 / 255, 0xf6 / 255, 0xef / 255), LINHA = rgb(0xd8 / 255, 0xdd / 255, 0xc5 / 255);
-const CORAL = rgb(0xff / 255, 0x6b / 255, 0x4a / 255), ARDOSIA = rgb(0x34 / 255, 0x41 / 255, 0x53 / 255);
-
-// As fontes base do PDF só conhecem o alfabeto latino (WinAnsi).
-const EXTRA_WINANSI = new Set("€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ");
-function limpo(t: string): string {
-  return t.replace(/[‐-‒]/g, "-").replace(/ | /g, " ").replace(/[→➔]/g, "->")
-    .split("").filter(c => c === "\n" || (c >= " " && c <= "~") || (c >= " " && c <= "ÿ") || EXTRA_WINANSI.has(c)).join("");
-}
-
-function quebrar(texto: string, fonte: PDFFont, tamanho: number, largura: number): string[] {
-  const linhas: string[] = [];
-  for (const paragrafo of limpo(texto).split("\n")) {
-    let linha = "";
-    for (const palavra of paragrafo.split(/\s+/).filter(Boolean)) {
-      const tentativa = linha ? `${linha} ${palavra}` : palavra;
-      if (fonte.widthOfTextAtSize(tentativa, tamanho) <= largura || !linha) linha = tentativa;
-      else { linhas.push(linha); linha = palavra; }
-    }
-    linhas.push(linha);
-  }
-  return linhas;
-}
-
-interface Tema { titulo: PDFFont; texto: PDFFont; negrito: PDFFont; capaFundo: RGB; capaTexto: RGB; destaque: RGB; cartao: RGB | null; faixa: boolean }
-
-class Paginador {
-  pagina!: PDFPage;
-  y = 0;
-  numero = 0;
-  constructor(private pdf: PDFDocument, private tema: Tema, private rodape: string) {}
-  nova() {
-    this.pagina = this.pdf.addPage([A4.w, A4.h]);
-    this.numero += 1;
-    this.y = A4.h - MARGEM;
-    this.pagina.drawText(limpo(this.rodape), {x: MARGEM, y: 24, size: 8, font: this.tema.texto, color: CINZA});
-    const n = String(this.numero);
-    this.pagina.drawText(n, {x: A4.w - MARGEM - this.tema.texto.widthOfTextAtSize(n, 8), y: 24, size: 8, font: this.tema.texto, color: CINZA});
-  }
-  garantir(altura: number) { if (this.y - altura < 56) this.nova(); }
-  titulo(texto: string) {
-    this.garantir(60);
-    const t = limpo(texto);
-    if (this.tema.faixa) {
-      this.pagina.drawRectangle({x: MARGEM, y: this.y - 30, width: A4.w - 2 * MARGEM, height: 30, color: PRETO});
-      this.pagina.drawText(t.toUpperCase(), {x: MARGEM + 12, y: this.y - 20, size: 13, font: this.tema.titulo, color: BRANCO});
-      this.y -= 46;
-    } else {
-      this.pagina.drawText(t, {x: MARGEM, y: this.y - 20, size: 20, font: this.tema.titulo, color: PRETO});
-      this.pagina.drawRectangle({x: MARGEM, y: this.y - 30, width: 40, height: 2.5, color: this.tema.destaque});
-      this.y -= 46;
-    }
-  }
-  /** Bloco com subtítulo e texto; o fundo de cartão acompanha o bloco quando o estilo o pede. */
-  bloco(subtitulo: string, texto: string, opcoes: {etiqueta?: string} = {}) {
-    const largura = A4.w - 2 * MARGEM - (this.tema.cartao ? 24 : 0);
-    const linhas = texto.trim() ? quebrar(texto, this.tema.texto, 10.5, largura) : [];
-    const altura = 18 + linhas.length * 14.5 + (this.tema.cartao ? 20 : 8);
-    if (altura < 700) this.garantir(altura);
-    const x = MARGEM + (this.tema.cartao ? 12 : 0);
-    if (this.tema.cartao && altura < 700) this.pagina.drawRectangle({x: MARGEM, y: this.y - altura + 6, width: A4.w - 2 * MARGEM, height: altura - 4, color: this.tema.cartao});
-    if (this.tema.cartao) this.y -= 10;
-    this.pagina.drawText(limpo(subtitulo), {x, y: this.y - 12, size: 11.5, font: this.tema.negrito, color: this.tema.destaque});
-    if (opcoes.etiqueta) {
-      const w = this.tema.negrito.widthOfTextAtSize(opcoes.etiqueta, 8);
-      this.pagina.drawText(limpo(opcoes.etiqueta), {x: A4.w - MARGEM - (this.tema.cartao ? 12 : 0) - w, y: this.y - 11, size: 8, font: this.tema.negrito, color: CINZA});
-    }
-    this.y -= 18;
-    for (const linha of linhas) {
-      this.garantir(15);
-      this.pagina.drawText(linha, {x, y: this.y - 11, size: 10.5, font: this.tema.texto, color: PRETO, lineHeight: 14.5});
-      this.y -= 14.5;
-    }
-    this.y -= this.tema.cartao ? 16 : 10;
-  }
-}
-
-async function fotoJPEG(url: string): Promise<Uint8Array | null> {
-  try {
-    const u = new URL(url);
-    if (u.protocol !== "https:" || u.hostname !== "upload.wikimedia.org" || u.username || u.password || u.port) return null;
-    const r = await fetch(u, {headers: {"User-Agent": "ReservasConsultor/1.0 (travel planner)"}, redirect: "error", signal: AbortSignal.timeout(20_000)});
-    if (!r.ok || !/^image\/(jpeg|png|webp)/.test(r.headers.get("Content-Type") ?? "")) return null;
-    const bytes = Buffer.from(await r.arrayBuffer());
-    if (bytes.length > 8_000_000) return null;
-    return new Uint8Array(await sharp(bytes, {limitInputPixels: 30_000_000}).rotate().resize({width: 1400, height: 1400, fit: "inside", withoutEnlargement: true}).jpeg({quality: 78}).toBuffer());
-  } catch { return null; }
-}
-
-async function logotipo(origem: string): Promise<Uint8Array | null> {
-  try {
-    const r = await fetch(new URL("/icligo-logo.png", origem), {signal: AbortSignal.timeout(10_000)});
-    return r.ok ? new Uint8Array(await r.arrayBuffer()) : null;
-  } catch { return null; }
-}
-
-function desenharMarca(pagina: PDFPage, x: number, y: number, logo: PDFImage | null, negrito: PDFFont, texto: PDFFont, clara: boolean) {
-  let tx = x;
-  if (logo) { pagina.drawImage(logo, {x, y: y - 4, width: 26, height: 26 * logo.height / logo.width}); tx += 32; }
-  pagina.drawText("icligo", {x: tx, y: y + 8, size: 15, font: negrito, color: clara ? BRANCO : CORAL});
-  pagina.drawText("travel partners", {x: tx, y: y - 3, size: 7.5, font: texto, color: clara ? BRANCO : ARDOSIA});
-}
-
-export async function pdfPlanner(email: string, id: unknown, origem: string): Promise<{bytes: Uint8Array; nome: string}> {
+/** Cada página é desenhada como imagem A4 e o PDF junta-as. */
+export async function pdfPlanner(email: string, id: unknown): Promise<{bytes: Uint8Array; nome: string}> {
   const p = await abrirPlanner(email, id);
   const pendentes = pendentesPlanner(p);
   if (pendentes.length) throw new ErroPlanner(`Antes de descarregar, confirma: ${pendentes.join(", ")}.`, 409);
   if (!p.viagem.destino) throw new ErroPlanner("Indica o destino da viagem.");
   const membro = await buscarMembroEquipa(email);
+  const [capa, hotel, ...dias] = await Promise.all([imagemDe(p.foto), imagemDe(p.fotoHotel), ...p.dias.map(d => imagemDe(d.foto))]);
+  const paginas = await desenharPlanner({p, consultor: membro ? {nome: membro.nome, email} : null, imagens: {capa, hotel, dias}});
 
   const pdf = await PDFDocument.create();
-  pdf.setTitle(limpo(p.nome)); pdf.setAuthor("iCliGo travel partners"); pdf.setLanguage("pt-PT");
-  const serif = p.estilo === "classico";
-  const tema: Tema = {
-    titulo: await pdf.embedFont(serif ? StandardFonts.TimesRomanBold : StandardFonts.HelveticaBold),
-    texto: await pdf.embedFont(StandardFonts.Helvetica),
-    negrito: await pdf.embedFont(StandardFonts.HelveticaBold),
-    capaFundo: p.estilo === "moderno" ? PRETO : p.estilo === "natural" ? OLIVA : BRANCO,
-    capaTexto: p.estilo === "classico" ? PRETO : BRANCO,
-    destaque: OLIVA,
-    cartao: p.estilo === "natural" ? CREME : null,
-    faixa: p.estilo === "moderno",
-  };
-  const [fotoBytes, logoBytes] = await Promise.all([p.foto ? fotoJPEG(p.foto.url) : null, logotipo(origem)]);
-  const foto = fotoBytes ? await pdf.embedJpg(fotoBytes) : null;
-  const logo = logoBytes ? await pdf.embedPng(logoBytes).catch(() => null) : null;
-
-  // Capa
-  const capa = pdf.addPage([A4.w, A4.h]);
-  capa.drawRectangle({x: 0, y: 0, width: A4.w, height: A4.h, color: tema.capaFundo});
-  const alturaFoto = A4.h * 0.58;
-  if (foto) {
-    // Preenche a área da foto mantendo a proporção (recorta o excesso).
-    const escala = Math.max(A4.w / foto.width, alturaFoto / foto.height);
-    const w = foto.width * escala, h = foto.height * escala;
-    const inset = p.estilo === "classico" ? MARGEM : 0;
-    if (inset) {
-      const escalaI = Math.max((A4.w - 2 * inset) / foto.width, (alturaFoto - inset) / foto.height);
-      const wi = foto.width * escalaI, hi = foto.height * escalaI;
-      capa.drawImage(foto, {x: inset - (wi - (A4.w - 2 * inset)) / 2, y: A4.h - inset - hi + (hi - (alturaFoto - inset)) / 2, width: wi, height: hi});
-      // Tapa o que sai da moldura com a cor da capa.
-      capa.drawRectangle({x: 0, y: A4.h - inset, width: A4.w, height: inset, color: tema.capaFundo});
-      capa.drawRectangle({x: 0, y: 0, width: A4.w, height: A4.h - alturaFoto, color: tema.capaFundo});
-      capa.drawRectangle({x: 0, y: 0, width: inset, height: A4.h, color: tema.capaFundo});
-      capa.drawRectangle({x: A4.w - inset, y: 0, width: inset, height: A4.h, color: tema.capaFundo});
-    } else {
-      capa.drawImage(foto, {x: (A4.w - w) / 2, y: A4.h - alturaFoto - (h - alturaFoto) / 2, width: w, height: h});
-      capa.drawRectangle({x: 0, y: 0, width: A4.w, height: A4.h - alturaFoto, color: tema.capaFundo});
-    }
+  pdf.setTitle(`${p.viagem.destino} · Travel planner`); pdf.setAuthor("iCliGo travel partners"); pdf.setLanguage("pt-PT");
+  for (const jpeg of paginas) {
+    const imagem = await pdf.embedJpg(jpeg);
+    const pagina = pdf.addPage([595.28, 841.89]);
+    pagina.drawImage(imagem, {x: 0, y: 0, width: 595.28, height: 841.89});
   }
-  let y = A4.h - alturaFoto - 56;
-  capa.drawText("O VOSSO TRAVEL PLANNER", {x: MARGEM, y, size: 10, font: tema.negrito, color: p.estilo === "classico" ? OLIVA : tema.capaTexto});
-  y -= 44;
-  for (const linha of quebrar(p.viagem.destino, tema.titulo, 38, A4.w - 2 * MARGEM).slice(0, 2)) {
-    capa.drawText(linha, {x: MARGEM, y, size: 38, font: tema.titulo, color: tema.capaTexto}); y -= 44;
-  }
-  const datas = p.viagem.ida && p.viagem.regresso ? `${dataPlanner(p.viagem.ida)} - ${dataPlanner(p.viagem.regresso)}` : "";
-  if (datas) { capa.drawText(limpo(datas), {x: MARGEM, y, size: 13, font: tema.texto, color: tema.capaTexto}); y -= 20; }
-  const subtitulo = [p.perfil.tipo, p.viagem.viajantes ? `${p.viagem.viajantes} viajante${p.viagem.viajantes > 1 ? "s" : ""}` : ""].filter(Boolean).join(" · ");
-  if (subtitulo) capa.drawText(limpo(subtitulo), {x: MARGEM, y, size: 11, font: tema.texto, color: tema.capaTexto});
-  desenharMarca(capa, MARGEM, 58, logo, tema.negrito, tema.texto, p.estilo !== "classico");
-  if (membro) {
-    const consultor = limpo(`Preparado por ${membro.nome}`);
-    capa.drawText(consultor, {x: A4.w - MARGEM - tema.texto.widthOfTextAtSize(consultor, 9), y: 64, size: 9, font: tema.texto, color: tema.capaTexto});
-  }
-  if (p.foto?.credito) capa.drawText(limpo(`Fotografia: ${p.foto.credito}`).slice(0, 110), {x: MARGEM, y: 26, size: 6.5, font: tema.texto, color: p.estilo === "classico" ? CINZA : tema.capaTexto});
-
-  const pag = new Paginador(pdf, tema, `${p.viagem.destino} · travel planner iCliGo`);
-  pag.numero = 1;
-
-  // Resumo
-  pag.nova();
-  pag.titulo("A vossa viagem");
-  const v = p.viagem;
-  const resumo: [string, string][] = [
-    ["Datas", datas], ["Partida", v.partida], ["Voos", v.voo], ["Bagagem", v.bagagem],
-    ["Alojamento", [v.hotel, v.quarto, v.regime].filter(Boolean).join("\n")], ["Transfer", v.transfer],
-    ["Viajantes", v.viajantes ? String(v.viajantes) : ""],
-  ];
-  for (const [rotulo, valor] of resumo) if (valor.trim()) pag.bloco(rotulo, valor);
-
-  // Roteiro
-  if (p.dias.some(d => d.titulo || d.manha || d.tarde || d.noite)) {
-    pag.nova();
-    pag.titulo("Roteiro dia a dia");
-    p.dias.forEach((d, i) => {
-      const data = v.ida ? dataPlanner(new Date(Date.parse(`${v.ida}T12:00:00Z`) + i * 86_400_000).toISOString().slice(0, 10), {weekday: "long", day: "numeric", month: "long"}) : "";
-      const corpo = [d.manha && `Manhã: ${d.manha}`, d.tarde && `Tarde: ${d.tarde}`, d.noite && `Noite: ${d.noite}`].filter(Boolean).join("\n");
-      pag.bloco(`Dia ${i + 1}${d.titulo ? ` · ${d.titulo}` : ""}`, corpo, {etiqueta: data});
-    });
-  }
-
-  // Dicas
-  if (p.dicas.some(d => d.texto)) {
-    pag.nova();
-    pag.titulo("Dicas para a viagem");
-    for (const d of p.dicas) if (d.texto) pag.bloco(d.titulo, d.texto);
-  }
-
-  // Contactos
-  pag.nova();
-  pag.titulo("Contactos e emergência");
-  if (membro) pag.bloco("O vosso consultor", `${membro.nome}\n${email}`);
-  if (v.hotel) pag.bloco("Alojamento", v.hotel);
-  if (p.emergencia.texto) pag.bloco("Emergência no destino", p.emergencia.texto);
-  pag.bloco("Antes de partir", "Confirmem os requisitos de entrada, vistos e vacinas junto das autoridades competentes e da embaixada do país de destino. Levem cópia dos documentos de viagem e do seguro.");
-
   const nome = `${p.viagem.destino.normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "viagem"}-travel-planner.pdf`;
   return {bytes: await pdf.save(), nome};
 }
