@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { aPartirDoModeloReserva, CAMPOS_RESERVA, ICONES_RESERVA, dadosReservaVazios, dimensoesReserva, elementoReserva, espacoFotoReserva, hotelVazio, manterFotografiasReserva, novoMaterialReserva, precoPessoaReserva, prepararModeloReserva, validarMaterialReserva, type CampoReserva, type DadosReserva, type ElementoReserva, type FormatoReserva, type HotelReserva, type MaterialReserva, type ResumoReserva } from "@/lib/reservas";
 import { comprimirImagemReserva, desenharReserva, pngReserva, prepararBaseReserva } from "@/lib/reservas-canvas";
 import { CriarReservaOrcamento } from "./reservas-orcamento";
+import { AjustesReserva } from "./reservas-ajustes";
+import { FONTES_RESERVA } from "@/lib/reservas-fontes";
 import { legendaMaterialReserva, novoModeloBaseReserva } from "@/lib/reservas-modelos";
 import css from "./reservas.module.css";
 
@@ -39,11 +41,13 @@ export function ReservasNovaArea({email}: {email: string}) {
   const [modoBase,setModoBase]=useState(false),[guiaSobreposta,setGuiaSobreposta]=useState(false);
   const [modeloParaUsar,setModeloParaUsar]=useState<{id:string;material:MaterialReserva}|null>(null);
   const [erroPreview, setErroPreview] = useState("");
+  const [podeDesfazer,setPodeDesfazer]=useState(false);
+  const anteriores=useRef<MaterialReserva[]>([]);
   const canvas = useRef<HTMLCanvasElement>(null);
   const referenciaInput = useRef<HTMLInputElement>(null), pdfInput = useRef<HTMLInputElement>(null), fotoInput = useRef<HTMLInputElement>(null);
   const fotoDestino = useRef<string | null>(null);
   const baseInput=useRef<HTMLInputElement>(null),guiaInput=useRef<HTMLInputElement>(null);
-  const arrasto=useRef<{id:string;x:number;y:number;inicioX:number;inicioY:number;w:number;h:number}|null>(null);
+  const arrasto=useRef<{id:string;x:number;y:number;inicioX:number;inicioY:number;w:number;h:number;redimensionar?:boolean;tamanho:number;antes:MaterialReserva;guardou:boolean}|null>(null);
   const previewSequencia = useRef(0);
 
   async function pedir<T>(acao: string, extra: Record<string, unknown> = {}): Promise<T> {
@@ -78,7 +82,10 @@ export function ReservasNovaArea({email}: {email: string}) {
     window.addEventListener("beforeunload", proteger); return () => window.removeEventListener("beforeunload", proteger);
   }, [alterado]);
 
-  function atualizar(alterar: (m: MaterialReserva) => MaterialReserva) {setMaterial(alterar); setAlterado(true); setRevisado(false); setMensagem("");}
+  function lembrar(m:MaterialReserva){if(anteriores.current.at(-1)!==m)anteriores.current=[...anteriores.current.slice(-29),m];setPodeDesfazer(true);}
+  function limparDesfazer(){anteriores.current=[];setPodeDesfazer(false);arrasto.current=null;}
+  function desfazer(){const m=anteriores.current.pop();if(m){setMaterial(m);setAlterado(true);setRevisado(false);setMensagem("");setSelecionado(id=>m.elementos.some(e=>e.id===id)?id:null);}setPodeDesfazer(anteriores.current.length>0);}
+  function atualizar(alterar: (m: MaterialReserva) => MaterialReserva,guardar=true) {if(guardar)lembrar(material);setMaterial(alterar); setAlterado(true); setRevisado(false); setMensagem("");}
   function dados<K extends keyof DadosReserva>(chave: K, valor: DadosReserva[K]) {atualizar(m => ({...m, dados: {...m.dados, [chave]: valor}}));}
   function hotel<K extends keyof HotelReserva>(i: number, chave: K, valor: HotelReserva[K]) {atualizar(m => ({...m, dados: {...m.dados, hoteis: m.dados.hoteis.map((h, n) => n === i ? {...h, [chave]: valor} : h)}}));}
   function elemento(patch: Partial<ElementoReserva>) {atualizar(m => ({...m, elementos: m.elementos.map(e => {
@@ -92,9 +99,10 @@ export function ReservasNovaArea({email}: {email: string}) {
     try {await acao();} catch (e) {setErro(e instanceof Error ? e.message : "Não foi possível concluir o pedido.");} finally {setOcupado("");}
   }
   function podeSubstituir() {return !alterado || window.confirm("Tens alterações por guardar. Queres abrir outro material e descartar essas alterações?");}
-  function novo() {if (!podeSubstituir()) return; setModoBase(false);setGuiaSobreposta(false);setCompararReferencia(false);setMaterial(novoMaterialReserva(material.formato)); setResultadoSimples(false); setRegisto(null); setSelecionado(null); setAlterado(false); setRevisado(false); setAvisos([]); setImportadas([]); setFotografias([]); setErro(""); setMensagem(""); setAba("criar");}
+  function novo() {if (!podeSubstituir()) return; limparDesfazer(); setModoBase(false);setGuiaSobreposta(false);setCompararReferencia(false);setMaterial(novoMaterialReserva(material.formato)); setResultadoSimples(false); setRegisto(null); setSelecionado(null); setAlterado(false); setRevisado(false); setAvisos([]); setImportadas([]); setFotografias([]); setErro(""); setMensagem(""); setAba("criar");}
   function iniciarModeloBase() {
     if(!podeSubstituir())return;
+    limparDesfazer();
     setMaterial(novoModeloBaseReserva("story"));setModoBase(true);setResultadoSimples(false);setRegisto(null);setSelecionado(null);setAlterado(false);setRevisado(false);setCompararReferencia(false);setGuiaSobreposta(false);setAvisos([]);setImportadas([]);setFotografias([]);setErro("");setMensagem("");setAba("criar");
   }
   async function carregarBase(e:ChangeEvent<HTMLInputElement>) {
@@ -112,6 +120,7 @@ export function ReservasNovaArea({email}: {email: string}) {
   }
   function receberTemplate(m: MaterialReserva) {
     if (!podeSubstituir()) return;
+    limparDesfazer();
     setMaterial(m);setModoBase(!!m.baseFixa);setGuiaSobreposta(false); setRegisto(null); setSelecionado(null); setAlterado(true); setRevisado(false); setCompararReferencia(false); setResultadoSimples(true); setAba("criar"); setAvisos([]); setImportadas([]); setFotografias([]); setErro(""); setMensagem("Template criado a partir do orçamento. Revê o resultado antes de descarregar.");
   }
   async function carregarReferencia(e: ChangeEvent<HTMLInputElement>) {
@@ -125,7 +134,7 @@ export function ReservasNovaArea({email}: {email: string}) {
         setImportadas([material.dados]); setAvisos(["A nova referência tem menos espaços para hotéis. Escolhe abaixo quais as opções que queres colocar."]);
       }
       reconstruido.dados = {...material.dados, hoteis: Array.from({length: reconstruido.maxHoteis}, (_, i) => material.dados.hoteis[i] ?? hotelVazio())};
-      setMaterial(reconstruido); setRegisto(null); setSelecionado(null); setAlterado(true); setRevisado(false); setFotografias([]);
+      limparDesfazer(); setMaterial(reconstruido); setRegisto(null); setSelecionado(null); setAlterado(true); setRevisado(false); setFotografias([]);
       setMensagem(`Referência reconstruída. O modelo tem espaço para ${reconstruido.maxHoteis} ${reconstruido.maxHoteis === 1 ? "hotel" : "hotéis"}. Revê o desenho e ajusta os elementos.`);
     });
   }
@@ -135,7 +144,7 @@ export function ReservasNovaArea({email}: {email: string}) {
       const m = validarMaterialReserva(resposta.material); m.dados = {...material.dados, hoteis: Array.from({length: m.maxHoteis}, (_, i) => material.dados.hoteis[i] ?? hotelVazio())};
       m.elementos = manterFotografiasReserva(material.elementos, m.elementos);
       if (material.dados.hoteis.length > m.maxHoteis) {setImportadas([material.dados]); setAvisos(["A referência adaptada tem menos espaços. Escolhe as opções abaixo para manter todos os hotéis disponíveis."]);}
-      setMaterial(m); setSelecionado(null); setAlterado(true); setRevisado(false); setMensagem("Referência reanalisada. Compara a composição com a imagem original. As fotografias que carregaste foram mantidas.");
+      limparDesfazer(); setMaterial(m); setSelecionado(null); setAlterado(true); setRevisado(false); setMensagem("Referência reanalisada. Compara a composição com a imagem original. As fotografias que carregaste foram mantidas.");
     });
   }
   async function importarPDF(e: ChangeEvent<HTMLInputElement>) {
@@ -178,6 +187,7 @@ export function ReservasNovaArea({email}: {email: string}) {
     await executar("A abrir…", async () => {
       const r = await pedir<Registo>("abrir", {id: item.id}); const m = validarMaterialReserva(r.material);
       if(acao==="usar"&&m.baseFixa){setModeloParaUsar({id:r.id,material:m});setAba("orcamento");return;}
+      limparDesfazer();
       setModoBase(!!m.baseFixa);setGuiaSobreposta(false);setCompararReferencia(false);
       setMaterial(acao === "usar" ? aPartirDoModeloReserva(m) : acao === "duplicar" ? {...m, nome: `${m.nome.slice(0, 110)} — cópia`} : m);
       setRegisto(acao === "editar" ? {id: r.id, tipo: r.tipo} : null); setAlterado(acao !== "editar"); setRevisado(false); setResultadoSimples(false); setSelecionado(null); setImportadas([]); setAvisos([]); setFotografias([]); setTermoFoto(acao === "usar" ? "" : m.dados.destino); setAba("criar");
@@ -233,12 +243,21 @@ export function ReservasNovaArea({email}: {email: string}) {
     const r = e.currentTarget.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 100, y = (e.clientY - r.top) / r.height * 100;
     const encontrado = [...material.elementos].reverse().find(e => e.tipo !== "marca" && x >= e.x && x <= e.x + e.w && y >= e.y && y <= e.y + e.h);
     setSelecionado(encontrado?.id ?? null);
-    if(encontrado&&material.baseFixa){arrasto.current={id:encontrado.id,x:encontrado.x,y:encontrado.y,inicioX:e.clientX,inicioY:e.clientY,w:encontrado.w,h:encontrado.h};e.currentTarget.setPointerCapture(e.pointerId);}
+    if(encontrado){arrasto.current={id:encontrado.id,x:encontrado.x,y:encontrado.y,inicioX:e.clientX,inicioY:e.clientY,w:encontrado.w,h:encontrado.h,tamanho:encontrado.tamanho,antes:material,guardou:false};e.currentTarget.setPointerCapture(e.pointerId);}
   }
-  function moverCampo(e:React.PointerEvent<HTMLCanvasElement>) {
+  function redimensionarCampo(e:React.PointerEvent<HTMLButtonElement>){
+    const v=material.elementos.find(v=>v.id===selecionado);if(!v||v.tipo==="marca")return;
+    e.preventDefault();e.stopPropagation();arrasto.current={id:v.id,x:v.x,y:v.y,w:v.w,h:v.h,inicioX:e.clientX,inicioY:e.clientY,tamanho:v.tamanho,redimensionar:true,antes:material,guardou:false};e.currentTarget.setPointerCapture(e.pointerId);
+  }
+  function moverCampo(e:React.PointerEvent<HTMLElement>) {
     const a=arrasto.current;if(!a||ocupado)return;
-    const r=e.currentTarget.getBoundingClientRect(),x=Math.max(0,Math.min(100-a.w,a.x+(e.clientX-a.inicioX)/r.width*100)),y=Math.max(0,Math.min(100-a.h,a.y+(e.clientY-a.inicioY)/r.height*100));
-    atualizar(m=>({...m,elementos:m.elementos.map(v=>v.id===a.id?{...v,x,y}:v)}));
+    const r=canvas.current?.getBoundingClientRect();if(!r)return;
+    const dx=(e.clientX-a.inicioX)/r.width*100,dy=(e.clientY-a.inicioY)/r.height*100;
+    if(Math.abs(dx)+Math.abs(dy)<.05)return;
+    if(!a.guardou){lembrar(a.antes);a.guardou=true;}
+    const x=Math.max(0,Math.min(100-a.w,a.x+dx)),y=Math.max(0,Math.min(100-a.h,a.y+dy));
+    const w=Math.max(.5,Math.min(100-a.x,a.w+dx)),h=Math.max(.5,Math.min(100-a.y,a.h+dy));
+    atualizar(m=>({...m,elementos:m.elementos.map(v=>v.id!==a.id?v:a.redimensionar?{...v,w,h,...v.tipo==="texto"?{tamanho:Math.max(.5,Math.min(25,a.tamanho*Math.min(w/a.w,h/a.h)))}:{}}:{...v,x,y})}),false);
   }
   const atual = material.elementos.find(e => e.id === selecionado && e.tipo !== "marca");
   const numeroInput = (valor: string) => valor === "" ? null : Number(valor);
@@ -246,7 +265,7 @@ export function ReservasNovaArea({email}: {email: string}) {
   const registosAba = lista.filter(r => r.tipo === (aba === "modelos" ? "modelo" : "material"));
 
   return <section className={css.pagina} aria-label="Reservas e templates">
-    <header className={css.intro}><span>RESERVAS</span><h1>Do orçamento à publicação.</h1><p>Configura o teu template uma vez e preenche-o com os dados de cada orçamento.</p><button type="button" className={css.criarBase} disabled={!!ocupado} onClick={iniciarModeloBase}>Criar modelo do Canva</button></header>
+    <header className={css.intro}><span>RESERVAS</span><h1>Do orçamento à publicação.</h1><p>Carrega o orçamento, escolhe o teu modelo e ajusta o resultado com um clique.</p><button type="button" className={css.criarBase} disabled={!!ocupado} onClick={iniciarModeloBase}>Criar modelo do Canva</button></header>
     <div className={css.abas} role="tablist" aria-label="Reservas">{([['orcamento', 'Criar com orçamento'], ['criar', 'Editor de templates'], ['modelos', 'Os meus modelos'], ['historico', 'Histórico']] as const).map(([id, titulo]) => <button type="button" role="tab" aria-selected={aba === id} aria-controls="reservas-painel" key={id} disabled={!!ocupado} onClick={() => {setAba(id); if (id === "criar") setResultadoSimples(false);}}>{titulo}{(id === "modelos" || id === "historico") && <span>{lista.filter(r => r.tipo === (id === "modelos" ? "modelo" : "material")).length}</span>}</button>)}</div>
     <div aria-live="polite" className={css.mensagens}>{ocupado && <p role="status">{ocupado}</p>}{mensagem && <p className={css.sucesso}>{mensagem}</p>}{erro && <p role="alert" className={css.erro}>{erro}</p>}</div>
     <input ref={referenciaInput} className={css.inputOculto} type="file" accept="image/png,image/jpeg,image/webp" onChange={e => void carregarReferencia(e)} aria-label="Carregar referência" />
@@ -273,9 +292,9 @@ export function ReservasNovaArea({email}: {email: string}) {
         <aside className={css.preview} aria-label="Pré-visualização do material"><div className={css.previewTopo}><strong>Pré-visualização</strong><span>{dimensoes.largura} × {dimensoes.altura}</span></div>
           {material.referencia && <button type="button" aria-pressed={compararReferencia} onClick={() => setCompararReferencia(v => !v)}>{compararReferencia ? "Ver template criado" : "Comparar com a referência"}</button>}
           {material.baseFixa&&material.referencia&&!resultadoSimples&&<button type="button" aria-pressed={guiaSobreposta} onClick={()=>{setGuiaSobreposta(v=>!v);setCompararReferencia(false);}}>{guiaSobreposta?"Esconder guia sobreposta":"Sobrepor guia para alinhar"}</button>}
-          <div className={css.canvasWrap}><canvas ref={canvas} style={{display: compararReferencia && material.referencia ? "none" : undefined,touchAction:material.baseFixa&&!resultadoSimples?"none":undefined}} width={1080} height={dimensoes.altura} onPointerDown={resultadoSimples ? undefined : selecionarCanvas} onPointerMove={moverCampo} onPointerUp={()=>{arrasto.current=null;}} onPointerCancel={()=>{arrasto.current=null;}} aria-label="Pré-visualização. Usa a lista de elementos para selecionar e editar o desenho." />{compararReferencia && material.referencia && <img src={material.referencia} alt="Referência para comparar com o template criado" className={css.comparacao} />}{material.baseFixa&&material.referencia&&guiaSobreposta&&!resultadoSimples&&!compararReferencia&&<img className={css.guiaSobreposta} src={material.referencia} alt="Guia de alinhamento; não faz parte do PNG"/>}{atual && !resultadoSimples && !compararReferencia && <div className={css.selecao} style={{left: `${atual.x}%`, top: `${atual.y}%`, width: `${atual.w}%`, height: `${atual.h}%`}} />}</div>
+          <div className={css.canvasWrap}><canvas ref={canvas} style={{display: compararReferencia && material.referencia ? "none" : undefined,touchAction:selecionado?"none":"pan-y"}} width={1080} height={dimensoes.altura} onPointerDown={selecionarCanvas} onPointerMove={moverCampo} onPointerUp={()=>{arrasto.current=null;}} onPointerCancel={()=>{arrasto.current=null;}} aria-label="Template editável. Clica num texto ou imagem para ajustar." />{compararReferencia && material.referencia && <img src={material.referencia} alt="Referência para comparar com o template criado" className={css.comparacao} />}{material.baseFixa&&material.referencia&&guiaSobreposta&&!resultadoSimples&&!compararReferencia&&<img className={css.guiaSobreposta} src={material.referencia} alt="Guia de alinhamento; não faz parte do PNG"/>}{atual && !compararReferencia && <div className={css.selecao} style={{left: `${atual.x}%`, top: `${atual.y}%`, width: `${atual.w}%`, height: `${atual.h}%`}}><button type="button" className={css.redimensionar} aria-label="Redimensionar elemento" title="Arrasta para redimensionar" onPointerDown={redimensionarCampo} onPointerMove={moverCampo} onPointerUp={()=>{arrasto.current=null;}} onPointerCancel={()=>{arrasto.current=null;}}/></div>}</div>
           {erroPreview && <p className={css.erro} role="alert">{erroPreview}</p>}
-          <p className={css.nota}>{resultadoSimples ? "Revê os dados do orçamento e a fotografia antes de descarregar. Podes ajustar o template no editor." : material.baseFixa?"Arrasta os campos sobre a base. Na lista de elementos podes ajustar tamanho, fonte, cor e posição. As linhas de seleção e os exemplos vazios são só de edição.":"Clica num elemento da imagem ou escolhe-o na lista para editar. A marca iCliGo está protegida."}</p>
+          <p className={css.nota}>{resultadoSimples ? "Clica num texto para mudar a letra ou o conteúdo. Revê o resultado e descarrega." : material.baseFixa?"Clica e arrasta os campos. Usa o canto para redimensionar. As linhas de seleção não aparecem no PNG.":"Clica num elemento da imagem ou escolhe-o na lista para editar. A marca iCliGo está protegida."}</p>
           {material.referencia && !material.baseFixa && !resultadoSimples && <p className={css.nota}>Os campos ainda vazios mostram exemplos da referência apenas nesta pré-visualização. O PNG usa os dados da tua viagem.</p>}
           <label className={css.confirmar}><input type="checkbox" checked={revisado} onChange={e => setRevisado(e.target.checked)} />Confirmei os dados, os preços e o desenho.</label>
           <button className={css.primario} type="button" disabled={!revisado || !!erroPreview} onClick={() => void exportar()}>Descarregar PNG</button>
@@ -283,8 +302,11 @@ export function ReservasNovaArea({email}: {email: string}) {
           {material.baseFixa&&registo?.tipo==="modelo"&&!alterado&&<button type="button" onClick={()=>{setModeloParaUsar({id:registo.id,material:prepararModeloReserva(material)});setAba("orcamento");setMensagem("");}}>Usar este modelo com um orçamento</button>}
           <small>{alterado ? "Tens alterações por guardar." : registo ? "Guardado na tua conta." : "O teu material ainda não foi guardado."}</small>
         </aside>
-        {resultadoSimples && <div className={css.cartao}><span className={css.etiquetaPronto}>TEMPLATE CRIADO</span><h2>A tua viagem, pronta a divulgar.</h2><p className={css.nota}>A composição já utiliza os dados do orçamento que confirmaste.</p><dl className={css.dadosResultado}><div><dt>Destino</dt><dd>{material.dados.destino}</dd></div><div><dt>Hotel</dt><dd>{material.dados.hoteis[0]?.nome || "—"}</dd></div><div><dt>Regime</dt><dd>{material.dados.hoteis[0]?.regime || "—"}</dd></div><div><dt>Formato</dt><dd>{material.formato === "story" ? "Story · 1080 × 1920" : "Publicação · 1080 × 1350"}</dd></div></dl><div className={css.acoes}><button type="button" onClick={() => setResultadoSimples(false)}>Editar dados e desenho</button>{(!material.baseFixa||material.elementos.some(e=>e.tipo==="foto"))&&<button type="button" onClick={() => {fotoDestino.current=material.elementos.find(e=>e.tipo==="foto")?.id??null;fotoInput.current?.click();}}>Mudar fotografia</button>}</div><details className={css.servicosOrcamento}><summary>Texto para acompanhar a publicação</summary><p className={css.legendaPublicacao}>{legendaMaterialReserva(material)}</p><button type="button" onClick={() => void executar("A copiar o texto…",async()=>{await navigator.clipboard.writeText(legendaMaterialReserva(material));setMensagem("Texto da publicação copiado.");})}>Copiar texto</button></details><button type="button" className={css.botaoTexto} onClick={() => setAba("orcamento")}>Criar outro template com o orçamento</button></div>}
-        <div className={`${css.formulario} ${material.baseFixa?css.formularioBase:""}`} hidden={resultadoSimples}>
+        <div className={css.editorLateral}>
+        <AjustesReserva material={material} selecionado={selecionado} selecionar={setSelecionado} alterar={elemento} dados={patch=>atualizar(m=>({...m,dados:{...m.dados,...patch}}))} foto={()=>{fotoDestino.current=selecionado;fotoInput.current?.click();}} desfazer={desfazer} podeDesfazer={podeDesfazer}/>
+        {resultadoSimples&&<div className={css.cartao}><p className={css.nota}>O template já usa o orçamento confirmado. As alterações que fizeres aqui também atualizam o texto da publicação.</p><details className={css.servicosOrcamento}><summary>Texto para acompanhar a publicação</summary><p className={css.legendaPublicacao}>{legendaMaterialReserva(material)}</p><button type="button" onClick={()=>void executar("A copiar o texto…",async()=>{await navigator.clipboard.writeText(legendaMaterialReserva(material));setMensagem("Texto da publicação copiado.");})}>Copiar texto</button></details><button type="button" className={css.botaoTexto} onClick={()=>setAba("orcamento")}>Criar outro template com o orçamento</button></div>}
+        <details className={css.avancados}><summary>Mais opções: dados, elementos e desenho</summary>
+        <div className={`${css.formulario} ${material.baseFixa?css.formularioBase:""}`}>
           <article className={css.cartao}><div className={css.tituloLinha}><div><span className={css.passinho}>2</span><h2>Dados da viagem</h2></div><button type="button" disabled={!ia} onClick={() => pdfInput.current?.click()}>Importar PDF MyOffice</button></div>
             <p className={css.nota}>Podes importar uma ou várias propostas em PDF (até 4 MB cada) ou preencher tudo à mão. Confirma sempre os dados extraídos.</p>
             {avisos.length > 0 && <ul className={css.avisos}>{avisos.map((v,i) => <li key={i}>{v}</li>)}</ul>}
@@ -311,7 +333,7 @@ export function ReservasNovaArea({email}: {email: string}) {
               {atual.tipo === "texto" && <><label className={css.campo}><span>Conteúdo</span><select value={atual.campo} onChange={e => elemento({campo: e.target.value as CampoReserva})}>{CAMPOS_RESERVA.map(c => <option key={c} value={c}>{CAMPOS[c]}</option>)}</select></label>{atual.campo === "livre" ? <label className={css.campo}><span>Texto</span><textarea rows={2} value={atual.texto} onChange={e => elemento({texto:e.target.value})} /></label> : <p className={css.nota}>Este elemento usa o campo “{CAMPOS[atual.campo]}” dos dados da viagem. Altera esse campo acima para atualizar a imagem.</p>}
               {atual.campo !== "livre" && <div className={css.grelha}><Campo titulo="Texto antes do valor" valor={atual.prefixo ?? ""} alterar={v => elemento({prefixo:v})} /><Campo titulo="Texto depois do valor" valor={atual.sufixo ?? ""} alterar={v => elemento({sufixo:v})} /></div>}
               {["hotel","quarto","regime","preco","total"].includes(atual.campo) && material.maxHoteis > 1 && <label className={css.campo}><span>Opção de hotel</span><select value={atual.hotel} onChange={e => elemento({hotel:Number(e.target.value)})}>{Array.from({length: material.maxHoteis}, (_,i) => <option value={i} key={i}>Opção {i+1}</option>)}</select></label>}
-              <div className={css.grelha}><Campo titulo="Tamanho do texto (% da largura)" tipo="number" valor={atual.tamanho} alterar={v => elemento({tamanho:Math.max(.5,Math.min(25,Number(v)))})} /><label className={css.campo}><span>Fonte</span><select value={atual.fonte} onChange={e => elemento({fonte:e.target.value as ElementoReserva["fonte"]})}><option value="sans">Sem serifa</option><option value="serif">Com serifa</option><option value="condensada">Condensada</option><option value="geometrica">Geométrica · Montserrat</option></select></label><label className={css.campo}><span>Alinhamento</span><select value={atual.alinhar} onChange={e => elemento({alinhar:e.target.value as ElementoReserva["alinhar"]})}><option value="left">Esquerda</option><option value="center">Centro</option><option value="right">Direita</option></select></label><label className={css.confirmar}><input type="checkbox" checked={atual.negrito} onChange={e => elemento({negrito:e.target.checked})} />Negrito</label></div></>}
+              <div className={css.grelha}><Campo titulo="Tamanho do texto (% da largura)" tipo="number" valor={atual.tamanho} alterar={v => elemento({tamanho:Math.max(.5,Math.min(25,Number(v)))})} /><label className={css.campo}><span>Fonte</span><select value={atual.fonte} onChange={e => elemento({fonte:e.target.value as ElementoReserva["fonte"]})}>{FONTES_RESERVA.map(f=><option key={f.id} value={f.id}>{f.nome}</option>)}</select></label><label className={css.campo}><span>Alinhamento</span><select value={atual.alinhar} onChange={e => elemento({alinhar:e.target.value as ElementoReserva["alinhar"]})}><option value="left">Esquerda</option><option value="center">Centro</option><option value="right">Direita</option></select></label><label className={css.confirmar}><input type="checkbox" checked={atual.negrito} onChange={e => elemento({negrito:e.target.checked})} />Negrito</label></div></>}
               {atual.tipo === "texto" && <label className={css.confirmar}><input type="checkbox" checked={atual.capitalizacao === "maiusculas"} onChange={e => elemento({capitalizacao:e.target.checked?"maiusculas":"normal"})} />Mostrar em maiúsculas</label>}
               {atual.tipo === "texto" && <><label className={css.campo}><span>Alinhamento vertical</span><select value={atual.vertical ?? "middle"} onChange={e => elemento({vertical:e.target.value as ElementoReserva["vertical"]})}><option value="top">Topo</option><option value="middle">Centro</option><option value="bottom">Base</option></select></label><label className={css.confirmar}><input type="checkbox" checked={!!atual.sombra} onChange={e => elemento({sombra:e.target.checked})} />Sombra no texto</label></>}
               {(atual.tipo === "texto" || atual.tipo === "forma" || atual.icone) && <label className={css.campo}><span>Cor do elemento</span><input type="color" value={atual.cor} onChange={e => elemento({cor:e.target.value})} /></label>}
@@ -327,7 +349,7 @@ export function ReservasNovaArea({email}: {email: string}) {
             {material.baseFixa&&<details><summary>Posicionar a marca protegida</summary><p className={css.nota}>A plataforma aplica a marca iCliGo. Posiciona-a no local reservado no teu desenho.</p><div className={css.grelha}>{([['x','Marca: posição horizontal (%)'],['y','Marca: posição vertical (%)'],['w','Marca: largura (%)'],['h','Marca: altura (%)']] as const).map(([chave,titulo])=><Campo key={chave} titulo={titulo} tipo="number" valor={material.elementos.find(e=>e.tipo==="marca")![chave]} alterar={v=>atualizar(m=>({...m,elementos:m.elementos.map(e=>{if(e.tipo!=="marca")return e;const n={...e,[chave]:Math.max(chave==="x"||chave==="y"?0:.5,Math.min(chave==="x"||chave==="y"?99:100,Number(v)))};return {...n,w:Math.min(n.w,100-n.x),h:Math.min(n.h,100-n.y)};})}))}/>)}</div></details>}
             <label className={css.campo}><span>Apresentação da marca</span><select value={material.marcaEstilo ?? "cartao"} onChange={e => atualizar(m => ({...m,marcaEstilo:e.target.value as MaterialReserva["marcaEstilo"]}))}><option value="cartao">Sobre cartão branco</option><option value="clara">Clara · fundo transparente</option><option value="escura">Escura · fundo transparente</option></select></label>
           </article>
-        </div>
+        </div></details></div>
       </div>
     </fieldset> : <div className={css.biblioteca}><div className={css.tituloLinha}><h2>{aba === "modelos" ? "Os teus modelos reutilizáveis" : "Os teus materiais guardados"}</h2>{aba === "historico" && registosAba.length > 0 && <button type="button" disabled={!!ocupado} onClick={() => void exportarHistorico()}>Descarregar todos (.zip)</button>}</div><p>Estes registos pertencem à tua conta. Podes voltar ao editor sem perder o material que estás a preparar.</p>
       {!carregado ? <p>A carregar…</p> : !registosAba.length ? <div className={css.vazio}><strong>{aba === "modelos" ? "Ainda não guardaste modelos." : "Ainda não guardaste materiais."}</strong><p>Cria o teu primeiro desenho e guarda-o para o voltar a usar.</p><button type="button" onClick={() => setAba("criar")}>Ir para o editor</button></div> : <div className={css.lista}>{registosAba.map(item => <article key={item.id}><div className={css.formatoIcone}>{item.formato === "story" ? "9:16" : "4:5"}</div><div><h3>{item.nome}</h3><p>{item.formato === "story" ? "Story" : "Feed"} · {new Date(item.atualizadoEm).toLocaleString("pt-PT")}</p></div><div className={css.acoes}>{aba === "modelos" && <button className={css.primario} disabled={!!ocupado} type="button" onClick={() => void abrir(item,"usar")}>Usar modelo</button>}<button disabled={!!ocupado} type="button" onClick={() => void abrir(item,"editar")}>Editar</button><button disabled={!!ocupado} type="button" onClick={() => void abrir(item,"duplicar")}>Duplicar</button><button className={css.remover} disabled={!!ocupado} type="button" onClick={() => {if (window.confirm(`Apagar “${item.nome}” da tua conta?`)) void executar("A apagar…",async()=>{await pedir("apagar",{id:item.id});if(registo?.id===item.id){setRegisto(null);setAlterado(true);}await carregarLista();});}}>Apagar</button></div></article>)}</div>}

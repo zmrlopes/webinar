@@ -7,6 +7,7 @@ import { EMAIL_PAINEL_DEMONSTRACAO } from "../src/lib/demo";
 import { abrirReserva, analisarReferenciaReserva, chamarIAReservas, descarregarFotoReserva, fotografiasReserva, guardarReserva, importarPDFReserva, listarReservas } from "../src/lib/reservas-servidor";
 import { aPartirDoModeloReserva, dadosReservaVazios, elementoReserva, hotelVazio, manterFotografiasReserva, novoMaterialReserva, precoPessoaReserva, textoElementoReserva, validarDadosReserva, validarMaterialReserva } from "../src/lib/reservas";
 import { comporModeloReserva, legendaMaterialReserva, novoModeloBaseReserva, preencherReferenciaReserva } from "../src/lib/reservas-modelos";
+import { FONTES_RESERVA } from "../src/lib/reservas-fontes";
 
 async function main() {
   const material = novoMaterialReserva();
@@ -29,8 +30,14 @@ async function main() {
   assert.equal(aPartirDoModeloReserva(multi).dados.destino,"");
   const dadosModelo = {...dadosReservaVazios(),destino:"Maldivas",partida:"Lisboa",ida:"2026-11-10",regresso:"2026-11-17",viajantes:2,bagagem:"",transfer:"",condicoes:"",hoteis:[{...hotelVazio(),nome:"Hotel A",regime:"Pequeno-almoço",total:2000},{...hotelVazio(),nome:"Hotel B",regime:"Tudo incluído",total:2600}]};
   const antesModelo = structuredClone(dadosModelo);
+  for(const fonte of FONTES_RESERVA){
+    const m=validarMaterialReserva({...material,elementos:[{...campo,hotel:0,fonte:fonte.id}]});
+    assert.equal(m.elementos[0]!.fonte,fonte.id,"A validação mantém a fonte escolhida");
+    assert.equal(preencherReferenciaReserva(m,dadosModelo,0).elementos[0]!.fonte,fonte.id,"O orçamento não substitui a fonte do modelo");
+  }
   const baseFixa=novoModeloBaseReserva("story","data:image/png;base64,YmFzZQ==");
   baseFixa.baseSobreFotos=true;
+  baseFixa.elementos[0]!.fonte="playfair";
   baseFixa.elementos.splice(baseFixa.elementos.length-1,0,{...elementoReserva("foto","Destino",{x:5,y:10,w:90,h:40}),imagem:"data:image/png;base64,YW50aWdh"});
   baseFixa.referencia="data:image/png;base64,Z3VpYQ==";
   const baseAntes=structuredClone(baseFixa);
@@ -131,6 +138,7 @@ async function main() {
     const fixoSalvo=await guardarReserva(EMAIL_PAINEL_DEMONSTRACAO,{tipo:"modelo",material:fixaPreenchida});
     const fixoAberto=(await abrirReserva(EMAIL_PAINEL_DEMONSTRACAO,fixoSalvo.id)).material;
     assert.equal(fixoAberto.baseFixa,baseFixa.baseFixa);assert.equal(fixoAberto.referencia,baseFixa.referencia);assert.equal(fixoAberto.baseSobreFotos,true);
+    assert.equal(fixoAberto.elementos[0]!.fonte,"playfair","Reabrir conserva a fonte da biblioteca alargada");
     assert.equal(fixoAberto.dados.destino,"");assert.equal(fixoAberto.dados.hoteis[0]!.total,null);
     assert(fixoAberto.elementos.filter(e=>e.tipo==="foto").every(e=>!e.imagem&&!e.credito&&!e.recorte),"Gravar modelo limpa a fotografia variável da viagem anterior");
     assert.deepEqual(fixoAberto.elementos.map(({x,y,w,h})=>({x,y,w,h})),baseFixa.elementos.map(({x,y,w,h})=>({x,y,w,h})));

@@ -46,6 +46,29 @@
 .comparacao {display: block; width: 100%; height: auto;}
 .canvasWrap canvas { width: 100%; height: auto; display: block; cursor: pointer; }
 .selecao { position: absolute; border: 2px solid #b1db57; box-sizing: border-box; pointer-events: none; }
+.selecao .redimensionar { position:absolute; right:-10px; bottom:-10px; width:20px; height:20px; min-height:20px; padding:0; border:2px solid #fff; border-radius:4px; background:#4b5320; box-shadow:0 0 0 1px #4b5320; cursor:nwse-resize; pointer-events:auto; touch-action:none; }
+.editorLateral { display:grid; gap:16px; min-width:0; }
+.ajustes .tituloLinha { margin-bottom:0; }
+.ajustes .fecharAjustes { display:none; }
+.ajustes .acoes button[aria-pressed="true"], .barraTexto button[aria-pressed="true"], .catalogoFontes button[aria-pressed="true"] { background:#edf0df; border-color:#4b5320; }
+.ajusteVazio { padding:20px; color:#626953; background:#f6f8ee; border-radius:10px; font-size:13px; line-height:1.6; }
+.fonteEscolha { display:grid; gap:6px; margin:18px 0 10px; }
+.fonteEscolha > span { font-size:11px; font-weight:700; color:#525847; }
+.fonteEscolha > button { display:flex; align-items:center; justify-content:space-between; font-size:20px; font-weight:400; color:#222; padding:12px; }
+.catalogoFontes { display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:10px; background:#f8f9f3; border:1px solid #e2e6d8; border-radius:10px; }
+.catalogoFontes button { text-align:left; }
+.barraTexto { display:flex; gap:10px; align-items:flex-end; margin:12px 0 18px; }
+.barraTexto .campo { margin:0; }
+.barraTexto .campo:first-child { width:90px; }
+.barraTexto > button { flex:none; }
+.avancados { border:1px solid #e2e6d8; border-radius:12px; background:#fff; overflow:hidden; }
+.avancados > summary { padding:18px; cursor:pointer; font-size:12px; font-weight:650; color:#4b5320; line-height:1.6; }
+.avancados .formulario { padding:0 12px 12px; }
+@media (max-width:600px) {
+  .ajustes[data-ativo="true"] { position:fixed; bottom:0; left:8px; right:8px; z-index:100; max-height:48dvh; overflow:auto; overscroll-behavior:contain; border-radius:16px 16px 0 0; box-shadow:0 -8px 30px #0003; padding-bottom:max(14px,env(safe-area-inset-bottom)); }
+  .ajustes .fecharAjustes { display:block; }
+  .ajustes[data-ativo="true"] > .nota { display:none; }
+}
 .preview > small { font-size: 11px; color: #707467; }
 .preview .acoes { display: grid; grid-template-columns: 1fr 1fr; }
 .formulario { display: grid; gap: 18px; min-width: 0; }

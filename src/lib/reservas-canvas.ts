@@ -1,13 +1,19 @@
 import { dimensoesReserva, textoElementoReserva, type ElementoReserva, type FormatoReserva, type MaterialReserva } from "./reservas";
+import { fonteReserva, pesoFonteReserva, type FonteReserva } from "./reservas-fontes";
 
 const imagens = new Map<string, Promise<HTMLImageElement>>();
-let fontesProntas: Promise<void> | undefined;
-async function carregarFontes() {
-  if (!fontesProntas) fontesProntas = Promise.all([
-    new FontFace("ReservaCondensada", "url(/fonts/BebasNeue-Regular.ttf)"),
-    new FontFace("ReservaGeometrica", "url(/fonts/Montserrat-Variable.ttf)", {weight: "100 900"}),
-  ].map(async fonte => {(document.fonts as FontFaceSet & {add(fonte: FontFace): void}).add(await fonte.load());})).then(() => {}).catch(erro => {fontesProntas = undefined; throw new Error(`Não foi possível carregar as fontes do modelo: ${erro instanceof Error ? erro.message : "tenta novamente"}`);});
-  await fontesProntas;
+const fontesProntas = new Map<FonteReserva,Promise<void>>();
+export async function carregarFonteReserva(id:FonteReserva):Promise<void> {
+  let pronta=fontesProntas.get(id);
+  if(!pronta){
+    const config=fonteReserva(id);
+    pronta=Promise.all(config.ficheiros.map(async f=>{
+      const fonte=new FontFace(config.familia,`url(/fonts/${f.url})`,{weight:f.peso});
+      (document.fonts as FontFaceSet & {add(fonte: FontFace): void}).add(await fonte.load());
+    })).then(()=>{}).catch(()=>{fontesProntas.delete(id);throw new Error(`Não foi possível carregar a fonte ${config.nome}. Tenta novamente antes de exportar.`);});
+    fontesProntas.set(id,pronta);
+  }
+  await pronta;
 }
 function carregarImagem(src: string): Promise<HTMLImageElement> {
   const guardada = imagens.get(src);
@@ -56,7 +62,7 @@ function desenharIcone(ctx: CanvasRenderingContext2D, e: ElementoReserva, x: num
   const p = new Path2D(paths[e.icone!]); if (e.icone === "aviao") ctx.fill(p); else ctx.stroke(p); ctx.restore();
 }
 export async function desenharReserva(canvas: HTMLCanvasElement, material: MaterialReserva, exemplo = true): Promise<void> {
-  await carregarFontes();
+  await Promise.all([...new Set(material.elementos.filter(e=>e.tipo==="texto").map(e=>e.fonte))].map(carregarFonteReserva));
   const {largura, altura} = dimensoesReserva(material.formato);
   // Carrega tudo antes de desenhar; a mesma função produz a pré-visualização e o PNG final.
   const fontes = material.elementos.filter(e => e.tipo === "foto" || e.tipo === "grafico" && (!e.icone || e.imagem)).map(e => e.imagem || (e.recorte ? material.referencia : "")).filter(Boolean);
@@ -94,11 +100,11 @@ export async function desenharReserva(canvas: HTMLCanvasElement, material: Mater
       else if (exemplo) {ctx.fillStyle = "#ffffff18"; ctx.fillRect(x, y, w, h); ctx.fillStyle = "#ffffff"; ctx.font = "24px Arial"; ctx.textAlign = "center"; ctx.fillText("Escolhe uma fotografia", x + w / 2, y + h / 2, w - 16);}
     } else {
       const texto = textoElementoReserva(e, material.dados, exemplo);
-      const fonte = e.fonte === "serif" ? "Georgia, serif" : e.fonte === "condensada" ? "ReservaCondensada, sans-serif" : e.fonte === "geometrica" ? "ReservaGeometrica, sans-serif" : "Arial, sans-serif";
+      const fonte = fonteReserva(e.fonte).familia;
       let tamanho = e.tamanho / 100 * largura, linhas: string[] = [];
       let subida = 0, descida = 0, alturaTexto = 0;
       do {
-        ctx.font = `${e.fonte === "condensada" ? "400 " : e.negrito ? e.fonte === "geometrica" ? "800 " : "bold " : "400 "}${tamanho}px ${fonte}`;
+        ctx.font = `${pesoFonteReserva(e.fonte,e.negrito)} ${tamanho}px ${fonte}`;
         linhas = linhasTexto(ctx, texto, w);
         const medidas = linhas.map(l => ctx.measureText(l || "Ag"));
         subida = Math.max(...medidas.map(m => m.actualBoundingBoxAscent)); descida = Math.max(...medidas.map(m => m.actualBoundingBoxDescent));

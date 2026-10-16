@@ -1,4 +1,5 @@
 /** Formato independente do renderer: a referência é convertida em elementos, nunca em código executável. */
+import { FONTES_RESERVA, type FonteReserva } from "./reservas-fontes";
 export type FormatoReserva = "story" | "feed";
 export const CAMPOS_RESERVA = ["livre", "destino", "frase", "partida", "datas", "ida", "regresso", "noites", "viajantes", "voo", "preco", "total", "hotel", "quarto", "regime", "bagagem", "transfer", "condicoes"] as const;
 export type CampoReserva = typeof CAMPOS_RESERVA[number];
@@ -16,7 +17,7 @@ export interface ElementoReserva extends CaixaReserva {
   hotel: number;
   cor: string;
   tamanho: number;
-  fonte: "sans" | "serif" | "condensada" | "geometrica";
+  fonte: FonteReserva;
   negrito: boolean;
   alinhar: "left" | "center" | "right";
   opacidade: number;
@@ -137,7 +138,7 @@ export function validarMaterialReserva(valor: unknown): MaterialReserva {
     const hotel = numero(e.hotel, 0, maxHoteis - 1, 0);
     if (!Number.isInteger(hotel)) throw new ErroReserva("Opção de hotel inválida.");
     elementos.push({id, tipo: e.tipo as ElementoReserva["tipo"], nome: texto(e.nome, 100) || "Elemento", ...caixa(e), texto: texto(e.texto, 2000), campo, hotel,
-      cor: cor(e.cor, "#ffffff"), tamanho: numero(e.tamanho, .5, 25, 4), fonte: e.fonte === "serif" || e.fonte === "condensada" || e.fonte === "geometrica" ? e.fonte : "sans",
+      cor: cor(e.cor, "#ffffff"), tamanho: numero(e.tamanho, .5, 25, 4), fonte: FONTES_RESERVA.some(f=>f.id===e.fonte) ? e.fonte as FonteReserva : "sans",
       negrito: e.negrito === true, alinhar: e.alinhar === "left" || e.alinhar === "right" ? e.alinhar : "center",
       opacidade: numero(e.opacidade, 0, 1, 1), raio: numero(e.raio, 0, 50, 0), figura: e.figura === "elipse" ? "elipse" : "retangulo",
       ...(e.recorte ? {recorte: caixa(objeto(e.recorte))} : {}), ...(e.imagem ? {imagem: imagemReserva(e.imagem)} : {}),
