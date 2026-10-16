@@ -6,7 +6,7 @@ import { db, fecharDb } from "../src/lib/db";
 import { EMAIL_PAINEL_DEMONSTRACAO } from "../src/lib/demo";
 import { abrirReserva, analisarReferenciaReserva, chamarIAReservas, descarregarFotoReserva, fotografiasReserva, guardarReserva, importarPDFReserva, listarReservas } from "../src/lib/reservas-servidor";
 import { aPartirDoModeloReserva, dadosReservaVazios, elementoReserva, hotelVazio, manterFotografiasReserva, novoMaterialReserva, precoPessoaReserva, textoElementoReserva, validarDadosReserva, validarMaterialReserva } from "../src/lib/reservas";
-import { comporModeloReserva, legendaMaterialReserva, preencherReferenciaReserva } from "../src/lib/reservas-modelos";
+import { comporModeloReserva, legendaMaterialReserva, novoModeloBaseReserva, preencherReferenciaReserva } from "../src/lib/reservas-modelos";
 
 async function main() {
   const material = novoMaterialReserva();
@@ -29,6 +29,21 @@ async function main() {
   assert.equal(aPartirDoModeloReserva(multi).dados.destino,"");
   const dadosModelo = {...dadosReservaVazios(),destino:"Maldivas",partida:"Lisboa",ida:"2026-11-10",regresso:"2026-11-17",viajantes:2,bagagem:"",transfer:"",condicoes:"",hoteis:[{...hotelVazio(),nome:"Hotel A",regime:"Pequeno-almoço",total:2000},{...hotelVazio(),nome:"Hotel B",regime:"Tudo incluído",total:2600}]};
   const antesModelo = structuredClone(dadosModelo);
+  const baseFixa=novoModeloBaseReserva("story","data:image/png;base64,YmFzZQ==");
+  baseFixa.baseSobreFotos=true;
+  baseFixa.elementos.splice(baseFixa.elementos.length-1,0,{...elementoReserva("foto","Destino",{x:5,y:10,w:90,h:40}),imagem:"data:image/png;base64,YW50aWdh"});
+  baseFixa.referencia="data:image/png;base64,Z3VpYQ==";
+  const baseAntes=structuredClone(baseFixa);
+  const fixaPreenchida=preencherReferenciaReserva(baseFixa,dadosModelo,1,{imagem:"data:image/png;base64,bm92YQ==",credito:"Autor CC0",origem:"https://commons.wikimedia.org/wiki/Teste"});
+  assert.equal(fixaPreenchida.baseFixa,baseFixa.baseFixa);
+  assert.equal(fixaPreenchida.baseSobreFotos,true);
+  assert.deepEqual(fixaPreenchida.elementos.map(({x,y,w,h,fonte,cor})=>({x,y,w,h,fonte,cor})),baseFixa.elementos.map(({x,y,w,h,fonte,cor})=>({x,y,w,h,fonte,cor})),"Preencher mantém posições e estilos, mesmo com créditos de fotografia");
+  assert.equal(precoPessoaReserva(fixaPreenchida.dados,fixaPreenchida.dados.hoteis[0]!),1300);
+  assert.match(legendaMaterialReserva(fixaPreenchida),/Autor CC0/);
+  assert.deepEqual(baseFixa,baseAntes,"O modelo original não é alterado ao preencher");
+  assert.throws(()=>validarMaterialReserva({...baseFixa,baseFixa:"https://example.com/base.png"}));
+  assert.throws(()=>validarMaterialReserva({...baseFixa,baseFixa:"data:image/svg+xml;base64,YmFzZQ=="}));
+  assert.throws(()=>validarMaterialReserva({...baseFixa,baseFixa:"data:image/png;base64,"+"a".repeat(2_000_000)}));
   for (const formato of ["story","feed"] as const) for (const estilo of ["elegante","fotografico"] as const) {
     const composto = comporModeloReserva(dadosModelo,formato,estilo,{imagem:"data:image/png;base64,aGVsbG8="},1);
     assert.equal(composto.dados.hoteis.length,1); assert.equal(composto.dados.hoteis[0]!.nome,"Hotel B");
@@ -96,7 +111,7 @@ async function main() {
     if (sql.includes("'janela'")) return {rows:[{chave:valores[0]}],rowCount:1};
     if (sql.startsWith("insert into dashboard_config")) {registos.set(valores[0] as string,{valor:JSON.parse(valores[1] as string),atualizado_em:new Date()});return {rows:[],rowCount:1};}
     if (sql.includes("where chave = $1")) return {rows:registos.has(valores[0] as string)?[registos.get(valores[0] as string)]:[],rowCount:0};
-    if (sql.includes("starts_with(chave")) return {rows:[...registos.entries()].filter(([k])=>k.startsWith(valores[0] as string)).map(([,r])=>({id:r.valor.id,nome:r.valor.nome,tipo:r.valor.tipo,formato:(r.valor.material as {formato:string}).formato,atualizado_em:r.atualizado_em})),rowCount:1};
+    if (sql.includes("starts_with(chave")) return {rows:[...registos.entries()].filter(([k])=>k.startsWith(valores[0] as string)).map(([,r])=>({id:r.valor.id,nome:r.valor.nome,tipo:r.valor.tipo,formato:(r.valor.material as {formato:string}).formato,base_fixa:!!(r.valor.material as {baseFixa?:string}).baseFixa,atualizado_em:r.atualizado_em})),rowCount:1};
     throw new Error(`Consulta de teste inesperada: ${sql.slice(0,60)}`);
   }) as typeof pool.query;
   try {
@@ -113,6 +128,14 @@ async function main() {
     globalThis.fetch=(async()=>{throw new Error("Sem ligação");}) as typeof fetch;
     await assert.rejects(()=>fotografiasReserva("Gran Canaria"),/fotografia tua/);
     globalThis.fetch=originalFetch;
+    const fixoSalvo=await guardarReserva(EMAIL_PAINEL_DEMONSTRACAO,{tipo:"modelo",material:fixaPreenchida});
+    const fixoAberto=(await abrirReserva(EMAIL_PAINEL_DEMONSTRACAO,fixoSalvo.id)).material;
+    assert.equal(fixoAberto.baseFixa,baseFixa.baseFixa);assert.equal(fixoAberto.referencia,baseFixa.referencia);assert.equal(fixoAberto.baseSobreFotos,true);
+    assert.equal(fixoAberto.dados.destino,"");assert.equal(fixoAberto.dados.hoteis[0]!.total,null);
+    assert(fixoAberto.elementos.filter(e=>e.tipo==="foto").every(e=>!e.imagem&&!e.credito&&!e.recorte),"Gravar modelo limpa a fotografia variável da viagem anterior");
+    assert.deepEqual(fixoAberto.elementos.map(({x,y,w,h})=>({x,y,w,h})),baseFixa.elementos.map(({x,y,w,h})=>({x,y,w,h})));
+    assert.equal((await listarReservas(EMAIL_PAINEL_DEMONSTRACAO)).find(m=>m.id===fixoSalvo.id)?.baseFixa,true);
+    await assert.rejects(()=>abrirReserva("outra-conta@example.com",fixoSalvo.id),/não existe/);
     const salvo = await guardarReserva(EMAIL_PAINEL_DEMONSTRACAO,{tipo:"material",material});
     assert.equal((await abrirReserva(EMAIL_PAINEL_DEMONSTRACAO,salvo.id)).material.dados.destino,"Amesterdão");
     await assert.rejects(()=>abrirReserva("outra-conta@example.com",salvo.id),/não existe/);

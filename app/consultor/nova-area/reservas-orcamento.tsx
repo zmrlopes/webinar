@@ -1,7 +1,7 @@
 "use client";
 
-import {useRef, useState, type ChangeEvent} from "react";
-import {dadosReservaVazios, precoPessoaReserva, validarDadosReserva, validarMaterialReserva, type DadosReserva, type FormatoReserva, type MaterialReserva} from "@/lib/reservas";
+import {useEffect, useRef, useState, type ChangeEvent} from "react";
+import {dadosReservaVazios, precoPessoaReserva, validarDadosReserva, validarMaterialReserva, type DadosReserva, type FormatoReserva, type MaterialReserva, type ResumoReserva} from "@/lib/reservas";
 import {comprimirImagemReserva} from "@/lib/reservas-canvas";
 import {comporModeloReserva, preencherReferenciaReserva, ESTILOS_RESERVA, type EstiloReserva, type FotografiaModeloReserva} from "@/lib/reservas-modelos";
 import css from "./reservas.module.css";
@@ -9,7 +9,8 @@ import css from "./reservas.module.css";
 const API = "/api/consultor/nova-area/reservas";
 const euros = (n: number | null) => n === null ? "Por confirmar" : `${new Intl.NumberFormat("pt-PT",{maximumFractionDigits:2}).format(n)} €`;
 type Foto = {titulo: string; url: string; credito: string; origem: string};
-export function CriarReservaOrcamento({email,ia,ocupado,onOcupado,onGerar}: {email:string;ia:boolean;ocupado:string;onOcupado:(v:string)=>void;onGerar:(m:MaterialReserva)=>void}) {
+type ModeloGuardado = {id:string;material:MaterialReserva};
+export function CriarReservaOrcamento({email,ia,ocupado,onOcupado,onGerar,modelos,modeloParaUsar,onConfigurar}: {email:string;ia:boolean;ocupado:string;onOcupado:(v:string)=>void;onGerar:(m:MaterialReserva)=>void;modelos:ResumoReserva[];modeloParaUsar:ModeloGuardado|null;onConfigurar:()=>void}) {
   const [passo,setPasso] = useState<1|2|3>(1);
   const [dados,setDados] = useState<DadosReserva>(()=>({...dadosReservaVazios(),condicoes:""}));
   const [propostas,setPropostas] = useState<DadosReserva[]>([]), [proposta,setProposta] = useState(0), [hotel,setHotel] = useState(0);
@@ -17,7 +18,9 @@ export function CriarReservaOrcamento({email,ia,ocupado,onOcupado,onGerar}: {ema
   const [manual,setManual] = useState(false), [confirmado,setConfirmado] = useState(false);
   const [formato,setFormato] = useState<FormatoReserva>("story"), [estilo,setEstilo] = useState<EstiloReserva>("elegante");
   const [foto,setFoto] = useState<FotografiaModeloReserva | null>(null);
-  const [desenho,setDesenho] = useState<"referencia"|"modelo">("referencia");
+  const [desenho,setDesenho] = useState<"guardado"|"referencia"|"modelo">("guardado");
+  const [modeloGuardado,setModeloGuardado] = useState<ModeloGuardado|null>(null);
+  useEffect(()=>{if(modeloParaUsar){setModeloGuardado(structuredClone(modeloParaUsar));setFormato(modeloParaUsar.material.formato);setDesenho("guardado");setPasso(p=>p===3?2:p);}},[modeloParaUsar]);
   const [referencia,setReferencia] = useState<{imagem:string;nome:string}|null>(null);
   const [analise,setAnalise] = useState<{imagem:string;formato:FormatoReserva;material:MaterialReserva}|null>(null);
   const pdfInput = useRef<HTMLInputElement>(null), fotoInput = useRef<HTMLInputElement>(null), referenciaInput = useRef<HTMLInputElement>(null);
@@ -62,8 +65,19 @@ export function CriarReservaOrcamento({email,ia,ocupado,onOcupado,onGerar}: {ema
     const f=e.target.files?.[0];e.target.value="";if(!f)return;
     await fazer("A preparar a tua referência…",async()=>{const imagem=await comprimirImagemReserva(f);setReferencia({imagem,nome:f.name});setAnalise(null);setDesenho("referencia");});
   }
+  async function escolherModelo(id:string) {
+    setModeloGuardado(null);
+    if(!id)return;
+    await fazer("A abrir o teu modelo…",async()=>{
+      const r=await pedir<{material:MaterialReserva}>("abrir",{id});
+      const material=validarMaterialReserva(r.material);
+      if(!material.baseFixa)throw new Error("Escolhe um modelo com base fixa.");
+      setModeloGuardado({id,material});setFormato(material.formato);setFoto(null);
+    });
+  }
   function continuarDesenho() {
     setErro("");
+    if(desenho==="guardado"&&(!modeloGuardado||!modelos.some(m=>m.id===modeloGuardado.id))){setErro("Escolhe o teu modelo guardado ou cria um modelo do Canva para continuar.");return;}
     if(desenho==="referencia"&&!referencia){setErro("Carrega a tua referência para continuar ou escolhe um dos modelos disponíveis.");return;}
     setPasso(3);
   }
@@ -71,6 +85,10 @@ export function CriarReservaOrcamento({email,ia,ocupado,onOcupado,onGerar}: {ema
     await fazer("A compor o teu template…",async()=>{
       const d=validarDadosReserva(dados);if(!confirmado||preco===null)throw new Error("Volta ao orçamento e confirma os dados e o preço.");
       let modelo:MaterialReserva|null=null;
+      if(desenho==="guardado") {
+        if(!modeloGuardado||!modelos.some(m=>m.id===modeloGuardado.id))throw new Error("Volta ao passo 2 e escolhe o teu modelo.");
+        modelo=structuredClone(modeloGuardado.material);
+      }
       if(desenho==="referencia") {
         if(!referencia)throw new Error("Volta ao passo 2 e carrega a tua referência.");
         if(analise?.imagem===referencia.imagem&&analise.formato===formato)modelo=analise.material;
@@ -118,18 +136,23 @@ export function CriarReservaOrcamento({email,ia,ocupado,onOcupado,onGerar}: {ema
           <div className={css.rodapePasso}><span>As restantes propostas e hotéis continuam disponíveis nesta seleção.</span><button type="button" className={css.primario} onClick={continuar}>Continuar →</button></div>
         </>}
       </div>}
-      {passo===2&&<div className={css.cartao}><h2>Qual é a referência para o teu template?</h2><p className={css.nota}>Carrega uma imagem do desenho que queres seguir. As cores, os textos e a composição são adaptados aos dados do orçamento.</p>
-        <div className={css.escolhasFormato}>{([['story','Story','1080 × 1920 · vertical'],['feed','Publicação','1080 × 1350 · feed']] as const).map(([id,nome,desc])=><button key={id} type="button" aria-pressed={formato===id} onClick={()=>setFormato(id)}><span className={id==="story"?css.formatoStory:css.formatoFeed} aria-hidden="true"/><strong>{nome}</strong><small>{desc}</small></button>)}</div>
-        <div className={css.acoes}><button type="button" aria-pressed={desenho==="referencia"} onClick={()=>{setDesenho("referencia");setErro("");}}>A minha referência</button><button type="button" aria-pressed={desenho==="modelo"} onClick={()=>{setDesenho("modelo");setErro("");}}>Modelos disponíveis</button></div>
-        {desenho==="referencia"?<div className={css.referenciaOrcamento}>
+      {passo===2&&<div className={css.cartao}><h2>Qual é o teu modelo?</h2><p className={css.nota}>Escolhe o teu template do Canva. O fundo e as posições dos campos mantêm-se; os dados vêm do orçamento.</p>
+        <div className={css.escolhasFormato}>{([['story','Story','1080 × 1920 · vertical'],['feed','Publicação','1080 × 1350 · feed']] as const).map(([id,nome,desc])=><button key={id} type="button" aria-pressed={formato===id} disabled={desenho==="guardado"} onClick={()=>setFormato(id)}><span className={id==="story"?css.formatoStory:css.formatoFeed} aria-hidden="true"/><strong>{nome}</strong><small>{desc}</small></button>)}</div>
+        <div className={css.acoes}><button type="button" aria-pressed={desenho==="guardado"} onClick={()=>{setDesenho("guardado");if(modeloGuardado)setFormato(modeloGuardado.material.formato);setErro("");}}>O meu template do Canva</button><button type="button" aria-pressed={desenho==="referencia"} onClick={()=>{setDesenho("referencia");setErro("");}}>A minha referência</button><button type="button" aria-pressed={desenho==="modelo"} onClick={()=>{setDesenho("modelo");setErro("");}}>Modelos disponíveis</button></div>
+        {desenho==="guardado"?<div className={css.referenciaOrcamento}>
+          {modeloGuardado&&<img src={modeloGuardado.material.baseFixa} alt="Base fixa do modelo escolhido"/>}
+          <div><h3>Os meus modelos do Canva</h3>{modelos.length>0?<label className={css.campo}><span>Modelo guardado</span><select value={modeloGuardado?.id??""} onChange={e=>void escolherModelo(e.target.value)}><option value="">Escolher modelo…</option>{modelos.map(m=><option key={m.id} value={m.id}>{m.nome} · {m.formato==="story"?"Story":"Publicação"}</option>)}</select></label>:<p className={css.nota}>Cria o teu primeiro modelo: carrega a base do Canva, posiciona os campos e guarda. Só precisas de o configurar uma vez.</p>}
+          <p className={css.nota}>O formato é o do modelo guardado. A imagem de fundo é preservada sem reconstrução por IA.</p><button type="button" onClick={onConfigurar}>Criar modelo do Canva</button></div>
+        </div>:desenho==="referencia"?<div className={css.referenciaOrcamento}>
           {referencia&&<img src={referencia.imagem} alt="A tua referência para o desenho do template"/>}
-          <div><h3>{referencia?"Referência escolhida":"Carrega o desenho que queres seguir"}</h3><p className={css.nota}>{referencia?referencia.nome:"PNG, JPG ou WebP · até 15 MB. Usa uma imagem do material final, por exemplo uma exportação do Canva."}</p><div className={css.acoes}><button type="button" className={css.primario} disabled={!ia} onClick={()=>referenciaInput.current?.click()}>{referencia?"Mudar a minha referência":"Carregar a minha referência"}</button>{referencia&&<button type="button" onClick={()=>{setReferencia(null);setAnalise(null);}}>Remover referência</button>}</div><p className={css.nota}>A referência define o desenho. Os preços, datas e hotéis vêm do orçamento. Podes comparar com a imagem original e ajustar o resultado no editor.</p>{!ia&&<p className={css.nota}>A análise de referências ainda não está configurada. Podes usar os modelos disponíveis.</p>}</div>
+          <div><h3>{referencia?"Referência escolhida":"Carrega o desenho que queres seguir"}</h3><p className={css.nota}>{referencia?referencia.nome:"PNG, JPG ou WebP · até 15 MB. Usa uma imagem do material final, por exemplo uma exportação do Canva."}</p><div className={css.acoes}><button type="button" className={css.primario} disabled={!ia} onClick={()=>referenciaInput.current?.click()}>{referencia?"Mudar a minha referência":"Carregar a minha referência"}</button>{referencia&&<button type="button" onClick={()=>{setReferencia(null);setAnalise(null);}}>Remover referência</button>}</div><p className={css.nota}>Esta opção reconstrói a imagem com IA e pode alterar o desenho. Para preservar o fundo, usa o teu template do Canva. Os preços, datas e hotéis vêm do orçamento. Podes comparar com a imagem original e ajustar o resultado no editor.</p>{!ia&&<p className={css.nota}>A análise de referências ainda não está configurada. Podes usar os modelos disponíveis.</p>}</div>
         </div>:<><h3 className={css.subtituloPasso}>Estilo do template</h3><div className={css.estilosModelo}>{ESTILOS_RESERVA.map(e=><button key={e.id} type="button" aria-pressed={estilo===e.id} onClick={()=>setEstilo(e.id)}><span className={e.id==="elegante"?css.amostraElegante:css.amostraFotografica} aria-hidden="true"><i/><b>O teu destino</b><em>desde 1.250 €</em></span><strong>{e.nome}</strong><small>{e.descricao}</small></button>)}</div><p className={css.nota}>As miniaturas ilustram o estilo. O resultado utiliza os preços e dados do teu orçamento.</p></>}
-        <div className={css.fotoOrcamento}>{foto&&<img src={foto.imagem} alt="Fotografia escolhida para o template"/>}<div><strong>Fotografia do destino</strong><p className={css.nota}>{foto?"Esta fotografia será usada no template.":"Escolhemos uma fotografia do destino automaticamente. Também podes usar uma fotografia tua."}</p><button type="button" onClick={()=>fotoInput.current?.click()}>{foto?"Mudar fotografia":"Carregar a minha fotografia"}</button></div></div>
+        {(desenho!=="guardado"||modeloGuardado?.material.elementos.some(e=>e.tipo==="foto"))&&<div className={css.fotoOrcamento}>{foto&&<img src={foto.imagem} alt="Fotografia escolhida para o template"/>}<div><strong>Fotografia do destino</strong><p className={css.nota}>{foto?"Esta fotografia será usada no template.":"Escolhemos uma fotografia do destino automaticamente. Também podes usar uma fotografia tua."}</p><button type="button" onClick={()=>fotoInput.current?.click()}>{foto?"Mudar fotografia":"Carregar a minha fotografia"}</button></div></div>}
         <div className={css.rodapePasso}><button type="button" onClick={()=>{setPasso(1);setErro("");}}>← Orçamento</button><button type="button" className={css.primario} onClick={continuarDesenho}>Continuar →</button></div>
       </div>}
       {passo===3&&<div className={css.cartao}><h2>Prepara o texto e gera o teu template.</h2><p className={css.nota}>O destino, as datas, o hotel e o preço já vêm do orçamento. Podes acrescentar uma frase de destaque.</p>
-        <div className={css.resumoOrcamento}><div><span>DESTINO</span><strong>{dados.destino}</strong><small>{h.nome}</small></div><div><span>POR PESSOA</span><strong>{euros(preco)}</strong><small>{formato==="story"?"Story":"Publicação"} · {desenho==="referencia"?"A minha referência":ESTILOS_RESERVA.find(e=>e.id===estilo)!.nome}</small></div></div>
+        <div className={css.resumoOrcamento}><div><span>DESTINO</span><strong>{dados.destino}</strong><small>{h.nome}</small></div><div><span>POR PESSOA</span><strong>{euros(preco)}</strong><small>{formato==="story"?"Story":"Publicação"} · {desenho==="guardado"?modeloGuardado?.material.nome:desenho==="referencia"?"A minha referência":ESTILOS_RESERVA.find(e=>e.id===estilo)!.nome}</small></div></div>
+        {desenho==="guardado"&&modeloGuardado&&<p className={css.nota}>Vamos preencher os campos de “{modeloGuardado.material.nome}” mantendo a base e as posições que guardaste.</p>}
         {desenho==="referencia"&&referencia&&<div className={css.referenciaOrcamento}><img src={referencia.imagem} alt="Referência que será usada para gerar"/><div><strong>{referencia.nome}</strong><p className={css.nota}>Este desenho será preenchido com os dados confirmados. Se tiver vários espaços de hotéis, começa pela opção selecionada e inclui as seguintes opções disponíveis.</p></div></div>}
         <label className={css.campo}><span>Frase de destaque · opcional</span><textarea rows={3} maxLength={500} placeholder="A tua próxima viagem começa aqui." value={dados.frase} onChange={e=>setDados(d=>({...d,frase:e.target.value}))}/></label><button type="button" disabled={!ia} onClick={()=>void fazer("A sugerir uma frase…",async()=>{const r=await pedir<{frase:string}>("frase",{destino:dados.destino});setDados(d=>({...d,frase:r.frase}));})}>Sugerir frase</button>
         <p className={css.marcaProtegida}>A marca iCliGo acompanha o template. Podes ajustar os textos, a fotografia e a composição depois de gerar.</p>

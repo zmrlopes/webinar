@@ -1,4 +1,4 @@
-import { dimensoesReserva, textoElementoReserva, type ElementoReserva, type MaterialReserva } from "./reservas";
+import { dimensoesReserva, textoElementoReserva, type ElementoReserva, type FormatoReserva, type MaterialReserva } from "./reservas";
 
 const imagens = new Map<string, Promise<HTMLImageElement>>();
 let fontesProntas: Promise<void> | undefined;
@@ -61,13 +61,19 @@ export async function desenharReserva(canvas: HTMLCanvasElement, material: Mater
   // Carrega tudo antes de desenhar; a mesma função produz a pré-visualização e o PNG final.
   const fontes = material.elementos.filter(e => e.tipo === "foto" || e.tipo === "grafico" && (!e.icone || e.imagem)).map(e => e.imagem || (e.recorte ? material.referencia : "")).filter(Boolean);
   const carregadas = new Map<string, HTMLImageElement>();
-  await Promise.all([...new Set([...fontes, "/icligo-logo.png"])].map(async src => carregadas.set(src, await carregarImagem(src))));
+  await Promise.all([...new Set([...fontes, ...material.baseFixa?[material.baseFixa]:[], "/icligo-logo.png"])].map(async src => carregadas.set(src, await carregarImagem(src))));
   const ctx = canvas.getContext("2d"); if (!ctx) throw new Error("O navegador não suporta a criação de imagens.");
   canvas.width = largura; canvas.height = altura;
   const fundo = ctx.createLinearGradient(0, 0, 0, altura);
   fundo.addColorStop(0, material.fundo); fundo.addColorStop(1, material.fundoFinal);
   ctx.fillStyle = fundo; ctx.fillRect(0, 0, largura, altura);
-  for (const e of material.elementos.filter(e => e.tipo !== "marca")) {
+  const desenharBase=()=>{if(material.baseFixa)ctx.drawImage(carregadas.get(material.baseFixa)!,0,0,largura,altura);};
+  if(!material.baseSobreFotos)desenharBase();
+  const camadas=material.baseFixa&&material.baseSobreFotos
+    ? [...material.elementos.filter(e=>e.tipo==="foto"),null,...material.elementos.filter(e=>e.tipo!=="foto"&&e.tipo!=="marca")]
+    : material.elementos.filter(e=>e.tipo!=="marca");
+  for (const e of camadas) {
+    if(!e){desenharBase();continue;}
     const x = e.x / 100 * largura, y = e.y / 100 * altura, w = e.w / 100 * largura, h = e.h / 100 * altura;
     ctx.save(); ctx.globalAlpha = e.opacidade;
     ctx.beginPath(); ctx.roundRect(x, y, w, h, Math.min(e.raio / 100 * largura, w / 2, h / 2)); ctx.clip();
@@ -121,7 +127,27 @@ export async function desenharReserva(canvas: HTMLCanvasElement, material: Mater
   }
   // Atribuições das imagens sugeridas acompanham também o ficheiro exportado.
   const creditos = [...new Set(material.elementos.map(e => e.credito).filter(Boolean))].join(" · ");
-  if (creditos) {ctx.fillStyle = "#ffffff"; ctx.fillRect(0, altura - 28, largura, 28); ctx.fillStyle = "#333333"; ctx.font = "11px Arial"; ctx.textAlign = "center"; ctx.fillText(creditos, largura / 2, altura - 10, largura - 20);}
+  if (creditos&&!material.baseFixa) {ctx.fillStyle = "#ffffff"; ctx.fillRect(0, altura - 28, largura, 28); ctx.fillStyle = "#333333"; ctx.font = "11px Arial"; ctx.textAlign = "center"; ctx.fillText(creditos, largura / 2, altura - 10, largura - 20);}
+}
+
+/** Conserva o PNG à resolução final, sem compressão com perdas ou recorte. */
+export async function prepararBaseReserva(ficheiro: File): Promise<{imagem:string;formato:FormatoReserva}> {
+  if(!/^image\/(png|jpeg|webp)$/.test(ficheiro.type)||ficheiro.size>15_000_000)throw new Error("Usa um PNG, JPG ou WebP até 15 MB.");
+  const url=URL.createObjectURL(ficheiro);
+  try {
+    const img=await carregarImagem(url),ratio=img.width/img.height;
+    const formato:FormatoReserva=Math.abs(ratio-9/16)<.005?"story":Math.abs(ratio-4/5)<.005?"feed":(()=>{throw new Error("Exporta a base em Story (1080 × 1920) ou Feed (1080 × 1350), sem margens à volta.");})();
+    const {largura,altura}=dimensoesReserva(formato);
+    if(img.width===largura&&img.height===altura&&ficheiro.type==="image/png"&&ficheiro.size<1_499_950) {
+      const imagem=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error("Não foi possível ler a base."));reader.readAsDataURL(ficheiro);});
+      return {imagem,formato};
+    }
+    const c=document.createElement("canvas");c.width=largura;c.height=altura;
+    const ctx=c.getContext("2d");if(!ctx)throw new Error("Não foi possível preparar a base.");
+    ctx.drawImage(img,0,0,largura,altura);const imagem=c.toDataURL("image/png");
+    if(imagem.length>2_000_000)throw new Error("A base é demasiado pesada. Exporta um PNG até 1,5 MB; podes carregar a fotografia separadamente.");
+    return {imagem,formato};
+  } finally {URL.revokeObjectURL(url);imagens.delete(url);}
 }
 
 export async function comprimirImagemReserva(ficheiro: File): Promise<string> {

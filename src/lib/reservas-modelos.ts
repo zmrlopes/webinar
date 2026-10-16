@@ -1,8 +1,16 @@
-import { dimensoesReserva, elementoReserva, marcaReserva, precoPessoaReserva, validarMaterialReserva, type CampoReserva, type DadosReserva, type ElementoReserva, type FormatoReserva, type MaterialReserva } from "./reservas";
+import { dadosReservaVazios, dimensoesReserva, elementoReserva, marcaReserva, precoPessoaReserva, validarMaterialReserva, type CampoReserva, type DadosReserva, type ElementoReserva, type FormatoReserva, type MaterialReserva } from "./reservas";
 
 export const ESTILOS_RESERVA = [{id:"elegante", nome:"Elegante", descricao:"Fotografia em destaque, cartão claro e preço central."}, {id:"fotografico", nome:"Fotográfico", descricao:"Imagem de fundo, título amplo e informação sobreposta."}] as const;
 export type EstiloReserva = typeof ESTILOS_RESERVA[number]["id"];
 export interface FotografiaModeloReserva {imagem: string; credito?: string; origem?: string}
+
+export function novoModeloBaseReserva(formato: FormatoReserva, baseFixa = ""): MaterialReserva {
+  const campos: [CampoReserva,string,number,number][] = [["destino","Destino",58,8],["hotel","Hotel",70,4],["datas","Datas",76,3],["preco","Preço",83,7]];
+  return validarMaterialReserva({versao:1,nome:"O meu template do Canva",formato,fundo:"#ffffff",fundoFinal:"#ffffff",referencia:"",baseFixa,maxHoteis:1,dados:{...dadosReservaVazios(),condicoes:""},marcaEstilo:"cartao",elementos:[
+    ...campos.map(([campo,nome,y,tamanho])=>({...elementoReserva("texto",nome,{x:8,y,w:84,h:campo==="destino"||campo==="preco"?9:5}),campo,texto:nome,fonte:"geometrica",tamanho,alinhar:"left",negrito:campo==="destino"||campo==="preco",sombra:true,...campo==="preco"?{sufixo:" / pessoa"}:{}})),
+    marcaReserva({x:65,y:3,w:28,h:5}),
+  ]});
+}
 
 /** Preenche o desenho analisado sem substituir as suas posições, cores ou fontes. */
 export function preencherReferenciaReserva(modelo: MaterialReserva, dados: DadosReserva, hotel = 0, fotografia?: FotografiaModeloReserva | null): MaterialReserva {
@@ -18,7 +26,7 @@ export function preencherReferenciaReserva(modelo: MaterialReserva, dados: Dados
   }));
   // O renderer coloca os créditos nos últimos 28 px. Reserva esse rodapé
   // sem cortar preços/textos de referências que ocupam toda a altura.
-  if(m.elementos.some(e=>e.credito)) {
+  if(!m.baseFixa&&m.elementos.some(e=>e.credito)) {
     const escala=(dimensoesReserva(m.formato).altura-32)/dimensoesReserva(m.formato).altura;
     m.elementos=m.elementos.map(e=>({...e,y:e.y*escala,h:Math.max(.5,e.h*escala)}));
   }
@@ -84,5 +92,6 @@ export function comporModeloReserva(dados: DadosReserva, formato: FormatoReserva
 export function legendaMaterialReserva(m: MaterialReserva): string {
   const d=m.dados;
   const opcoes=d.hoteis.flatMap(h=>{const preco=precoPessoaReserva(d,h);return [h.nome,h.regime,preco===null?"":`Desde ${new Intl.NumberFormat("pt-PT",{maximumFractionDigits:2}).format(preco)} € por pessoa`];});
-  return [d.destino,d.frase,[d.ida,d.regresso].filter(Boolean).map(v=>v.split("-").reverse().join("/")).join(" — "),...opcoes,d.partida?`Partida: ${d.partida}`:"",d.bagagem,d.transfer,d.condicoes,"Pede o teu orçamento personalizado."].filter(Boolean).join("\n");
+  const creditos=m.baseFixa?[...new Set(m.elementos.filter(e=>e.credito).map(e=>`Fotografia: ${e.credito}${e.origem?` · ${e.origem}`:""}`))]:[];
+  return [d.destino,d.frase,[d.ida,d.regresso].filter(Boolean).map(v=>v.split("-").reverse().join("/")).join(" — "),...opcoes,d.partida?`Partida: ${d.partida}`:"",d.bagagem,d.transfer,d.condicoes,"Pede o teu orçamento personalizado.",...creditos].filter(Boolean).join("\n");
 }

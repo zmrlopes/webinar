@@ -1,5 +1,9 @@
 .pagina { --oliva: #4b5320; color: #111; min-width: 0; }
 .pagina [hidden] { display: none !important; }
+.intro .criarBase { margin-top: 18px; background: #4b5320; color: white; }
+.guiaSobreposta { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .35; pointer-events: none; object-fit: contain; }
+.formularioBase > article:nth-child(3) { order: -1; }
+.workspaceBase .canvasWrap { width: min(100%,480px); }
 .intro { padding: 8px 0 22px; }
 .intro > span { color: var(--oliva); font-size: 11px; font-weight: 750; letter-spacing: .14em; }
 .intro h1 { margin: 10px 0; font-size: clamp(27px, 3vw, 40px); letter-spacing: -.045em; line-height: 1.2; }

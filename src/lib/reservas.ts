@@ -44,8 +44,11 @@ export interface MaterialReserva {
   versao: 1; nome: string; formato: FormatoReserva; fundo: string; fundoFinal: string;
   referencia: string; maxHoteis: number; elementos: ElementoReserva[]; dados: DadosReserva;
   marcaEstilo?: "cartao" | "clara" | "escura";
+  /** Arte raster preservada; os campos variáveis são desenhados em separado. */
+  baseFixa?: string;
+  baseSobreFotos?: boolean;
 }
-export interface ResumoReserva { id: string; nome: string; tipo: "modelo" | "material"; formato: FormatoReserva; atualizadoEm: string }
+export interface ResumoReserva { id: string; nome: string; tipo: "modelo" | "material"; formato: FormatoReserva; atualizadoEm: string; baseFixa?: boolean }
 export class ErroReserva extends Error {
   diagnostico?: {servico: string; status: number; parametro: string};
   constructor(mensagem: string, public status = 400) { super(mensagem); }
@@ -153,6 +156,7 @@ export function validarMaterialReserva(valor: unknown): MaterialReserva {
   const dados = validarDadosReserva(v.dados);
   if (dados.hoteis.length > maxHoteis) throw new ErroReserva(`Este modelo tem espaço para ${maxHoteis} ${maxHoteis === 1 ? "hotel" : "hotéis"}.`);
   const material: MaterialReserva = {versao: 1, nome: texto(v.nome, 120) || "Sem nome", formato: v.formato, fundo: cor(v.fundo, "#ffffff"), fundoFinal: cor(v.fundoFinal, cor(v.fundo, "#ffffff")), referencia: imagemReserva(v.referencia), maxHoteis, elementos, dados,
+    ...(v.baseFixa ? {baseFixa: imagemReserva(v.baseFixa, 2_000_000), baseSobreFotos: v.baseSobreFotos === true} : {}),
     ...(v.marcaEstilo === "clara" || v.marcaEstilo === "escura" || v.marcaEstilo === "cartao" ? {marcaEstilo: v.marcaEstilo} : {})};
   if (JSON.stringify(material).length > 3_700_000) throw new ErroReserva("Este material tem demasiadas imagens. Reduz o tamanho das fotografias.", 413);
   return material;
@@ -193,6 +197,17 @@ export function manterFotografiasReserva(anteriores: ElementoReserva[], novos: E
 }
 export function aPartirDoModeloReserva(modelo: MaterialReserva): MaterialReserva {
   return {...structuredClone(modelo), nome: "Novo material", dados: {...dadosReservaVazios(), hoteis: Array.from({length: modelo.maxHoteis}, hotelVazio)}};
+}
+
+/** Um modelo fixo conserva a arte e a configuração; nunca guarda uma proposta ou foto variável. */
+export function prepararModeloReserva(material: MaterialReserva): MaterialReserva {
+  const m = aPartirDoModeloReserva(validarMaterialReserva(material));
+  m.nome = material.nome;
+  if(m.baseFixa) {
+    m.dados.condicoes = "";
+    m.elementos=m.elementos.map(e=>e.tipo==="foto"?{...e,imagem:undefined,recorte:undefined,credito:undefined,origem:undefined}:e);
+  }
+  return m;
 }
 export function espacoFotoReserva(material: MaterialReserva): CaixaReserva {
   const ocupados = material.elementos.filter(e => e.tipo !== "forma").map(e => [e.y, e.y + e.h]).sort((a,b)=>a[0]! - b[0]!);

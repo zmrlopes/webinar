@@ -3,7 +3,7 @@ import sharp from "sharp";
 import { db } from "./db";
 import { podeVerNovaArea } from "./consultor-nova-area";
 import { buscarMembroEquipa } from "./equipa";
-import { dadosReservaVazios, elementoReserva, ErroReserva, imagemReserva, marcaReserva, validarDadosReserva, validarMaterialReserva, type FormatoReserva, type MaterialReserva, type ResumoReserva } from "./reservas";
+import { dadosReservaVazios, elementoReserva, ErroReserva, imagemReserva, marcaReserva, prepararModeloReserva, validarDadosReserva, validarMaterialReserva, type FormatoReserva, type MaterialReserva, type ResumoReserva } from "./reservas";
 
 const prefixo = (email: string) => `reservas:v1:${email}:item:`;
 export async function acessoReservas(valor: unknown): Promise<string> {
@@ -17,12 +17,12 @@ function idReserva(valor: unknown): string {
   return valor;
 }
 export async function listarReservas(email: string): Promise<ResumoReserva[]> {
-  const {rows} = await db().query<{id: string; nome: string; tipo: "modelo" | "material"; formato: FormatoReserva; atualizado_em: Date}>(
+  const {rows} = await db().query<{id: string; nome: string; tipo: "modelo" | "material"; formato: FormatoReserva; atualizado_em: Date; base_fixa:boolean}>(
     `select valor->>'id' as id, valor->>'nome' as nome, valor->>'tipo' as tipo,
-      valor->'material'->>'formato' as formato, atualizado_em from dashboard_config
+      valor->'material'->>'formato' as formato, coalesce(valor->'material'->>'baseFixa','') <> '' as base_fixa, atualizado_em from dashboard_config
       where starts_with(chave, $1) order by atualizado_em desc`, [prefixo(email)],
   );
-  return rows.map(r => ({id: r.id, nome: r.nome, tipo: r.tipo, formato: r.formato, atualizadoEm: r.atualizado_em.toISOString()}));
+  return rows.map(r => ({id: r.id, nome: r.nome, tipo: r.tipo, formato: r.formato, baseFixa:r.base_fixa===true, atualizadoEm: r.atualizado_em.toISOString()}));
 }
 export async function abrirReserva(email: string, valor: unknown) {
   const id = idReserva(valor);
@@ -31,9 +31,10 @@ export async function abrirReserva(email: string, valor: unknown) {
   return rows[0].valor;
 }
 export async function guardarReserva(email: string, corpo: Record<string, unknown>) {
-  const material = validarMaterialReserva(corpo.material);
+  let material = validarMaterialReserva(corpo.material);
   const tipo = corpo.tipo === "modelo" ? "modelo" : corpo.tipo === "material" ? "material" : null;
   if (!tipo) throw new ErroReserva("Tipo de registo inválido.");
+  if(tipo==="modelo")material=prepararModeloReserva(material);
   const id = corpo.id ? idReserva(corpo.id) : randomUUID();
   if (corpo.id) {
     const existente = await abrirReserva(email, id);
