@@ -14,7 +14,7 @@ export interface AjustesEditorPublicacao {
 export interface EditorPublicacaoReserva {
   versao: 1; origemId: string; imagemOriginal: string; fundoLimpo: string; textos: TextoEditorPublicacao[];
   decoracoes: (CaixaReserva & {tipo?:"cartao"|"emoji"})[]; marca: CaixaReserva; ajustes: AjustesEditorPublicacao;
-  marcaPreparada?:boolean; marcaSuave?:boolean; logoBranco?:string; marcaDaReferencia?:boolean;
+  marcaPreparada?:boolean; marcaSuave?:boolean; logoBranco?:string; logoVersao?:string; marcaDaReferencia?:boolean;
 }
 export function ajustesIniciaisPublicacao(textos: TextoEditorPublicacao[]): AjustesEditorPublicacao {
   return {textos: textos.map(({id,fonte,tamanho,cor,negrito,italico,x,y})=>({id,fonte,tamanho,cor,negrito,italico,x,y,manterOriginal:true})),fundo:"",escurecimento:.5,credito:""};

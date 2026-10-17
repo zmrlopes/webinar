@@ -85,7 +85,8 @@ export async function reconhecerMarcaReferencia(email:string,referencia:Referenc
   const atualizada={...referencia,temMarca:analise.temMarca,marca:caixaMarca(analise.marca,analise.temMarca)};await guardar(email,atualizada);return atualizada;
 }
 
-export async function logotipoBrancoReserva(){return sharp(path.join(process.cwd(),"public/icligo-logo-branco.svg")).resize({width:1400}).png().toBuffer();}
+export const VERSAO_LOGOTIPO_BRANCO_RESERVA="icligo-branco-fornecido-v1";
+export async function logotipoBrancoReserva(){return sharp(path.join(process.cwd(),"public/icligo-logo-branco.png")).trim({background:"#00000000",threshold:1}).png().toBuffer();}
 /** A marca existente é preservada; a plataforma só acrescenta uma quando falta. */
 export async function finalizarImagemReserva(bytes: Buffer, referencia: ReferenciaImagemReserva, formato: PublicacaoImagemReserva["formato"],aplicarMarca=true) {
   const {largura, altura} = dimensoesReserva(formato), m = referencia.marca;

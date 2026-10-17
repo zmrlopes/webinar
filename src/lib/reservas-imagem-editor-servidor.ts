@@ -5,7 +5,7 @@ import {createCanvas,GlobalFonts,loadImage} from "@napi-rs/canvas";
 import {db} from "./db";
 import {ErroReserva,dimensoesReserva,type CaixaReserva} from "./reservas";
 import {chamarIAReservas,limitarIA} from "./reservas-servidor";
-import {abrirImagemReserva,finalizarImagemReserva,logotipoBrancoReserva} from "./reservas-imagem-servidor";
+import {abrirImagemReserva,finalizarImagemReserva,logotipoBrancoReserva,VERSAO_LOGOTIPO_BRANCO_RESERVA} from "./reservas-imagem-servidor";
 import type {PublicacaoImagemReserva} from "./reservas-imagem";
 import {FONTES_EDITOR_PUBLICACAO,ajustesIniciaisPublicacao,desenharEditorPublicacao,validarAjustesPublicacao,type EditorPublicacaoReserva,type TextoEditorPublicacao} from "./reservas-imagem-editor";
 import {decoracoesPublicacao,placaLimpaPublicacao,refinarTextosPublicacao,harmonizarMarcaPublicacao} from "./reservas-imagem-ocr";
@@ -18,6 +18,10 @@ async function carregarEditor(email:string,id:string) {
 async function guardarEditor(email:string,id:string,editor:EditorPublicacaoReserva){await db().query(`insert into dashboard_config (chave,valor) values ($1,$2::jsonb) on conflict (chave) do update set valor=excluded.valor,atualizado_em=now()`,[chaveEditor(email,id),JSON.stringify(editor)]);}
 const bytesImagem=(imagem:string)=>Buffer.from(imagem.split(",")[1]!,"base64");
 const dataUrl=(bytes:Buffer)=>`data:image/webp;base64,${bytes.toString("base64")}`;
+async function atualizarLogotipoEditor(editor:EditorPublicacaoReserva){
+  if(editor.logoBranco&&editor.logoVersao===VERSAO_LOGOTIPO_BRANCO_RESERVA)return false;
+  editor.logoBranco=`data:image/png;base64,${(await logotipoBrancoReserva()).toString("base64")}`;editor.logoVersao=VERSAO_LOGOTIPO_BRANCO_RESERVA;return true;
+}
 const propriedadesCaixa={x:{type:"number"},y:{type:"number"},w:{type:"number"},h:{type:"number"}};
 const esquemaEditor={type:"object",additionalProperties:false,properties:{textos:{type:"array",items:{type:"object",additionalProperties:false,properties:{...propriedadesCaixa,nome:{type:"string"},texto:{type:"string"},fonte:{type:"string",enum:FONTES_EDITOR_PUBLICACAO.map(f=>f.id)},tamanho:{type:"number"},cor:{type:"string"},negrito:{type:"boolean"},italico:{type:"boolean"},sombra:{type:"boolean"},alinhar:{type:"string",enum:["left","center","right"]}},required:[...Object.keys(propriedadesCaixa),"nome","texto","fonte","tamanho","cor","negrito","italico","sombra","alinhar"]}},decoracoes:{type:"array",items:{type:"object",additionalProperties:false,properties:propriedadesCaixa,required:Object.keys(propriedadesCaixa)}}},required:["textos","decoracoes"]};
 function caixa(valor:unknown):CaixaReserva {
@@ -28,7 +32,7 @@ function caixa(valor:unknown):CaixaReserva {
 export async function prepararEditorPublicacao(email:string,id:unknown):Promise<EditorPublicacaoReserva>{
   const r=await abrirImagemReserva(email,id);
   if(r.tipo!=="publicacao"||r.estado!=="pronta"||!r.imagem)throw new ErroReserva("Abre uma publicação concluída para editar.");
-  const guardado=await carregarEditor(email,r.id);if(guardado){let mudou=false;if(!guardado.logoBranco){guardado.logoBranco=`data:image/png;base64,${(await logotipoBrancoReserva()).toString("base64")}`;mudou=true;}if(!guardado.marcaPreparada&&guardado.origemId!==r.id){const origem=await carregarEditor(email,guardado.origemId);if(origem?.marcaPreparada&&origem.imagemOriginal===guardado.imagemOriginal){guardado.fundoLimpo=origem.fundoLimpo;guardado.marcaPreparada=true;guardado.marcaSuave=origem.marcaSuave;mudou=true;}}if(guardado.marcaPreparada&&!guardado.marcaSuave){const d=dimensoesReserva(r.formato);guardado.fundoLimpo=dataUrl(await harmonizarMarcaPublicacao(bytesImagem(guardado.imagemOriginal),bytesImagem(guardado.fundoLimpo),guardado.marca,d.largura,d.altura));guardado.marcaSuave=true;mudou=true;}if(mudou)await guardarEditor(email,r.id,guardado);return guardado;}
+  const guardado=await carregarEditor(email,r.id);if(guardado){let mudou=await atualizarLogotipoEditor(guardado);if(!guardado.marcaPreparada&&guardado.origemId!==r.id){const origem=await carregarEditor(email,guardado.origemId);if(origem?.marcaPreparada&&origem.imagemOriginal===guardado.imagemOriginal){guardado.fundoLimpo=origem.fundoLimpo;guardado.marcaPreparada=true;guardado.marcaSuave=origem.marcaSuave;mudou=true;}}if(guardado.marcaPreparada&&!guardado.marcaSuave){const d=dimensoesReserva(r.formato);guardado.fundoLimpo=dataUrl(await harmonizarMarcaPublicacao(bytesImagem(guardado.imagemOriginal),bytesImagem(guardado.fundoLimpo),guardado.marca,d.largura,d.altura));guardado.marcaSuave=true;mudou=true;}if(mudou)await guardarEditor(email,r.id,guardado);return guardado;}
   const ref=await abrirImagemReserva(email,r.referenciaId);if(ref.tipo!=="referencia")throw new ErroReserva("A referência não está disponível.");
   if(r.marca)ref.marca=r.marca;
   const {largura,altura}=dimensoesReserva(r.formato);
@@ -47,14 +51,15 @@ export async function prepararEditorPublicacao(email:string,id:unknown):Promise<
   // O reconhecimento e a limpeza são pedidos separados: cada um cabe no tempo da função.
   const refinados=await refinarTextosPublicacao(bytesImagem(r.imagem),textos,largura,altura);
   const decoracoes=await decoracoesPublicacao(bytesImagem(r.imagem),refinados,largura,altura);
-  const editor:EditorPublicacaoReserva={versao:1,origemId:r.id,imagemOriginal:r.imagem,fundoLimpo:"",textos:refinados,decoracoes,marca:ref.marca,marcaDaReferencia:ref.temMarca,logoBranco:`data:image/png;base64,${(await logotipoBrancoReserva()).toString("base64")}`,ajustes:ajustesIniciaisPublicacao(refinados)};
+  const editor:EditorPublicacaoReserva={versao:1,origemId:r.id,imagemOriginal:r.imagem,fundoLimpo:"",textos:refinados,decoracoes,marca:ref.marca,marcaDaReferencia:ref.temMarca,ajustes:ajustesIniciaisPublicacao(refinados)};
+  await atualizarLogotipoEditor(editor);
   await guardarEditor(email,r.id,editor);return editor;
 }
 export async function limparFundoEditorPublicacao(email:string,id:unknown):Promise<EditorPublicacaoReserva>{
   const r=await abrirImagemReserva(email,id);
   if(r.tipo!=="publicacao"||!r.imagem||r.estado!=="pronta")throw new ErroReserva("Abre uma publicação concluída.");
-  const editor=await carregarEditor(email,r.id);if(!editor)throw new ErroReserva("Prepara primeiro os textos da publicação.");if(editor.fundoLimpo&&editor.marcaPreparada)return editor;
-  if(editor.origemId!==r.id){const origem=await carregarEditor(email,editor.origemId);if(origem?.marcaPreparada&&origem.imagemOriginal===editor.imagemOriginal){editor.fundoLimpo=origem.fundoLimpo;editor.marcaPreparada=true;editor.marcaSuave=origem.marcaSuave;editor.logoBranco=origem.logoBranco;await guardarEditor(email,r.id,editor);return editor;}}
+  const editor=await carregarEditor(email,r.id);if(!editor)throw new ErroReserva("Prepara primeiro os textos da publicação.");if(await atualizarLogotipoEditor(editor))await guardarEditor(email,r.id,editor);if(editor.fundoLimpo&&editor.marcaPreparada)return editor;
+  if(editor.origemId!==r.id){const origem=await carregarEditor(email,editor.origemId);if(origem?.marcaPreparada&&origem.imagemOriginal===editor.imagemOriginal){editor.fundoLimpo=origem.fundoLimpo;editor.marcaPreparada=true;editor.marcaSuave=origem.marcaSuave;await guardarEditor(email,r.id,editor);return editor;}}
   const chave=process.env.RESERVAS_IMAGE_API_KEY||process.env.OPENAI_API_KEY;if(!chave)throw new ErroReserva("A geração de imagens ainda não está configurada.",503);
   await limitarIA(email);
   const {largura,altura}=dimensoesReserva(r.formato);
@@ -69,13 +74,14 @@ export async function limparFundoEditorPublicacao(email:string,id:unknown):Promi
   const meta=await sharp(Buffer.from(b64,"base64"),{limitInputPixels:10000000}).metadata();
   if(!meta.width||!meta.height||Math.abs(meta.width/meta.height-largura/altura)>.005)throw new ErroReserva("O fundo preparado tem um formato diferente da publicação.",502);
   const bytes=await placaLimpaPublicacao(bytesImagem(editor.imagemOriginal),Buffer.from(b64,"base64"),editor.textos,largura,altura,editor.marca);
-  editor.fundoLimpo=dataUrl(bytes);editor.marcaPreparada=true;editor.marcaSuave=true;editor.logoBranco??=`data:image/png;base64,${(await logotipoBrancoReserva()).toString("base64")}`;
+  editor.fundoLimpo=dataUrl(bytes);editor.marcaPreparada=true;editor.marcaSuave=true;
   if(bytes.length>1500000||JSON.stringify(editor).length>4100000)throw new ErroReserva("Esta publicação é demasiado pesada para o editor. Gera uma versão mais simples.",502);
   await guardarEditor(email,r.id,editor);return editor;
 }
 export async function guardarEdicaoPublicacao(email:string,corpo:Record<string,unknown>):Promise<PublicacaoImagemReserva>{
   const r=await abrirImagemReserva(email,corpo.id);if(r.tipo!=="publicacao"||r.estado!=="pronta"||!r.imagem)throw new ErroReserva("Abre uma publicação concluída.");
   const editor=await carregarEditor(email,r.id);if(!editor?.fundoLimpo)throw new ErroReserva("Prepara o editor antes de guardar.");
+  await atualizarLogotipoEditor(editor);
   const ajustes=validarAjustesPublicacao(corpo.ajustes,editor),{largura,altura}=dimensoesReserva(r.formato);
   if(ajustes.fundo){try{const imagem=sharp(bytesImagem(ajustes.fundo),{limitInputPixels:25000000,animated:false}),meta=await imagem.metadata();if(!["png","jpeg","webp"].includes(meta.format??"")||(meta.pages??1)>1)throw new Error();ajustes.fundo=dataUrl(await imagem.rotate().resize({width:1500,height:1500,fit:"inside",withoutEnlargement:true}).webp({quality:94}).toBuffer());}catch{throw new ErroReserva("A imagem de fundo não é válida. Escolhe um PNG, JPG ou WebP.");}}
   for(const f of FONTES_EDITOR_PUBLICACAO)for(const ficheiro of f.ficheiros)if(!GlobalFonts.has(f.familia)||ficheiro.peso==="700")GlobalFonts.registerFromPath(path.join(process.cwd(),"public/fonts",ficheiro.url),f.familia);

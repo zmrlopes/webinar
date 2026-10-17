@@ -91,6 +91,13 @@ permite deslocar a marca sem deixar a cópia anterior; nas publicações antigas
 a preparação do fundo retira também o cartão/logótipo da sua posição original.
 Esta alteração continua limitada à nova área e à API da conta de teste.
 
+Por indicação explícita do utilizador, o logótipo branco a inserir quando
+necessário é o ficheiro `docs/referencias-reservas/icligo branco.png`. A cópia
+de publicação fica em `public/icligo-logo-branco.png`, sem redesenhar o ícone,
+as letras, as proporções ou a transparência. Remover apenas as margens vazias
+para o posicionar. Editores guardados devem atualizar o recurso de marca,
+preservando os seus textos, posições, fundos e as publicações originais.
+
 Por indicação explícita do utilizador, o card de entrada no grupo WhatsApp
 Welcome Aboard também aparece nos Avisos da área atual (`/consultor`) para
 os consultores da equipa, com o mesmo convite definido em
