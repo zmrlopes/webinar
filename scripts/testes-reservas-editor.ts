@@ -5,7 +5,7 @@ import {createCanvas,loadImage} from "@napi-rs/canvas";
 import {db,fecharDb} from "../src/lib/db";
 import {EMAIL_PAINEL_DEMONSTRACAO} from "../src/lib/demo";
 import {dadosReservaVazios,hotelVazio} from "../src/lib/reservas";
-import {ajustesIniciaisPublicacao,desenharEditorPublicacao,validarAjustesPublicacao,type EditorPublicacaoReserva} from "../src/lib/reservas-imagem-editor";
+import {ajustesIniciaisPublicacao,desenharEditorPublicacao,prepararTextoEditor,validarAjustesPublicacao,type EditorPublicacaoReserva} from "../src/lib/reservas-imagem-editor";
 import {prepararEditorPublicacao,limparFundoEditorPublicacao,guardarEdicaoPublicacao} from "../src/lib/reservas-imagem-editor-servidor";
 import {abrirImagemReserva,finalizarImagemReserva} from "../src/lib/reservas-imagem-servidor";
 import type {PublicacaoImagemReserva,ReferenciaImagemReserva} from "../src/lib/reservas-imagem";
@@ -19,7 +19,7 @@ async function main(){
   for(const acao of ["preparar-editor","limpar-editor","guardar-edicao"])assert.equal((await POST(new Request("http://localhost/api",{method:"POST",body:JSON.stringify({acao,email:"outra@example.com"})}))).status,403);
   const base=await sharp({create:{width:1080,height:1920,channels:3,background:"#183d52"}}).webp().toBuffer(),url=(b:Buffer)=>`data:image/webp;base64,${b.toString("base64")}`;
   const ref:ReferenciaImagemReserva={id:randomUUID(),tipo:"referencia",nome:"Modelo pessoal",formato:"story",imagem:url(base),miniatura:"",estilo:"Desenho de teste",marca:{x:3,y:2,w:24,h:5}};
-  const source=await finalizarImagemReserva(base,ref,"story");
+  const baseComMarca=await finalizarImagemReserva(base,ref,"story"),arte=createCanvas(1080,1920),arteCtx=arte.getContext("2d");arteCtx.drawImage(await loadImage(baseComMarca),0,0);arteCtx.font="bold 70px sans-serif";arteCtx.fillStyle="#ffffff";arteCtx.fillText("GRAN CANARIA",54,1310);const source=arte.toBuffer("image/png");
   const r:PublicacaoImagemReserva={id:randomUUID(),tipo:"publicacao",nome:"Gran Canaria",formato:"story",estado:"pronta",criadaEm:new Date().toISOString(),referenciaId:ref.id,dados:{...dadosReservaVazios(),destino:"Gran Canaria",ida:"2026-11-17",regresso:"2026-11-22",viajantes:3,hoteis:[{...hotelVazio(),nome:"Hotel",total:4405}]},notas:"",imagem:url(source)};
   const textos=[{id:"titulo",nome:"Destino",texto:"GRAN CANARIA",fonte:"geometrica" as const,tamanho:70,cor:"#ffffff",negrito:true,italico:false,sombra:true,alinhar:"left" as const,x:5,y:65,w:85,h:7}];
   const editor:EditorPublicacaoReserva={versao:1,origemId:r.id,imagemOriginal:r.imagem!,fundoLimpo:url(base),textos,decoracoes:[],marca:ref.marca,ajustes:ajustesIniciaisPublicacao(textos)};
@@ -30,11 +30,27 @@ async function main(){
   const canvas=createCanvas(1080,1920),ctx=canvas.getContext("2d"),img=await loadImage(source),limpo=await loadImage(base);
   desenharEditorPublicacao(ctx as unknown as CanvasRenderingContext2D,img as unknown as CanvasImageSource,limpo as unknown as CanvasImageSource,null,editor,editor.ajustes,1080,1920);
   const original=createCanvas(1080,1920);original.getContext("2d").drawImage(img,0,0);
-  assert.deepEqual(ctx.getImageData(0,0,1080,1920).data,original.getContext("2d").getImageData(0,0,1080,1920).data,"Abrir o editor preserva todos os píxeis");
+  assert(Buffer.from(ctx.getImageData(0,0,1080,1920).data).equals(Buffer.from(original.getContext("2d").getImageData(0,0,1080,1920).data)),"Abrir o editor preserva todos os píxeis");
   const ajustes=structuredClone(editor.ajustes);ajustes.textos[0]!.fonte="condensada";ajustes.textos[0]!.tamanho=96;
   const antes=structuredClone(r),editada=await guardarEdicaoPublicacao(email,{id:r.id,ajustes});assert.notEqual(editada.id,r.id);assert.equal(editada.anteriorId,r.id);assert.deepEqual(editada.dados,r.dados);assert.deepEqual(await abrirImagemReserva(email,r.id),antes);
   const reaberto=await prepararEditorPublicacao(email,editada.id);assert.equal(reaberto.imagemOriginal,r.imagem);assert.equal(reaberto.ajustes.textos[0]!.fonte,"condensada");assert.equal(chamadasIA,0);
   ajustes.textos[0]!.tamanho=80;await guardarEdicaoPublicacao(email,{id:editada.id,ajustes});assert.equal(chamadasIA,0,"Reabrir e continuar a editar não volta a preparar o fundo");
+  const corrigidos=structuredClone(editor.ajustes);corrigidos.textos[0]!.texto="Pensão Completa\nBebidas incluídas";
+  const linhas=prepararTextoEditor(ctx as unknown as CanvasRenderingContext2D,textos[0]!,corrigidos.textos[0]!,1080).linhas;assert.deepEqual(linhas,["Pensão Completa","Bebidas incluídas"]);
+  const desenhados:string[]=[],proxy=new Proxy(ctx,{get(target,key){if(key==="fillText")return (s:string,...args:unknown[])=>{desenhados.push(s);return Reflect.apply(target.fillText,target,[s,...args]);};const v=Reflect.get(target,key,target);return typeof v==="function"?v.bind(target):v;},set(target,key,value){return Reflect.set(target,key,value,target);}});
+  // Mesmo havendo um recorte das letras antigas, uma correção usa o novo conteúdo.
+  desenharEditorPublicacao(proxy as unknown as CanvasRenderingContext2D,img as unknown as CanvasImageSource,limpo as unknown as CanvasImageSource,null,editor,corrigidos,1080,1920,new Map([["titulo",img as unknown as CanvasImageSource]]));
+  assert.deepEqual(desenhados,linhas);assert(!desenhados.includes("GRAN CANARIA"));
+  const corrigida=await guardarEdicaoPublicacao(email,{id:r.id,ajustes:corrigidos});assert.deepEqual(corrigida.dados,r.dados);assert.equal((await prepararEditorPublicacao(email,corrigida.id)).ajustes.textos[0]!.texto,corrigidos.textos[0]!.texto);
+  const apagados=structuredClone(corrigidos);apagados.textos[0]!.apagado=true;desenhados.length=0;
+  desenharEditorPublicacao(proxy as unknown as CanvasRenderingContext2D,img as unknown as CanvasImageSource,limpo as unknown as CanvasImageSource,null,editor,apagados,1080,1920);assert.deepEqual(desenhados,[]);
+  const area=[44,1238,938,154] as const,esperado=createCanvas(1080,1920);esperado.getContext("2d").drawImage(limpo,0,0);
+  assert(Buffer.from(ctx.getImageData(...area).data).equals(Buffer.from(esperado.getContext("2d").getImageData(...area).data)),"Apagar remove a inscrição antiga e deixa o fundo limpo");
+  const apagada=await guardarEdicaoPublicacao(email,{id:corrigida.id,ajustes:apagados}),recuperado=await prepararEditorPublicacao(email,apagada.id);assert.equal(recuperado.ajustes.textos[0]!.apagado,true);assert.equal(recuperado.ajustes.textos[0]!.texto,corrigidos.textos[0]!.texto);
+  apagados.textos[0]!.apagado=false;desenhados.length=0;desenharEditorPublicacao(proxy as unknown as CanvasRenderingContext2D,img as unknown as CanvasImageSource,limpo as unknown as CanvasImageSource,null,editor,apagados,1080,1920);assert.deepEqual(desenhados,linhas,"Restaurar recupera a correção anterior");
+  apagados.textos[0]!.texto="";desenhados.length=0;desenharEditorPublicacao(proxy as unknown as CanvasRenderingContext2D,img as unknown as CanvasImageSource,limpo as unknown as CanvasImageSource,null,editor,apagados,1080,1920);assert.deepEqual(desenhados,[]);assert(Buffer.from(ctx.getImageData(...area).data).equals(Buffer.from(esperado.getContext("2d").getImageData(...area).data)),"Esvaziar também remove o texto");
+  assert.equal(chamadasIA,0);assert.deepEqual(await abrirImagemReserva(email,r.id),antes);
+  for(const invalido of [{texto:123},{texto:"a".repeat(1601)},{apagado:"true"},{id:"marca",texto:"alterar marca"}])assert.throws(()=>validarAjustesPublicacao({...ajustes,textos:[{...ajustes.textos[0],...invalido}]},editor));
   assert.throws(()=>validarAjustesPublicacao({...ajustes,textos:[{...ajustes.textos[0],fonte:"codigo-remoto"}]},editor));
   assert.throws(()=>validarAjustesPublicacao({...ajustes,textos:[{...ajustes.textos[0],tamanho:NaN}]},editor));
   assert.throws(()=>validarAjustesPublicacao({...ajustes,fundo:"https://example.com/fundo.png"},editor));
@@ -43,7 +59,7 @@ async function main(){
   const fundo=await sharp({create:{width:800,height:500,channels:3,background:"#b97732"}}).webp().toBuffer();ajustes.fundo=url(fundo);
   const comFundo=await guardarEdicaoPublicacao(email,{id:r.id,ajustes});const bytes=Buffer.from(comFundo.imagem!.split(",")[1]!,"base64"),meta=await sharp(bytes).metadata();assert.equal(meta.width,1080);assert.equal(meta.height,1920);
   const marca=await sharp(bytes).extract({left:40,top:50,width:1,height:1}).raw().toBuffer();assert(marca[0]!>220&&marca[1]!>220,"A marca continua aplicada por cima da fotografia");
-  console.log("OK: acesso privado, abertura sem alterar o original, fontes/tamanhos, troca de fundo, marca protegida, versões e reabertura sem nova IA. Sem rede nem alterações reais.");
+  console.log("OK: acesso privado, original preservado, correção e remoção de textos na imagem, restauro, persistência, fontes/tamanhos, fundo, marca e reabertura sem IA. Sem rede nem alterações reais.");
  }finally{pool.query=originalQuery;globalThis.fetch=originalFetch;await fecharDb();}
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

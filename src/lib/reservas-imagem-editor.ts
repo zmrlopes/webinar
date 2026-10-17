@@ -7,7 +7,7 @@ export interface TextoEditorPublicacao extends CaixaReserva {
   cor: string; negrito: boolean; italico: boolean; sombra: boolean; alinhar: "left" | "center" | "right";
   recorteOriginal?: string;
 }
-export interface EstiloTextoPublicacao {id: string; fonte: FonteReserva; tamanho: number; cor: string; negrito: boolean; italico: boolean; x: number; y: number; manterOriginal?:boolean}
+export interface EstiloTextoPublicacao {id: string; fonte: FonteReserva; tamanho: number; cor: string; negrito: boolean; italico: boolean; x: number; y: number; manterOriginal?:boolean; texto?:string; apagado?:boolean}
 export interface AjustesEditorPublicacao {
   textos: EstiloTextoPublicacao[]; fundo: string; escurecimento: number; credito: string;
 }
@@ -19,8 +19,10 @@ export function ajustesIniciaisPublicacao(textos: TextoEditorPublicacao[]): Ajus
   return {textos: textos.map(({id,fonte,tamanho,cor,negrito,italico,x,y})=>({id,fonte,tamanho,cor,negrito,italico,x,y,manterOriginal:true})),fundo:"",escurecimento:.5,credito:""};
 }
 export function textoAlteradoPublicacao(texto: TextoEditorPublicacao, estilo: EstiloTextoPublicacao) {
-  return estilo.manterOriginal===false||(["fonte","tamanho","cor","negrito","italico","x","y"] as const).some(k => texto[k] !== estilo[k]);
+  return estilo.apagado===true||conteudoTextoPublicacao(texto,estilo)!==texto.texto||estilo.manterOriginal===false||(["fonte","tamanho","cor","negrito","italico","x","y"] as const).some(k => texto[k] !== estilo[k]);
 }
+export function conteudoTextoPublicacao(texto: TextoEditorPublicacao, estilo: EstiloTextoPublicacao) {return estilo.texto??texto.texto;}
+export function textoVisivelPublicacao(texto: TextoEditorPublicacao, estilo: EstiloTextoPublicacao) {return !estilo.apagado&&conteudoTextoPublicacao(texto,estilo).trim().length>0;}
 export function validarAjustesPublicacao(valor: unknown, editor: EditorPublicacaoReserva): AjustesEditorPublicacao {
   const v = valor as Partial<AjustesEditorPublicacao> | null;
   if (!v || !Array.isArray(v.textos) || v.textos.length !== editor.textos.length) throw new ErroReserva("Os textos do editor são inválidos.");
@@ -29,9 +31,10 @@ export function validarAjustesPublicacao(valor: unknown, editor: EditorPublicaca
     const original = editor.textos.find(e => e.id === t?.id);
     if (!original || ids.has(t.id)) throw new ErroReserva("O texto selecionado não existe nesta publicação.");
     ids.add(t.id);
+    if ((t.texto!==undefined&&(typeof t.texto!=="string"||t.texto.length>1600)) || (t.apagado!==undefined&&typeof t.apagado!=="boolean")) throw new ErroReserva("Cada texto pode ter até 1600 caracteres.");
     if (!FONTES_EDITOR_PUBLICACAO.some(f=>f.id===t.fonte) || !Number.isFinite(t.tamanho) || t.tamanho < 10 || t.tamanho > 220 || !/^#[0-9a-f]{6}$/i.test(t.cor) || typeof t.negrito !== "boolean" || typeof t.italico !== "boolean") throw new ErroReserva("Revê o tipo, o tamanho e a cor da letra.");
     if (!Number.isFinite(t.x) || !Number.isFinite(t.y) || t.x < 0 || t.x > 100-original.w || t.y < 0 || t.y > 98) throw new ErroReserva("Mantém o texto dentro da publicação.");
-    return {id:t.id,fonte:t.fonte,tamanho:t.tamanho,cor:t.cor,negrito:t.negrito,italico:t.italico,x:t.x,y:t.y,manterOriginal:t.manterOriginal!==false};
+    return {id:t.id,fonte:t.fonte,tamanho:t.tamanho,cor:t.cor,negrito:t.negrito,italico:t.italico,x:t.x,y:t.y,manterOriginal:t.manterOriginal!==false,...(t.texto!==undefined?{texto:t.texto}:{}),...(t.apagado!==undefined?{apagado:t.apagado}:{})};
   });
   if (typeof v.escurecimento !== "number" || !Number.isFinite(v.escurecimento) || v.escurecimento < 0 || v.escurecimento > .85 || typeof v.credito !== "string" || v.credito.length > 300) throw new ErroReserva("O fundo escolhido é inválido.");
   return {textos,fundo:imagemReserva(v.fundo),escurecimento:v.escurecimento,credito:v.credito.trim()};
@@ -45,7 +48,7 @@ function linhasEditor(ctx: CanvasRenderingContext2D, texto: string, largura: num
 }
 export function prepararTextoEditor(ctx: CanvasRenderingContext2D, texto: TextoEditorPublicacao, estilo: EstiloTextoPublicacao, largura: number) {
   ctx.font = `${estilo.italico?"italic ":""}${pesoFonteReserva(estilo.fonte,estilo.negrito)} ${estilo.tamanho}px ${fonteReserva(estilo.fonte).familia}`;
-  const linhas=linhasEditor(ctx,texto.texto,texto.w/100*largura),medidas=linhas.map(l=>ctx.measureText(l||"Ag"));
+  const linhas=linhasEditor(ctx,conteudoTextoPublicacao(texto,estilo),texto.w/100*largura),medidas=linhas.map(l=>ctx.measureText(l||"Ag"));
   const subida=Math.max(...medidas.map(m=>m.actualBoundingBoxAscent)),descida=Math.max(...medidas.map(m=>m.actualBoundingBoxDescent));
   return {linhas,subida,altura:subida+descida+(linhas.length-1)*estilo.tamanho*1.15};
 }
@@ -64,8 +67,9 @@ export function desenharEditorPublicacao(ctx: CanvasRenderingContext2D, original
     }
   }
   for(const t of editor.textos){const estilo=ajustes.textos.find(e=>e.id===t.id)!;if(!fundo&&!textoAlteradoPublicacao(t,estilo))continue;
+    if(!textoVisivelPublicacao(t,estilo))continue;
     const recorte=recortes.get(t.id);
-    if(recorte&&estilo.manterOriginal!==false&&estilo.fonte===t.fonte&&estilo.cor===t.cor&&estilo.negrito===t.negrito&&estilo.italico===t.italico){
+    if(recorte&&conteudoTextoPublicacao(t,estilo)===t.texto&&estilo.manterOriginal!==false&&estilo.fonte===t.fonte&&estilo.cor===t.cor&&estilo.negrito===t.negrito&&estilo.italico===t.italico){
       const escala=estilo.tamanho/t.tamanho;ctx.drawImage(recorte,estilo.x/100*largura,estilo.y/100*altura,t.w/100*largura*escala,t.h/100*altura*escala);continue;
     }
     ctx.save();const {linhas,subida}=prepararTextoEditor(ctx,t,estilo,largura),x=estilo.x/100*largura,y=estilo.y/100*altura,w=t.w/100*largura;
@@ -75,7 +79,7 @@ export function desenharEditorPublicacao(ctx: CanvasRenderingContext2D, original
     linhas.forEach((linha,i)=>ctx.fillText(linha,tx,y+subida+i*estilo.tamanho*1.15));ctx.restore();
   }
   // A marca original fica por cima de qualquer letra ou fotografia.
-  const m=editor.marca,x=m.x/100*largura,y=m.y/100*altura,w=m.w/100*largura,h=m.h/100*altura;
+  const m=editor.marca,x=Math.floor(m.x/100*largura),y=Math.floor(m.y/100*altura),w=Math.ceil((m.x+m.w)/100*largura)-x,h=Math.ceil((m.y+m.h)/100*altura)-y;
   ctx.drawImage(original,x,y,w,h,x,y,w,h);
   if(fundo&&ajustes.credito){ctx.fillStyle="#ffffff";ctx.fillRect(0,altura-24,largura,24);ctx.fillStyle="#333333";ctx.font=`11px ${fonteReserva("poppins").familia}`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(ajustes.credito,largura/2,altura-12,largura-20);}
 }

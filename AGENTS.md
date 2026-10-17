@@ -77,6 +77,12 @@ os ajustes seguintes são imediatos e gravam uma nova versão privada. Preservar
 a publicação original, os dados confirmados e a marca iCliGo protegida. O editor
 continua limitado à nova área da conta de teste, incluindo todas as ações da API.
 
+Por indicação explícita do utilizador, este editor também permite corrigir o
+conteúdo dos textos e apagá-los, com desfazer e restauro. As alterações manuais
+ficam na versão da publicação, sem substituir os dados do orçamento importado.
+Na geração, os talheres correspondem ao regime alimentar confirmado, nunca a
+uma frase promocional. A marca mantém-se protegida e o acesso exclusivo de teste.
+
 Por indicação explícita do utilizador, o card de entrada no grupo WhatsApp
 Welcome Aboard também aparece nos Avisos da área atual (`/consultor`) para
 os consultores da equipa, com o mesmo convite definido em
