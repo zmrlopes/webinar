@@ -5,7 +5,7 @@ import {
   ALTURA, alturaParagrafo, cabecalho, CINZA, codificarPaginas, cobrir, icone, LARGURA, LINHA, linhas, logo, M, marca, novaPagina,
   paginasDicas, paragrafo, pastilha, registarFontes, retangulo, rodape, semFoto, sombra, tema, TINTA, viagem, type FotoDesenho, type Tema,
 } from "./travel-planner-desenho";
-import { euros, plannerDaProposta, type Proposta } from "./proposta";
+import { euros, listasIncluido, plannerDaProposta, precosDaOpcao, type Proposta } from "./proposta";
 import { dataPlanner, diasDaViagem, type MarcaPlanner, type TravelPlanner } from "./travel-planner";
 
 export interface DadosProposta {
@@ -32,7 +32,7 @@ function etiquetaEscolha(ctx: SKRSContext2D, t: Tema, x: number, y: number) {
   return w;
 }
 
-const menorPreco = (p: Proposta) => Math.min(...p.opcoes.map(o => o.precoPessoa ?? o.total ?? Infinity));
+const menorPreco = (p: Proposta) => Math.min(...p.opcoes.map(o => precosDaOpcao(o, p.viagem.viajantes).porPessoa ?? Infinity));
 
 function capa(d: DadosProposta, t: Tema, img: Image | null) {
   const {p} = d, {canvas, ctx} = novaPagina(t);
@@ -63,7 +63,7 @@ function capa(d: DadosProposta, t: Tema, img: Image | null) {
   const desde = menorPreco(p);
   if (Number.isFinite(desde)) {
     ctx.fillStyle = "rgba(255,255,255,0.85)"; ctx.font = "22px Poppins"; ctx.textBaseline = "alphabetic";
-    ctx.fillText(p.opcoes.some(o => o.precoPessoa !== null) ? "desde, por pessoa" : "desde", M, y);
+    ctx.fillText("desde, por pessoa", M, y);
     ctx.fillStyle = "#fff"; ctx.font = "84px PoppinsBold"; ctx.fillText(euros(desde), M, y + 86);
   }
   ctx.fillStyle = "rgba(255,255,255,0.35)"; ctx.fillRect(M, ALTURA - 150, LARGURA - 2 * M, 1.5);
@@ -77,7 +77,7 @@ function capa(d: DadosProposta, t: Tema, img: Image | null) {
 function incluido(d: DadosProposta, t: Tema, img: Image | null, plano: TravelPlanner, n: number) {
   const {p} = d, {canvas, ctx} = novaPagina(t);
   let y = cabecalho(ctx, t, "Sem surpresas", "O que está incluído");
-  const colW = p.naoIncluido.length ? (LARGURA - 2 * M - 30) / 2 : LARGURA - 2 * M;
+  const colW = listasIncluido(p).nao.length ? (LARGURA - 2 * M - 30) / 2 : LARGURA - 2 * M;
   const coluna = (titulo: string, itens: string[], x: number, sim: boolean) => {
     ctx.font = "21px Poppins";
     const alturas = itens.map(i => Math.max(46, alturaParagrafo(ctx, i, colW - 110, 30, 3) + 16));
@@ -95,10 +95,10 @@ function incluido(d: DadosProposta, t: Tema, img: Image | null, plano: TravelPla
     });
     return h;
   };
-  const extra = [p.viagem.transfer && `Transfer: ${p.viagem.transfer}`, p.viagem.bagagem && `Bagagem: ${p.viagem.bagagem}`].filter(Boolean) as string[];
-  const sim = [...p.incluido, ...extra.filter(e => !p.incluido.some(i => i.toLowerCase().includes(e.split(":")[0]!.toLowerCase())))];
+  const listas = listasIncluido(p);
+  const sim = [...listas.sim, ...(p.viagem.bagagem && !listas.sim.some(i => /bagagem/i.test(i)) ? [`Bagagem: ${p.viagem.bagagem}`] : [])];
   const hSim = coluna("Incluído", sim.length ? sim : ["Confirma com o teu consultor o que está incluído."], M, true);
-  const hNao = p.naoIncluido.length ? coluna("Não incluído", p.naoIncluido, M + colW + 30, false) : 0;
+  const hNao = listas.nao.length ? coluna("Não incluído", listas.nao, M + colW + 30, false) : 0;
   y += Math.max(hSim, hNao) + 40;
   if (p.condicoes) {
     ctx.font = "20px Poppins"; const h = alturaParagrafo(ctx, p.condicoes, LARGURA - 2 * M - 80, 30, 10) + 100;
@@ -150,9 +150,10 @@ function opcoes(d: DadosProposta, t: Tema, img: Image | null, plano: TravelPlann
     // Preço no canto inferior.
     const py = y + h - 40;
     ctx.textAlign = "right"; ctx.textBaseline = "alphabetic";
-    ctx.fillStyle = TINTA; ctx.font = "54px PoppinsBold"; ctx.fillText(euros(o.total ?? o.precoPessoa), M + w - 32, py - 26);
+    const precos = precosDaOpcao(o, p.viagem.viajantes);
+    ctx.fillStyle = TINTA; ctx.font = "54px PoppinsBold"; ctx.fillText(euros(precos.porPessoa ?? precos.total), M + w - 32, py - 26);
     ctx.fillStyle = CINZA; ctx.font = "19px Poppins";
-    ctx.fillText(o.total !== null ? (o.precoPessoa !== null ? `total · ${euros(o.precoPessoa)} por pessoa` : "total") : "por pessoa", M + w - 32, py + 4);
+    ctx.fillText(precos.porPessoa !== null ? (precos.total !== null ? `por pessoa · ${euros(precos.total)} no total` : "por pessoa") : "total", M + w - 32, py + 4);
     ctx.textAlign = "left";
     y += h + gap;
   });
@@ -166,7 +167,7 @@ async function comparacao(d: DadosProposta, t: Tema, img: Image | null, plano: T
   const comCoords = p.opcoes.map((o, i) => ({o, i})).filter(({o}) => o.lat !== null && o.lng !== null);
   const linhasTabela: [string, (o: Proposta["opcoes"][number]) => string][] = [
     ["Alojamento", o => o.hotel], ["Categoria", o => o.estrelas ? " " : "—"], ["Zona", o => o.zona || "—"], ["Quarto", o => o.quarto || "—"],
-    ["Regime", o => o.regime || "—"], ["Por pessoa", o => euros(o.precoPessoa)], ["Total", o => euros(o.total)],
+    ["Regime", o => o.regime || "—"], ["Por pessoa", o => euros(precosDaOpcao(o, p.viagem.viajantes).porPessoa)], ["Total", o => euros(precosDaOpcao(o, p.viagem.viajantes).total)],
   ];
   const colRotulo = 220, colW = (LARGURA - 2 * M - colRotulo) / p.opcoes.length;
   ctx.font = "19px Poppins";
@@ -211,7 +212,7 @@ async function comparacao(d: DadosProposta, t: Tema, img: Image | null, plano: T
     if (k) { ctx.fillStyle = LINHA; ctx.fillRect(M + 24, ly, LARGURA - 2 * M - 48, 1.5); }
     ctx.fillStyle = CINZA; ctx.font = "16px PoppinsBold"; ctx.textBaseline = "top"; ctx.fillText(rotulo.toUpperCase(), M + 30, ly + 20);
     p.opcoes.forEach((o, i) => {
-      const destaque = rotulo === "Total" || rotulo === "Alojamento";
+      const destaque = rotulo === "Por pessoa" || rotulo === "Alojamento";
       ctx.fillStyle = rotulo === "Categoria" ? t.c.destaque : TINTA; ctx.font = destaque ? "20px PoppinsBold" : "19px Poppins";
       if (rotulo === "Categoria" && o.estrelas) estrelas(ctx, o.estrelas, M + colRotulo + i * colW + 20, ly + 32, t.c.destaque);
       else paragrafo(ctx, f(o), M + colRotulo + i * colW + 20, ly + 18, colW - 40, 27, 3);

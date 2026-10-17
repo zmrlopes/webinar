@@ -15,6 +15,8 @@ export const MAX_OPCOES_PROPOSTA = 3;
 export interface ViagemProposta {
   destino: string; partida: string; ida: string; regresso: string; viajantes: number | null;
   voo: string; bagagem: string; transfer: string;
+  /** Se os transfers estão incluídos no preço: sim, não, ou null quando o PDF não diz. */
+  transferIncluido: boolean | null;
 }
 export interface HotelLido { nome: string; quarto: string; regime: string; total: number | null; precoPessoa: number | null }
 export interface LeituraPDF {
@@ -56,7 +58,7 @@ export interface Proposta {
 }
 export interface ResumoProposta { id: string; nome: string; destino: string; ida: string; opcoes: number; atualizadoEm: string }
 
-export const viagemVazia = (): ViagemProposta => ({destino: "", partida: "", ida: "", regresso: "", viajantes: null, voo: "", bagagem: "", transfer: ""});
+export const viagemVazia = (): ViagemProposta => ({destino: "", partida: "", ida: "", regresso: "", viajantes: null, voo: "", bagagem: "", transfer: "", transferIncluido: null});
 export const opcaoVazia = (): OpcaoProposta => ({hotel: "", estrelas: null, zona: "", quarto: "", regime: "", total: null, precoPessoa: null, lat: null, lng: null, foto: null, diferencas: "", ficheiro: ""});
 
 export function propostaVazia(id: string): Proposta {
@@ -74,7 +76,8 @@ export function validarViagemProposta(v: unknown): ViagemProposta {
   const d = objeto(v);
   const viajantes = typeof d.viajantes === "number" && Number.isInteger(d.viajantes) && d.viajantes > 0 && d.viajantes < 100 ? d.viajantes : null;
   return {destino: texto(d.destino, 160), partida: texto(d.partida, 120), ida: data(d.ida), regresso: data(d.regresso), viajantes,
-    voo: texto(d.voo, 600), bagagem: texto(d.bagagem, 300), transfer: texto(d.transfer, 300)};
+    voo: texto(d.voo, 600), bagagem: texto(d.bagagem, 300), transfer: texto(d.transfer, 300),
+    transferIncluido: typeof d.transferIncluido === "boolean" ? d.transferIncluido : null};
 }
 
 export function validarOpcao(v: unknown): OpcaoProposta {
@@ -138,8 +141,13 @@ export function juntarLeituras(leituras: LeituraPDF[]): {viagem: ViagemProposta;
   for (const l of leituras) {
     const diferencas = ROTULOS.filter(([k]) => normal(String(l.viagem[k] ?? "")) !== normal(String(base[k] ?? "")) && String(l.viagem[k] ?? "").trim())
       .map(([k, rotulo]) => `${rotulo}: ${l.viagem[k]}`);
+    // Transfers incluídos num PDF e não noutro: a opção tem de o dizer claramente.
+    if (l.viagem.transferIncluido !== null && base.transferIncluido !== null && l.viagem.transferIncluido !== base.transferIncluido) {
+      diferencas.push(l.viagem.transferIncluido ? "Transfers incluídos" : "Transfers não incluídos");
+    }
     if (diferencas.length && l !== leituras[0]) avisos.push(`${l.ficheiro}: ${diferencas.map(d => d.split(":")[0]).join(", ")} diferente(s) da primeira proposta.`);
-    for (const h of l.hoteis) opcoes.push({...opcaoVazia(), hotel: h.nome, quarto: h.quarto, regime: h.regime, total: h.total, precoPessoa: h.precoPessoa,
+    for (const h of l.hoteis) opcoes.push({...opcaoVazia(), hotel: h.nome, quarto: h.quarto, regime: h.regime,
+      total: precosDaOpcao(h, l.viagem.viajantes ?? base.viajantes).total, precoPessoa: precosDaOpcao(h, l.viagem.viajantes ?? base.viajantes).porPessoa,
       diferencas: l === leituras[0] ? "" : diferencas.join("\n"), ficheiro: l.ficheiro});
   }
   if (opcoes.length > MAX_OPCOES_PROPOSTA) avisos.push(`Encontrámos ${opcoes.length} alojamentos; ficaram os primeiros ${MAX_OPCOES_PROPOSTA}. Podes remover e trocar.`);
@@ -155,6 +163,27 @@ export function plannerDaProposta(p: Proposta, opcao: number, id: string): Trave
   return {...base, nome: `Viagem a ${p.viagem.destino}${o?.hotel ? ` · ${o.hotel}` : ""}`, estilo: p.estilo,
     viagem: {...base.viagem, ...p.viagem, hotel: o?.hotel ?? "", quarto: o?.quarto ?? "", regime: o?.regime ?? ""},
     voos: p.voos, extras: p.extras, dicas: p.dicas, emergencia: p.emergencia, foto: p.foto, fotoHotel: o?.foto ?? null};
+}
+
+/**
+ * Preço por pessoa e total de uma opção. Quando o PDF só traz um dos dois,
+ * o outro calcula-se com o número de viajantes — assim nenhuma opção fica
+ * sem preço por pessoa na comparação.
+ */
+export function precosDaOpcao(o: Pick<OpcaoProposta, "total" | "precoPessoa">, viajantes: number | null): {total: number | null; porPessoa: number | null} {
+  const arredondar = (v: number) => Math.round(v * 100) / 100;
+  const total = o.total ?? (o.precoPessoa !== null && viajantes ? arredondar(o.precoPessoa * viajantes) : null);
+  const porPessoa = o.precoPessoa ?? (o.total !== null && viajantes ? arredondar(o.total / viajantes) : null);
+  return {total, porPessoa};
+}
+
+/** Listas do que está incluído, com os transfers ditos de forma clara (incluídos ou não). */
+export function listasIncluido(p: Pick<Proposta, "incluido" | "naoIncluido" | "viagem">): {sim: string[]; nao: string[]} {
+  const semTransfer = (l: string[]) => p.viagem.transferIncluido === null ? l : l.filter(i => !/transfer/i.test(i));
+  const sim = semTransfer(p.incluido), nao = semTransfer(p.naoIncluido);
+  if (p.viagem.transferIncluido === true) sim.push("Transfers incluídos");
+  if (p.viagem.transferIncluido === false) nao.push("Transfers não incluídos");
+  return {sim, nao};
 }
 
 export function euros(v: number | null): string {

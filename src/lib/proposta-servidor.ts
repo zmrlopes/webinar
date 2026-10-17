@@ -68,9 +68,9 @@ export async function guardarPerfil(email: string, valor: unknown): Promise<{tel
 const esquemaLeitura = {
   type: "object", additionalProperties: false, required: ["viagem", "hoteis", "incluido", "naoIncluido", "condicoes", "validade"],
   properties: {
-    viagem: {type: "object", additionalProperties: false, required: ["destino", "partida", "ida", "regresso", "viajantes", "voo", "bagagem", "transfer"],
+    viagem: {type: "object", additionalProperties: false, required: ["destino", "partida", "ida", "regresso", "viajantes", "voo", "bagagem", "transfer", "transferIncluido"],
       properties: {destino: {type: "string"}, partida: {type: "string"}, ida: {type: "string"}, regresso: {type: "string"}, viajantes: {type: ["integer", "null"]},
-        voo: {type: "string"}, bagagem: {type: "string"}, transfer: {type: "string"}}},
+        voo: {type: "string"}, bagagem: {type: "string"}, transfer: {type: "string"}, transferIncluido: {type: ["boolean", "null"]}}},
     hoteis: {type: "array", items: {type: "object", additionalProperties: false, required: ["nome", "quarto", "regime", "total", "precoPessoa"],
       properties: {nome: {type: "string"}, quarto: {type: "string"}, regime: {type: "string"}, total: {type: ["number", "null"]}, precoPessoa: {type: ["number", "null"]}}}},
     incluido: {type: "array", items: {type: "string"}}, naoIncluido: {type: "array", items: {type: "string"}},
@@ -85,7 +85,7 @@ export async function lerPDFProposta(email: string, ficheiro: File): Promise<Lei
   if (bytes.subarray(0, 5).toString() !== "%PDF-") throw new ErroPlanner("O ficheiro não é um PDF válido.");
   const r = await chamarIAReservas(email, `Extrai exclusivamente dados comprovados neste PDF de uma proposta de viagem da iCliGo (MyOffice), incluindo os que estão em imagens. Não inventes nem adivinhes.
 Não devolvas dados pessoais de clientes, referências de reserva, dados de pagamento nem comissões.
-- viagem: destino (cidade/região e país), partida (cidade), ida e regresso (YYYY-MM-DD), viajantes (número de pessoas), voo (companhia, números e horários, ida e volta), bagagem, transfer.
+- viagem: destino (cidade/região e país), partida (cidade), ida e regresso (YYYY-MM-DD), viajantes (número de pessoas), voo (companhia, números e horários, ida e volta), bagagem, transfer (descrição curta), transferIncluido (true se o preço inclui transfers, false se o PDF diz que não inclui ou não há transfer, null se o PDF não diz nada).
 - hoteis: cada alojamento proposto com nome, tipo de quarto, regime, preço total e preço por pessoa (números em euros, sem símbolo).
 - incluido: lista curta do que o preço inclui (ex.: "Voos Lisboa–Funchal", "Taxas de aeroporto", "Transfer", "Seguro de viagem"), SEM o alojamento, o número de noites no hotel nem o regime (esses aparecem em cada opção de alojamento). naoIncluido: o que o PDF diz não estar incluído.
 - condicoes: condições importantes (cancelamento, pagamento) num parágrafo curto. validade: data limite da proposta em YYYY-MM-DD, se existir.`,

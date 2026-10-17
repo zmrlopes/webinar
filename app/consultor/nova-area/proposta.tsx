@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ChangeEvent } from "react";
 import {
-  euros, juntarLeituras, MAX_OPCOES_PROPOSTA, opcaoVazia, pendentesProposta,
+  euros, juntarLeituras, MAX_OPCOES_PROPOSTA, opcaoVazia, pendentesProposta, precosDaOpcao,
   type LeituraPDF, type OpcaoProposta, type Proposta, type ResumoProposta,
 } from "@/lib/proposta";
 import { dataPlanner, ESTILOS_PLANNER, MARCA_PADRAO, vooVazio, type FotoPlanner, type MarcaPlanner, type VooPlanner } from "@/lib/travel-planner";
@@ -241,7 +241,9 @@ export function PropostaNovaArea({email, abrirPlanner}: {email: string; abrirPla
           <Campo titulo="Data de regresso" tipo="date" valor={p.viagem.regresso} alterar={v => alterarViagem("regresso", v)} />
           <Campo titulo="Viajantes" tipo="number" valor={p.viagem.viajantes} alterar={v => alterarViagem("viajantes", v)} />
           <Campo titulo="Bagagem" valor={p.viagem.bagagem} alterar={v => alterarViagem("bagagem", v)} />
-          <Campo titulo="Transfer" valor={p.viagem.transfer} alterar={v => alterarViagem("transfer", v)} />
+          <label className={css.campo}><span>Transfers</span><select value={p.viagem.transferIncluido === null ? "" : p.viagem.transferIncluido ? "sim" : "nao"}
+            onChange={e => setP({...p, viagem: {...p.viagem, transferIncluido: e.target.value === "" ? null : e.target.value === "sim"}})}>
+            <option value="">Sem informação</option><option value="sim">Incluídos</option><option value="nao">Não incluídos</option></select></label>
         </div>
         <Campo titulo="Voos (companhia, horários, escalas)" grande valor={p.viagem.voo} alterar={v => alterarViagem("voo", v)} />
 
@@ -256,7 +258,7 @@ export function PropostaNovaArea({email, abrirPlanner}: {email: string; abrirPla
             <Campo titulo="Quarto" valor={o.quarto} alterar={v => alterarOpcao(i, {quarto: v})} />
             <Campo titulo="Regime" valor={o.regime} alterar={v => alterarOpcao(i, {regime: v})} />
             <Campo titulo="Preço total (€)" valor={o.total === null ? "" : String(o.total)} alterar={v => alterarOpcao(i, {total: numeroOuNulo(v)})} />
-            <Campo titulo="Preço por pessoa (€)" valor={o.precoPessoa === null ? "" : String(o.precoPessoa)} alterar={v => alterarOpcao(i, {precoPessoa: numeroOuNulo(v)})} />
+            <Campo titulo={o.precoPessoa === null && precosDaOpcao(o, p.viagem.viajantes).porPessoa !== null ? `Preço por pessoa (€) · calculado: ${euros(precosDaOpcao(o, p.viagem.viajantes).porPessoa)}` : "Preço por pessoa (€)"} valor={o.precoPessoa === null ? "" : String(o.precoPessoa)} alterar={v => alterarOpcao(i, {precoPessoa: numeroOuNulo(v)})} />
           </div>
           <Campo titulo="O que muda nesta opção (além do hotel)" grande valor={o.diferencas} alterar={v => alterarOpcao(i, {diferencas: v})} />
         </article>)}
@@ -365,7 +367,7 @@ export function PropostaNovaArea({email, abrirPlanner}: {email: string; abrirPla
         <p className={css.ajuda}>Destaca a opção que recomendas (aparece com a etiqueta “A nossa escolha”), ou deixa todas iguais.</p>
         <div className={css.paletas}>
           <button type="button" aria-pressed={p.recomendada === null} onClick={() => setP({...p, recomendada: null})}>Nenhuma</button>
-          {p.opcoes.map((o, i) => <button type="button" key={i} aria-pressed={p.recomendada === i} onClick={() => setP({...p, recomendada: i})}>{LETRAS[i]} · {o.hotel || "Opção"} · {euros(o.total ?? o.precoPessoa)}</button>)}
+          {p.opcoes.map((o, i) => <button type="button" key={i} aria-pressed={p.recomendada === i} onClick={() => setP({...p, recomendada: i})}>{LETRAS[i]} · {o.hotel || "Opção"} · {euros(precosDaOpcao(o, p.viagem.viajantes).porPessoa)} por pessoa</button>)}
         </div>
 
         <h3>O teu WhatsApp</h3>

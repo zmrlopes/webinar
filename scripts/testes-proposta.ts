@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { db, fecharDb } from "../src/lib/db";
-import { juntarLeituras, opcaoVazia, pendentesProposta, propostaVazia, telemovelWhatsApp, validarProposta, type LeituraPDF, type Proposta } from "../src/lib/proposta";
+import { juntarLeituras, listasIncluido, opcaoVazia, pendentesProposta, precosDaOpcao, propostaVazia, telemovelWhatsApp, validarProposta, type LeituraPDF, type Proposta } from "../src/lib/proposta";
 import { apagarProposta, criarPlannerDaProposta, gerarConteudoProposta, guardarPerfil, guardarProposta, lerPDFProposta, pdfProposta } from "../src/lib/proposta-servidor";
 import { abrirPlanner, apagarPlanner } from "../src/lib/travel-planner-servidor";
 
@@ -21,14 +21,18 @@ assert.equal(telemovelWhatsApp("+44 7700 900123"), "447700900123");
 assert.equal(telemovelWhatsApp("abc"), "");
 
 const leitura = (ficheiro: string, hotel: string, total: number, transfer = "Aeroporto–hotel–aeroporto"): LeituraPDF => ({
-  ficheiro, hoteis: [{nome: hotel, quarto: "Duplo", regime: "Pequeno-almoço", total, precoPessoa: total / 2}], incluido: ["Voos", "Taxas"], naoIncluido: ["Seguro"],
+  ficheiro, hoteis: [{nome: hotel, quarto: "Duplo", regime: "Pequeno-almoço", total, precoPessoa: hotel === "Hotel B" ? null : total / 2}], incluido: ["Voos", "Taxas"], naoIncluido: ["Seguro"],
   condicoes: "", validade: "2026-11-30",
-  viagem: {destino: "Funchal, Madeira", partida: "Lisboa", ida: "2026-11-10", regresso: "2026-11-14", viajantes: 2, voo: "TP1687 08:05", bagagem: "23 kg", transfer},
+  viagem: {destino: "Funchal, Madeira", partida: "Lisboa", ida: "2026-11-10", regresso: "2026-11-14", viajantes: 2, voo: "TP1687 08:05", bagagem: "23 kg", transfer, transferIncluido: transfer !== "Sem transfer"},
 });
 const junta = juntarLeituras([leitura("a.pdf", "Hotel A", 900), leitura("b.pdf", "Hotel B", 1100), leitura("c.pdf", "Hotel C", 1300, "Sem transfer")]);
 assert.equal(junta.opcoes.length, 3);
+assert.equal(junta.opcoes[1]!.precoPessoa, 550, "Sem preço por pessoa no PDF, calcula-se com os viajantes");
+assert.deepEqual(precosDaOpcao({total: null, precoPessoa: 400}, 3), {total: 1200, porPessoa: 400});
+assert.deepEqual(listasIncluido({incluido: ["Voos", "Transfer privado"], naoIncluido: [], viagem: {...junta.viagem, transferIncluido: false}}), {sim: ["Voos"], nao: ["Transfers não incluídos"]}, "Transfers ditos de forma clara");
 assert.equal(junta.opcoes[1]!.diferencas, "", "PDF igual ao primeiro, salvo o hotel, não tem diferenças");
 assert.match(junta.opcoes[2]!.diferencas, /Transfer: Sem transfer/, "O que muda fica na opção");
+assert.match(junta.opcoes[2]!.diferencas, /Transfers não incluídos/, "Opção sem transfers diz isso claramente");
 assert.equal(junta.avisos.length, 1);
 assert.deepEqual(junta.incluido, ["Voos", "Taxas"], "Itens repetidos aparecem uma vez");
 assert.equal(validarProposta({...propostaVazia(id), opcoes: [opcaoVazia()], recomendada: 3}).recomendada, null, "Recomendada fora das opções é ignorada");
