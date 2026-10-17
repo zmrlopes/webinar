@@ -18,7 +18,7 @@ interface Foto { titulo: string; url: string; credito: string }
 type AlvoFoto = "capa" | "hotel" | number;
 
 /** Reduz a fotografia do consultor para JPEG até 1600 px, para caber no registo. */
-async function comprimirFoto(ficheiro: File): Promise<string> {
+export async function comprimirFoto(ficheiro: File): Promise<string> {
   const bitmap = await createImageBitmap(ficheiro);
   for (const [lado, qualidade] of [[1600, 0.82], [1300, 0.75], [1000, 0.7]] as const) {
     const escala = Math.min(1, lado / Math.max(bitmap.width, bitmap.height));
@@ -32,7 +32,7 @@ async function comprimirFoto(ficheiro: File): Promise<string> {
 }
 
 /** Clicar na fotografia escolhe o ponto que fica sempre à vista quando é cortada. */
-function EnquadrarFoto({foto, alterar}: {foto: FotoPlanner; alterar: (f: FotoPlanner) => void}) {
+export function EnquadrarFoto({foto, alterar}: {foto: FotoPlanner; alterar: (f: FotoPlanner) => void}) {
   const foco = foto.foco ?? {x: 0.5, y: 0.5};
   return <div className={css.enquadrar}>
     <p className={css.ajuda}>Toca na parte mais importante da fotografia: é essa que fica sempre visível quando a fotografia tem de ser cortada.</p>
@@ -51,23 +51,23 @@ function EnquadrarFoto({foto, alterar}: {foto: FotoPlanner; alterar: (f: FotoPla
   </div>;
 }
 
-function Miniatura({foto, legenda}: {foto: FotoPlanner | null; legenda: string}) {
+export function Miniatura({foto, legenda}: {foto: FotoPlanner | null; legenda: string}) {
   // eslint-disable-next-line @next/next/no-img-element
   return foto ? <img className={css.miniatura} src={foto.url} alt={legenda} /> : <span className={css.miniaturaVazia}>Sem fotografia</span>;
 }
 
-function Campo({titulo, valor, alterar, tipo = "text", grande = false}: {titulo: string; valor: string | number | null; alterar: (v: string) => void; tipo?: "text" | "date" | "number"; grande?: boolean}) {
+export function Campo({titulo, valor, alterar, tipo = "text", grande = false}: {titulo: string; valor: string | number | null; alterar: (v: string) => void; tipo?: "text" | "date" | "number"; grande?: boolean}) {
   return <label className={css.campo}><span>{titulo}</span>{grande
     ? <textarea value={valor ?? ""} rows={3} onChange={e => alterar(e.target.value)} />
     : <input type={tipo} value={valor ?? ""} min={tipo === "number" ? 1 : undefined} onChange={e => alterar(e.target.value)} />}</label>;
 }
 
-function Chip({ativo, onClick, children}: {ativo: boolean; onClick: () => void; children: ReactNode}) {
+export function Chip({ativo, onClick, children}: {ativo: boolean; onClick: () => void; children: ReactNode}) {
   return <button type="button" className={ativo ? css.chipAtivo : css.chip} aria-pressed={ativo} onClick={onClick}>{children}</button>;
 }
 
 /** Pré-visualização das cores: capa, números, etiqueta de dia e cartão de embarque em miniatura. */
-function Previsualizacao({marca}: {marca: MarcaPlanner}) {
+export function Previsualizacao({marca}: {marca: MarcaPlanner}) {
   const c = coresPlanner(marca);
   return <div className={css.previa} aria-hidden="true">
     <div className={css.previaCapa} style={{background: `linear-gradient(180deg, #8fa7b5 0%, #6b8a6a 45%, ${c.capaA92} 100%)`}}>
@@ -87,7 +87,7 @@ function Previsualizacao({marca}: {marca: MarcaPlanner}) {
   </div>;
 }
 
-function EditorCores({marca, aoGuardar, aoFechar, ocupado}: {marca: MarcaPlanner; aoGuardar: (m: MarcaPlanner) => void; aoFechar: () => void; ocupado: boolean}) {
+export function EditorCores({marca, aoGuardar, aoFechar, ocupado}: {marca: MarcaPlanner; aoGuardar: (m: MarcaPlanner) => void; aoFechar: () => void; ocupado: boolean}) {
   const [rascunho, setRascunho] = useState(marca);
   const invalida = Object.values(rascunho).some(v => !/^#[0-9a-f]{6}$/i.test(v));
   const campos: [keyof MarcaPlanner, string, string][] = [

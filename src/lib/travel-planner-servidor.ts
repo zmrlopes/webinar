@@ -114,7 +114,7 @@ function pontuacaoFoto(titulo: string): number {
 
 // As fotografias descarregadas ficam em memória: a pré-visualização é pedida várias vezes seguidas.
 const fotosEmCache = new Map<string, Promise<Buffer | null>>();
-async function imagemDe(foto: FotoPlanner | null): Promise<FotoDesenho | null> {
+export async function imagemDe(foto: FotoPlanner | null): Promise<FotoDesenho | null> {
   if (!foto) return null;
   if (!fotosEmCache.has(foto.url)) {
     if (fotosEmCache.size > 60) fotosEmCache.clear();
@@ -235,16 +235,22 @@ export async function pdfPlanner(email: string, id: unknown): Promise<{bytes: Ui
   const pendentes = pendentesPlanner(p);
   if (pendentes.length) throw new ErroPlanner(`Antes de descarregar, confirma: ${pendentes.join(", ")}.`, 409);
   const paginas = await paginasPlanner(email, p, 2);
+  return {bytes: await montarPDF(paginas, `${p.viagem.destino} · Travel planner`), nome: nomeFicheiro(p.viagem.destino, "travel-planner")};
+}
 
+/** Junta as páginas (JPEG A4) num PDF. */
+export async function montarPDF(paginas: Buffer[], titulo: string): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
-  pdf.setTitle(`${p.viagem.destino} · Travel planner`); pdf.setAuthor("iCliGo travel partners"); pdf.setLanguage("pt-PT");
+  pdf.setTitle(titulo); pdf.setAuthor("iCliGo travel partners"); pdf.setLanguage("pt-PT");
   for (const jpeg of paginas) {
     const imagem = await pdf.embedJpg(jpeg);
-    const pagina = pdf.addPage([595.28, 841.89]);
-    pagina.drawImage(imagem, {x: 0, y: 0, width: 595.28, height: 841.89});
+    pdf.addPage([595.28, 841.89]).drawImage(imagem, {x: 0, y: 0, width: 595.28, height: 841.89});
   }
-  const nome = `${p.viagem.destino.normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "viagem"}-travel-planner.pdf`;
-  return {bytes: await pdf.save(), nome};
+  return pdf.save();
+}
+
+export function nomeFicheiro(destino: string, sufixo: string): string {
+  return `${destino.normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "viagem"}-${sufixo}.pdf`;
 }
 
 /** Procura um local no OpenStreetMap (Nominatim), para corrigir um ponto do mapa. */

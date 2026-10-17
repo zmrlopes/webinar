@@ -107,3 +107,12 @@ guardadas por consultor e aplicadas a todos os seus PDFs. É uma exceção à
 regra das cores da marca, limitada aos documentos do travel planner; o
 logótipo e o nome iCliGo mantêm-se protegidos e a área de consultor continua
 com as cores da marca. O texto sobre cada cor ajusta-se para se ler bem.
+
+Por indicação explícita do utilizador, Reservas → Propostas fica publicado
+apenas na nova área da conta de teste (mesmo acesso de Reservas). Junta até 3
+PDFs iCliGo da mesma viagem (um por hotel) numa proposta visual: voos, o que
+está incluído, as opções com preço total e por pessoa, comparação com mapa,
+destaques do destino, dicas (documentos e saúde a confirmar), validade e QR
+para o WhatsApp do consultor. As fotografias dos hotéis vêm primeiro da
+imagem do site oficial do hotel e, sem ela, de fotografias livres. Uma opção
+escolhida pelo cliente pode dar origem a um travel planner.
