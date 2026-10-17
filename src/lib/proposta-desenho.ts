@@ -2,8 +2,8 @@ import { loadImage, type Image, type SKRSContext2D } from "@napi-rs/canvas";
 import QRCode from "qrcode";
 import { desenharFundoMapa, enquadrar, noMapa, type Ponto } from "./travel-planner-mapas";
 import {
-  ALTURA, alturaParagrafo, cabecalho, CINZA, codificarPaginas, cobrir, icone, LARGURA, LINHA, linhas, logo, M, marca, novaPagina,
-  paginasDicas, paragrafo, pastilha, registarFontes, retangulo, rodape, semFoto, sombra, tema, TINTA, viagem, type FotoDesenho, type Tema,
+  ALTURA, alturaParagrafo, cabecalho, CINZA, codificarPaginas, desenharCapa, icone, LARGURA, LINHA, logo, M, novaPagina, r,
+  paginasDicas, paragrafo, registarFontes, retangulo, rodape, semFoto, sombra, tema, TINTA, viagem, cobrir, type FotoDesenho, type Icone, type Tema,
 } from "./travel-planner-desenho";
 import { euros, listasIncluido, plannerDaProposta, precosDaOpcao, type Proposta } from "./proposta";
 import { dataPlanner, diasDaViagem, type MarcaPlanner, type TravelPlanner } from "./travel-planner";
@@ -35,43 +35,18 @@ function etiquetaEscolha(ctx: SKRSContext2D, t: Tema, x: number, y: number) {
 const menorPreco = (p: Proposta) => Math.min(...p.opcoes.map(o => precosDaOpcao(o, p.viagem.viajantes).porPessoa ?? Infinity));
 
 function capa(d: DadosProposta, t: Tema, img: Image | null) {
-  const {p} = d, {canvas, ctx} = novaPagina(t);
-  if (d.imagens.capa) cobrir(ctx, d.imagens.capa, 0, 0, LARGURA, ALTURA); else semFoto(ctx, t, 0, 0, LARGURA, ALTURA, 0, "");
-  const g = ctx.createLinearGradient(0, ALTURA * 0.3, 0, ALTURA);
-  g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(0.55, p.estilo === "moderno" ? t.c.escuraA78 : t.c.capaA70); g.addColorStop(1, p.estilo === "moderno" ? t.c.escuraA95 : t.c.capaA92);
-  ctx.fillStyle = g; ctx.fillRect(0, 0, LARGURA, ALTURA);
-  const topo = ctx.createLinearGradient(0, 0, 0, 260); topo.addColorStop(0, "rgba(0,0,0,0.35)"); topo.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = topo; ctx.fillRect(0, 0, LARGURA, 260);
-  retangulo(ctx, M - 24, 70, 300, 92, 18, "#ffffff");
-  marca(ctx, M - 2, 112, img, false, 1);
-  ctx.font = "18px PoppinsBold"; ctx.fillStyle = "#fff"; ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.fillText("PROPOSTA DE VIAGEM", LARGURA - M, 116); ctx.textAlign = "left";
-
-  let y = ALTURA - 700;
-  ctx.fillStyle = t.c.suave; ctx.font = "22px PoppinsBold"; ctx.textBaseline = "alphabetic";
-  ctx.fillText(`${p.opcoes.length} ${p.opcoes.length === 1 ? "OPÇÃO" : "OPÇÕES"} PENSADAS PARA VOCÊS`, M, y);
-  y += 30;
-  const grande = p.viagem.destino.length > 18;
-  ctx.fillStyle = "#fff"; ctx.font = t.titulo(grande ? 104 : 136);
-  for (const l of linhas(ctx, t.maiusculas ? p.viagem.destino.toUpperCase() : p.viagem.destino, LARGURA - 2 * M).slice(0, 2)) { y += grande ? 112 : 140; ctx.fillText(l, M, y); }
-  y += 46;
-  const total = diasDaViagem(p.viagem.ida, p.viagem.regresso), vidro = "rgba(255,255,255,0.16)";
-  let x = M;
-  if (p.viagem.ida && p.viagem.regresso) x += pastilha(ctx, `${dataPlanner(p.viagem.ida, {day: "numeric", month: "short"})} – ${dataPlanner(p.viagem.regresso, {day: "numeric", month: "short", year: "numeric"})}`, x, y, vidro, "#fff", "calendario") + 14;
-  if (total) x += pastilha(ctx, `${total} dias`, x, y, vidro, "#fff", "estrela") + 14;
-  if (p.viagem.viajantes) pastilha(ctx, `${p.viagem.viajantes} viajante${p.viagem.viajantes > 1 ? "s" : ""}`, x, y, vidro, "#fff", "pessoas");
-  y += 110;
-  const desde = menorPreco(p);
-  if (Number.isFinite(desde)) {
-    ctx.fillStyle = "rgba(255,255,255,0.85)"; ctx.font = "22px Poppins"; ctx.textBaseline = "alphabetic";
-    ctx.fillText("desde, por pessoa", M, y);
-    ctx.fillStyle = "#fff"; ctx.font = "84px PoppinsBold"; ctx.fillText(euros(desde), M, y + 86);
-  }
-  ctx.fillStyle = "rgba(255,255,255,0.35)"; ctx.fillRect(M, ALTURA - 150, LARGURA - 2 * M, 1.5);
-  ctx.textBaseline = "alphabetic";
-  if (d.consultor?.nome) { ctx.font = "18px Poppins"; ctx.fillStyle = "rgba(255,255,255,0.8)"; ctx.fillText(`Preparada por ${d.consultor.nome}`, M, ALTURA - 104); }
-  if (p.validade) { ctx.textAlign = "right"; ctx.font = "18px PoppinsBold"; ctx.fillStyle = "#fff"; ctx.fillText(`Válida até ${dataPlanner(p.validade)}`, LARGURA - M, ALTURA - 104); ctx.textAlign = "left"; }
-  if (p.foto?.credito) { ctx.font = "13px Poppins"; ctx.fillStyle = "rgba(255,255,255,0.6)"; ctx.textAlign = "right"; ctx.fillText(`Fotografia: ${p.foto.credito}`.slice(0, 90), LARGURA - M, ALTURA - 70); ctx.textAlign = "left"; }
-  return canvas;
+  const {p} = d, total = diasDaViagem(p.viagem.ida, p.viagem.regresso), desde = menorPreco(p);
+  const pastilhas: [string, Icone][] = [];
+  if (p.viagem.ida && p.viagem.regresso) pastilhas.push([`${dataPlanner(p.viagem.ida, {day: "numeric", month: "short"})} – ${dataPlanner(p.viagem.regresso, {day: "numeric", month: "short", year: "numeric"})}`, "calendario"]);
+  if (total) pastilhas.push([`${total} dias`, "estrela"]);
+  if (p.viagem.viajantes) pastilhas.push([`${p.viagem.viajantes} viajante${p.viagem.viajantes > 1 ? "s" : ""}`, "pessoas"]);
+  return desenharCapa(t, img, {
+    foto: d.imagens.capa, credito: p.foto?.credito ?? "", rotulo: "Proposta de viagem",
+    sobretitulo: `${p.opcoes.length} ${p.opcoes.length === 1 ? "opção pensada" : "opções pensadas"} para vocês`, destino: p.viagem.destino, pastilhas,
+    preco: Number.isFinite(desde) ? {rotulo: "desde, por pessoa", valor: euros(desde)} : null,
+    assinatura: d.consultor?.nome ? {rotulo: "Preparada por", nome: d.consultor.nome} : null,
+    direita: p.validade ? `Válida até ${dataPlanner(p.validade)}` : "",
+  });
 }
 
 function incluido(d: DadosProposta, t: Tema, img: Image | null, plano: TravelPlanner, n: number) {
@@ -124,7 +99,7 @@ function opcoes(d: DadosProposta, t: Tema, img: Image | null, plano: TravelPlann
   p.opcoes.forEach((o, i) => {
     const escolhida = p.recomendada === i;
     sombra(ctx, true); retangulo(ctx, M, y, w, h, 26, "#ffffff", escolhida ? t.c.destaque : undefined); sombra(ctx, false);
-    if (escolhida) { ctx.lineWidth = 5; ctx.strokeStyle = t.c.destaque; ctx.beginPath(); ctx.roundRect(M, y, w, h, 26); ctx.stroke(); }
+    if (escolhida) { ctx.lineWidth = 5; ctx.strokeStyle = t.c.destaque; ctx.beginPath(); ctx.roundRect(M, y, w, h, r(ctx, 26)); ctx.stroke(); }
     const foto = d.imagens.hoteis[i];
     if (foto) cobrir(ctx, foto, M, y, fotoW, h, 26); else semFoto(ctx, t, M, y, fotoW, h, 26, o.hotel);
     retangulo(ctx, M + 24, y + 24, 70, 70, 16, p.estilo === "moderno" ? t.c.escura : t.c.principal);
@@ -179,8 +154,8 @@ async function comparacao(d: DadosProposta, t: Tema, img: Image | null, plano: T
     const pontos: Ponto[] = comCoords.map(({o}) => ({lat: o.lat!, lng: o.lng!}));
     const base = pontos.length > 1 ? pontos : [...pontos, {lat: pontos[0]!.lat + 0.02, lng: pontos[0]!.lng + 0.02}, {lat: pontos[0]!.lat - 0.02, lng: pontos[0]!.lng - 0.02}];
     const e = enquadrar(base, area.w, area.h, 0.18, 15);
-    await desenharFundoMapa(ctx, area, e, 24, t.escala >= 1.5 ? 2 : 1);
-    ctx.save(); ctx.beginPath(); ctx.roundRect(area.x, area.y, area.w, area.h, 24); ctx.clip();
+    await desenharFundoMapa(ctx, area, e, r(ctx, 24), t.escala >= 1.5 ? 2 : 1);
+    ctx.save(); ctx.beginPath(); ctx.roundRect(area.x, area.y, area.w, area.h, r(ctx, 24)); ctx.clip();
     const posicoes: {x: number; y: number}[] = [];
     for (const {o, i} of comCoords) {
       const q = noMapa({lat: o.lat!, lng: o.lng!}, area, e);
@@ -285,7 +260,7 @@ async function fecho(d: DadosProposta, t: Tema, img: Image | null, plano: Travel
   if (fotoH > 260) {
     const foto = d.imagens.destaques.find(Boolean) ?? d.imagens.capa;
     if (foto) cobrir(ctx, foto, M, y, LARGURA - 2 * M, fotoH, 26); else semFoto(ctx, t, M, y, LARGURA - 2 * M, fotoH, 26, "");
-    ctx.save(); ctx.beginPath(); ctx.roundRect(M, y, LARGURA - 2 * M, fotoH, 26); ctx.clip();
+    ctx.save(); ctx.beginPath(); ctx.roundRect(M, y, LARGURA - 2 * M, fotoH, r(ctx, 26)); ctx.clip();
     const g = ctx.createLinearGradient(0, y, 0, y + fotoH); g.addColorStop(0.3, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,0.65)");
     ctx.fillStyle = g; ctx.fillRect(M, y, LARGURA - 2 * M, fotoH); ctx.restore();
     ctx.fillStyle = "#fff"; ctx.font = t.titulo(76); ctx.textBaseline = "alphabetic";

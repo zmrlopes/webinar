@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { createCanvas, GlobalFonts, loadImage, type Canvas, type Image, type SKRSContext2D } from "@napi-rs/canvas";
 import sharp from "sharp";
 import { arcoVoo, desenharFundoMapa, distanciaKm, enquadrar, noMapa, type Ponto } from "./travel-planner-mapas";
-import { coresPlanner, dataPlanner, diasDaViagem, misturar, somarDiasPlanner, type CoresPlanner, type DicaPlanner, type MarcaPlanner, type TemaDica, type TravelPlanner } from "./travel-planner";
+import { coresPlanner, dataPlanner, diasDaViagem, misturar, somarDiasPlanner, type CoresPlanner, type EstiloPlanner, type DicaPlanner, type MarcaPlanner, type TemaDica, type TravelPlanner } from "./travel-planner";
 
 /**
  * Desenha cada página do travel planner como imagem A4 (150 ppp). O PDF
@@ -29,12 +29,30 @@ export function logo(): Promise<Image | null> {
   return logoCache;
 }
 
-export interface Tema { escala: number; fundo: string; cartao: string; titulo: (t: number) => string; maiusculas: boolean; faixa: boolean; c: CoresPlanner }
+/**
+ * Cada estilo tem a sua composição, não só outras cores:
+ * Clássico — página branca com moldura fina, títulos com serifa centrados, cartões com contorno, cantos discretos;
+ * Moderno — fundo cinza, faixas escuras de ponta a ponta, cantos retos, sem sombras, maiúsculas;
+ * Natural — fundo creme com formas suaves, títulos em itálico, cantos muito redondos e sombras leves.
+ */
+export interface Tema {
+  estilo: EstiloPlanner; escala: number; fundo: string; cartao: string; titulo: (t: number) => string; maiusculas: boolean;
+  /** Multiplica o raio dos cantos. */
+  raio: number; sombra: boolean; contorno: boolean; c: CoresPlanner;
+}
 export function tema(estilo: TravelPlanner["estilo"], marca: MarcaPlanner, escala: number): Tema {
   const c = coresPlanner(marca);
-  if (estilo === "moderno") return {escala, fundo: "#ffffff", cartao: misturar(marca.escura, 0.95), titulo: t => `${t}px PoppinsBold`, maiusculas: true, faixa: true, c};
-  if (estilo === "natural") return {escala, fundo: misturar(marca.principal, 0.95), cartao: "#ffffff", titulo: t => `${t}px Playfair`, maiusculas: false, faixa: false, c};
-  return {escala, fundo: "#ffffff", cartao: c.creme, titulo: t => `${t}px Playfair`, maiusculas: false, faixa: false, c};
+  if (estilo === "moderno") return {estilo, escala, fundo: misturar(marca.escura, 0.92), cartao: "#ffffff", titulo: t => `${t}px PoppinsBold`, maiusculas: true, raio: 0, sombra: false, contorno: false, c};
+  if (estilo === "natural") return {estilo, escala, fundo: misturar(marca.principal, 0.94), cartao: "#ffffff", titulo: t => `italic ${t}px Playfair`, maiusculas: false, raio: 1.7, sombra: true, contorno: false, c};
+  return {estilo: "classico", escala, fundo: "#ffffff", cartao: c.creme, titulo: t => `${t}px Playfair`, maiusculas: false, raio: 0.3, sombra: false, contorno: true, c};
+}
+
+// O tema de cada página, para os utilitários de desenho seguirem o estilo sem o receberem.
+const TEMAS = new WeakMap<SKRSContext2D, Tema>();
+/** Raio dos cantos no estilo da página. */
+export function r(ctx: SKRSContext2D, v: number): number {
+  const t = TEMAS.get(ctx);
+  return t ? v * t.raio : v;
 }
 
 // ---------- utilitários de desenho ----------
@@ -79,10 +97,10 @@ export interface FotoDesenho { img: Image; foco: {x: number; y: number}; inteira
  * foco. Com "inteira", mostra a fotografia toda, sobre uma versão desfocada
  * dela própria a encher o espaço.
  */
-export function cobrir(ctx: SKRSContext2D, f: FotoDesenho, x: number, y: number, w: number, h: number, raio = 0) {
+export function cobrir(ctx: SKRSContext2D, f: FotoDesenho, x: number, y: number, w: number, h: number, raio: number | number[] = 0) {
   const img = f.img, escala = Math.max(w / img.width, h / img.height), iw = img.width * escala, ih = img.height * escala;
   ctx.save();
-  ctx.beginPath(); ctx.roundRect(x, y, w, h, raio); ctx.clip();
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, typeof raio === "number" ? r(ctx, raio) : raio); ctx.clip();
   if (f.inteira) {
     ctx.filter = "blur(28px) brightness(0.8)";
     ctx.drawImage(img, x + (w - iw * 1.1) / 2, y + (h - ih * 1.1) / 2, iw * 1.1, ih * 1.1);
@@ -98,20 +116,23 @@ export function cobrir(ctx: SKRSContext2D, f: FotoDesenho, x: number, y: number,
 }
 
 export function retangulo(ctx: SKRSContext2D, x: number, y: number, w: number, h: number, raio: number, cor: string, contorno?: string) {
-  ctx.beginPath(); ctx.roundRect(x, y, w, h, raio);
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, r(ctx, raio));
   ctx.fillStyle = cor; ctx.fill();
-  if (contorno) { ctx.strokeStyle = contorno; ctx.lineWidth = 2; ctx.stroke(); }
+  // No Clássico, os cartões brancos têm um contorno fino em vez de sombra.
+  const fino = !contorno && TEMAS.get(ctx)?.contorno && (cor === "#ffffff" || cor === "#fff") && w > 120 && h > 80;
+  if (contorno || fino) { ctx.strokeStyle = contorno ?? LINHA; ctx.lineWidth = contorno ? 2 : 1.5; ctx.stroke(); }
 }
 
 export function sombra(ctx: SKRSContext2D, ativa: boolean) {
-  const e = ctx.getTransform().a;
-  ctx.shadowColor = ativa ? "rgba(0,0,0,0.12)" : "transparent"; ctx.shadowBlur = ativa ? 24 * e : 0; ctx.shadowOffsetY = ativa ? 6 * e : 0;
+  const e = ctx.getTransform().a, t = TEMAS.get(ctx), liga = ativa && (t?.sombra ?? true), suave = t?.estilo === "natural";
+  ctx.shadowColor = liga ? (suave ? "rgba(60,50,20,0.11)" : "rgba(0,0,0,0.12)") : "transparent";
+  ctx.shadowBlur = liga ? (suave ? 40 : 24) * e : 0; ctx.shadowOffsetY = liga ? (suave ? 12 : 6) * e : 0;
 }
 
 /** Placeholder quando não há fotografia: gradiente verde-oliva com o nome do local. */
-export function semFoto(ctx: SKRSContext2D, t: Tema, x: number, y: number, w: number, h: number, raio: number, legenda: string) {
+export function semFoto(ctx: SKRSContext2D, t: Tema, x: number, y: number, w: number, h: number, raio: number | number[], legenda: string) {
   ctx.save();
-  ctx.beginPath(); ctx.roundRect(x, y, w, h, raio); ctx.clip();
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, typeof raio === "number" ? r(ctx, raio) : raio); ctx.clip();
   const g = ctx.createLinearGradient(x, y, x + w, y + h);
   g.addColorStop(0, t.c.principal); g.addColorStop(1, t.c.principalEscuro);
   ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
@@ -177,25 +198,63 @@ export function marca(ctx: SKRSContext2D, x: number, y: number, img: Image | nul
 }
 
 export function rodape(ctx: SKRSContext2D, p: TravelPlanner, n: number, img: Image | null) {
-  ctx.fillStyle = LINHA; ctx.fillRect(M, ALTURA - 92, LARGURA - 2 * M, 2);
-  marca(ctx, M, ALTURA - 52, img, false, 0.62);
-  ctx.font = "17px Poppins"; ctx.fillStyle = CINZA; ctx.textBaseline = "middle";
-  ctx.textAlign = "center"; ctx.fillText(p.viagem.destino, LARGURA / 2, ALTURA - 50);
-  ctx.textAlign = "right"; ctx.fillText(String(n), LARGURA - M, ALTURA - 50); ctx.textAlign = "left";
+  const t = TEMAS.get(ctx), estilo = t?.estilo ?? "classico";
+  ctx.textBaseline = "middle";
+  if (estilo === "moderno" && t) {
+    marca(ctx, M, ALTURA - 52, img, false, 0.62);
+    ctx.font = "16px PoppinsBold"; ctx.fillStyle = TINTA; ctx.textAlign = "center"; ctx.fillText(p.viagem.destino.toUpperCase(), LARGURA / 2, ALTURA - 50);
+    ctx.fillStyle = t.c.escura; ctx.fillRect(LARGURA - M - 60, ALTURA - 82, 60, 60);
+    ctx.fillStyle = t.c.sobreEscura; ctx.font = "24px PoppinsBold"; ctx.fillText(String(n).padStart(2, "0"), LARGURA - M - 30, ALTURA - 50);
+  } else if (estilo === "natural" && t) {
+    marca(ctx, M, ALTURA - 52, img, false, 0.62);
+    ctx.font = "italic 21px Playfair"; ctx.fillStyle = CINZA; ctx.textAlign = "center"; ctx.fillText(p.viagem.destino, LARGURA / 2, ALTURA - 50);
+    ctx.beginPath(); ctx.arc(LARGURA - M - 26, ALTURA - 52, 26, 0, Math.PI * 2); ctx.fillStyle = t.c.suave; ctx.fill();
+    ctx.fillStyle = t.c.principalTexto; ctx.font = "19px PoppinsBold"; ctx.fillText(String(n), LARGURA - M - 26, ALTURA - 50);
+  } else {
+    ctx.fillStyle = LINHA; ctx.fillRect(M, ALTURA - 96, LARGURA - 2 * M, 1.5);
+    marca(ctx, M, ALTURA - 56, img, false, 0.62);
+    ctx.font = "16px Poppins"; ctx.fillStyle = CINZA; ctx.textAlign = "right"; ctx.fillText(p.viagem.destino, LARGURA - M, ALTURA - 54);
+    ctx.font = "22px Playfair"; ctx.fillStyle = TINTA; ctx.textAlign = "center"; ctx.fillText(`— ${n} —`, LARGURA / 2, ALTURA - 54);
+  }
+  ctx.textAlign = "left";
 }
+
+/** Letras espaçadas, como nos títulos de revista. */
+const espacado = (s: string) => s.toUpperCase().split("").join(" ");
 
 export function cabecalho(ctx: SKRSContext2D, t: Tema, etiqueta: string, titulo: string, y = M): number {
   ctx.textBaseline = "alphabetic"; ctx.textAlign = "left";
-  if (t.faixa) {
-    retangulo(ctx, M, y, LARGURA - 2 * M, 104, 0, t.c.escura);
-    ctx.fillStyle = t.c.sobreEscura; ctx.globalAlpha = 0.75; ctx.font = "18px PoppinsBold"; ctx.fillText(etiqueta.toUpperCase(), M + 34, y + 38); ctx.globalAlpha = 1;
-    ctx.fillStyle = t.c.sobreEscura; ctx.font = t.titulo(40); ctx.fillText(titulo.toUpperCase(), M + 34, y + 84, LARGURA - 2 * M - 68);
-    return y + 140;
+  if (t.estilo === "moderno") {
+    // Faixa escura de ponta a ponta, com uma barra na cor de destaque.
+    ctx.fillStyle = t.c.escura; ctx.fillRect(0, 0, LARGURA, y + 124);
+    ctx.fillStyle = t.c.destaque; ctx.fillRect(M, y + 116, 150, 16);
+    ctx.fillStyle = t.c.sobreEscura; ctx.globalAlpha = 0.7; ctx.font = "18px PoppinsBold"; ctx.fillText(etiqueta.toUpperCase(), M, y + 26); ctx.globalAlpha = 1;
+    ctx.font = t.titulo(54); ctx.fillText(titulo.toUpperCase(), M, y + 90, LARGURA - 2 * M);
+    return y + 170;
   }
-  ctx.fillStyle = t.c.principalTexto; ctx.font = "18px PoppinsBold"; ctx.fillText(etiqueta.toUpperCase(), M, y + 22);
-  ctx.fillStyle = TINTA; ctx.font = t.titulo(58); ctx.fillText(titulo, M, y + 90, LARGURA - 2 * M);
-  ctx.fillStyle = t.c.principal; ctx.fillRect(M, y + 112, 70, 5);
-  return y + 150;
+  if (t.estilo === "natural") {
+    ctx.fillStyle = t.c.principalTexto; ctx.font = "italic 26px Playfair"; ctx.fillText(etiqueta, M, y + 22);
+    ctx.fillStyle = TINTA; ctx.font = t.titulo(66); ctx.fillText(titulo, M, y + 96, LARGURA - 2 * M);
+    // Traço ondulado.
+    ctx.strokeStyle = t.c.principal; ctx.lineWidth = 4; ctx.lineCap = "round"; ctx.beginPath();
+    for (let i = 0; i <= 40; i++) { const x = M + i * 4, yy = y + 126 + Math.sin(i / 40 * Math.PI * 4) * 5; i ? ctx.lineTo(x, yy) : ctx.moveTo(x, yy); }
+    ctx.stroke();
+    return y + 166;
+  }
+  // Clássico: centrado, com um ornamento.
+  ctx.textAlign = "center";
+  ctx.fillStyle = t.c.principalTexto; ctx.font = "15px PoppinsBold"; ctx.fillText(espacado(etiqueta), LARGURA / 2, y + 18);
+  ctx.fillStyle = TINTA; ctx.font = t.titulo(60); ctx.fillText(titulo, LARGURA / 2, y + 90, LARGURA - 2 * M);
+  ornamento(ctx, t, LARGURA / 2, y + 122);
+  ctx.textAlign = "left";
+  return y + 166;
+}
+
+/** Linha — losango — linha. */
+function ornamento(ctx: SKRSContext2D, t: Tema, cx: number, cy: number, w = 150) {
+  ctx.fillStyle = t.c.principal;
+  ctx.fillRect(cx - w, cy - 0.75, w - 20, 1.5); ctx.fillRect(cx + 20, cy - 0.75, w - 20, 1.5);
+  ctx.beginPath(); ctx.moveTo(cx, cy - 8); ctx.lineTo(cx + 8, cy); ctx.lineTo(cx, cy + 8); ctx.lineTo(cx - 8, cy); ctx.closePath(); ctx.fill();
 }
 
 export function novaPagina(t: Tema) {
@@ -203,6 +262,18 @@ export function novaPagina(t: Tema) {
   const canvas = createCanvas(Math.round(LARGURA * t.escala), Math.round(ALTURA * t.escala)), ctx = canvas.getContext("2d");
   ctx.scale(t.escala, t.escala);
   ctx.fillStyle = t.fundo; ctx.fillRect(0, 0, LARGURA, ALTURA);
+  TEMAS.set(ctx, t);
+  if (t.estilo === "classico") {
+    // Moldura dupla e fina.
+    ctx.strokeStyle = t.c.principalA55; ctx.lineWidth = 1.5; ctx.strokeRect(34, 34, LARGURA - 68, ALTURA - 68);
+    ctx.lineWidth = 0.75; ctx.strokeRect(42, 42, LARGURA - 84, ALTURA - 84);
+  } else if (t.estilo === "natural") {
+    // Formas redondas e suaves nos cantos.
+    ctx.fillStyle = t.c.suave; ctx.globalAlpha = 0.55;
+    ctx.beginPath(); ctx.arc(LARGURA - 20, 40, 250, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(-40, ALTURA - 300, 190, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
   return {canvas, ctx};
 }
 
@@ -224,54 +295,129 @@ export interface DadosDesenho {
   escala?: number;
 }
 
-function capa(d: DadosDesenho, t: Tema, img: Image | null) {
-  const {p} = d, {canvas, ctx} = novaPagina(t);
-  const natural = p.estilo === "natural", sobreCapa = natural ? t.c.sobrePrincipal : "#ffffff", vidro = sobreCapa === "#ffffff" ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.08)", alturaFoto = natural ? ALTURA * 0.6 : ALTURA;
-  if (d.imagens.capa) cobrir(ctx, d.imagens.capa, 0, 0, LARGURA, alturaFoto);
-  else semFoto(ctx, t, 0, 0, LARGURA, alturaFoto, 0, "");
-  if (natural) { ctx.fillStyle = t.c.principal; ctx.fillRect(0, alturaFoto, LARGURA, ALTURA - alturaFoto); }
-  else {
-    const g = ctx.createLinearGradient(0, ALTURA * 0.35, 0, ALTURA);
-    g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(0.55, p.estilo === "moderno" ? t.c.escuraA78 : t.c.capaA70); g.addColorStop(1, p.estilo === "moderno" ? t.c.escuraA95 : t.c.capaA92);
-    ctx.fillStyle = g; ctx.fillRect(0, 0, LARGURA, ALTURA);
-    const topo = ctx.createLinearGradient(0, 0, 0, 260); topo.addColorStop(0, "rgba(0,0,0,0.35)"); topo.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = topo; ctx.fillRect(0, 0, LARGURA, 260);
-  }
-  // Marca num cartão branco, como nos materiais de Reservas.
-  retangulo(ctx, M - 24, 70, 300, 92, 18, "#ffffff");
-  marca(ctx, M - 2, 112, img, false, 1);
-  ctx.font = "18px PoppinsBold"; ctx.fillStyle = "#fff"; ctx.textAlign = "right"; ctx.textBaseline = "middle";
-  ctx.fillText("TRAVEL PLANNER", LARGURA - M, 116); ctx.textAlign = "left";
+/** O que vai na capa; cada estilo arruma-o à sua maneira. */
+export interface ConteudoCapa {
+  foto: FotoDesenho | null; credito: string; rotulo: string; sobretitulo: string; destino: string;
+  pastilhas: [string, Icone][]; preco: {rotulo: string; valor: string} | null;
+  assinatura: {rotulo: string; nome: string} | null; direita: string;
+}
 
-  let y = natural ? alturaFoto + 110 : ALTURA - 640;
-  ctx.fillStyle = natural ? sobreCapa : t.c.suave; ctx.globalAlpha = natural ? 0.8 : 1; ctx.font = "22px PoppinsBold"; ctx.textBaseline = "alphabetic";
-  ctx.fillText(p.perfil.tipo ? `A VIAGEM DE SONHO · ${p.perfil.tipo.toUpperCase()}` : "A VOSSA PRÓXIMA AVENTURA", M, y);
-  y += 30; ctx.globalAlpha = 1;
-  ctx.fillStyle = sobreCapa; ctx.font = t.titulo(p.viagem.destino.length > 18 ? 104 : 136);
-  const destino = t.maiusculas ? p.viagem.destino.toUpperCase() : p.viagem.destino;
-  for (const l of linhas(ctx, destino, LARGURA - 2 * M).slice(0, 2)) { y += p.viagem.destino.length > 18 ? 112 : 140; ctx.fillText(l, M, y); }
-  y += 46;
-  const total = diasDaViagem(p.viagem.ida, p.viagem.regresso);
-  let x = M;
-  if (p.viagem.ida && p.viagem.regresso) x += pastilha(ctx, `${dataPlanner(p.viagem.ida, {day: "numeric", month: "short"})} – ${dataPlanner(p.viagem.regresso, {day: "numeric", month: "short", year: "numeric"})}`, x, y, vidro, sobreCapa, "calendario") + 14;
-  if (total) x += pastilha(ctx, `${total} dias`, x, y, vidro, sobreCapa, "estrela") + 14;
-  if (p.viagem.viajantes) pastilha(ctx, `${p.viagem.viajantes} viajante${p.viagem.viajantes > 1 ? "s" : ""}`, x, y, vidro, sobreCapa, "pessoas");
+function larguraMarca(ctx: SKRSContext2D, img: Image | null, escala: number) {
+  ctx.font = `${30 * escala}px PoppinsBold`;
+  return (img ? 52 * escala * img.width / img.height + 12 * escala : 0) + ctx.measureText("icligo").width;
+}
 
-  ctx.fillStyle = sobreCapa; ctx.globalAlpha = 0.35; ctx.fillRect(M, ALTURA - 190, LARGURA - 2 * M, 1.5); ctx.globalAlpha = 1;
-  ctx.fillStyle = sobreCapa; ctx.textBaseline = "alphabetic";
-  if (d.consultor) {
-    ctx.font = "18px Poppins"; ctx.fillStyle = sobreCapa; ctx.globalAlpha = 0.8; ctx.fillText("Preparado com carinho por", M, ALTURA - 140); ctx.globalAlpha = 1;
-    ctx.font = "30px PoppinsBold"; ctx.fillStyle = sobreCapa; ctx.fillText(d.consultor.nome, M, ALTURA - 100);
+export function desenharCapa(t: Tema, img: Image | null, k: ConteudoCapa) {
+  const {canvas, ctx} = novaPagina(t);
+  const credito = k.credito ? `Fotografia: ${k.credito}`.slice(0, 90) : "";
+  const tamanho = k.destino.length > 18 ? 0.78 : 1, destino = t.maiusculas ? k.destino.toUpperCase() : k.destino;
+  ctx.textBaseline = "alphabetic"; ctx.textAlign = "left";
+
+  if (t.estilo === "moderno") {
+    // Fotografia em cima, bloco escuro sólido em baixo, letra grande em maiúsculas.
+    const fotoH = Math.round(ALTURA * (k.preco ? 0.5 : 0.56)), sobre = t.c.sobreEscura;
+    if (k.foto) cobrir(ctx, k.foto, 0, 0, LARGURA, fotoH); else semFoto(ctx, t, 0, 0, LARGURA, fotoH, 0, "");
+    const topo = ctx.createLinearGradient(0, 0, 0, 240); topo.addColorStop(0, "rgba(0,0,0,0.4)"); topo.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = topo; ctx.fillRect(0, 0, LARGURA, 240);
+    ctx.fillStyle = t.c.escura; ctx.fillRect(0, fotoH, LARGURA, ALTURA - fotoH);
+    ctx.fillStyle = t.c.destaque; ctx.fillRect(M, fotoH - 14, 240, 28);
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(M - 24, 66, 300, 92);
+    marca(ctx, M - 2, 108, img, false, 1);
+    ctx.font = "18px PoppinsBold"; ctx.fillStyle = "#fff"; ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.fillText(k.rotulo.toUpperCase(), LARGURA - M, 112);
+    if (credito) { ctx.font = "13px Poppins"; ctx.fillStyle = "rgba(255,255,255,0.8)"; ctx.textBaseline = "alphabetic"; ctx.fillText(credito, LARGURA - M, fotoH - 26); }
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    let y = fotoH + 96;
+    ctx.fillStyle = sobre; ctx.globalAlpha = 0.7; ctx.font = "21px PoppinsBold"; ctx.fillText(k.sobretitulo.toUpperCase(), M, y); ctx.globalAlpha = 1;
+    y += 20; ctx.font = t.titulo(Math.round(124 * tamanho));
+    for (const l of linhas(ctx, destino, LARGURA - 2 * M).slice(0, 2)) { y += Math.round(124 * tamanho); ctx.fillText(l, M, y); }
+    y += 44;
+    const vidro = sobre === "#ffffff" ? "rgba(255,255,255,0.14)" : "rgba(0,0,0,0.08)";
+    let x = M;
+    for (const [texto, ic] of k.pastilhas) x += pastilha(ctx, texto, x, y, vidro, sobre, ic) + 12;
+    y += 50;
+    if (k.preco) {
+      ctx.textBaseline = "alphabetic"; ctx.fillStyle = sobre; ctx.globalAlpha = 0.75; ctx.font = "20px PoppinsBold"; ctx.fillText(k.preco.rotulo.toUpperCase(), M, y + 70); ctx.globalAlpha = 1;
+      ctx.font = "92px PoppinsBold"; ctx.fillText(k.preco.valor, M, y + 160);
+    }
+    ctx.fillStyle = sobre; ctx.globalAlpha = 0.3; ctx.fillRect(M, ALTURA - 150, LARGURA - 2 * M, 2); ctx.globalAlpha = 1;
+    ctx.textBaseline = "alphabetic";
+    if (k.assinatura) { ctx.font = "18px PoppinsBold"; ctx.fillText(`${k.assinatura.rotulo} ${k.assinatura.nome}`.toUpperCase(), M, ALTURA - 100, LARGURA - 2 * M - 420); }
+    if (k.direita) { ctx.textAlign = "right"; ctx.font = "18px PoppinsBold"; ctx.fillStyle = sobre; ctx.fillText(k.direita.toUpperCase(), LARGURA - M, ALTURA - 100); ctx.textAlign = "left"; }
+    return canvas;
   }
-  if (p.foto?.credito) { ctx.font = "13px Poppins"; ctx.fillStyle = sobreCapa === "#ffffff" ? "rgba(255,255,255,0.65)" : "rgba(0,0,0,0.55)"; ctx.textAlign = "right"; ctx.fillText(`Fotografia: ${p.foto.credito}`.slice(0, 90), LARGURA - M, ALTURA - 104); ctx.textAlign = "left"; }
+
+  if (t.estilo === "natural") {
+    // Fundo creme, fotografia em arco, título em itálico.
+    const fotoW = LARGURA - 2 * M, fotoH = k.preco ? 860 : 900, fotoY = 210;
+    marca(ctx, M, 120, img, false, 1);
+    ctx.font = "italic 24px Playfair"; ctx.fillStyle = t.c.principalTexto; ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.fillText(k.rotulo.toLowerCase(), LARGURA - M, 122); ctx.textAlign = "left";
+    sombra(ctx, true); ctx.beginPath(); ctx.roundRect(M, fotoY, fotoW, fotoH, [fotoW / 2, fotoW / 2, 60, 60]); ctx.fillStyle = "#fff"; ctx.fill(); sombra(ctx, false);
+    if (k.foto) cobrir(ctx, k.foto, M, fotoY, fotoW, fotoH, [fotoW / 2, fotoW / 2, 60, 60]); else semFoto(ctx, t, M, fotoY, fotoW, fotoH, [fotoW / 2, fotoW / 2, 60, 60], "");
+    if (credito) { ctx.font = "13px Poppins"; ctx.fillStyle = CINZA; ctx.textAlign = "right"; ctx.textBaseline = "alphabetic"; ctx.fillText(credito, LARGURA - M, fotoY + fotoH + 28); ctx.textAlign = "left"; }
+    let y = fotoY + fotoH + 84;
+    ctx.textBaseline = "alphabetic"; ctx.fillStyle = t.c.principalTexto; ctx.font = "italic 30px Playfair"; ctx.fillText(k.sobretitulo, M, y);
+    y += 10; ctx.fillStyle = TINTA; ctx.font = t.titulo(Math.round(118 * tamanho));
+    for (const l of linhas(ctx, k.destino, LARGURA - 2 * M).slice(0, 2)) { y += Math.round(116 * tamanho); ctx.fillText(l, M, y); }
+    y += 40;
+    let x = M;
+    for (const [texto, ic] of k.pastilhas) x += pastilha(ctx, texto, x, y, t.c.suave, t.c.principalTexto, ic) + 12;
+    y += 50;
+    if (k.preco) {
+      ctx.textBaseline = "alphabetic"; ctx.fillStyle = CINZA; ctx.font = "italic 26px Playfair"; ctx.fillText(k.preco.rotulo, M, y + 62);
+      ctx.fillStyle = t.c.principalTexto; ctx.font = "80px PoppinsBold"; ctx.fillText(k.preco.valor, M, y + 142);
+    }
+    ctx.textBaseline = "alphabetic";
+    if (k.assinatura) {
+      ctx.font = "italic 22px Playfair"; ctx.fillStyle = CINZA; ctx.fillText(k.assinatura.rotulo, M, ALTURA - 126);
+      ctx.font = "28px PoppinsBold"; ctx.fillStyle = TINTA; ctx.fillText(k.assinatura.nome, M, ALTURA - 88, LARGURA - 2 * M - 420);
+    }
+    if (k.direita) { ctx.textAlign = "right"; ctx.font = "20px PoppinsBold"; ctx.fillStyle = t.c.principalTexto; ctx.fillText(k.direita, LARGURA - M, ALTURA - 88); ctx.textAlign = "left"; }
+    return canvas;
+  }
+
+  // Clássico: página branca com moldura, fotografia emoldurada e texto centrado, como numa revista.
+  const cx = LARGURA / 2, fotoY = 250, fotoH = k.preco ? 700 : 820;
+  marca(ctx, cx - larguraMarca(ctx, img, 1) / 2, 128, img, false, 1);
+  ctx.textAlign = "center"; ctx.fillStyle = t.c.principalTexto; ctx.font = "14px PoppinsBold"; ctx.textBaseline = "alphabetic"; ctx.fillText(espacado(k.rotulo), cx, 206);
+  if (k.foto) cobrir(ctx, k.foto, M, fotoY, LARGURA - 2 * M, fotoH, 0); else semFoto(ctx, t, M, fotoY, LARGURA - 2 * M, fotoH, 0, "");
+  ctx.strokeStyle = t.c.principalA55; ctx.lineWidth = 1.5; ctx.strokeRect(M - 14, fotoY - 14, LARGURA - 2 * M + 28, fotoH + 28);
+  if (credito) { ctx.font = "13px Poppins"; ctx.fillStyle = CINZA; ctx.textAlign = "right"; ctx.fillText(credito, LARGURA - M, fotoY + fotoH + 42); ctx.textAlign = "center"; }
+  let y = fotoY + fotoH + 110;
+  ctx.fillStyle = t.c.principalTexto; ctx.font = "16px PoppinsBold"; ctx.fillText(espacado(k.sobretitulo), cx, y, LARGURA - 2 * M);
+  ctx.fillStyle = TINTA; ctx.font = t.titulo(Math.round(112 * tamanho));
+  for (const l of linhas(ctx, k.destino, LARGURA - 2 * M).slice(0, 2)) { y += Math.round(112 * tamanho); ctx.fillText(l, cx, y); }
+  ornamento(ctx, t, cx, y + 46, 180);
+  y += 110;
+  ctx.font = "22px Poppins"; ctx.fillStyle = CINZA; ctx.fillText(k.pastilhas.map(([s]) => s).join("   ·   "), cx, y, LARGURA - 2 * M);
+  if (k.preco) {
+    ctx.font = "italic 24px Playfair"; ctx.fillText(k.preco.rotulo, cx, y + 70);
+    ctx.fillStyle = t.c.principalTexto; ctx.font = "76px Playfair"; ctx.fillText(k.preco.valor, cx, y + 150);
+  }
+  ctx.fillStyle = TINTA; ctx.font = "19px Poppins";
+  if (k.assinatura) { ctx.fillText(k.assinatura.rotulo, cx, ALTURA - 140); ctx.font = "30px Playfair"; ctx.fillText(k.assinatura.nome, cx, ALTURA - 100, LARGURA - 2 * M); }
+  if (k.direita) { ctx.font = "16px PoppinsBold"; ctx.fillStyle = t.c.principalTexto; ctx.fillText(espacado(k.direita), cx, ALTURA - 64, LARGURA - 2 * M); }
+  ctx.textAlign = "left";
   return canvas;
+}
+
+function capa(d: DadosDesenho, t: Tema, img: Image | null) {
+  const {p} = d, total = diasDaViagem(p.viagem.ida, p.viagem.regresso);
+  const pastilhas: [string, Icone][] = [];
+  if (p.viagem.ida && p.viagem.regresso) pastilhas.push([`${dataPlanner(p.viagem.ida, {day: "numeric", month: "short"})} – ${dataPlanner(p.viagem.regresso, {day: "numeric", month: "short", year: "numeric"})}`, "calendario"]);
+  if (total) pastilhas.push([`${total} dias`, "estrela"]);
+  if (p.viagem.viajantes) pastilhas.push([`${p.viagem.viajantes} viajante${p.viagem.viajantes > 1 ? "s" : ""}`, "pessoas"]);
+  return desenharCapa(t, img, {
+    foto: d.imagens.capa, credito: p.foto?.credito ?? "", rotulo: "Travel planner",
+    sobretitulo: p.perfil.tipo ? `A viagem de sonho · ${p.perfil.tipo}` : "A vossa próxima aventura", destino: p.viagem.destino,
+    pastilhas, preco: null, assinatura: d.consultor?.nome ? {rotulo: "Preparado com carinho por", nome: d.consultor.nome} : null, direita: "",
+  });
 }
 
 export function cartaoEmbarque(ctx: SKRSContext2D, t: Tema, v: TravelPlanner["voos"][number], x: number, y: number, w: number, h: number) {
   sombra(ctx, true); retangulo(ctx, x, y, w, h, 22, "#ffffff"); sombra(ctx, false);
   const stub = 190, corpo = w - stub;
   // Talão lateral verde-oliva com o sentido.
-  ctx.save(); ctx.beginPath(); ctx.roundRect(x + corpo, y, stub, h, [0, 22, 22, 0]); ctx.clip();
+  ctx.save(); ctx.beginPath(); ctx.roundRect(x + corpo, y, stub, h, [0, r(ctx, 22), r(ctx, 22), 0]); ctx.clip();
   const sobre = v.sentido === "ida" ? t.c.sobrePrincipal : t.c.sobreEscura;
   ctx.fillStyle = v.sentido === "ida" ? t.c.principal : t.c.escura; ctx.fillRect(x + corpo, y, stub, h); ctx.restore();
   ctx.fillStyle = sobre; ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -332,8 +478,8 @@ export async function viagem(d: DadosDesenho, t: Tema, img: Image | null, n: num
     const rotas = voosComCoords.filter((v, i, todos) => todos.findIndex(o => o.origem === v.destino && o.destino === v.origem) >= i || v.sentido === "ida");
     const arcos = rotas.flatMap(v => [arcoVoo({lat: v.origemLat!, lng: v.origemLng!}, {lat: v.destinoLat!, lng: v.destinoLng!})]);
     const e = enquadrar([...pontos, ...arcos.flat()], area.w, area.h, 0.14, 9);
-    await desenharFundoMapa(ctx, area, e, 24, t.escala >= 1.5 ? 2 : 1);
-    ctx.save(); ctx.beginPath(); ctx.roundRect(area.x, area.y, area.w, area.h, 24); ctx.clip();
+    await desenharFundoMapa(ctx, area, e, r(ctx, 24), t.escala >= 1.5 ? 2 : 1);
+    ctx.save(); ctx.beginPath(); ctx.roundRect(area.x, area.y, area.w, area.h, r(ctx, 24)); ctx.clip();
     for (const arco of arcos) {
       const pts = arco.map(q => noMapa(q, area, e));
       ctx.strokeStyle = t.c.principalA25; ctx.lineWidth = 14; ctx.beginPath(); pts.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.stroke();
@@ -400,8 +546,8 @@ async function alojamento(d: DadosDesenho, t: Tema, img: Image | null, n: number
     const pontos = unicos.map(l => ({lat: l.lat!, lng: l.lng!}));
     if (p.extras.destinoLat !== null && p.extras.destinoLng !== null && unicos.length === 1) pontos.push({lat: p.extras.destinoLat, lng: p.extras.destinoLng});
     const e = enquadrar(pontos.length > 1 ? pontos : [...pontos, {lat: pontos[0]!.lat + 0.03, lng: pontos[0]!.lng + 0.03}, {lat: pontos[0]!.lat - 0.03, lng: pontos[0]!.lng - 0.03}], area.w, area.h, 0.16, 13);
-    await desenharFundoMapa(ctx, area, e, 24, t.escala >= 1.5 ? 2 : 1);
-    ctx.save(); ctx.beginPath(); ctx.roundRect(area.x, area.y, area.w, area.h, 24); ctx.clip();
+    await desenharFundoMapa(ctx, area, e, r(ctx, 24), t.escala >= 1.5 ? 2 : 1);
+    ctx.save(); ctx.beginPath(); ctx.roundRect(area.x, area.y, area.w, area.h, r(ctx, 24)); ctx.clip();
     // Afasta pinos que ficariam uns em cima dos outros (locais muito próximos).
     const posicoes: {x: number; y: number}[] = [];
     for (const l of unicos) {
@@ -628,7 +774,7 @@ function contactos(d: DadosDesenho, t: Tema, img: Image | null, n: number) {
     const comFoto = d.imagens.dias.filter(Boolean);
     const foto = comFoto[Math.floor(comFoto.length / 2)] ?? d.imagens.capa;
     if (foto) cobrir(ctx, foto, M, fotoY, LARGURA - 2 * M, fotoH, 26); else semFoto(ctx, t, M, fotoY, LARGURA - 2 * M, fotoH, 26, "");
-    ctx.save(); ctx.beginPath(); ctx.roundRect(M, fotoY, LARGURA - 2 * M, fotoH, 26); ctx.clip();
+    ctx.save(); ctx.beginPath(); ctx.roundRect(M, fotoY, LARGURA - 2 * M, fotoH, r(ctx, 26)); ctx.clip();
     const g = ctx.createLinearGradient(0, fotoY, 0, fotoY + fotoH); g.addColorStop(0.3, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,0.65)");
     ctx.fillStyle = g; ctx.fillRect(M, fotoY, LARGURA - 2 * M, fotoH); ctx.restore();
     ctx.fillStyle = "#fff"; ctx.font = t.titulo(84); ctx.textBaseline = "alphabetic";

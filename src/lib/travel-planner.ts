@@ -9,9 +9,9 @@ export type RitmoPlanner = "calmo" | "equilibrado" | "intenso";
 export type TemaDica = "documentos" | "saude" | "moeda" | "clima" | "tomadas" | "fuso" | "mala" | "gorjetas" | "transportes" | "outro";
 
 export const ESTILOS_PLANNER: {id: EstiloPlanner; nome: string; descricao: string}[] = [
-  {id: "classico", nome: "Clássico", descricao: "Páginas brancas, títulos elegantes com serifa e detalhes verde-oliva."},
-  {id: "moderno", nome: "Moderno", descricao: "Contraste a preto, letra direita e faixas escuras."},
-  {id: "natural", nome: "Natural", descricao: "Tons creme e verde-oliva, ambiente calmo."},
+  {id: "classico", nome: "Clássico", descricao: "Elegante, como uma revista: moldura fina, fotografia emoldurada e títulos com serifa centrados."},
+  {id: "moderno", nome: "Moderno", descricao: "Arrojado: blocos escuros de ponta a ponta, cantos retos e letra grande em maiúsculas."},
+  {id: "natural", nome: "Natural", descricao: "Suave e acolhedor: fundo creme, fotografia em arco, cantos redondos e títulos em itálico."},
 ];
 export const TIPOS_VIAGEM = ["Casal", "Lua de mel", "Família com crianças", "Amigos", "Sozinho/a", "Sénior", "Grupo"] as const;
 export const INTERESSES_PLANNER = ["Praia", "Cultura e história", "Gastronomia", "Compras", "Natureza", "Aventura", "Vida noturna", "Relaxar e spa", "Parques temáticos", "Fotografia"] as const;
