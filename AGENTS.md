@@ -70,6 +70,13 @@ posicionar campos neste fluxo. O editor antigo continua em “Editor e materiais
 anteriores”. A marca iCliGo é aplicada pelo servidor e permanece protegida.
 Este fluxo e a respetiva API continuam exclusivos da conta de teste.
 
+Por indicação explícita do utilizador, as publicações geradas incluem um
+pequeno editor para selecionar textos, alterar os tipos/tamanhos de letra e
+trocar a imagem de fundo. A preparação automática é feita na primeira abertura;
+os ajustes seguintes são imediatos e gravam uma nova versão privada. Preservar
+a publicação original, os dados confirmados e a marca iCliGo protegida. O editor
+continua limitado à nova área da conta de teste, incluindo todas as ações da API.
+
 Por indicação explícita do utilizador, o card de entrada no grupo WhatsApp
 Welcome Aboard também aparece nos Avisos da área atual (`/consultor`) para
 os consultores da equipa, com o mesmo convite definido em

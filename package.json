@@ -27,6 +27,7 @@
     "typecheck": "tsc --noEmit",
     "test:reservas": "tsx scripts/testes-reservas.ts",
     "test:reservas-imagem": "tsx scripts/testes-reservas-imagem.ts",
+    "test:reservas-editor": "tsx scripts/testes-reservas-editor.ts",
     "importar-documentos": "tsx scripts/importar-documentos.ts"
   },
   "dependencies": {
@@ -42,6 +43,7 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "sharp": "^0.35.5",
+    "tesseract.js": "^7.0.0",
     "unpdf": "^1.8.1",
     "web-push": "^3.6.7"
   },

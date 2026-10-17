@@ -12,14 +12,14 @@ const nextConfig: NextConfig = {
   // isto, a pasta migrations/ não ia parar ao pacote da função e o botão
   // falhava em produção com "pasta não encontrada".
   outputFileTracingIncludes: {
-    "/api/consultor/nova-area/reservas/imagem": ["./public/icligo-logo.png", "./public/fonts/Poppins-*.ttf"],
+    "/api/consultor/nova-area/reservas/imagem": ["./public/icligo-logo.png", "./public/fonts/*.ttf", "./assets/ocr/*", "./node_modules/tesseract.js/**/*", "./node_modules/tesseract.js-core/*", ...["wasm-feature-detect","bmp-js","idb-keyval","zlibjs","regenerator-runtime"].map(p=>`./node_modules/${p}/**/*`)],
     "/admin/migrar": ["./migrations/**/*"],
     "/api/admin/migrar": ["./migrations/**/*"],
     // O travel planner desenha as páginas com estas fontes e o logótipo, lidos do disco.
     "/api/consultor/nova-area/travel-planner": ["./public/fonts/Poppins-*.ttf", "./public/fonts/PlayfairDisplay-Variable.ttf", "./public/icligo-logo.png"],
   },
   // Binário nativo de desenho (canvas); não pode ser empacotado.
-  serverExternalPackages: ["@napi-rs/canvas"],
+  serverExternalPackages: ["@napi-rs/canvas", "tesseract.js", "tesseract.js-core"],
 };
 
 export default nextConfig;

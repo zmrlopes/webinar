@@ -44,6 +44,7 @@ export async function apagarImagemReserva(email: string, id: unknown) {
     if (usados.rows.length) throw new ErroReserva("Esta referência acompanha publicações guardadas. Apaga essas publicações primeiro para a remover.", 409);
   }
   await db().query("delete from dashboard_config where chave = $1", [prefixo(email) + r.id]);
+  await db().query("delete from dashboard_config where chave = $1", [`reservas:editor:v1:${email}:${r.id}`]);
 }
 async function normalizarImagem(valor: unknown) {
   const data = imagemReserva(valor);

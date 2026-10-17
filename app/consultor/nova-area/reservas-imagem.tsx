@@ -5,6 +5,8 @@ import { comprimirImagemReserva } from "@/lib/reservas-canvas";
 import { dadosPublicacaoReserva, textosPublicacaoReserva, type PublicacaoImagemReserva, type ReferenciaImagemReserva, type ResumoImagemReserva } from "@/lib/reservas-imagem";
 import type { DadosReserva, FormatoReserva } from "@/lib/reservas";
 import { CriarReservaOrcamento } from "./reservas-orcamento";
+import {EditorRapidoPublicacao} from "./reservas-imagem-editor";
+import type {AjustesEditorPublicacao,EditorPublicacaoReserva} from "@/lib/reservas-imagem-editor";
 import css from "./reservas.module.css";
 import styles from "./reservas-imagem.module.css";
 
@@ -21,6 +23,7 @@ export function CriarPublicacaoImagem({email}: {email: string}) {
   const [ocupado, setOcupado] = useState(""), [erro, setErro] = useState("");
   const [revisto, setRevisto] = useState(false), [verificacao, setVerificacao] = useState<string[] | null>(null);
   const [verificacaoErro, setVerificacaoErro] = useState("");
+  const [editor,setEditor]=useState<EditorPublicacaoReserva|null>(null),[editorAberto,setEditorAberto]=useState(false),[editorAlterado,setEditorAlterado]=useState(false);
   const upload = useRef<HTMLInputElement>(null), bloqueado = useRef(false);
   const referencias = lista.filter(r => r.tipo === "referencia");
   async function pedir<T>(acao: string, extra: Record<string, unknown> = {}): Promise<T> {
@@ -37,10 +40,10 @@ export function CriarPublicacaoImagem({email}: {email: string}) {
     try {await acao();} catch (e) {setErro(e instanceof Error ? e.message : "Não foi possível concluir.");} finally {bloqueado.current = false; setOcupado("");}
   }
   useEffect(() => {
-    if (!ocupado) return;
+    if (!ocupado && !editorAlterado) return;
     const proteger = (e: BeforeUnloadEvent) => {e.preventDefault(); e.returnValue = "";};
     window.addEventListener("beforeunload", proteger); return () => window.removeEventListener("beforeunload", proteger);
-  }, [ocupado]);
+  }, [ocupado,editorAlterado]);
   useEffect(() => {
     if (resultado?.estado !== "a-gerar" || ocupado) return;
     let vivo = true;
@@ -57,7 +60,9 @@ export function CriarPublicacaoImagem({email}: {email: string}) {
       setReferencia(r); setFormato(r.formato); setRascunho(null); setResultado(null); setRevisto(false); setPasso(2); setAba("criar");
     });
   }
-  function mostrarResultado(r: PublicacaoImagemReserva) {setResultado(r); setRevisto(false); setVerificacao(r.verificacao?.avisos ?? null); setVerificacaoErro(""); setAjuste("");}
+  function mostrarResultado(r: PublicacaoImagemReserva) {setResultado(r); setRevisto(false); setVerificacao(r.verificacao?.avisos ?? null); setVerificacaoErro(""); setAjuste("");setEditor(null);setEditorAberto(false);setEditorAlterado(false);}
+  async function abrirEditor(){if(!resultado)return;await fazer("A identificar os textos da publicação…",async()=>{let e=editor??await pedir<EditorPublicacaoReserva>("preparar-editor",{id:resultado.id});setEditor(e);if(!e.fundoLimpo){setOcupado("A preparar a edição das letras e do fundo… Só é necessário na primeira abertura.");e=await pedir<EditorPublicacaoReserva>("limpar-editor",{id:resultado.id});setEditor(e);}setEditorAberto(true);});}
+  async function guardarEditor(ajustes:AjustesEditorPublicacao){if(!resultado)return;await fazer("A guardar a versão editada…",async()=>{const r=await pedir<PublicacaoImagemReserva>("guardar-edicao",{id:resultado.id,ajustes});mostrarResultado(r);await carregarLista();});}
   async function verificar(id: string) {
     setVerificacaoErro("");
     try {const r = await pedir<{avisos: string[]}>("verificar", {id}); setVerificacao(r.avisos);}
@@ -99,7 +104,7 @@ export function CriarPublicacaoImagem({email}: {email: string}) {
   const aGerar = resultado?.estado === "a-gerar";
   return <section className={css.pagina} aria-label="Publicações por referência">
     <header className={css.intro}><span>RESERVAS · CRIAR TEMPLATES</span><h1>O teu desenho. Uma nova viagem.</h1><p>Carrega a referência completa e o orçamento. A IA cria a publicação com o teu estilo e os novos dados.</p></header>
-    <div className={css.abas}><button type="button" aria-pressed={aba === "criar"} disabled={!!ocupado} onClick={() => setAba("criar")}>Criar publicação</button><button type="button" aria-pressed={aba === "historico"} disabled={!!ocupado} onClick={() => {setAba("historico");void fazer("A abrir o histórico…", carregarLista);}}>As minhas publicações</button></div>
+    <div className={css.abas}><button type="button" aria-pressed={aba === "criar"} disabled={!!ocupado||editorAlterado} onClick={() => setAba("criar")}>Criar publicação</button><button type="button" aria-pressed={aba === "historico"} disabled={!!ocupado||editorAlterado} onClick={() => {setAba("historico");void fazer("A abrir o histórico…", carregarLista);}}>As minhas publicações</button></div>
     <div aria-live="polite">{ocupado && <p role="status" className={styles.progresso}>{ocupado}</p>}{erro && <p role="alert" className={css.erro}>{erro}</p>}</div>
     {disponivel === false && <p className={css.avisos}>A geração de imagens ainda precisa de ser ativada na plataforma. As referências e publicações guardadas continuam disponíveis.</p>}
     <div hidden={aba !== "criar"}>
@@ -119,8 +124,9 @@ export function CriarPublicacaoImagem({email}: {email: string}) {
       <fieldset disabled={!!ocupado || !!aGerar} className={css.editorCompleto} hidden={passo !== 3}>
         {resumo && referencia && <div className={css.cartao}>
           {resultado?.estado === "pronta" && resultado.imagem ? <>
-            <h2>A tua publicação está guardada</h2><p className={css.nota}>Confere o resultado. Para mudar o desenho, escreve o ajuste e cria uma nova versão.</p>
-            <div className={styles.resultado}><img className={styles.publicacao} src={resultado.imagem} alt={`Publicação gerada para ${resultado.dados.destino}`}/><div>
+            <h2>A tua publicação está guardada</h2><p className={css.nota}>Ajusta os tipos e tamanhos de letra ou escolhe outra imagem de fundo no editor.</p>
+            {editorAberto&&editor?<EditorRapidoPublicacao key={resultado.id} email={email} destino={resultado.dados.destino} formato={resultado.formato} editor={editor} ocupado={!!ocupado} onGuardar={guardarEditor} onFechar={()=>setEditorAberto(false)} onAlterado={setEditorAlterado}/>:<div className={styles.resultado}><img className={styles.publicacao} src={resultado.imagem} alt={`Publicação gerada para ${resultado.dados.destino}`}/><div>
+              <button type="button" className={css.primario} onClick={()=>void abrirEditor()}>Editar letras e fundo</button>
               <h3>Dados confirmados</h3><p><strong>{resumo.destino}</strong><br/>{resumo.hotel}<br/>{resumo.datas}<br/>{resumo.preco}<br/>{resumo.basePreco}<br/>{resumo.regime}</p>
               <details><summary>Comparar com a referência</summary><img className={styles.comparacao} src={referencia.imagem} alt="Referência original para comparar"/></details>
               {resultado.avisos?.map(a => <p key={a} className={css.nota}>{a}</p>)}
@@ -133,7 +139,7 @@ export function CriarPublicacaoImagem({email}: {email: string}) {
               <label className={css.campo}><span>O que queres ajustar?</span><textarea rows={3} maxLength={1500} value={ajuste} onChange={e => setAjuste(e.target.value)} placeholder="Por exemplo: aproxima o tipo de letra da referência e aumenta o preço."/></label>
               <button type="button" disabled={!ajuste.trim() || !disponivel} onClick={() => void gerar(true)}>Criar versão com este ajuste</button>
               <p className={css.nota}>A versão atual fica no histórico. Para corrigir dados da viagem, volta ao orçamento.</p>
-            </div></div>
+            </div></div>}
           </> : <>
             <h2>Pronto para criar a publicação</h2>
             <div className={css.referenciaOrcamento}><img src={referencia.miniatura} alt="Referência da publicação"/><div><strong>{resumo.destino} · {resumo.hotel}</strong><p>{resumo.datas}<br/>{resumo.preco}<br/>{resumo.basePreco}</p><small>Referência: {referencia.nome}</small></div></div>
@@ -144,7 +150,7 @@ export function CriarPublicacaoImagem({email}: {email: string}) {
             <p className={css.nota}>A imagem final segue a tua referência e inclui a marca iCliGo protegida. Podes pedir ajustes depois de gerar.</p>
             <button type="button" className={css.primario} disabled={!disponivel} onClick={() => void gerar()}>Gerar publicação</button>
           </>}
-          <div className={css.rodapePasso}><button type="button" onClick={() => {setPasso(2);setErro("");}}>← Rever orçamento</button><button type="button" onClick={() => {setPasso(1);setErro("");}}>Escolher outra referência</button></div>
+          <div className={css.rodapePasso}><button type="button" disabled={editorAlterado} onClick={() => {setEditorAberto(false);setPasso(2);setErro("");}}>← Rever orçamento</button><button type="button" disabled={editorAlterado} onClick={() => {setEditorAberto(false);setPasso(1);setErro("");}}>Escolher outra referência</button></div>
         </div>}
       </fieldset>
     </div>
