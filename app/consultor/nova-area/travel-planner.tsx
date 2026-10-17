@@ -453,7 +453,7 @@ export function TravelPlannerNovaArea({email}: {email: string}) {
         <div className={css.tituloLinha}><h3>Cores</h3>{botaoCores}</div>
         {editorCores}
         <h3>Estilo</h3>
-        <div className={css.estilos}>{ESTILOS_PLANNER.map(e => <button type="button" key={e.id} aria-pressed={p.estilo === e.id} className={p.estilo === e.id ? css.estiloAtivo : css.estilo} onClick={() => setP({...p, estilo: e.id})}>
+        <div className={css.estilos}>{ESTILOS_PLANNER.map(e => <button type="button" key={e.id} aria-pressed={p.estilo === e.id} className={p.estilo === e.id ? css.estiloAtivo : css.estilo} onClick={() => { const novo = {...p, estilo: e.id}; setP(novo); if (previa) void gerarPrevia(novo); }}>
           <span className={css[`amostra_${e.id}`]} aria-hidden="true" /><strong>{e.nome}</strong><small>{e.descricao}</small></button>)}</div>
 
         <h3>Fotografias</h3>

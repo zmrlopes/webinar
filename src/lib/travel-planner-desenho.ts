@@ -28,6 +28,19 @@ export function logo(): Promise<Image | null> {
   logoCache ??= loadImage(readFileSync(join(process.cwd(), "public", "icligo-logo.png"))).catch(() => null);
   return logoCache;
 }
+let brancoCache: Promise<Image | null> | null = null;
+/** Logótipo iCliGo branco (ícone e letras), para pôr sobre fotografias; sem a margem transparente do ficheiro. */
+export function logoBranco(): Promise<Image | null> {
+  brancoCache ??= sharp(readFileSync(join(process.cwd(), "public", "icligo-logo-branco.png"))).trim().png().toBuffer().then(b => loadImage(b)).catch(() => null);
+  return brancoCache;
+}
+
+/** Logótipo branco sobre a fotografia da capa; sem ele, o logótipo normal num cartão branco. */
+function marcaSobreFoto(ctx: SKRSContext2D, img: Image | null, branco: Image | null) {
+  if (branco) { const h = 88; ctx.drawImage(branco, M, 112 - h / 2, h * branco.width / branco.height, h); return; }
+  ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.roundRect(M - 24, 66, 300, 92, r(ctx, 18)); ctx.fill();
+  marca(ctx, M - 2, 112, img, false, 1);
+}
 
 /**
  * Cada estilo tem a sua composição, não só outras cores:
@@ -287,7 +300,7 @@ export interface ConteudoCapa {
   assinatura: {rotulo: string; nome: string} | null; direita: string;
 }
 
-export function desenharCapa(t: Tema, img: Image | null, k: ConteudoCapa) {
+export function desenharCapa(t: Tema, img: Image | null, branco: Image | null, k: ConteudoCapa) {
   const {canvas, ctx} = novaPagina(t);
   const credito = k.credito ? `Fotografia: ${k.credito}`.slice(0, 90) : "";
   const tamanho = k.destino.length > 18 ? 0.78 : 1, destino = t.maiusculas ? k.destino.toUpperCase() : k.destino;
@@ -301,8 +314,7 @@ export function desenharCapa(t: Tema, img: Image | null, k: ConteudoCapa) {
     ctx.fillStyle = topo; ctx.fillRect(0, 0, LARGURA, 240);
     ctx.fillStyle = t.c.escura; ctx.fillRect(0, fotoH, LARGURA, ALTURA - fotoH);
     ctx.fillStyle = t.c.destaque; ctx.fillRect(M, fotoH - 14, 240, 28);
-    ctx.fillStyle = "#ffffff"; ctx.fillRect(M - 24, 66, 300, 92);
-    marca(ctx, M - 2, 108, img, false, 1);
+    marcaSobreFoto(ctx, img, branco);
     ctx.font = "18px PoppinsBold"; ctx.fillStyle = "#fff"; ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.fillText(k.rotulo.toUpperCase(), LARGURA - M, 112);
     if (credito) { ctx.font = "13px Poppins"; ctx.fillStyle = "rgba(255,255,255,0.8)"; ctx.textBaseline = "alphabetic"; ctx.fillText(credito, LARGURA - M, fotoH - 26); }
     ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
@@ -362,9 +374,7 @@ export function desenharCapa(t: Tema, img: Image | null, k: ConteudoCapa) {
   ctx.fillStyle = g; ctx.fillRect(0, 0, LARGURA, ALTURA);
   const topo = ctx.createLinearGradient(0, 0, 0, 260); topo.addColorStop(0, "rgba(0,0,0,0.35)"); topo.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = topo; ctx.fillRect(0, 0, LARGURA, 260);
-  // Marca num cartão branco, como nos materiais de Reservas.
-  retangulo(ctx, M - 24, 70, 300, 92, 18, "#ffffff");
-  marca(ctx, M - 2, 112, img, false, 1);
+  marcaSobreFoto(ctx, img, branco);
   ctx.font = "18px PoppinsBold"; ctx.fillStyle = "#fff"; ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.fillText(k.rotulo.toUpperCase(), LARGURA - M, 116); ctx.textAlign = "left";
   let y = ALTURA - (k.preco ? 700 : 640);
   ctx.fillStyle = t.c.suave; ctx.font = "22px PoppinsBold"; ctx.textBaseline = "alphabetic"; ctx.fillText(k.sobretitulo.toUpperCase(), M, y);
@@ -396,13 +406,13 @@ export function desenharCapa(t: Tema, img: Image | null, k: ConteudoCapa) {
   return canvas;
 }
 
-function capa(d: DadosDesenho, t: Tema, img: Image | null) {
+function capa(d: DadosDesenho, t: Tema, img: Image | null, branco: Image | null) {
   const {p} = d, total = diasDaViagem(p.viagem.ida, p.viagem.regresso);
   const pastilhas: [string, Icone][] = [];
   if (p.viagem.ida && p.viagem.regresso) pastilhas.push([`${dataPlanner(p.viagem.ida, {day: "numeric", month: "short"})} – ${dataPlanner(p.viagem.regresso, {day: "numeric", month: "short", year: "numeric"})}`, "calendario"]);
   if (total) pastilhas.push([`${total} dias`, "estrela"]);
   if (p.viagem.viajantes) pastilhas.push([`${p.viagem.viajantes} viajante${p.viagem.viajantes > 1 ? "s" : ""}`, "pessoas"]);
-  return desenharCapa(t, img, {
+  return desenharCapa(t, img, branco, {
     foto: d.imagens.capa, credito: p.foto?.credito ?? "", rotulo: "Travel planner",
     sobretitulo: p.perfil.tipo ? `A viagem de sonho · ${p.perfil.tipo}` : "A vossa próxima aventura", destino: p.viagem.destino,
     pastilhas, preco: null, assinatura: d.consultor?.nome ? {rotulo: "Preparado com carinho por", nome: d.consultor.nome} : null, direita: "",
@@ -784,7 +794,7 @@ function contactos(d: DadosDesenho, t: Tema, img: Image | null, n: number) {
 export async function desenharPlanner(d: DadosDesenho): Promise<Buffer[]> {
   registarFontes();
   const t = tema(d.p.estilo, d.marca, d.escala ?? 2), img = await logo();
-  const paginas = [capa(d, t, img)];
+  const paginas = [capa(d, t, img, await logoBranco())];
   paginas.push(await viagem(d, t, img, paginas.length + 1));
   paginas.push(await alojamento(d, t, img, paginas.length + 1));
   if (d.p.dias.length) paginas.push(...paginasRoteiro(d, t, img, paginas.length + 1));

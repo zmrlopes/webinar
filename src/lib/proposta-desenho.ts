@@ -3,7 +3,7 @@ import QRCode from "qrcode";
 import { desenharFundoMapa, enquadrar, noMapa, type Ponto } from "./travel-planner-mapas";
 import {
   ALTURA, alturaParagrafo, cabecalho, CINZA, codificarPaginas, desenharCapa, icone, LARGURA, LINHA, logo, M, novaPagina, r,
-  paginasDicas, paragrafo, registarFontes, retangulo, rodape, semFoto, sombra, tema, TINTA, viagem, cobrir, type FotoDesenho, type Icone, type Tema,
+  paginasDicas, paragrafo, logoBranco, registarFontes, retangulo, rodape, semFoto, sombra, tema, TINTA, viagem, cobrir, type FotoDesenho, type Icone, type Tema,
 } from "./travel-planner-desenho";
 import { euros, listasIncluido, plannerDaProposta, precosDaOpcao, type Proposta } from "./proposta";
 import { dataPlanner, diasDaViagem, type MarcaPlanner, type TravelPlanner } from "./travel-planner";
@@ -34,13 +34,13 @@ function etiquetaEscolha(ctx: SKRSContext2D, t: Tema, x: number, y: number) {
 
 const menorPreco = (p: Proposta) => Math.min(...p.opcoes.map(o => precosDaOpcao(o, p.viagem.viajantes).porPessoa ?? Infinity));
 
-function capa(d: DadosProposta, t: Tema, img: Image | null) {
+function capa(d: DadosProposta, t: Tema, img: Image | null, branco: Image | null) {
   const {p} = d, total = diasDaViagem(p.viagem.ida, p.viagem.regresso), desde = menorPreco(p);
   const pastilhas: [string, Icone][] = [];
   if (p.viagem.ida && p.viagem.regresso) pastilhas.push([`${dataPlanner(p.viagem.ida, {day: "numeric", month: "short"})} – ${dataPlanner(p.viagem.regresso, {day: "numeric", month: "short", year: "numeric"})}`, "calendario"]);
   if (total) pastilhas.push([`${total} dias`, "estrela"]);
   if (p.viagem.viajantes) pastilhas.push([`${p.viagem.viajantes} viajante${p.viagem.viajantes > 1 ? "s" : ""}`, "pessoas"]);
-  return desenharCapa(t, img, {
+  return desenharCapa(t, img, branco, {
     foto: d.imagens.capa, credito: p.foto?.credito ?? "", rotulo: "Proposta de viagem",
     sobretitulo: `${p.opcoes.length} ${p.opcoes.length === 1 ? "opção pensada" : "opções pensadas"} para vocês`, destino: p.viagem.destino, pastilhas,
     preco: Number.isFinite(desde) ? {rotulo: "desde, por pessoa", valor: euros(desde)} : null,
@@ -277,7 +277,7 @@ export async function desenharProposta(d: DadosProposta): Promise<Buffer[]> {
   // As páginas partilhadas com o travel planner recebem a proposta no formato dele.
   const base = plannerDaProposta(d.p, 0, d.p.id);
   const plano: TravelPlanner = {...base, viagem: {...base.viagem, hotel: "", quarto: "", regime: ""}};
-  const paginas = [capa(d, t, img)];
+  const paginas = [capa(d, t, img, await logoBranco())];
   if (plano.voos.length || d.p.viagem.voo) paginas.push(await viagem({p: plano, marca: d.marca, consultor: d.consultor, imagens: {capa: null, hotel: null, dias: []}}, t, img, paginas.length + 1));
   paginas.push(incluido(d, t, img, plano, paginas.length + 1));
   if (d.p.opcoes.length) paginas.push(opcoes(d, t, img, plano, paginas.length + 1));
