@@ -4,8 +4,8 @@ import sharp from "sharp";
 import {db, fecharDb} from "../src/lib/db";
 import {EMAIL_PAINEL_DEMONSTRACAO} from "../src/lib/demo";
 import {dadosReservaVazios, hotelVazio} from "../src/lib/reservas";
-import {dadosPublicacaoReserva, textosPublicacaoReserva, type RegistoImagemReserva} from "../src/lib/reservas-imagem";
-import {abrirImagemReserva, apagarImagemReserva, criarReferenciaImagemReserva, gerarImagemReserva, listarImagensReserva, verificarImagemReserva} from "../src/lib/reservas-imagem-servidor";
+import {dadosPublicacaoReserva, textosPublicacaoReserva,promptPublicacaoReserva, type RegistoImagemReserva} from "../src/lib/reservas-imagem";
+import {abrirImagemReserva, apagarImagemReserva, criarReferenciaImagemReserva, gerarImagemReserva, listarImagensReserva, verificarImagemReserva,finalizarImagemReserva} from "../src/lib/reservas-imagem-servidor";
 import {POST} from "../app/api/consultor/nova-area/reservas/imagem/route";
 
 async function main() {
@@ -51,7 +51,7 @@ async function main() {
       assert.equal(String(url),"https://api.openai.com/v1/responses");
       const body=JSON.parse(String(init!.body));
       assert.equal(body.store,false);
-      const output=body.instructions.startsWith("Confere")?{avisos:["Confirma a legibilidade das datas."]}:{estilo:"Título grande branco alinhado à esquerda, fotografia de fundo com degradé escuro, preço destacado junto ao rodapé.",marca:{x:36,y:3,w:28,h:5}};
+      const output=body.instructions.startsWith("Confere")?{avisos:["Confirma a legibilidade das datas."]}:{estilo:"Título grande branco alinhado à esquerda, fotografia de fundo com degradé escuro, preço destacado junto ao rodapé.",temMarca:false,marca:{x:36,y:3,w:28,h:5}};
       return Response.json({status:"completed",output:[{type:"message",content:[{type:"output_text",text:JSON.stringify(output)}]}]});
     }) as typeof fetch;
     await assert.rejects(()=>criarReferenciaImagemReserva(email,{nome:"Teste",imagem:"https://example.com/ref.png"}));
@@ -73,7 +73,8 @@ async function main() {
     assert(!prompt.includes("input_file"));assert(prompt.includes("first image is the original design reference"));
     const bytes=Buffer.from(r.imagem!.split(",")[1]!,"base64"),meta=await sharp(bytes).metadata();
     assert.equal(meta.width,1080);assert.equal(meta.height,1920);
-    const pixel=await sharp(bytes).extract({left:660,top:75,width:1,height:1}).raw().toBuffer();assert(pixel[0]!>220,"A marca oficial é composta no servidor");
+    const zona=await sharp(bytes).extract({left:390,top:58,width:300,height:95}).raw().toBuffer();assert(zona.some(v=>v>240),"A marca branca é composta no servidor");
+    const jaComMarca={...ref,temMarca:true};assert((await finalizarImagemReserva(imageBytes,jaComMarca,"story")).equals(await finalizarImagemReserva(imageBytes,ref,"story",false)),"Uma referência com marca não recebe outra sobreposição");assert(promptPublicacaoReserva(jaComMarca,dados,"story","",false).includes("ALREADY contains"));
     assert.equal((await gerarImagemReserva(email,pedido)).id,r.id);assert.equal(imagens,1,"Repetir o mesmo pedido não cobra nova geração");
     await assert.rejects(()=>apagarImagemReserva(email,ref.id),/acompanha/);
     assert.deepEqual((await verificarImagemReserva(email,r.id)).avisos,["Confirma a legibilidade das datas."]);

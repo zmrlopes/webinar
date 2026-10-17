@@ -3,6 +3,7 @@ import sharp from "sharp";
 import {createWorker,OEM,PSM,type Line} from "tesseract.js";
 import {createCanvas,GlobalFonts} from "@napi-rs/canvas";
 import {fonteReserva,pesoFonteReserva} from "./reservas-fontes";
+import type {CaixaReserva} from "./reservas";
 import type {TextoEditorPublicacao} from "./reservas-imagem-editor";
 import type {EditorPublicacaoReserva} from "./reservas-imagem-editor";
 
@@ -65,7 +66,7 @@ export async function decoracoesPublicacao(bytes:Buffer,textos:TextoEditorPublic
   return saida.slice(0,12);
 }
 /** Só retoca os píxeis das letras; conserva a luz e a textura fora dos glifos. */
-export async function placaLimpaPublicacao(original:Buffer,retocada:Buffer,textos:TextoEditorPublicacao[],largura:number,altura:number){
+export async function placaLimpaPublicacao(original:Buffer,retocada:Buffer,textos:TextoEditorPublicacao[],largura:number,altura:number,marca?:CaixaReserva){
   const alvo=await sharp(original).ensureAlpha().raw().toBuffer(),limpo=await sharp(retocada).resize(largura,altura).ensureAlpha().raw().toBuffer(),saida=Buffer.from(alvo);
   for(const t of textos){
     if(!t.recorteOriginal)continue;
@@ -79,5 +80,6 @@ export async function placaLimpaPublicacao(original:Buffer,retocada:Buffer,texto
     const suave=await sharp(mascara,{raw:{width:w+20,height:h+20,channels:1}}).greyscale().blur(1).raw().toBuffer();
     for(let y=-10;y<h+10;y++)for(let x=-10;x<w+10;x++){const xx=left+x,yy=top+y;if(xx<0||yy<0||xx>=largura||yy>=altura)continue;const a=suave[(y+10)*(w+20)+x+10]!/255;if(!a)continue;const p=(yy*largura+xx)*4;for(let c=0;c<3;c++)saida[p+c]=Math.round(saida[p+c]!*(1-a)+Math.min(255,limpo[p+c]!*fatores[c]!)*a);}
   }
+  if(marca){const left=Math.max(0,Math.floor(marca.x/100*largura)-6),top=Math.max(0,Math.floor(marca.y/100*altura)-6),right=Math.min(largura,Math.ceil((marca.x+marca.w)/100*largura)+6),bottom=Math.min(altura,Math.ceil((marca.y+marca.h)/100*altura)+6);for(let y=top;y<bottom;y++)for(let x=left;x<right;x++){const p=(y*largura+x)*4,a=Math.min(1,(x-left+1)/3,(right-x)/3,(y-top+1)/3,(bottom-y)/3);for(let c=0;c<3;c++)saida[p+c]=Math.round(saida[p+c]!*(1-a)+limpo[p+c]!*a);}}
   return sharp(saida,{raw:{width:largura,height:altura,channels:4}}).webp({quality:94}).toBuffer();
 }

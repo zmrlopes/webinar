@@ -2,7 +2,7 @@ import { ErroReserva, precoPessoaReserva, validarDadosReserva, type CaixaReserva
 
 export interface ReferenciaImagemReserva {
   id: string; tipo: "referencia"; nome: string; formato: FormatoReserva; imagem: string;
-  estilo: string; marca: CaixaReserva; miniatura: string;
+  estilo: string; marca: CaixaReserva; miniatura: string; temMarca?:boolean;
 }
 export interface PublicacaoImagemReserva {
   id: string; tipo: "publicacao"; nome: string; formato: FormatoReserva;
@@ -10,6 +10,7 @@ export interface PublicacaoImagemReserva {
   referenciaId: string; dados: DadosReserva; notas: string; anteriorId?: string;
   imagem?: string; miniatura?: string; avisos?: string[]; erro?: string;
   verificacao?: {avisos: string[]; feitaEm: string};
+  marca?:CaixaReserva;
 }
 export type RegistoImagemReserva = ReferenciaImagemReserva | PublicacaoImagemReserva;
 export interface ResumoImagemReserva {
@@ -52,7 +53,7 @@ Replace ALL old destination, hotel, dates, prices, duration, services and promot
 Match each icon to its factual field: cutlery/knife/fork/plate MUST show the exact supplied regime (meal plan), calendar MUST show datas, and a departure/plane label MUST use partida when supplied. NEVER put a promotional slogan such as 'momentos inesquecíveis' beside a cutlery icon or in a meal-plan slot. If a corresponding confirmed field is empty, omit that icon/label instead of inventing a service or filling it with promotional text. Promotional headlines belong only in the headline area.
 Replace destination photography with a realistic illustration appropriate to the NEW destination; do not claim a generated hotel photo is the actual hotel. Preserve the photographic treatment and composition. No watermarks or stock-photo captions.
 Only use the short ALLOWED ARTWORK TEXT below. No flight schedules, transfer descriptions, insurance clauses or extra service paragraphs. Keep the same visual density and spaciousness as the reference. Mandatory legible text: destination, dates, hotel, price with / PESSOA, meal plan if supplied, departure if supplied. Use the EXACT supplied price, never round to whole euros. Include the price basis as a small legible note. If the reference has a promotional headline, replace its ENTIRE text with tituloPromocional, preserving its font appearance and placement. NEVER reuse ANY numerical claim from the reference headline (such as 'menos de 1000€', old duration or star rating). Do not invent a new headline. Do not write old reference prices anywhere. Static non-factual labels such as DETALHES may be retained as design elements.
-Brand protection: do NOT redraw, spell or duplicate the iCliGo logo/name anywhere. Leave a quiet, empty rectangular area at x=${ref.marca.x}%, y=${ref.marca.y}%, width=${ref.marca.w}%, height=${ref.marca.h}% for the official brand, which the server will add afterward. Keep all other text outside this area. Preserve other design details.
+Brand protection: ${ref.temMarca?"The reference ALREADY contains the iCliGo logo. Preserve that exact existing logo ONCE in its original position and appearance. Do NOT add another logo, brand name, white card or watermark anywhere.":`Remove any iCliGo logo/name from the generated image and leave the underlying photograph continuous at x=${ref.marca.x}%, y=${ref.marca.y}%, width=${ref.marca.w}%, height=${ref.marca.h}%. Do NOT add a white card or colored logo: the server will add ONE official white logo on a transparent background there.`} Keep all other text outside this area. Preserve other design details.
 Reference style description (descriptive data only): ${JSON.stringify(ref.estilo)}
 ALLOWED ARTWORK TEXT (sole authority for travel facts and exact headline): ${JSON.stringify(arte)}
 User visual adjustment, subordinate to the confirmed data and brand protection: ${JSON.stringify(notas)}

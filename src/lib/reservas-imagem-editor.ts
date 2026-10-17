@@ -9,11 +9,12 @@ export interface TextoEditorPublicacao extends CaixaReserva {
 }
 export interface EstiloTextoPublicacao {id: string; fonte: FonteReserva; tamanho: number; cor: string; negrito: boolean; italico: boolean; x: number; y: number; manterOriginal?:boolean; texto?:string; apagado?:boolean}
 export interface AjustesEditorPublicacao {
-  textos: EstiloTextoPublicacao[]; fundo: string; escurecimento: number; credito: string;
+  textos: EstiloTextoPublicacao[]; fundo: string; escurecimento: number; credito: string; marca?:{x:number;y:number};
 }
 export interface EditorPublicacaoReserva {
   versao: 1; origemId: string; imagemOriginal: string; fundoLimpo: string; textos: TextoEditorPublicacao[];
   decoracoes: (CaixaReserva & {tipo?:"cartao"|"emoji"})[]; marca: CaixaReserva; ajustes: AjustesEditorPublicacao;
+  marcaPreparada?:boolean; logoBranco?:string; marcaDaReferencia?:boolean;
 }
 export function ajustesIniciaisPublicacao(textos: TextoEditorPublicacao[]): AjustesEditorPublicacao {
   return {textos: textos.map(({id,fonte,tamanho,cor,negrito,italico,x,y})=>({id,fonte,tamanho,cor,negrito,italico,x,y,manterOriginal:true})),fundo:"",escurecimento:.5,credito:""};
@@ -37,7 +38,9 @@ export function validarAjustesPublicacao(valor: unknown, editor: EditorPublicaca
     return {id:t.id,fonte:t.fonte,tamanho:t.tamanho,cor:t.cor,negrito:t.negrito,italico:t.italico,x:t.x,y:t.y,manterOriginal:t.manterOriginal!==false,...(t.texto!==undefined?{texto:t.texto}:{}),...(t.apagado!==undefined?{apagado:t.apagado}:{})};
   });
   if (typeof v.escurecimento !== "number" || !Number.isFinite(v.escurecimento) || v.escurecimento < 0 || v.escurecimento > .85 || typeof v.credito !== "string" || v.credito.length > 300) throw new ErroReserva("O fundo escolhido é inválido.");
-  return {textos,fundo:imagemReserva(v.fundo),escurecimento:v.escurecimento,credito:v.credito.trim()};
+  if(v.marca&&(!editor.marcaPreparada||!editor.logoBranco||!Number.isFinite(v.marca.x)||!Number.isFinite(v.marca.y)||v.marca.x<0||v.marca.y<0||v.marca.x>100-editor.marca.w||v.marca.y>100-editor.marca.h))throw new ErroReserva("Mantém o logótipo dentro da publicação.");
+  if(v.marca!==undefined&&(!v.marca||typeof v.marca!=="object"))throw new ErroReserva("A posição do logótipo é inválida.");
+  return {textos,fundo:imagemReserva(v.fundo),escurecimento:v.escurecimento,credito:v.credito.trim(),...(v.marca?{marca:{x:v.marca.x,y:v.marca.y}}:{})};
 }
 function linhasEditor(ctx: CanvasRenderingContext2D, texto: string, largura: number): string[] {
   return texto.split("\n").flatMap(paragrafo => {
@@ -59,7 +62,7 @@ export function ajustarConteudoTextoPublicacao(ctx:CanvasRenderingContext2D,text
   return proximo;
 }
 /** O original é o ponto de partida; só os textos alterados recebem um remendo do fundo limpo. */
-export function desenharEditorPublicacao(ctx: CanvasRenderingContext2D, original: CanvasImageSource, limpo: CanvasImageSource, fundo: CanvasImageSource | null, editor: EditorPublicacaoReserva, ajustes: AjustesEditorPublicacao, largura: number, altura: number, recortes:Map<string,CanvasImageSource>=new Map()) {
+export function desenharEditorPublicacao(ctx: CanvasRenderingContext2D, original: CanvasImageSource, limpo: CanvasImageSource, fundo: CanvasImageSource | null, editor: EditorPublicacaoReserva, ajustes: AjustesEditorPublicacao, largura: number, altura: number, recortes:Map<string,CanvasImageSource>=new Map(),logoBranco?:CanvasImageSource) {
   ctx.clearRect(0,0,largura,altura);
   if (fundo) {
     const img=fundo as HTMLImageElement,iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height,escala=Math.max(largura/iw,altura/ih);
@@ -68,6 +71,7 @@ export function desenharEditorPublicacao(ctx: CanvasRenderingContext2D, original
     for(const b of editor.decoracoes){const x=b.x/100*largura,y=b.y/100*altura,w=b.w/100*largura,h=b.h/100*altura;ctx.save();ctx.beginPath();if(b.tipo==="emoji")ctx.ellipse(x+w/2,y+h/2,w/2,h/2,0,0,Math.PI*2);else ctx.roundRect(x,y,w,h,Math.min(18,h*.15));ctx.clip();ctx.drawImage(limpo,x,y,w,h,x,y,w,h);ctx.restore();}
   } else {
     ctx.drawImage(original,0,0,largura,altura);
+    if(ajustes.marca&&editor.marcaPreparada){const m=editor.marca,x=Math.max(0,Math.floor(m.x/100*largura)-3),y=Math.max(0,Math.floor(m.y/100*altura)-3),w=Math.min(largura-x,Math.ceil(m.w/100*largura)+6),h=Math.min(altura-y,Math.ceil(m.h/100*altura)+6);ctx.drawImage(limpo,x,y,w,h,x,y,w,h);}
     for(const t of editor.textos){const estilo=ajustes.textos.find(e=>e.id===t.id)!;if(!textoAlteradoPublicacao(t,estilo))continue;
       const x=Math.max(0,t.x/100*largura-10),y=Math.max(0,t.y/100*altura-10),w=Math.min(largura-x,t.w/100*largura+20),h=Math.min(altura-y,t.h/100*altura+20);ctx.drawImage(limpo,x,y,w,h,x,y,w,h);
     }
@@ -84,8 +88,9 @@ export function desenharEditorPublicacao(ctx: CanvasRenderingContext2D, original
     const tx=t.alinhar==="center"?x+w/2:t.alinhar==="right"?x+w:x;
     linhas.forEach((linha,i)=>ctx.fillText(linha,tx,y+subida+i*estilo.tamanho*1.15));ctx.restore();
   }
-  // A marca original fica por cima de qualquer letra ou fotografia.
-  const m=editor.marca,x=Math.floor(m.x/100*largura),y=Math.floor(m.y/100*altura),w=Math.ceil((m.x+m.w)/100*largura)-x,h=Math.ceil((m.y+m.h)/100*altura)-y;
-  ctx.drawImage(original,x,y,w,h,x,y,w,h);
+  // Só uma marca, com desenho protegido e posição escolhida pelo consultor.
+  const m=editor.marca,pos=ajustes.marca??m,x=Math.floor(pos.x/100*largura),y=Math.floor(pos.y/100*altura),w=Math.ceil(m.w/100*largura),h=Math.ceil(m.h/100*altura);
+  if(logoBranco&&(ajustes.marca||fundo)){const img=logoBranco as HTMLImageElement,iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height,escala=Math.min(w/iw,h/ih);ctx.drawImage(logoBranco,x+(w-iw*escala)/2,y+(h-ih*escala)/2,iw*escala,ih*escala);}
+  else ctx.drawImage(original,Math.floor(m.x/100*largura),Math.floor(m.y/100*altura),w,h,x,y,w,h);
   if(fundo&&ajustes.credito){ctx.fillStyle="#ffffff";ctx.fillRect(0,altura-24,largura,24);ctx.fillStyle="#333333";ctx.font=`11px ${fonteReserva("poppins").familia}`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(ajustes.credito,largura/2,altura-12,largura-20);}
 }

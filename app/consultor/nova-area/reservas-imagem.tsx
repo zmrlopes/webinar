@@ -61,7 +61,7 @@ export function CriarPublicacaoImagem({email}: {email: string}) {
     });
   }
   function mostrarResultado(r: PublicacaoImagemReserva) {setResultado(r); setRevisto(false); setVerificacao(r.verificacao?.avisos ?? null); setVerificacaoErro(""); setAjuste("");setEditor(null);setEditorAberto(false);setEditorAlterado(false);}
-  async function abrirEditor(){if(!resultado)return;await fazer("A identificar os textos da publicação…",async()=>{let e=editor??await pedir<EditorPublicacaoReserva>("preparar-editor",{id:resultado.id});setEditor(e);if(!e.fundoLimpo){setOcupado("A preparar a edição das letras e do fundo… Só é necessário na primeira abertura.");e=await pedir<EditorPublicacaoReserva>("limpar-editor",{id:resultado.id});setEditor(e);}setEditorAberto(true);});}
+  async function abrirEditor(){if(!resultado)return;await fazer("A identificar os textos da publicação…",async()=>{let e=editor??await pedir<EditorPublicacaoReserva>("preparar-editor",{id:resultado.id});setEditor(e);if(!e.fundoLimpo||!e.marcaPreparada){setOcupado("A preparar os textos e o logótipo para mover… Só é necessário uma vez por publicação.");e=await pedir<EditorPublicacaoReserva>("limpar-editor",{id:resultado.id});setEditor(e);}setEditorAberto(true);});}
   async function guardarEditor(ajustes:AjustesEditorPublicacao){if(!resultado)return;await fazer("A guardar a versão editada…",async()=>{const r=await pedir<PublicacaoImagemReserva>("guardar-edicao",{id:resultado.id,ajustes});mostrarResultado(r);await carregarLista();});}
   async function verificar(id: string) {
     setVerificacaoErro("");
@@ -124,9 +124,9 @@ export function CriarPublicacaoImagem({email}: {email: string}) {
       <fieldset disabled={!!ocupado || !!aGerar} className={css.editorCompleto} hidden={passo !== 3}>
         {resumo && referencia && <div className={css.cartao}>
           {resultado?.estado === "pronta" && resultado.imagem ? <>
-            <h2>A tua publicação está guardada</h2><p className={css.nota}>Corrige ou apaga textos, ajusta as letras e escolhe outra imagem de fundo no editor.</p>
+            <h2>A tua publicação está guardada</h2><p className={css.nota}>Corrige ou apaga textos, move o logótipo e escolhe outra imagem de fundo no editor.</p>
             {editorAberto&&editor?<EditorRapidoPublicacao key={resultado.id} email={email} destino={resultado.dados.destino} formato={resultado.formato} editor={editor} ocupado={!!ocupado} onGuardar={guardarEditor} onFechar={()=>setEditorAberto(false)} onAlterado={setEditorAlterado}/>:<div className={styles.resultado}><img className={styles.publicacao} src={resultado.imagem} alt={`Publicação gerada para ${resultado.dados.destino}`}/><div>
-              <button type="button" className={css.primario} onClick={()=>void abrirEditor()}>Editar letras e fundo</button>
+              <button type="button" className={css.primario} onClick={()=>void abrirEditor()}>Editar publicação</button>
               <h3>Dados confirmados</h3><p><strong>{resumo.destino}</strong><br/>{resumo.hotel}<br/>{resumo.datas}<br/>{resumo.preco}<br/>{resumo.basePreco}<br/>{resumo.regime}</p>
               <details><summary>Comparar com a referência</summary><img className={styles.comparacao} src={referencia.imagem} alt="Referência original para comparar"/></details>
               {resultado.avisos?.map(a => <p key={a} className={css.nota}>{a}</p>)}

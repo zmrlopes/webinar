@@ -83,6 +83,14 @@ ficam na versão da publicação, sem substituir os dados do orçamento importad
 Na geração, os talheres correspondem ao regime alimentar confirmado, nunca a
 uma frase promocional. A marca mantém-se protegida e o acesso exclusivo de teste.
 
+Por indicação explícita do utilizador, o logótipo dos templates pode ser branco
+(ícone e letras) com fundo transparente e pode ser movido livremente dentro da
+imagem. A proteção abrange o desenho da marca, não a sua posição. Referências
+que já incluem o logótipo não recebem uma segunda marca automática. O editor
+permite deslocar a marca sem deixar a cópia anterior; nas publicações antigas,
+a preparação do fundo retira também o cartão/logótipo da sua posição original.
+Esta alteração continua limitada à nova área e à API da conta de teste.
+
 Por indicação explícita do utilizador, o card de entrada no grupo WhatsApp
 Welcome Aboard também aparece nos Avisos da área atual (`/consultor`) para
 os consultores da equipa, com o mesmo convite definido em

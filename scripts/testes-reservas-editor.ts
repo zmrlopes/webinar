@@ -7,7 +7,7 @@ import {EMAIL_PAINEL_DEMONSTRACAO} from "../src/lib/demo";
 import {dadosReservaVazios,hotelVazio} from "../src/lib/reservas";
 import {ajustesIniciaisPublicacao,ajustarConteudoTextoPublicacao,desenharEditorPublicacao,prepararTextoEditor,validarAjustesPublicacao,type EditorPublicacaoReserva} from "../src/lib/reservas-imagem-editor";
 import {prepararEditorPublicacao,limparFundoEditorPublicacao,guardarEdicaoPublicacao} from "../src/lib/reservas-imagem-editor-servidor";
-import {abrirImagemReserva,finalizarImagemReserva} from "../src/lib/reservas-imagem-servidor";
+import {abrirImagemReserva,finalizarImagemReserva,logotipoBrancoReserva} from "../src/lib/reservas-imagem-servidor";
 import type {PublicacaoImagemReserva,ReferenciaImagemReserva} from "../src/lib/reservas-imagem";
 import {POST} from "../app/api/consultor/nova-area/reservas/imagem/route";
 async function main(){
@@ -19,10 +19,12 @@ async function main(){
   for(const acao of ["preparar-editor","limpar-editor","guardar-edicao"])assert.equal((await POST(new Request("http://localhost/api",{method:"POST",body:JSON.stringify({acao,email:"outra@example.com"})}))).status,403);
   const base=await sharp({create:{width:1080,height:1920,channels:3,background:"#183d52"}}).webp().toBuffer(),url=(b:Buffer)=>`data:image/webp;base64,${b.toString("base64")}`;
   const ref:ReferenciaImagemReserva={id:randomUUID(),tipo:"referencia",nome:"Modelo pessoal",formato:"story",imagem:url(base),miniatura:"",estilo:"Desenho de teste",marca:{x:3,y:2,w:24,h:5}};
-  const baseComMarca=await finalizarImagemReserva(base,ref,"story"),arte=createCanvas(1080,1920),arteCtx=arte.getContext("2d");arteCtx.drawImage(await loadImage(baseComMarca),0,0);arteCtx.font="bold 70px sans-serif";arteCtx.fillStyle="#ffffff";arteCtx.fillText("GRAN CANARIA",54,1310);const source=arte.toBuffer("image/png");
+  const baseComMarca=await finalizarImagemReserva(base,ref,"story"),arte=createCanvas(1080,1920),arteCtx=arte.getContext("2d");arteCtx.drawImage(await loadImage(baseComMarca),0,0);arteCtx.fillStyle="#ffffff";arteCtx.fillRect(33,39,258,94);arteCtx.font="bold 70px sans-serif";arteCtx.fillText("GRAN CANARIA",54,1310);const source=arte.toBuffer("image/png");
   const r:PublicacaoImagemReserva={id:randomUUID(),tipo:"publicacao",nome:"Gran Canaria",formato:"story",estado:"pronta",criadaEm:new Date().toISOString(),referenciaId:ref.id,dados:{...dadosReservaVazios(),destino:"Gran Canaria",ida:"2026-11-17",regresso:"2026-11-22",viajantes:3,hoteis:[{...hotelVazio(),nome:"Hotel",total:4405}]},notas:"",imagem:url(source)};
   const textos=[{id:"titulo",nome:"Destino",texto:"GRAN CANARIA",fonte:"geometrica" as const,tamanho:70,cor:"#ffffff",negrito:true,italico:false,sombra:true,alinhar:"left" as const,x:5,y:65,w:85,h:7}];
-  const editor:EditorPublicacaoReserva={versao:1,origemId:r.id,imagemOriginal:r.imagem!,fundoLimpo:url(base),textos,decoracoes:[],marca:ref.marca,ajustes:ajustesIniciaisPublicacao(textos)};
+  const logo=await logotipoBrancoReserva(),editor:EditorPublicacaoReserva={versao:1,origemId:r.id,imagemOriginal:r.imagem!,fundoLimpo:url(base),textos,decoracoes:[],marca:ref.marca,marcaPreparada:true,logoBranco:`data:image/png;base64,${logo.toString("base64")}`,ajustes:ajustesIniciaisPublicacao(textos)};
+  const rgba=await sharp(logo).ensureAlpha().raw().toBuffer();let transparentes=0,brancos=0;for(let i=0;i<rgba.length;i+=4){if(rgba[i+3]===0)transparentes++;if(rgba[i+3]!>200){assert(rgba[i]!>250&&rgba[i+1]!>250&&rgba[i+2]!>250);brancos++;}}assert(transparentes>100&&brancos>100,"Ícone e letras brancos sem cartão opaco");
+  const icone=await sharp(logo).extract({left:0,top:0,width:440,height:440}).ensureAlpha().raw().toBuffer(),opacos=icone.filter((v,i)=>i%4===3&&v>200).length;assert(opacos>1000&&opacos<440*440/2,"O ícone mantém os detalhes brancos e o interior transparente");
   registos.set(`reservas:imagem:v1:${email}:${r.id}`,r);registos.set(`reservas:imagem:v1:${email}:${ref.id}`,ref);registos.set(`reservas:editor:v1:${email}:${r.id}`,editor);
   await assert.rejects(()=>prepararEditorPublicacao("outra@example.com",r.id),/não existe/);
   await assert.rejects(()=>guardarEdicaoPublicacao("outra@example.com",{id:r.id,ajustes:editor.ajustes}),/não existe/);
@@ -51,6 +53,14 @@ async function main(){
   apagados.textos[0]!.apagado=false;desenhados.length=0;desenharEditorPublicacao(proxy as unknown as CanvasRenderingContext2D,img as unknown as CanvasImageSource,limpo as unknown as CanvasImageSource,null,editor,apagados,1080,1920);assert.deepEqual(desenhados,linhas,"Restaurar recupera a correção anterior");
   apagados.textos[0]!.texto="";desenhados.length=0;desenharEditorPublicacao(proxy as unknown as CanvasRenderingContext2D,img as unknown as CanvasImageSource,limpo as unknown as CanvasImageSource,null,editor,apagados,1080,1920);assert.deepEqual(desenhados,[]);assert(Buffer.from(ctx.getImageData(...area).data).equals(Buffer.from(esperado.getContext("2d").getImageData(...area).data)),"Esvaziar também remove o texto");
   assert.equal(chamadasIA,0);assert.deepEqual(await abrirImagemReserva(email,r.id),antes);
+  const movida=structuredClone(editor.ajustes);movida.marca={x:68,y:88};
+  const comMarca=await guardarEdicaoPublicacao(email,{id:r.id,ajustes:movida}),marcaReaberta=await prepararEditorPublicacao(email,comMarca.id);assert.deepEqual(marcaReaberta.ajustes.marca,movida.marca);assert.equal(marcaReaberta.imagemOriginal,editor.imagemOriginal);
+  const chaveMovida=`reservas:editor:v1:${email}:${comMarca.id}`,antigo=structuredClone(marcaReaberta);delete antigo.marcaPreparada;delete antigo.logoBranco;registos.set(chaveMovida,antigo);const atualizado=await prepararEditorPublicacao(email,comMarca.id);assert.equal(atualizado.marcaPreparada,true);assert.equal(atualizado.fundoLimpo,editor.fundoLimpo);assert.equal(chamadasIA,0,"Versões antigas reutilizam a limpeza da mesma imagem original");
+  const renderMarca=createCanvas(1080,1920),ctxMarca=renderMarca.getContext("2d"),logoImg=await loadImage(logo);
+  desenharEditorPublicacao(ctxMarca as unknown as CanvasRenderingContext2D,img as unknown as CanvasImageSource,limpo as unknown as CanvasImageSource,null,editor,movida,1080,1920,new Map(),logoImg as unknown as CanvasImageSource);
+  assert(Buffer.from(ctxMarca.getImageData(40,50,240,70).data).equals(Buffer.from(esperado.getContext("2d").getImageData(40,50,240,70).data)),"Mover limpa a marca antiga, sem deixar uma cópia");
+  const destinoMarca=ctxMarca.getImageData(735,1690,260,90).data;assert(destinoMarca.some((v,i)=>i%4===0&&v>240),"O logótipo branco aparece na posição escolhida");
+  for(const marca of [{x:-1,y:0},{x:100,y:0},{x:0,y:100},{x:NaN,y:0},null])assert.throws(()=>validarAjustesPublicacao({...movida,marca},editor));
   for(const invalido of [{texto:123},{texto:"a".repeat(1601)},{apagado:"true"},{id:"marca",texto:"alterar marca"}])assert.throws(()=>validarAjustesPublicacao({...ajustes,textos:[{...ajustes.textos[0],...invalido}]},editor));
   assert.throws(()=>validarAjustesPublicacao({...ajustes,textos:[{...ajustes.textos[0],fonte:"codigo-remoto"}]},editor));
   assert.throws(()=>validarAjustesPublicacao({...ajustes,textos:[{...ajustes.textos[0],tamanho:NaN}]},editor));
@@ -59,7 +69,7 @@ async function main(){
   await assert.rejects(()=>guardarEdicaoPublicacao(email,{id:r.id,ajustes:{...ajustes,fundo:"data:image/png;base64,aGVsbG8="}}),/fundo/);
   const fundo=await sharp({create:{width:800,height:500,channels:3,background:"#b97732"}}).webp().toBuffer();ajustes.fundo=url(fundo);
   const comFundo=await guardarEdicaoPublicacao(email,{id:r.id,ajustes});const bytes=Buffer.from(comFundo.imagem!.split(",")[1]!,"base64"),meta=await sharp(bytes).metadata();assert.equal(meta.width,1080);assert.equal(meta.height,1920);
-  const marca=await sharp(bytes).extract({left:40,top:50,width:1,height:1}).raw().toBuffer();assert(marca[0]!>220&&marca[1]!>220,"A marca continua aplicada por cima da fotografia");
+  const marca=await sharp(bytes).extract({left:33,top:39,width:255,height:90}).raw().toBuffer();assert(marca.some(v=>v>240),"A marca continua aplicada por cima da fotografia");
   console.log("OK: acesso privado, original preservado, correção e remoção de textos na imagem, restauro, persistência, fontes/tamanhos, fundo, marca e reabertura sem IA. Sem rede nem alterações reais.");
  }finally{pool.query=originalQuery;globalThis.fetch=originalFetch;await fecharDb();}
 }
