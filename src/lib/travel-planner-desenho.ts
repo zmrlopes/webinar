@@ -44,7 +44,7 @@ export function tema(estilo: TravelPlanner["estilo"], marca: MarcaPlanner, escal
   const c = coresPlanner(marca);
   if (estilo === "moderno") return {estilo, escala, fundo: misturar(marca.escura, 0.92), cartao: "#ffffff", titulo: t => `${t}px PoppinsBold`, maiusculas: true, raio: 0, sombra: false, contorno: false, c};
   if (estilo === "natural") return {estilo, escala, fundo: misturar(marca.principal, 0.94), cartao: "#ffffff", titulo: t => `italic ${t}px Playfair`, maiusculas: false, raio: 1.7, sombra: true, contorno: false, c};
-  return {estilo: "classico", escala, fundo: "#ffffff", cartao: c.creme, titulo: t => `${t}px Playfair`, maiusculas: false, raio: 0.3, sombra: false, contorno: true, c};
+  return {estilo: "classico", escala, fundo: "#ffffff", cartao: c.creme, titulo: t => `${t}px Playfair`, maiusculas: false, raio: 1, sombra: true, contorno: false, c};
 }
 
 // O tema de cada página, para os utilitários de desenho seguirem o estilo sem o receberem.
@@ -211,16 +211,14 @@ export function rodape(ctx: SKRSContext2D, p: TravelPlanner, n: number, img: Ima
     ctx.beginPath(); ctx.arc(LARGURA - M - 26, ALTURA - 52, 26, 0, Math.PI * 2); ctx.fillStyle = t.c.suave; ctx.fill();
     ctx.fillStyle = t.c.principalTexto; ctx.font = "19px PoppinsBold"; ctx.fillText(String(n), LARGURA - M - 26, ALTURA - 50);
   } else {
-    ctx.fillStyle = LINHA; ctx.fillRect(M, ALTURA - 96, LARGURA - 2 * M, 1.5);
-    marca(ctx, M, ALTURA - 56, img, false, 0.62);
-    ctx.font = "16px Poppins"; ctx.fillStyle = CINZA; ctx.textAlign = "right"; ctx.fillText(p.viagem.destino, LARGURA - M, ALTURA - 54);
-    ctx.font = "22px Playfair"; ctx.fillStyle = TINTA; ctx.textAlign = "center"; ctx.fillText(`— ${n} —`, LARGURA / 2, ALTURA - 54);
+    ctx.fillStyle = LINHA; ctx.fillRect(M, ALTURA - 92, LARGURA - 2 * M, 2);
+    marca(ctx, M, ALTURA - 52, img, false, 0.62);
+    ctx.font = "17px Poppins"; ctx.fillStyle = CINZA; ctx.textBaseline = "middle";
+    ctx.textAlign = "center"; ctx.fillText(p.viagem.destino, LARGURA / 2, ALTURA - 50);
+    ctx.textAlign = "right"; ctx.fillText(String(n), LARGURA - M, ALTURA - 50);
   }
   ctx.textAlign = "left";
 }
-
-/** Letras espaçadas, como nos títulos de revista. */
-const espacado = (s: string) => s.toUpperCase().split("").join(" ");
 
 export function cabecalho(ctx: SKRSContext2D, t: Tema, etiqueta: string, titulo: string, y = M): number {
   ctx.textBaseline = "alphabetic"; ctx.textAlign = "left";
@@ -241,20 +239,11 @@ export function cabecalho(ctx: SKRSContext2D, t: Tema, etiqueta: string, titulo:
     ctx.stroke();
     return y + 166;
   }
-  // Clássico: centrado, com um ornamento.
-  ctx.textAlign = "center";
-  ctx.fillStyle = t.c.principalTexto; ctx.font = "15px PoppinsBold"; ctx.fillText(espacado(etiqueta), LARGURA / 2, y + 18);
-  ctx.fillStyle = TINTA; ctx.font = t.titulo(60); ctx.fillText(titulo, LARGURA / 2, y + 90, LARGURA - 2 * M);
-  ornamento(ctx, t, LARGURA / 2, y + 122);
-  ctx.textAlign = "left";
-  return y + 166;
-}
-
-/** Linha — losango — linha. */
-function ornamento(ctx: SKRSContext2D, t: Tema, cx: number, cy: number, w = 150) {
-  ctx.fillStyle = t.c.principal;
-  ctx.fillRect(cx - w, cy - 0.75, w - 20, 1.5); ctx.fillRect(cx + 20, cy - 0.75, w - 20, 1.5);
-  ctx.beginPath(); ctx.moveTo(cx, cy - 8); ctx.lineTo(cx + 8, cy); ctx.lineTo(cx, cy + 8); ctx.lineTo(cx - 8, cy); ctx.closePath(); ctx.fill();
+  // Clássico.
+  ctx.fillStyle = t.c.principalTexto; ctx.font = "18px PoppinsBold"; ctx.fillText(etiqueta.toUpperCase(), M, y + 22);
+  ctx.fillStyle = TINTA; ctx.font = t.titulo(58); ctx.fillText(titulo, M, y + 90, LARGURA - 2 * M);
+  ctx.fillStyle = t.c.principal; ctx.fillRect(M, y + 112, 70, 5);
+  return y + 150;
 }
 
 export function novaPagina(t: Tema) {
@@ -263,11 +252,7 @@ export function novaPagina(t: Tema) {
   ctx.scale(t.escala, t.escala);
   ctx.fillStyle = t.fundo; ctx.fillRect(0, 0, LARGURA, ALTURA);
   TEMAS.set(ctx, t);
-  if (t.estilo === "classico") {
-    // Moldura dupla e fina.
-    ctx.strokeStyle = t.c.principalA55; ctx.lineWidth = 1.5; ctx.strokeRect(34, 34, LARGURA - 68, ALTURA - 68);
-    ctx.lineWidth = 0.75; ctx.strokeRect(42, 42, LARGURA - 84, ALTURA - 84);
-  } else if (t.estilo === "natural") {
+  if (t.estilo === "natural") {
     // Formas redondas e suaves nos cantos.
     ctx.fillStyle = t.c.suave; ctx.globalAlpha = 0.55;
     ctx.beginPath(); ctx.arc(LARGURA - 20, 40, 250, 0, Math.PI * 2); ctx.fill();
@@ -300,11 +285,6 @@ export interface ConteudoCapa {
   foto: FotoDesenho | null; credito: string; rotulo: string; sobretitulo: string; destino: string;
   pastilhas: [string, Icone][]; preco: {rotulo: string; valor: string} | null;
   assinatura: {rotulo: string; nome: string} | null; direita: string;
-}
-
-function larguraMarca(ctx: SKRSContext2D, img: Image | null, escala: number) {
-  ctx.font = `${30 * escala}px PoppinsBold`;
-  return (img ? 52 * escala * img.width / img.height + 12 * escala : 0) + ctx.measureText("icligo").width;
 }
 
 export function desenharCapa(t: Tema, img: Image | null, k: ConteudoCapa) {
@@ -375,27 +355,43 @@ export function desenharCapa(t: Tema, img: Image | null, k: ConteudoCapa) {
     return canvas;
   }
 
-  // Clássico: página branca com moldura, fotografia emoldurada e texto centrado, como numa revista.
-  const cx = LARGURA / 2, fotoY = 250, fotoH = k.preco ? 700 : 820;
-  marca(ctx, cx - larguraMarca(ctx, img, 1) / 2, 128, img, false, 1);
-  ctx.textAlign = "center"; ctx.fillStyle = t.c.principalTexto; ctx.font = "14px PoppinsBold"; ctx.textBaseline = "alphabetic"; ctx.fillText(espacado(k.rotulo), cx, 206);
-  if (k.foto) cobrir(ctx, k.foto, M, fotoY, LARGURA - 2 * M, fotoH, 0); else semFoto(ctx, t, M, fotoY, LARGURA - 2 * M, fotoH, 0, "");
-  ctx.strokeStyle = t.c.principalA55; ctx.lineWidth = 1.5; ctx.strokeRect(M - 14, fotoY - 14, LARGURA - 2 * M + 28, fotoH + 28);
-  if (credito) { ctx.font = "13px Poppins"; ctx.fillStyle = CINZA; ctx.textAlign = "right"; ctx.fillText(credito, LARGURA - M, fotoY + fotoH + 42); ctx.textAlign = "center"; }
-  let y = fotoY + fotoH + 110;
-  ctx.fillStyle = t.c.principalTexto; ctx.font = "16px PoppinsBold"; ctx.fillText(espacado(k.sobretitulo), cx, y, LARGURA - 2 * M);
-  ctx.fillStyle = TINTA; ctx.font = t.titulo(Math.round(112 * tamanho));
-  for (const l of linhas(ctx, k.destino, LARGURA - 2 * M).slice(0, 2)) { y += Math.round(112 * tamanho); ctx.fillText(l, cx, y); }
-  ornamento(ctx, t, cx, y + 46, 180);
-  y += 110;
-  ctx.font = "22px Poppins"; ctx.fillStyle = CINZA; ctx.fillText(k.pastilhas.map(([s]) => s).join("   ·   "), cx, y, LARGURA - 2 * M);
+  // Clássico: fotografia a toda a página, com o texto em branco sobre um gradiente.
+  if (k.foto) cobrir(ctx, k.foto, 0, 0, LARGURA, ALTURA); else semFoto(ctx, t, 0, 0, LARGURA, ALTURA, 0, "");
+  const g = ctx.createLinearGradient(0, ALTURA * (k.preco ? 0.3 : 0.35), 0, ALTURA);
+  g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(0.55, t.c.capaA70); g.addColorStop(1, t.c.capaA92);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, LARGURA, ALTURA);
+  const topo = ctx.createLinearGradient(0, 0, 0, 260); topo.addColorStop(0, "rgba(0,0,0,0.35)"); topo.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = topo; ctx.fillRect(0, 0, LARGURA, 260);
+  // Marca num cartão branco, como nos materiais de Reservas.
+  retangulo(ctx, M - 24, 70, 300, 92, 18, "#ffffff");
+  marca(ctx, M - 2, 112, img, false, 1);
+  ctx.font = "18px PoppinsBold"; ctx.fillStyle = "#fff"; ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.fillText(k.rotulo.toUpperCase(), LARGURA - M, 116); ctx.textAlign = "left";
+  let y = ALTURA - (k.preco ? 700 : 640);
+  ctx.fillStyle = t.c.suave; ctx.font = "22px PoppinsBold"; ctx.textBaseline = "alphabetic"; ctx.fillText(k.sobretitulo.toUpperCase(), M, y);
+  y += 30;
+  const grande = k.destino.length > 18;
+  ctx.fillStyle = "#fff"; ctx.font = t.titulo(grande ? 104 : 136);
+  for (const l of linhas(ctx, destino, LARGURA - 2 * M).slice(0, 2)) { y += grande ? 112 : 140; ctx.fillText(l, M, y); }
+  y += 46;
+  let x = M;
+  for (const [texto, ic] of k.pastilhas) x += pastilha(ctx, texto, x, y, "rgba(255,255,255,0.16)", "#fff", ic) + 14;
   if (k.preco) {
-    ctx.font = "italic 24px Playfair"; ctx.fillText(k.preco.rotulo, cx, y + 70);
-    ctx.fillStyle = t.c.principalTexto; ctx.font = "76px Playfair"; ctx.fillText(k.preco.valor, cx, y + 150);
+    y += 110;
+    ctx.fillStyle = "rgba(255,255,255,0.85)"; ctx.font = "22px Poppins"; ctx.textBaseline = "alphabetic"; ctx.fillText(k.preco.rotulo, M, y);
+    ctx.fillStyle = "#fff"; ctx.font = "84px PoppinsBold"; ctx.fillText(k.preco.valor, M, y + 86);
+    ctx.fillStyle = "rgba(255,255,255,0.35)"; ctx.fillRect(M, ALTURA - 150, LARGURA - 2 * M, 1.5);
+    if (k.assinatura) { ctx.font = "18px Poppins"; ctx.fillStyle = "rgba(255,255,255,0.8)"; ctx.fillText(`${k.assinatura.rotulo} ${k.assinatura.nome}`, M, ALTURA - 104); }
+    if (k.direita) { ctx.textAlign = "right"; ctx.font = "18px PoppinsBold"; ctx.fillStyle = "#fff"; ctx.fillText(k.direita, LARGURA - M, ALTURA - 104); }
+    if (credito) { ctx.textAlign = "right"; ctx.font = "13px Poppins"; ctx.fillStyle = "rgba(255,255,255,0.6)"; ctx.fillText(credito, LARGURA - M, ALTURA - 70); }
+  } else {
+    ctx.fillStyle = "rgba(255,255,255,0.35)"; ctx.fillRect(M, ALTURA - 190, LARGURA - 2 * M, 1.5);
+    ctx.textBaseline = "alphabetic";
+    if (k.assinatura) {
+      ctx.font = "18px Poppins"; ctx.fillStyle = "rgba(255,255,255,0.8)"; ctx.fillText(k.assinatura.rotulo, M, ALTURA - 140);
+      ctx.font = "30px PoppinsBold"; ctx.fillStyle = "#fff"; ctx.fillText(k.assinatura.nome, M, ALTURA - 100);
+    }
+    if (credito) { ctx.font = "13px Poppins"; ctx.fillStyle = "rgba(255,255,255,0.65)"; ctx.textAlign = "right"; ctx.fillText(credito, LARGURA - M, ALTURA - 104); }
   }
-  ctx.fillStyle = TINTA; ctx.font = "19px Poppins";
-  if (k.assinatura) { ctx.fillText(k.assinatura.rotulo, cx, ALTURA - 140); ctx.font = "30px Playfair"; ctx.fillText(k.assinatura.nome, cx, ALTURA - 100, LARGURA - 2 * M); }
-  if (k.direita) { ctx.font = "16px PoppinsBold"; ctx.fillStyle = t.c.principalTexto; ctx.fillText(espacado(k.direita), cx, ALTURA - 64, LARGURA - 2 * M); }
   ctx.textAlign = "left";
   return canvas;
 }
