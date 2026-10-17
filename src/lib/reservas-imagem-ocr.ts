@@ -65,6 +65,22 @@ export async function decoracoesPublicacao(bytes:Buffer,textos:TextoEditorPublic
   }
   return saida.slice(0,12);
 }
+/** Faz a fotografia retocada encontrar a cor original em todos os lados da antiga marca. */
+export async function harmonizarMarcaPublicacao(original:Buffer,retocada:Buffer,marca:CaixaReserva,largura:number,altura:number){
+  const alvo=await sharp(original).resize(largura,altura).ensureAlpha().raw().toBuffer(),limpo=await sharp(retocada).resize(largura,altura).ensureAlpha().raw().toBuffer(),saida=Buffer.from(limpo);
+  const mx=Math.floor(marca.x/100*largura),my=Math.floor(marca.y/100*altura),mw=Math.ceil(marca.w/100*largura),mh=Math.ceil(marca.h/100*altura),left=Math.max(0,mx-28),top=Math.max(0,my-28),right=Math.min(largura-1,mx+mw+27),bottom=Math.min(altura-1,my+mh+27);
+  const w=right-left+1,h=bottom-top+1,correcao=new Float32Array(w*h*3),media=[0,0,0],somas=[0,0,0],quadrados=[0,0,0];let n=0;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(!x||!y||x===w-1||y===h-1){const p=((top+y)*largura+left+x)*4;for(let c=0;c<3;c++){somas[c]!+=alvo[p+c]!;quadrados[c]!+=alvo[p+c]!**2;}n++;}
+  // Céu, paredes e outros fundos suaves usam a continuação da fotografia original,
+  // evitando inserir nuvens ou texturas novas num pequeno retângulo.
+  const suave=somas.every((s,c)=>Math.sqrt(Math.max(0,quadrados[c]!/n-(s/n)**2))<25);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(!x||!y||x===w-1||y===h-1){const p=((top+y)*largura+left+x)*4,q=(y*w+x)*3;for(let c=0;c<3;c++){correcao[q+c]=alvo[p+c]!-(suave?0:limpo[p+c]!);media[c]!+=correcao[q+c]!;}}
+  for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++)for(let c=0;c<3;c++)correcao[(y*w+x)*3+c]=media[c]!/Math.max(1,n);
+  // A correção harmónica liga as margens sem projetar linhas ou grelhas para dentro da fotografia.
+  for(let passo=0;passo<400;passo++){let diferenca=0;for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const q=(y*w+x)*3;for(let c=0;c<3;c++){const atual=correcao[q+c]!,alvo=(correcao[q+c-3]!+correcao[q+c+3]!+correcao[q+c-w*3]!+correcao[q+c+w*3]!)/4,d=alvo-atual;correcao[q+c]=atual+1.8*d;diferenca=Math.max(diferenca,Math.abs(d));}}if(diferenca<.025)break;}
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const p=((top+y)*largura+left+x)*4,q=(y*w+x)*3,dist=Math.max(0,mx-3-left-x,left+x-mx-mw-2,my-3-top-y,top+y-my-mh-2),f=Math.min(1,dist/25),a=1-f*f*(3-2*f);for(let c=0;c<3;c++){const corrigido=(suave?0:limpo[p+c]!)+correcao[q+c]!;saida[p+c]=Math.max(0,Math.min(255,Math.round(limpo[p+c]!*(1-a)+corrigido*a)));}}
+  return sharp(saida,{raw:{width:largura,height:altura,channels:4}}).webp({quality:94}).toBuffer();
+}
 /** Só retoca os píxeis das letras; conserva a luz e a textura fora dos glifos. */
 export async function placaLimpaPublicacao(original:Buffer,retocada:Buffer,textos:TextoEditorPublicacao[],largura:number,altura:number,marca?:CaixaReserva){
   const alvo=await sharp(original).ensureAlpha().raw().toBuffer(),limpo=await sharp(retocada).resize(largura,altura).ensureAlpha().raw().toBuffer(),saida=Buffer.from(alvo);
@@ -81,5 +97,6 @@ export async function placaLimpaPublicacao(original:Buffer,retocada:Buffer,texto
     for(let y=-10;y<h+10;y++)for(let x=-10;x<w+10;x++){const xx=left+x,yy=top+y;if(xx<0||yy<0||xx>=largura||yy>=altura)continue;const a=suave[(y+10)*(w+20)+x+10]!/255;if(!a)continue;const p=(yy*largura+xx)*4;for(let c=0;c<3;c++)saida[p+c]=Math.round(saida[p+c]!*(1-a)+Math.min(255,limpo[p+c]!*fatores[c]!)*a);}
   }
   if(marca){const left=Math.max(0,Math.floor(marca.x/100*largura)-6),top=Math.max(0,Math.floor(marca.y/100*altura)-6),right=Math.min(largura,Math.ceil((marca.x+marca.w)/100*largura)+6),bottom=Math.min(altura,Math.ceil((marca.y+marca.h)/100*altura)+6);for(let y=top;y<bottom;y++)for(let x=left;x<right;x++){const p=(y*largura+x)*4,a=Math.min(1,(x-left+1)/3,(right-x)/3,(y-top+1)/3,(bottom-y)/3);for(let c=0;c<3;c++)saida[p+c]=Math.round(saida[p+c]!*(1-a)+limpo[p+c]!*a);}}
-  return sharp(saida,{raw:{width:largura,height:altura,channels:4}}).webp({quality:94}).toBuffer();
+  const placa=await sharp(saida,{raw:{width:largura,height:altura,channels:4}}).webp({quality:94}).toBuffer();
+  return marca?harmonizarMarcaPublicacao(original,placa,marca,largura,altura):placa;
 }

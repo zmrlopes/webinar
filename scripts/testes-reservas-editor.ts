@@ -10,6 +10,7 @@ import {prepararEditorPublicacao,limparFundoEditorPublicacao,guardarEdicaoPublic
 import {abrirImagemReserva,finalizarImagemReserva,logotipoBrancoReserva} from "../src/lib/reservas-imagem-servidor";
 import type {PublicacaoImagemReserva,ReferenciaImagemReserva} from "../src/lib/reservas-imagem";
 import {POST} from "../app/api/consultor/nova-area/reservas/imagem/route";
+import {harmonizarMarcaPublicacao} from "../src/lib/reservas-imagem-ocr";
 async function main(){
  process.env.DATABASE_URL||="postgres://test:test@localhost/test";
  const email=EMAIL_PAINEL_DEMONSTRACAO,pool=db(),originalQuery=pool.query,originalFetch=globalThis.fetch,registos=new Map<string,unknown>();let chamadasIA=0;
@@ -22,9 +23,10 @@ async function main(){
   const baseComMarca=await finalizarImagemReserva(base,ref,"story"),arte=createCanvas(1080,1920),arteCtx=arte.getContext("2d");arteCtx.drawImage(await loadImage(baseComMarca),0,0);arteCtx.fillStyle="#ffffff";arteCtx.fillRect(33,39,258,94);arteCtx.font="bold 70px sans-serif";arteCtx.fillText("GRAN CANARIA",54,1310);const source=arte.toBuffer("image/png");
   const r:PublicacaoImagemReserva={id:randomUUID(),tipo:"publicacao",nome:"Gran Canaria",formato:"story",estado:"pronta",criadaEm:new Date().toISOString(),referenciaId:ref.id,dados:{...dadosReservaVazios(),destino:"Gran Canaria",ida:"2026-11-17",regresso:"2026-11-22",viajantes:3,hoteis:[{...hotelVazio(),nome:"Hotel",total:4405}]},notas:"",imagem:url(source)};
   const textos=[{id:"titulo",nome:"Destino",texto:"GRAN CANARIA",fonte:"geometrica" as const,tamanho:70,cor:"#ffffff",negrito:true,italico:false,sombra:true,alinhar:"left" as const,x:5,y:65,w:85,h:7}];
-  const logo=await logotipoBrancoReserva(),editor:EditorPublicacaoReserva={versao:1,origemId:r.id,imagemOriginal:r.imagem!,fundoLimpo:url(base),textos,decoracoes:[],marca:ref.marca,marcaPreparada:true,logoBranco:`data:image/png;base64,${logo.toString("base64")}`,ajustes:ajustesIniciaisPublicacao(textos)};
+  const logo=await logotipoBrancoReserva(),editor:EditorPublicacaoReserva={versao:1,origemId:r.id,imagemOriginal:r.imagem!,fundoLimpo:url(base),textos,decoracoes:[],marca:ref.marca,marcaPreparada:true,marcaSuave:true,logoBranco:`data:image/png;base64,${logo.toString("base64")}`,ajustes:ajustesIniciaisPublicacao(textos)};
   const rgba=await sharp(logo).ensureAlpha().raw().toBuffer();let transparentes=0,brancos=0;for(let i=0;i<rgba.length;i+=4){if(rgba[i+3]===0)transparentes++;if(rgba[i+3]!>200){assert(rgba[i]!>250&&rgba[i+1]!>250&&rgba[i+2]!>250);brancos++;}}assert(transparentes>100&&brancos>100,"Ícone e letras brancos sem cartão opaco");
   const icone=await sharp(logo).extract({left:0,top:0,width:440,height:440}).ensureAlpha().raw().toBuffer(),opacos=icone.filter((v,i)=>i%4===3&&v>200).length;assert(opacos>1000&&opacos<440*440/2,"O ícone mantém os detalhes brancos e o interior transparente");
+  const luminoso=await sharp(base).modulate({brightness:1.8}).webp().toBuffer(),harmonizado=await harmonizarMarcaPublicacao(source,luminoso,ref.marca,1080,1920),amostra=await sharp(harmonizado).extract({left:140,top:80,width:1,height:1}).removeAlpha().raw().toBuffer();assert(Math.abs(amostra[0]!-24)<4&&Math.abs(amostra[1]!-61)<4&&Math.abs(amostra[2]!-82)<4,"A antiga marca fica integrada no tom do fundo original, sem um retângulo mais claro");
   registos.set(`reservas:imagem:v1:${email}:${r.id}`,r);registos.set(`reservas:imagem:v1:${email}:${ref.id}`,ref);registos.set(`reservas:editor:v1:${email}:${r.id}`,editor);
   await assert.rejects(()=>prepararEditorPublicacao("outra@example.com",r.id),/não existe/);
   await assert.rejects(()=>guardarEdicaoPublicacao("outra@example.com",{id:r.id,ajustes:editor.ajustes}),/não existe/);

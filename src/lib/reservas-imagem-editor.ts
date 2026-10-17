@@ -14,7 +14,7 @@ export interface AjustesEditorPublicacao {
 export interface EditorPublicacaoReserva {
   versao: 1; origemId: string; imagemOriginal: string; fundoLimpo: string; textos: TextoEditorPublicacao[];
   decoracoes: (CaixaReserva & {tipo?:"cartao"|"emoji"})[]; marca: CaixaReserva; ajustes: AjustesEditorPublicacao;
-  marcaPreparada?:boolean; logoBranco?:string; marcaDaReferencia?:boolean;
+  marcaPreparada?:boolean; marcaSuave?:boolean; logoBranco?:string; marcaDaReferencia?:boolean;
 }
 export function ajustesIniciaisPublicacao(textos: TextoEditorPublicacao[]): AjustesEditorPublicacao {
   return {textos: textos.map(({id,fonte,tamanho,cor,negrito,italico,x,y})=>({id,fonte,tamanho,cor,negrito,italico,x,y,manterOriginal:true})),fundo:"",escurecimento:.5,credito:""};
@@ -71,12 +71,12 @@ export function desenharEditorPublicacao(ctx: CanvasRenderingContext2D, original
     for(const b of editor.decoracoes){const x=b.x/100*largura,y=b.y/100*altura,w=b.w/100*largura,h=b.h/100*altura;ctx.save();ctx.beginPath();if(b.tipo==="emoji")ctx.ellipse(x+w/2,y+h/2,w/2,h/2,0,0,Math.PI*2);else ctx.roundRect(x,y,w,h,Math.min(18,h*.15));ctx.clip();ctx.drawImage(limpo,x,y,w,h,x,y,w,h);ctx.restore();}
   } else {
     ctx.drawImage(original,0,0,largura,altura);
-    if(ajustes.marca&&editor.marcaPreparada){const m=editor.marca,x=Math.max(0,Math.floor(m.x/100*largura)-3),y=Math.max(0,Math.floor(m.y/100*altura)-3),w=Math.min(largura-x,Math.ceil(m.w/100*largura)+6),h=Math.min(altura-y,Math.ceil(m.h/100*altura)+6);ctx.drawImage(limpo,x,y,w,h,x,y,w,h);}
+    if(ajustes.marca&&editor.marcaPreparada){const m=editor.marca,x=Math.max(0,Math.floor(m.x/100*largura)-28),y=Math.max(0,Math.floor(m.y/100*altura)-28),w=Math.min(largura-x,Math.ceil((m.x+m.w)/100*largura)+28-x),h=Math.min(altura-y,Math.ceil((m.y+m.h)/100*altura)+28-y);ctx.drawImage(limpo,x,y,w,h,x,y,w,h);}
     for(const t of editor.textos){const estilo=ajustes.textos.find(e=>e.id===t.id)!;if(!textoAlteradoPublicacao(t,estilo))continue;
       const x=Math.max(0,t.x/100*largura-10),y=Math.max(0,t.y/100*altura-10),w=Math.min(largura-x,t.w/100*largura+20),h=Math.min(altura-y,t.h/100*altura+20);ctx.drawImage(limpo,x,y,w,h,x,y,w,h);
     }
   }
-  for(const t of editor.textos){const estilo=ajustes.textos.find(e=>e.id===t.id)!;if(!fundo&&!textoAlteradoPublicacao(t,estilo))continue;
+  for(const t of editor.textos){const estilo=ajustes.textos.find(e=>e.id===t.id)!,m=editor.marca,sobMarca=ajustes.marca&&editor.marcaPreparada&&t.x+t.w>m.x-28/largura*100&&t.x<m.x+m.w+28/largura*100&&t.y+t.h>m.y-28/altura*100&&t.y<m.y+m.h+28/altura*100;if(!fundo&&!sobMarca&&!textoAlteradoPublicacao(t,estilo))continue;
     if(!textoVisivelPublicacao(t,estilo))continue;
     const recorte=recortes.get(t.id);
     if(recorte&&conteudoTextoPublicacao(t,estilo)===t.texto&&estilo.manterOriginal!==false&&estilo.fonte===t.fonte&&estilo.cor===t.cor&&estilo.negrito===t.negrito&&estilo.italico===t.italico){
