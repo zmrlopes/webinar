@@ -52,6 +52,12 @@ export function prepararTextoEditor(ctx: CanvasRenderingContext2D, texto: TextoE
   const subida=Math.max(...medidas.map(m=>m.actualBoundingBoxAscent)),descida=Math.max(...medidas.map(m=>m.actualBoundingBoxDescent));
   return {linhas,subida,altura:subida+descida+(linhas.length-1)*estilo.tamanho*1.15};
 }
+/** Ao corrigir o conteúdo, reduz a letra se necessário para caber na caixa original. */
+export function ajustarConteudoTextoPublicacao(ctx:CanvasRenderingContext2D,texto:TextoEditorPublicacao,estilo:EstiloTextoPublicacao,conteudo:string,largura:number,altura:number):EstiloTextoPublicacao {
+  const proximo={...estilo,texto:conteudo};
+  while(proximo.tamanho>10){const preparado=prepararTextoEditor(ctx,texto,proximo,largura);if(preparado.altura<=texto.h/100*altura&&preparado.linhas.every(l=>ctx.measureText(l).width<=texto.w/100*largura))break;proximo.tamanho=Math.max(10,proximo.tamanho-1);}
+  return proximo;
+}
 /** O original é o ponto de partida; só os textos alterados recebem um remendo do fundo limpo. */
 export function desenharEditorPublicacao(ctx: CanvasRenderingContext2D, original: CanvasImageSource, limpo: CanvasImageSource, fundo: CanvasImageSource | null, editor: EditorPublicacaoReserva, ajustes: AjustesEditorPublicacao, largura: number, altura: number, recortes:Map<string,CanvasImageSource>=new Map()) {
   ctx.clearRect(0,0,largura,altura);

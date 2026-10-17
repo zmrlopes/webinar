@@ -4,7 +4,7 @@ import {useEffect,useRef,useState,type ChangeEvent} from "react";
 import {carregarFonteReserva,comprimirImagemReserva} from "@/lib/reservas-canvas";
 import {dimensoesReserva,type FormatoReserva} from "@/lib/reservas";
 import {fonteReserva,type FonteReserva} from "@/lib/reservas-fontes";
-import {FONTES_EDITOR_PUBLICACAO,conteudoTextoPublicacao,textoVisivelPublicacao,desenharEditorPublicacao,prepararTextoEditor,type AjustesEditorPublicacao,type EditorPublicacaoReserva,type EstiloTextoPublicacao} from "@/lib/reservas-imagem-editor";
+import {FONTES_EDITOR_PUBLICACAO,ajustarConteudoTextoPublicacao,conteudoTextoPublicacao,textoVisivelPublicacao,desenharEditorPublicacao,prepararTextoEditor,type AjustesEditorPublicacao,type EditorPublicacaoReserva,type EstiloTextoPublicacao} from "@/lib/reservas-imagem-editor";
 import css from "./reservas.module.css";
 import styles from "./reservas-imagem-editor.module.css";
 
@@ -41,6 +41,7 @@ export function EditorRapidoPublicacao({email,destino,formato,editor,ocupado,onG
   function lembrar(antes:AjustesEditorPublicacao){historico.current=[...historico.current.slice(-11),antes];setPodeDesfazer(true);}
   function alterar(proximo:AjustesEditorPublicacao){lembrar(ajustes);setAjustes(proximo);}
   function mudarTexto(patch:Partial<EstiloTextoPublicacao>,agrupar=false){if(!estilo)return;if(!agrupar||editandoConteudo.current!==selecionado)lembrar(ajustes);editandoConteudo.current=agrupar?selecionado:null;setAjustes({...ajustes,textos:ajustes.textos.map(t=>t.id===selecionado?{...t,...patch}:t)});}
+  function corrigirTexto(conteudo:string){if(!texto||!estilo)return;const ctx=canvas.current?.getContext("2d");mudarTexto(ctx?ajustarConteudoTextoPublicacao(ctx,texto,estilo,conteudo,largura,altura):{texto:conteudo},true);}
   function desfazer(){editandoConteudo.current=null;const anterior=historico.current.pop();if(anterior)setAjustes(anterior);setPodeDesfazer(historico.current.length>0);}
   async function fazer(acao:()=>Promise<void>){if(desativado)return;setCarregando(true);setErro("");try{await acao();}catch(e){setErro(e instanceof Error?e.message:"Não foi possível escolher esta imagem.");}finally{setCarregando(false);}}
   async function carregarFundo(e:ChangeEvent<HTMLInputElement>){const f=e.target.files?.[0];e.target.value="";if(f)await fazer(async()=>alterar({...ajustes,fundo:await comprimirImagemReserva(f),credito:""}));}
@@ -63,7 +64,7 @@ export function EditorRapidoPublicacao({email,destino,formato,editor,ocupado,onG
       </div><p className={styles.marca}>A marca iCliGo está protegida.</p></div>
       <fieldset className={styles.controles} disabled={desativado}>
         <label className={css.campo}><span>Texto selecionado</span><select value={selecionado} onChange={e=>{editandoConteudo.current=null;setSelecionado(e.target.value);}}>{editor.textos.map(t=><option key={t.id} value={t.id}>{t.nome}{!textoVisivelPublicacao(t,ajustes.textos.find(s=>s.id===t.id)!)?" (apagado)":""}</option>)}</select></label>
-        {texto&&estilo&&<><label className={css.campo}><span>Texto</span><textarea aria-label="Conteúdo do texto da publicação" rows={3} maxLength={1600} value={conteudoTextoPublicacao(texto,estilo)} disabled={estilo.apagado} onChange={e=>mudarTexto({texto:e.target.value},true)} onBlur={()=>{editandoConteudo.current=null;}}/></label>
+        {texto&&estilo&&<><label className={css.campo}><span>Texto</span><textarea aria-label="Conteúdo do texto da publicação" rows={3} maxLength={1600} value={conteudoTextoPublicacao(texto,estilo)} disabled={estilo.apagado} onChange={e=>corrigirTexto(e.target.value)} onBlur={()=>{editandoConteudo.current=null;}}/></label>
           <div className={css.acoes}><button type="button" onClick={()=>mudarTexto(estilo.apagado?{apagado:false}:{apagado:true})}>{estilo.apagado?"Restaurar texto":"Apagar texto"}</button></div>
           <label className={css.campo}><span>Tipo de letra</span><select aria-label="Tipo de letra da publicação" value={estilo.manterOriginal!==false?"original":estilo.fonte} style={{fontFamily:fonteReserva(estilo.fonte).familia}} onChange={e=>mudarTexto(e.target.value==="original"?{fonte:texto.fonte,manterOriginal:true}:{fonte:e.target.value as FonteReserva,manterOriginal:false})}><option value="original">Letra original</option>{FONTES_EDITOR_PUBLICACAO.map(f=><option key={f.id} value={f.id}>{f.nome}</option>)}</select></label>
           <div className={styles.linha}><label className={css.campo}><span>Tamanho da letra</span><input type="number" aria-label="Tamanho da letra da publicação" min={10} max={220} step={1} value={Math.round(estilo.tamanho)} onChange={e=>mudarTexto({tamanho:Math.max(10,Math.min(220,Number(e.target.value)||10))})}/></label><label className={css.campo}><span>Cor</span><input type="color" aria-label="Cor da letra da publicação" value={estilo.cor} onChange={e=>mudarTexto({cor:e.target.value})}/></label></div>

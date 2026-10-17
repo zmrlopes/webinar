@@ -5,7 +5,7 @@ import {createCanvas,loadImage} from "@napi-rs/canvas";
 import {db,fecharDb} from "../src/lib/db";
 import {EMAIL_PAINEL_DEMONSTRACAO} from "../src/lib/demo";
 import {dadosReservaVazios,hotelVazio} from "../src/lib/reservas";
-import {ajustesIniciaisPublicacao,desenharEditorPublicacao,prepararTextoEditor,validarAjustesPublicacao,type EditorPublicacaoReserva} from "../src/lib/reservas-imagem-editor";
+import {ajustesIniciaisPublicacao,ajustarConteudoTextoPublicacao,desenharEditorPublicacao,prepararTextoEditor,validarAjustesPublicacao,type EditorPublicacaoReserva} from "../src/lib/reservas-imagem-editor";
 import {prepararEditorPublicacao,limparFundoEditorPublicacao,guardarEdicaoPublicacao} from "../src/lib/reservas-imagem-editor-servidor";
 import {abrirImagemReserva,finalizarImagemReserva} from "../src/lib/reservas-imagem-servidor";
 import type {PublicacaoImagemReserva,ReferenciaImagemReserva} from "../src/lib/reservas-imagem";
@@ -36,6 +36,7 @@ async function main(){
   const reaberto=await prepararEditorPublicacao(email,editada.id);assert.equal(reaberto.imagemOriginal,r.imagem);assert.equal(reaberto.ajustes.textos[0]!.fonte,"condensada");assert.equal(chamadasIA,0);
   ajustes.textos[0]!.tamanho=80;await guardarEdicaoPublicacao(email,{id:editada.id,ajustes});assert.equal(chamadasIA,0,"Reabrir e continuar a editar não volta a preparar o fundo");
   const corrigidos=structuredClone(editor.ajustes);corrigidos.textos[0]!.texto="Pensão Completa\nBebidas incluídas";
+  const ajustado=ajustarConteudoTextoPublicacao(ctx as unknown as CanvasRenderingContext2D,textos[0]!,editor.ajustes.textos[0]!,"Regime: Pensão Completa com bebidas incluídas",1080,1920);assert(ajustado.tamanho<textos[0]!.tamanho);assert(prepararTextoEditor(ctx as unknown as CanvasRenderingContext2D,textos[0]!,ajustado,1080).altura<=textos[0]!.h/100*1920,"Uma correção maior cabe sem invadir a linha seguinte");
   const linhas=prepararTextoEditor(ctx as unknown as CanvasRenderingContext2D,textos[0]!,corrigidos.textos[0]!,1080).linhas;assert.deepEqual(linhas,["Pensão Completa","Bebidas incluídas"]);
   const desenhados:string[]=[],proxy=new Proxy(ctx,{get(target,key){if(key==="fillText")return (s:string,...args:unknown[])=>{desenhados.push(s);return Reflect.apply(target.fillText,target,[s,...args]);};const v=Reflect.get(target,key,target);return typeof v==="function"?v.bind(target):v;},set(target,key,value){return Reflect.set(target,key,value,target);}});
   // Mesmo havendo um recorte das letras antigas, uma correção usa o novo conteúdo.
