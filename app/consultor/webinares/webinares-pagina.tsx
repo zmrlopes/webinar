@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { lerEmailGuardado } from "../armazenamento";
 import { ObjecaoLead } from "./objecao-lead";
 import { SessaoUnica } from "./sessao-unica";
+import type { TestemunhoObjecao } from "@/lib/objecoes";
 
 type EstadoLead = "follow_up" | "convertido" | "desistiu";
 
@@ -21,6 +22,7 @@ interface LeadConsolidado {
   podeEditar: boolean;
   objecao: string | null;
   respostasObjecao: string[] | null;
+  testemunhoObjecao: TestemunhoObjecao | null;
   assistiuCorrigido: boolean;
 }
 
@@ -218,6 +220,29 @@ export function WebinaresPagina({ embutida = false }: { embutida?: boolean } = {
           padding: 0.4rem 0.55rem;
           font-size: 0.8rem;
           margin: 0;
+        }
+        .vqw-objecao-testemunho {
+          display: flex;
+          gap: 0.55rem;
+          align-items: flex-start;
+          background: #ffffff;
+          border: 1px solid #4b5320;
+          border-radius: 6px;
+          padding: 0.5rem 0.55rem;
+          font-size: 0.8rem;
+        }
+        .vqw-objecao-testemunho img { flex: none; border-radius: 4px; object-fit: cover; }
+        .vqw-objecao-testemunho > div { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
+        .vqw-objecao-testemunho p { margin: 0; }
+        .vqw-objecao-etiqueta { color: #4b5320; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+        .vqw-objecao-testemunho a {
+          background: #4b5320;
+          color: #ffffff;
+          border-radius: 6px;
+          padding: 0.3rem 0.7rem;
+          font-size: 0.78rem;
+          font-weight: 600;
+          text-decoration: none;
         }
         .vqw-tabela th, .vqw-tabela td {
           text-align: left;
@@ -456,6 +481,7 @@ export function WebinaresPagina({ embutida = false }: { embutida?: boolean } = {
                                   leadEmail={lead.email}
                                   objecaoInicial={lead.objecao}
                                   respostasIniciais={lead.respostasObjecao}
+                                  testemunhoInicial={lead.testemunhoObjecao ?? null}
                                 />
                               </td>
                             )}

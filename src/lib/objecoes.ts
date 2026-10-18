@@ -4,6 +4,35 @@ import {
   conhecimentoParaTemas,
   TEMAS_CONHECIMENTO,
 } from "./formacoes-conhecimento";
+import testemunhos from "./testemunhos.json";
+
+/** Testemunho da playlist iCliGo sugerido para o follow-up de uma objeção. */
+export interface TestemunhoObjecao {
+  id: string;
+  titulo: string;
+  duracao: string;
+  /** Frase curta do modelo: porque ajuda e como o enviar à lead. */
+  comoUsar: string;
+}
+
+export interface RespostasObjecao {
+  respostas: string[];
+  testemunho: TestemunhoObjecao | null;
+}
+
+/**
+ * objecoes_lead.respostas guardava só a lista de respostas; com testemunho
+ * passa a ser {respostas, testemunho} na mesma coluna jsonb (sem migração).
+ * Lê os dois formatos.
+ */
+export function lerRespostasGuardadas(valor: unknown): RespostasObjecao | null {
+  if (Array.isArray(valor)) return { respostas: valor as string[], testemunho: null };
+  if (valor && typeof valor === "object" && Array.isArray((valor as RespostasObjecao).respostas)) {
+    const v = valor as RespostasObjecao;
+    return { respostas: v.respostas, testemunho: v.testemunho ?? null };
+  }
+  return null;
+}
 
 export interface ConhecimentoObjecao {
   id: string;
@@ -174,7 +203,7 @@ export async function apagarConhecimentoObjecao(id: string): Promise<void> {
 export async function guardarObjecaoLead(
   leadEmail: string,
   objecao: string,
-  respostas: string[],
+  { respostas, testemunho }: RespostasObjecao,
   consultorEmail: string,
 ): Promise<void> {
   const { rows } = await db().query<{ existe: boolean }>(
@@ -195,7 +224,7 @@ export async function guardarObjecaoLead(
      values ($1, $2, $3, now())
      on conflict (lead_email) do update
        set objecao = excluded.objecao, respostas = excluded.respostas, atualizado_em = now()`,
-    [leadEmail, objecao, JSON.stringify(respostas)],
+    [leadEmail, objecao, JSON.stringify(testemunho ? { respostas, testemunho } : respostas)],
   );
 }
 
@@ -347,7 +376,8 @@ async function escolherTemasObjecao(objecao: string): Promise<string[]> {
  */
 export async function gerarRespostasObjecao(
   objecao: string,
-): Promise<string[]> {
+  { comTestemunho = false }: { comTestemunho?: boolean } = {},
+): Promise<RespostasObjecao> {
   const [
     diretrizesGerais,
     pdfsDiretrizesGerais,
@@ -394,19 +424,33 @@ export async function gerarRespostasObjecao(
       `promessas que não estejam aqui:\n\n${blocoConhecimento}\n\n` +
       `Quando o consultor descrever a dúvida da lead, responde SÓ com um JSON neste formato exato, ` +
       `sem mais nenhum texto à volta:\n` +
-      `{"respostas": ["primeira hipótese de resposta", "segunda hipótese", "terceira hipótese (opcional)"]}\n` +
+      (comTestemunho
+        ? `{"respostas": ["primeira hipótese de resposta", "segunda hipótese", "terceira hipótese (opcional)"], ` +
+          `"testemunho": {"id": "<id do testemunho>", "comoUsar": "<1-2 frases>"}}\n`
+        : `{"respostas": ["primeira hipótese de resposta", "segunda hipótese", "terceira hipótese (opcional)"]}\n`) +
       `Cada resposta deve ser um texto curto, natural, em português de Portugal, que o consultor ` +
       `possa usar diretamente na conversa com a lead — 2 a 3 hipóteses, nunca mais do que 3. ` +
       `Segue o método ensinado nas formações (por exemplo: ouvir, fazer perguntas, relacionar com a tua ` +
       `experiência, responder). Quando uma hipótese se apoiar numa ideia concreta de uma formação ou de um ` +
       `formador de referência, termina essa MESMA string com uma última linha "Base: <formação ou formador>" (não a ponhas como hipótese à parte) — só se vier ` +
-      `mesmo do conhecimento acima, nunca inventada.`,
+      `mesmo do conhecimento acima, nunca inventada.` +
+      (comTestemunho
+        ? `\n\nEm "testemunho", escolhe da lista abaixo o vídeo de um consultor que passou pela MESMA dúvida ` +
+          `e a ultrapassou — é para o consultor enviar à lead no follow-up. Usa o id exato. Em "comoUsar", ` +
+          `explica numa ou duas frases curtas porque este testemunho ajuda e sugere uma frase para ` +
+          `acompanhar o link no WhatsApp. Se nenhum se relacionar com a dúvida, usa "testemunho": null.\n` +
+          `Testemunhos disponíveis (id: título):\n` +
+          testemunhos.map((t) => `${t.id}: ${t.titulo}`).join("\n")
+        : ""),
     objecao,
-    1500,
+    comTestemunho ? 1800 : 1500,
   );
 
   try {
-    const dados = JSON.parse(textoResposta) as { respostas: string[] };
+    const dados = JSON.parse(textoResposta) as {
+      respostas: string[];
+      testemunho?: { id?: unknown; comoUsar?: unknown } | null;
+    };
     if (Array.isArray(dados.respostas) && dados.respostas.length > 0) {
       // Se o modelo puser a linha "Base: …" como hipótese à parte, cola-a à anterior.
       const juntas: string[] = [];
@@ -414,12 +458,22 @@ export async function gerarRespostasObjecao(
         if (/^\s*Base:/i.test(r) && juntas.length > 0) juntas[juntas.length - 1] += `\n${r.trim()}`;
         else juntas.push(r);
       }
-      return juntas;
+      // Só aceita um id que exista mesmo na playlist.
+      const escolhido = comTestemunho
+        ? testemunhos.find((t) => t.id === dados.testemunho?.id)
+        : undefined;
+      const comoUsar = dados.testemunho?.comoUsar;
+      return {
+        respostas: juntas,
+        testemunho: escolhido
+          ? { ...escolhido, comoUsar: typeof comoUsar === "string" ? comoUsar : "" }
+          : null,
+      };
     }
   } catch {
     // segue para o fallback abaixo
   }
   // Se o modelo não devolveu JSON válido (raro, mas acontece), mostra o
   // texto cru como única hipótese em vez de rebentar a página.
-  return [textoResposta];
+  return { respostas: [textoResposta], testemunho: null };
 }

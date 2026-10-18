@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { TestemunhoObjecao } from "@/lib/objecoes";
 
 type Estado = "pronto" | "a-gerar";
 
@@ -9,6 +10,7 @@ interface Props {
   leadEmail: string;
   objecaoInicial: string | null;
   respostasIniciais: string[] | null;
+  testemunhoInicial: TestemunhoObjecao | null;
 }
 
 /**
@@ -17,10 +19,12 @@ interface Props {
  * guardarObjecaoLead em src/lib/objecoes.ts) para reaparecer quando o
  * consultor voltar à tabela depois de responder à lead por fora.
  */
-export function ObjecaoLead({ email, leadEmail, objecaoInicial, respostasIniciais }: Props) {
+export function ObjecaoLead({ email, leadEmail, objecaoInicial, respostasIniciais, testemunhoInicial }: Props) {
   const [objecao, setObjecao] = useState(objecaoInicial ?? "");
   const [estado, setEstado] = useState<Estado>("pronto");
   const [respostas, setRespostas] = useState<string[]>(respostasIniciais ?? []);
+  const [testemunho, setTestemunho] = useState<TestemunhoObjecao | null>(testemunhoInicial);
+  const [copiado, setCopiado] = useState(false);
   const [erro, setErro] = useState("");
   const [abertas, setAbertas] = useState(false);
 
@@ -41,6 +45,8 @@ export function ObjecaoLead({ email, leadEmail, objecaoInicial, respostasIniciai
         return;
       }
       setRespostas(Array.isArray(corpo.respostas) ? corpo.respostas : []);
+      setTestemunho(corpo.testemunho ?? null);
+      setCopiado(false);
       setAbertas(true);
       setEstado("pronto");
     } catch {
@@ -74,6 +80,30 @@ export function ObjecaoLead({ email, leadEmail, objecaoInicial, respostasIniciai
             <strong>{i + 1}.</strong> {r}
           </p>
         ))}
+      {abertas && testemunho && (
+        <div className="vqw-objecao-testemunho">
+          <img src={`https://i.ytimg.com/vi/${testemunho.id}/mqdefault.jpg`} alt="" width="96" height="54" loading="lazy" />
+          <div>
+            <span className="vqw-objecao-etiqueta">Testemunho para o follow-up</span>
+            <strong>{testemunho.titulo}</strong>
+            {testemunho.comoUsar && <p>{testemunho.comoUsar}</p>}
+            <div className="vqw-objecao-botoes">
+              <a href={`https://www.youtube.com/watch?v=${testemunho.id}`} target="_blank" rel="noopener noreferrer">
+                Ver vídeo{testemunho.duracao && ` (${testemunho.duracao})`} ↗
+              </a>
+              <button
+                type="button"
+                className="vqw-objecao-toggle"
+                onClick={() => {
+                  navigator.clipboard.writeText(`https://youtu.be/${testemunho.id}`).then(() => setCopiado(true), () => {});
+                }}
+              >
+                {copiado ? "Link copiado" : "Copiar link"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

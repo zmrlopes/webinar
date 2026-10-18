@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { lerRespostasGuardadas, type TestemunhoObjecao } from "./objecoes";
 import { TITULO_WEBINAR_PUBLICO } from "./webinars";
 
 export type EstadoLead = "follow_up" | "convertido" | "desistiu";
@@ -21,6 +22,7 @@ export interface LeadConsolidado {
   podeEditar: boolean;
   objecao: string | null;
   respostasObjecao: string[] | null;
+  testemunhoObjecao: TestemunhoObjecao | null;
   assistiuCorrigido: boolean;
 }
 
@@ -59,7 +61,7 @@ export async function listarLeadsConsolidado(
     pode_editar: boolean;
     estado: EstadoLead | null;
     objecao: string | null;
-    respostas_objecao: string[] | null;
+    respostas_objecao: unknown;
     assistiu_manual: boolean | null;
   }>(
     `select
@@ -98,22 +100,26 @@ export async function listarLeadsConsolidado(
     [TITULO_WEBINAR_PUBLICO, referenciaEmails, proprioEmail],
   );
 
-  const leads: LeadConsolidado[] = rows.map((r) => ({
-    nome: r.nome,
-    telemovel: r.telemovel,
-    email: r.email,
-    sessoesFeitas: Number(r.sessoes_feitas),
-    assistiu: r.assistiu,
-    percentagemAssistencia:
-      r.percentagem_assistencia !== null ? Number(r.percentagem_assistencia) : null,
-    ultimaSessaoAssistida: r.ultima_sessao_assistida,
-    trazidoPor: r.referencia_email_mais_recente === proprioEmail ? null : r.trazido_por_nome,
-    estado: r.estado,
-    podeEditar: r.pode_editar,
-    objecao: r.objecao,
-    respostasObjecao: r.respostas_objecao,
-    assistiuCorrigido: r.assistiu_manual !== null,
-  }));
+  const leads: LeadConsolidado[] = rows.map((r) => {
+    const guardadas = lerRespostasGuardadas(r.respostas_objecao);
+    return {
+      nome: r.nome,
+      telemovel: r.telemovel,
+      email: r.email,
+      sessoesFeitas: Number(r.sessoes_feitas),
+      assistiu: r.assistiu,
+      percentagemAssistencia:
+        r.percentagem_assistencia !== null ? Number(r.percentagem_assistencia) : null,
+      ultimaSessaoAssistida: r.ultima_sessao_assistida,
+      trazidoPor: r.referencia_email_mais_recente === proprioEmail ? null : r.trazido_por_nome,
+      estado: r.estado,
+      podeEditar: r.pode_editar,
+      objecao: r.objecao,
+      respostasObjecao: guardadas?.respostas ?? null,
+      testemunhoObjecao: guardadas?.testemunho ?? null,
+      assistiuCorrigido: r.assistiu_manual !== null,
+    };
+  });
 
   return {
     leadsTotais: leads.length,

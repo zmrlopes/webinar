@@ -142,3 +142,9 @@ Por indicação explícita do utilizador, nas Leads da área atual
 (`/consultor/webinares`), cada sessão separa as leads em “Leads pessoais” e
 “Leads equipa”, tal como em “Todas as sessões”, para todos os consultores.
 A nova área usa o mesmo componente. Esta autorização abrange apenas esta separação.
+
+Na resolução de objeções das Leads, além das 2-3 respostas geradas a partir da
+base de conhecimento, a IA sugere um testemunho da playlist iCliGo
+(`src/lib/testemunhos.json`) para o follow-up, com uma frase de como o usar e
+o link para enviar à lead. Fica guardado por lead. Por agora só na conta de
+teste (decidido na API); publicar para todos requer instrução explícita.

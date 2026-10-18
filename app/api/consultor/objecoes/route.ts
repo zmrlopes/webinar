@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { buscarMembroEquipa } from "@/lib/equipa";
+import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
 import { gerarRespostasObjecao, guardarObjecaoLead } from "@/lib/objecoes";
 
 // Duas chamadas ao modelo (escolher temas + gerar respostas) com um contexto maior.
@@ -24,19 +25,22 @@ export async function POST(request: Request): Promise<Response> {
       return NextResponse.json({ erro: "esta ferramenta é só para a equipa" }, { status: 403 });
     }
 
-    const respostas = await gerarRespostasObjecao(objecao.trim());
+    // O testemunho sugerido ainda está só na conta de teste.
+    const resultado = await gerarRespostasObjecao(objecao.trim(), {
+      comTestemunho: email.trim().toLowerCase() === EMAIL_PAINEL_DEMONSTRACAO,
+    });
 
     // Best-effort — se a lead indicada não pertencer a este consultor (ou
     // faltar), não é motivo para esconder as respostas já geradas.
     if (typeof leadEmail === "string" && leadEmail.trim() !== "") {
       try {
-        await guardarObjecaoLead(leadEmail.trim().toLowerCase(), objecao.trim(), respostas, email.trim().toLowerCase());
+        await guardarObjecaoLead(leadEmail.trim().toLowerCase(), objecao.trim(), resultado, email.trim().toLowerCase());
       } catch (erroGuardar) {
         console.error("falha ao guardar objeção da lead:", erroGuardar);
       }
     }
 
-    return NextResponse.json({ respostas });
+    return NextResponse.json(resultado);
   } catch (erro) {
     console.error("falha ao gerar respostas de objeção:", erro);
     const mensagem = erro instanceof Error ? erro.message : String(erro);
