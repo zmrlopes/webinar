@@ -183,44 +183,6 @@ export function WebinaresPagina({ embutida = false }: { embutida?: boolean } = {
         }
         .vqw-tabela { width: 100%; min-width: 950px; border-collapse: collapse; background: #f7f6f3; }
         .vqw-tabela th:last-child, .vqw-tabela td:last-child { min-width: 220px; }
-        .vqw-objecao { display: flex; flex-direction: column; gap: 0.4rem; }
-        .vqw-objecao textarea {
-          box-sizing: border-box;
-          width: 100%;
-          min-height: 3rem;
-          resize: vertical;
-          padding: 0.4rem 0.55rem;
-          border-radius: 6px;
-          border: 1px solid #cfcdc3;
-          font-size: 0.82rem;
-          font-family: inherit;
-        }
-        .vqw-objecao-botoes { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-        .vqw-objecao button {
-          background: #4b5320;
-          color: #ffffff;
-          border: none;
-          border-radius: 6px;
-          padding: 0.3rem 0.7rem;
-          font-size: 0.78rem;
-          font-weight: 600;
-          cursor: pointer;
-        }
-        .vqw-objecao button:disabled { opacity: 0.5; cursor: default; }
-        .vqw-objecao-toggle {
-          background: transparent !important;
-          color: #4b5320 !important;
-          border: 1px solid #4b5320 !important;
-        }
-        .vqw-objecao-erro { color: #b3261e; font-size: 0.8rem; margin: 0; }
-        .vqw-objecao-resposta {
-          background: #ffffff;
-          border: 1px solid #eae7de;
-          border-radius: 6px;
-          padding: 0.4rem 0.55rem;
-          font-size: 0.8rem;
-          margin: 0;
-        }
         .vqw-objecoes-gerais {
           background: #f7f6f3;
           border: 1px solid #eae7de;
@@ -230,30 +192,6 @@ export function WebinaresPagina({ embutida = false }: { embutida?: boolean } = {
         }
         .vqw-objecoes-gerais h2 { margin: 0 0 0.25rem; font-size: 1.05rem; }
         .vqw-objecoes-gerais .vqw-mudo { margin: 0 0 0.6rem; }
-        .vqw-objecoes-gerais .vqw-objecao textarea { min-height: 4.5rem; font-size: 0.9rem; }
-        .vqw-objecao-testemunho {
-          display: flex;
-          gap: 0.55rem;
-          align-items: flex-start;
-          background: #ffffff;
-          border: 1px solid #4b5320;
-          border-radius: 6px;
-          padding: 0.5rem 0.55rem;
-          font-size: 0.8rem;
-        }
-        .vqw-objecao-testemunho img { flex: none; border-radius: 4px; object-fit: cover; }
-        .vqw-objecao-testemunho > div { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
-        .vqw-objecao-testemunho p { margin: 0; }
-        .vqw-objecao-etiqueta { color: #4b5320; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
-        .vqw-objecao-testemunho a {
-          background: #4b5320;
-          color: #ffffff;
-          border-radius: 6px;
-          padding: 0.3rem 0.7rem;
-          font-size: 0.78rem;
-          font-weight: 600;
-          text-decoration: none;
-        }
         .vqw-tabela th, .vqw-tabela td {
           text-align: left;
           padding: 0.6rem 0.9rem;
@@ -330,7 +268,7 @@ export function WebinaresPagina({ embutida = false }: { embutida?: boolean } = {
 
         {dados && (
           <>
-            {email && (
+            {email && !embutida && (
               <section className="vqw-objecoes-gerais" aria-labelledby="titulo-objecoes">
                 <h2 id="titulo-objecoes">Resolução de objeções</h2>
                 <p className="vqw-mudo">Escreve a dúvida da lead e recebe sugestões de resposta e um testemunho para o follow-up.</p>

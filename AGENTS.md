@@ -148,5 +148,6 @@ base de conhecimento, a IA sugere um testemunho da playlist iCliGo
 (`src/lib/testemunhos.json`) para o follow-up, com uma frase de como o usar e
 o link para enviar à lead. Por indicação explícita do utilizador, está
 publicado para todos os consultores na área atual: a resolução de objeções é
-um campo geral no topo das Leads (sem coluna por lead). A nova área usa o
-mesmo componente.
+um campo geral no topo das Leads (sem coluna por lead). Na nova área, o mesmo
+campo é um separador próprio, “Resolução de objeções”, em A minha organização,
+e não aparece nas Leads.

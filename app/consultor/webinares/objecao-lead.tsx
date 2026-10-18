@@ -58,6 +58,69 @@ export function ObjecaoLead({ email, leadEmail, objecaoInicial, respostasIniciai
 
   return (
     <div className="vqw-objecao">
+      <style>{`
+        .vqw-objecao { display: flex; flex-direction: column; gap: 0.4rem; }
+        .vqw-objecao textarea {
+          box-sizing: border-box;
+          width: 100%;
+          min-height: 4.5rem;
+          resize: vertical;
+          padding: 0.4rem 0.55rem;
+          border-radius: 6px;
+          border: 1px solid #cfcdc3;
+          font-size: 0.9rem;
+          font-family: inherit;
+        }
+        .vqw-objecao-botoes { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .vqw-objecao button {
+          background: #4b5320;
+          color: #ffffff;
+          border: none;
+          border-radius: 6px;
+          padding: 0.3rem 0.7rem;
+          font-size: 0.78rem;
+          font-weight: 600;
+          cursor: pointer;
+        }
+        .vqw-objecao button:disabled { opacity: 0.5; cursor: default; }
+        .vqw-objecao-toggle {
+          background: transparent !important;
+          color: #4b5320 !important;
+          border: 1px solid #4b5320 !important;
+        }
+        .vqw-objecao-erro { color: #b3261e; font-size: 0.8rem; margin: 0; }
+        .vqw-objecao-resposta {
+          background: #ffffff;
+          border: 1px solid #eae7de;
+          border-radius: 6px;
+          padding: 0.4rem 0.55rem;
+          font-size: 0.8rem;
+          margin: 0;
+        }
+        .vqw-objecao-testemunho {
+          display: flex;
+          gap: 0.55rem;
+          align-items: flex-start;
+          background: #ffffff;
+          border: 1px solid #4b5320;
+          border-radius: 6px;
+          padding: 0.5rem 0.55rem;
+          font-size: 0.8rem;
+        }
+        .vqw-objecao-testemunho img { flex: none; border-radius: 4px; object-fit: cover; }
+        .vqw-objecao-testemunho > div { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
+        .vqw-objecao-testemunho p { margin: 0; }
+        .vqw-objecao-etiqueta { color: #4b5320; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+        .vqw-objecao-testemunho a {
+          background: #4b5320;
+          color: #ffffff;
+          border-radius: 6px;
+          padding: 0.3rem 0.7rem;
+          font-size: 0.78rem;
+          font-weight: 600;
+          text-decoration: none;
+        }
+      `}</style>
       <textarea
         value={objecao}
         onChange={(e) => setObjecao(e.target.value)}
