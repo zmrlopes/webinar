@@ -167,7 +167,16 @@ function NoArvoreEquipa({
  * (cartões + árvore da equipa + tabela de leads com link do Zoom), só que
  * embutida aqui em vez de ser a página toda.
  */
-export function SessaoUnica({ email, webinarId }: { email: string; webinarId: string }) {
+export function SessaoUnica({
+  email,
+  webinarId,
+  separarLeads = false,
+}: {
+  email: string;
+  webinarId: string;
+  separarLeads?: boolean;
+}) {
+  const [aba, setAba] = useState<"pessoais" | "equipa">("pessoais");
   const [estado, setEstado] = useState<"a-carregar" | "pronto" | "erro">("a-carregar");
   const [dados, setDados] = useState<DadosEstatisticas | null>(null);
   const [erro, setErro] = useState("");
@@ -229,6 +238,10 @@ export function SessaoUnica({ email, webinarId }: { email: string; webinarId: st
   }
 
   const termoEquipa = pesquisaEquipa.trim().toLowerCase();
+  const leadsPessoais = dados ? dados.leads.filter((l) => l.trazidoPor === null) : [];
+  const leadsEquipa = dados ? dados.leads.filter((l) => l.trazidoPor !== null) : [];
+  const leadsVisiveis = !dados ? [] : !separarLeads ? dados.leads : aba === "pessoais" ? leadsPessoais : leadsEquipa;
+  const mostrarTrazidoPor = separarLeads ? aba === "equipa" : (dados?.equipaTotal ?? 0) > 0;
 
   return (
     <div className="vqs-bloco">
@@ -509,20 +522,47 @@ export function SessaoUnica({ email, webinarId }: { email: string; webinarId: st
             </>
           )}
 
-          {dados.leads.length > 0 && (
+          {separarLeads && (
+            <div className="vqw-abas" style={{ marginTop: "2rem" }}>
+              <button
+                type="button"
+                className={aba === "pessoais" ? "vqw-aba vqw-aba-ativa" : "vqw-aba"}
+                onClick={() => setAba("pessoais")}
+              >
+                Leads pessoais ({leadsPessoais.length})
+              </button>
+              <button
+                type="button"
+                className={aba === "equipa" ? "vqw-aba vqw-aba-ativa" : "vqw-aba"}
+                onClick={() => setAba("equipa")}
+              >
+                Leads equipa ({leadsEquipa.length})
+              </button>
+            </div>
+          )}
+
+          {separarLeads && leadsVisiveis.length === 0 && (
+            <p className="vqs-mudo">
+              {aba === "pessoais"
+                ? "Ainda sem leads pessoais nesta sessão."
+                : "Ainda sem leads trazidas pela equipa nesta sessão."}
+            </p>
+          )}
+
+          {leadsVisiveis.length > 0 && (
             <div className="vqs-tabela-wrap">
               <table className="vqs-tabela">
                 <thead>
                   <tr>
                     <th>Lead</th>
-                    {dados.equipaTotal > 0 && <th>Trazido por</th>}
+                    {mostrarTrazidoPor && <th>Trazido por</th>}
                     <th>Abriu o link do Zoom</th>
                     <th>% de assistência</th>
                     <th>Link do Zoom</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {dados.leads.map((lead) => (
+                  {leadsVisiveis.map((lead) => (
                     <tr key={lead.email}>
                       <td>
                         <div>{lead.nome}</div>
@@ -531,7 +571,7 @@ export function SessaoUnica({ email, webinarId }: { email: string; webinarId: st
                           {lead.telemovel ? ` · ${lead.telemovel}` : ""}
                         </div>
                       </td>
-                      {dados.equipaTotal > 0 && <td>{lead.trazidoPor ?? "Eu"}</td>}
+                      {mostrarTrazidoPor && <td>{lead.trazidoPor ?? "Eu"}</td>}
                       <td>{textoAbriuLink(lead.abriuLink)}</td>
                       <td>{lead.percentagemAssistencia !== null ? `${lead.percentagemAssistencia}%` : "—"}</td>
                       <td>
