@@ -98,7 +98,7 @@ pasta. Testes com tabelas temporárias: `node --import tsx scripts/testes-docume
 
 ### Testemunhos na nova área
 
-Em **Formação → Testemunhos**, os 23 vídeos da playlist iCliGo aparecem em cards
+Em **A minha organização → Testemunhos**, os 23 vídeos da playlist iCliGo aparecem em cards
 compactos com título e duração. A pesquisa combina palavras e ignora acentos.
 Cada card abre o vídeo num diálogo com alternativa para ver no YouTube.
 A lista está em `src/lib/testemunhos.json`; para voltar a importar os títulos

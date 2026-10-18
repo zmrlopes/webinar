@@ -28,7 +28,7 @@ export function TestemunhosNovaArea() {
 
   return <section id="testemunhos" aria-label="Testemunhos">
     <div className={estilos.intro}>
-      <span className={estilos.etiqueta}>FORMAÇÃO</span>
+      <span className={estilos.etiqueta}>A MINHA ORGANIZAÇÃO</span>
       <h1>Testemunhos<span>.</span></h1>
       <p>Histórias de consultores iCliGo: das primeiras dúvidas à decisão de começar.</p>
     </div>
