@@ -7,10 +7,11 @@ type Estado = "pronto" | "a-gerar";
 
 interface Props {
   email: string;
-  leadEmail: string;
-  objecaoInicial: string | null;
-  respostasIniciais: string[] | null;
-  testemunhoInicial: TestemunhoObjecao | null;
+  /** Sem lead (campo geral das Leads), nada fica guardado. */
+  leadEmail?: string;
+  objecaoInicial?: string | null;
+  respostasIniciais?: string[] | null;
+  testemunhoInicial?: TestemunhoObjecao | null;
 }
 
 /**
@@ -23,7 +24,7 @@ export function ObjecaoLead({ email, leadEmail, objecaoInicial, respostasIniciai
   const [objecao, setObjecao] = useState(objecaoInicial ?? "");
   const [estado, setEstado] = useState<Estado>("pronto");
   const [respostas, setRespostas] = useState<string[]>(respostasIniciais ?? []);
-  const [testemunho, setTestemunho] = useState<TestemunhoObjecao | null>(testemunhoInicial);
+  const [testemunho, setTestemunho] = useState<TestemunhoObjecao | null>(testemunhoInicial ?? null);
   const [copiado, setCopiado] = useState(false);
   const [erro, setErro] = useState("");
   const [abertas, setAbertas] = useState(false);
@@ -60,7 +61,7 @@ export function ObjecaoLead({ email, leadEmail, objecaoInicial, respostasIniciai
       <textarea
         value={objecao}
         onChange={(e) => setObjecao(e.target.value)}
-        placeholder="Qual é a dúvida dela?"
+        placeholder={leadEmail ? "Qual é a dúvida dela?" : "Ex.: não tenho dinheiro para investir agora"}
         disabled={estado === "a-gerar"}
       />
       <div className="vqw-objecao-botoes">
