@@ -146,7 +146,7 @@ A nova área usa o mesmo componente. Esta autorização abrange apenas esta sepa
 Na resolução de objeções das Leads, além das 2-3 respostas geradas a partir da
 base de conhecimento, a IA sugere um testemunho da playlist iCliGo
 (`src/lib/testemunhos.json`) para o follow-up, com uma frase de como o usar e
-o link para enviar à lead. Na conta de teste, a resolução de objeções é um
-campo geral no topo das Leads (sem coluna por lead) e o testemunho é decidido
-na API; os outros consultores mantêm a coluna por lead. Publicar para todos
-requer instrução explícita.
+o link para enviar à lead. Por indicação explícita do utilizador, está
+publicado para todos os consultores na área atual: a resolução de objeções é
+um campo geral no topo das Leads (sem coluna por lead). A nova área usa o
+mesmo componente.

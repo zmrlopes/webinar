@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { buscarMembroEquipa } from "@/lib/equipa";
-import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
 import { gerarRespostasObjecao, guardarObjecaoLead } from "@/lib/objecoes";
 
 // Duas chamadas ao modelo (escolher temas + gerar respostas) com um contexto maior.
@@ -25,10 +24,7 @@ export async function POST(request: Request): Promise<Response> {
       return NextResponse.json({ erro: "esta ferramenta é só para a equipa" }, { status: 403 });
     }
 
-    // O testemunho sugerido ainda está só na conta de teste.
-    const resultado = await gerarRespostasObjecao(objecao.trim(), {
-      comTestemunho: email.trim().toLowerCase() === EMAIL_PAINEL_DEMONSTRACAO,
-    });
+    const resultado = await gerarRespostasObjecao(objecao.trim(), { comTestemunho: true });
 
     // Best-effort — se a lead indicada não pertencer a este consultor (ou
     // faltar), não é motivo para esconder as respostas já geradas.

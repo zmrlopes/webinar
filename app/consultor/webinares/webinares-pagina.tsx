@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { lerEmailGuardado } from "../armazenamento";
 import { ObjecaoLead } from "./objecao-lead";
 import { SessaoUnica } from "./sessao-unica";
-import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
 import type { TestemunhoObjecao } from "@/lib/objecoes";
 
 type EstadoLead = "follow_up" | "convertido" | "desistiu";
@@ -142,9 +141,6 @@ export function WebinaresPagina({ embutida = false }: { embutida?: boolean } = {
   const leadsPessoais = dados ? dados.leads.filter((l) => l.trazidoPor === null) : [];
   const leadsEquipa = dados ? dados.leads.filter((l) => l.trazidoPor !== null) : [];
   const leadsVisiveis = aba === "pessoais" ? leadsPessoais : leadsEquipa;
-  // Conta de teste: um campo geral de objeções no topo em vez de um por lead.
-  const objecoesGerais = email === EMAIL_PAINEL_DEMONSTRACAO;
-  const objecaoPorLead = aba === "pessoais" && !!email && !objecoesGerais;
 
   return (
     <div className={embutida ? "vqw-pagina vqw-embutida" : "vqw-pagina"}>
@@ -334,7 +330,7 @@ export function WebinaresPagina({ embutida = false }: { embutida?: boolean } = {
 
         {dados && (
           <>
-            {objecoesGerais && email && (
+            {email && (
               <section className="vqw-objecoes-gerais" aria-labelledby="titulo-objecoes">
                 <h2 id="titulo-objecoes">Resolução de objeções</h2>
                 <p className="vqw-mudo">Escreve a dúvida da lead e recebe sugestões de resposta e um testemunho para o follow-up.</p>
@@ -419,7 +415,6 @@ export function WebinaresPagina({ embutida = false }: { embutida?: boolean } = {
                           <th>% assistência</th>
                           <th>Última sessão assistida</th>
                           <th>Estado</th>
-                          {objecaoPorLead && <th>Ultrapassar objeção</th>}
                         </tr>
                       </thead>
                       <tbody>
@@ -496,17 +491,6 @@ export function WebinaresPagina({ embutida = false }: { embutida?: boolean } = {
                                 )}
                               </div>
                             </td>
-                            {objecaoPorLead && email && (
-                              <td>
-                                <ObjecaoLead
-                                  email={email}
-                                  leadEmail={lead.email}
-                                  objecaoInicial={lead.objecao}
-                                  respostasIniciais={lead.respostasObjecao}
-                                  testemunhoInicial={lead.testemunhoObjecao ?? null}
-                                />
-                              </td>
-                            )}
                           </tr>
                         ))}
                       </tbody>
