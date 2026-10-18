@@ -318,7 +318,7 @@ export function WebinaresPagina({ embutida = false }: { embutida?: boolean } = {
             )}
 
             {sessaoSelecionada !== null && email ? (
-              <SessaoUnica email={email} webinarId={sessaoSelecionada} separarLeads={embutida} />
+              <SessaoUnica email={email} webinarId={sessaoSelecionada} />
             ) : (
               <>
                 <div className="vqw-grid">

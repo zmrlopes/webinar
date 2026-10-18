@@ -137,3 +137,8 @@ destaques do destino, dicas (documentos e saúde a confirmar), validade e QR
 para o WhatsApp do consultor. As fotografias dos hotéis vêm primeiro da
 imagem do site oficial do hotel e, sem ela, de fotografias livres. Uma opção
 escolhida pelo cliente pode dar origem a um travel planner.
+
+Por indicação explícita do utilizador, nas Leads da área atual
+(`/consultor/webinares`), cada sessão separa as leads em “Leads pessoais” e
+“Leads equipa”, tal como em “Todas as sessões”, para todos os consultores.
+A nova área usa o mesmo componente. Esta autorização abrange apenas esta separação.
