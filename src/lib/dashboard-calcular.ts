@@ -190,20 +190,24 @@ export async function calcularDashboard(gravar: boolean): Promise<Resultado> {
 
   if (!equipaCompleta) avisos.push("A lista da equipa chegou incompleta: Linha direta, Incentivos, Core-rank e equipa não foram atualizados");
 
-  // ---------------------------------------------------------- Linha direta
+  // Quem está «por cima» de cada grupo da Linha direta (v, s) deduz-se das
+  // linhas que já lá estão. São contas próprias: nunca entram como diretos
+  // nem como consultores (senão os pontos contavam a dobrar).
   const linha = await lerConfig<DadosLinhaDireta>("linha_direta");
+  const raizes = new Map<string, string>();
+  for (const l of linha?.linhas ?? []) {
+    const up = chaveU(equipa.get(chaveU(l.u))?.upline?.username);
+    if (up) raizes.set(up, l.c);
+  }
+  const propria = (a: Afiliado) => raizes.has(chaveU(a.user.username)) || ehContaPropria(a.user.name);
+
+  // ---------------------------------------------------------- Linha direta
   let novaLinha: DadosLinhaDireta | null = null;
   if (linha && equipaCompleta && novoMapas) {
     const novo: DadosLinhaDireta = structuredClone(linha);
-    // Quem está «por cima» de cada grupo (v, s) deduz-se das linhas que já lá estão.
-    const raizes = new Map<string, string>();
-    for (const l of novo.linhas) {
-      const up = chaveU(equipa.get(chaveU(l.u))?.upline?.username);
-      if (up) raizes.set(up, l.c);
-    }
     for (const [u, a] of equipa) {
       const c = raizes.get(chaveU(a.upline?.username));
-      if (!c || novo.linhas.some((l) => chaveU(l.u) === u)) continue;
+      if (!c || propria(a) || novo.linhas.some((l) => chaveU(l.u) === u)) continue;
       const temPontos = [...porMes.values()].some((m) => (m.get(u)?.stats.points ?? 0) > 0);
       if (temPontos) novo.linhas.push({ u: a.user.username, n: a.user.name, c, m: [] });
     }
@@ -222,11 +226,17 @@ export async function calcularDashboard(gravar: boolean): Promise<Resultado> {
       anoAtual.eq = r2(soma(novo.linhas.map((l) => soma(l.m))));
       anoAtual.pessoais = r2(anoAtual.geral - anoAtual.eq);
       anoAtual.parcial = true;
-      resumo.diretosCalculados = [...equipa.values()].filter((a) => raizes.has(chaveU(a.upline?.username))).length;
+      anoAtual.diretos = [...equipa.values()].filter((a) => raizes.has(chaveU(a.upline?.username)) && !propria(a)).length;
     }
     novo.ate = dataPorExtenso(hoje);
     novaLinha = novo;
-    resumo.linhaDireta = { linhas: `${linha.linhas.length} → ${novo.linhas.length}`, equipa: `${linha.anos.find((a) => a.ano === ano)?.eq} → ${anoAtual?.eq}` };
+    const antes = linha.anos.find((a) => a.ano === ano);
+    resumo.linhaDireta = {
+      linhas: `${linha.linhas.length} → ${novo.linhas.length}`,
+      equipa: `${antes?.eq} → ${anoAtual?.eq}`,
+      pessoais: `${antes?.pessoais} → ${anoAtual?.pessoais}`,
+      diretos: `${antes?.diretos} → ${anoAtual?.diretos}`,
+    };
   }
 
   // ------------------------------------------------------------ Incentivos
@@ -274,7 +284,7 @@ export async function calcularDashboard(gravar: boolean): Promise<Resultado> {
     const novo: DadosCoreRank = structuredClone(core);
     const existentes = new Set(novo.consultores.map((c) => chaveU(c.u)));
     for (const [u, a] of equipa) {
-      if (existentes.has(u) || ehContaPropria(a.user.name)) continue;
+      if (existentes.has(u) || propria(a)) continue;
       const vendeu = [...porMes.values()].some((m) => (m.get(u)?.stats.sales ?? 0) > 0);
       if (vendeu) novo.consultores.push({ u: a.user.username, n: a.user.name, v: [], novos: [] });
     }
