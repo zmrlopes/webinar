@@ -4,6 +4,7 @@ import { LINK_GRUPO_WELCOME_ABOARD } from "./consultor-nova-area";
 const EMAIL_ANA_CUSTODIA = "apensarnaproxima@gmail.com";
 const EMAIL_MARISA_ARAUJO = "marisa.araujo.icligo@gmail.com";
 const LINK_GRUPO_ANA_CUSTODIA = "https://chat.whatsapp.com/CDFcyL0eYXc0kVl8Fp7XMK";
+const LINK_GRUPO_MARISA_ARAUJO = "https://chat.whatsapp.com/JBWy7ygb6CmJQHr8gpiT5m";
 
 /** Inclui a própria líder e toda a descendência, também após novas importações. */
 export async function obterLinkGrupoWelcomeAboard(email: string): Promise<string> {
@@ -19,6 +20,7 @@ export async function obterLinkGrupoWelcomeAboard(email: string): Promise<string
      from ascendentes`,
     [email.trim().toLowerCase(), EMAIL_ANA_CUSTODIA, EMAIL_MARISA_ARAUJO],
   );
-  // A equipa da Marisa conserva o convite atual até ser indicado o seu novo link.
-  return rows[0]?.ana && !rows[0].marisa ? LINK_GRUPO_ANA_CUSTODIA : LINK_GRUPO_WELCOME_ABOARD;
+  // O ramo da Marisa tem prioridade sobre a equipa da Ana, da qual faz parte.
+  if (rows[0]?.marisa) return LINK_GRUPO_MARISA_ARAUJO;
+  return rows[0]?.ana ? LINK_GRUPO_ANA_CUSTODIA : LINK_GRUPO_WELCOME_ABOARD;
 }

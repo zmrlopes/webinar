@@ -106,8 +106,8 @@ os consultores da equipa, com o mesmo convite definido em
 Por indicação explícita do utilizador, o convite Welcome Aboard da Ana Custódia
 (`apensarnaproxima@gmail.com`) e de toda a sua descendência é
 `https://chat.whatsapp.com/CDFcyL0eYXc0kVl8Fp7XMK`, com exceção da Marisa Araújo
-(`marisa.araujo.icligo@gmail.com`) e de toda a sua descendência, que mantêm o
-convite anterior até ser fornecido outro link. Resolver pela hierarquia atual
+(`marisa.araujo.icligo@gmail.com`) e de toda a sua descendência, cujo convite é
+`https://chat.whatsapp.com/JBWy7ygb6CmJQHr8gpiT5m`. Resolver pela hierarquia atual
 em `src/lib/welcome-aboard-grupo.ts`, incluindo automaticamente novos consultores,
 na área atual e na nova área. As restantes equipas mantêm o convite existente.
 
