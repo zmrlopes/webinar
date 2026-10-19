@@ -297,7 +297,7 @@ export default function NovaAreaConsultor() {
                 </div>}
               </GrupoMenu>}
               <div className={estilos.grupoMenu}>
-                <button type="button" className={seccao === "onboarding" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("onboarding")} aria-current={seccao === "onboarding" ? "page" : undefined} aria-controls="conteudo-nova-area">Onboarding (proposta) <span>Temp.</span></button>
+                <button type="button" className={seccao === "onboarding" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("onboarding")} aria-current={seccao === "onboarding" ? "page" : undefined} aria-controls="conteudo-nova-area">onboarding codex <span>Temp.</span></button>
               </div>
               <div className={estilos.grupoMenu}>
                 <button type="button" className={seccao === "calendario" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calendario")} aria-current={seccao === "calendario" ? "page" : undefined} aria-controls="conteudo-nova-area">Calendário <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" strokeWidth="1.6" /><path d="M7 3v4m10-4v4M3 11h18" stroke="currentColor" strokeWidth="1.6" /></svg></button>

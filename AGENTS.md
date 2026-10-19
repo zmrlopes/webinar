@@ -175,6 +175,8 @@ Esta autorização abrange apenas os Testemunhos; a restante nova área e o sele
 continuam exclusivos da conta de teste.
 
 Por indicação do utilizador, a nova área tem um separador temporário
-“Onboarding (proposta)” com uma sugestão de onboarding para substituir os
-primeiros passos, baseada na base de conhecimento das formações. É só leitura,
-exclusivo da conta de teste, e não altera os primeiros passos atuais.
+“onboarding codex” com uma sugestão de onboarding dos primeiros 90 dias,
+baseada nas apresentações Canva, Academy, formações internas e YouTube,
+testemunhos e navegação recolhida do MyOffice. Inclui etapas, tarefas,
+resultados a demonstrar e acompanhamento do mentor. É só leitura, exclusivo
+da conta de teste, e não altera os primeiros passos atuais nem envia comunicações.
