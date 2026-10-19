@@ -166,3 +166,10 @@ limites para a sugestão de follow-up. Os botões de ver e copiar respeitam a pl
 A secção Testemunhos continua limitada à nova área da conta de teste; a resolução
 de objeções da área atual reutiliza o mesmo catálogo para a equipa. Excertos
 formativos permanecem no conhecimento de objeções, sem serem tratados como relatos pessoais.
+
+Por indicação explícita do utilizador, a biblioteca de Testemunhos também fica
+disponível na área atual para os consultores da equipa, através de um cartão em
+`/consultor/formacoes` que abre `/consultor/formacoes/testemunhos`. Reutiliza os
+mesmos vídeos, pesquisa e links da nova área e o acesso existente às Formações.
+Esta autorização abrange apenas os Testemunhos; a restante nova área e o seletor
+continuam exclusivos da conta de teste.

@@ -6,6 +6,8 @@ import type { Categoria } from "@/lib/formacoes-gravadas";
 import { lerEmailGuardado } from "../armazenamento";
 import { ESTILOS_FORMACOES } from "./estilos";
 import { ResultadosPesquisa } from "./pesquisa";
+import { BibliotecaTestemunhos } from "./testemunhos/biblioteca";
+import { testemunhos } from "@/lib/testemunhos";
 
 interface ResumoCategoria {
   id: string;
@@ -18,8 +20,8 @@ interface ResumoCategoria {
 
 type Estado = "a-carregar" | "sem-conta" | "indisponivel" | "erro" | "pronto";
 
-export function FormacoesPagina({ embutida = false, aoAbrirCategoria }: {
-  embutida?: boolean; aoAbrirCategoria?: (id: string) => void;
+export function FormacoesPagina({ embutida = false, aoAbrirCategoria, testemunhosAbertos = false }: {
+  embutida?: boolean; aoAbrirCategoria?: (id: string) => void; testemunhosAbertos?: boolean;
 } = {}) {
   const [estado, setEstado] = useState<Estado>("a-carregar");
   const [erro, setErro] = useState("");
@@ -67,11 +69,11 @@ export function FormacoesPagina({ embutida = false, aoAbrirCategoria }: {
     <div className={embutida ? "vqf-pagina vqf-embutida" : "vqf-pagina"}>
       <style>{ESTILOS_FORMACOES}</style>
       <div className="vqf-caixa">
-        {!embutida && <><Link href="/consultor" className="vqf-voltar">
-          ← Voltar ao painel
+        {!embutida && <><Link href={testemunhosAbertos ? "/consultor/formacoes" : "/consultor"} className="vqf-voltar">
+          {testemunhosAbertos ? "← Voltar às formações" : "← Voltar ao painel"}
         </Link>
-        <h1>Formações</h1>
-        <p className="vqf-mudo">Formações gravadas para veres quando quiseres, ao teu ritmo.</p></>}
+        <h1>{testemunhosAbertos ? "Testemunhos" : "Formações"}</h1>
+        <p className="vqf-mudo">{testemunhosAbertos ? "Histórias de consultores iCliGo: das primeiras dúvidas à decisão de começar." : "Formações gravadas para veres quando quiseres, ao teu ritmo."}</p></>}
 
         {estado === "a-carregar" && <p className="vqf-mudo">A carregar…</p>}
 
@@ -87,7 +89,9 @@ export function FormacoesPagina({ embutida = false, aoAbrirCategoria }: {
 
         {estado === "erro" && <p className="vqf-erro">{erro}</p>}
 
-        {estado === "pronto" && (
+        {estado === "pronto" && testemunhosAbertos && <BibliotecaTestemunhos />}
+
+        {estado === "pronto" && !testemunhosAbertos && (
           <input
             type="search"
             className="vqf-pesquisa"
@@ -98,12 +102,18 @@ export function FormacoesPagina({ embutida = false, aoAbrirCategoria }: {
           />
         )}
 
-        {estado === "pronto" && pesquisa.trim() !== "" && (
+        {estado === "pronto" && !testemunhosAbertos && pesquisa.trim() !== "" && (
           <ResultadosPesquisa categorias={completas} pesquisa={pesquisa} vistas={vistas} />
         )}
 
-        {estado === "pronto" && pesquisa.trim() === "" && (
+        {estado === "pronto" && !testemunhosAbertos && pesquisa.trim() === "" && (
           <div className="vqf-grade-categorias">
+            {!embutida && <div className="vqf-cartao">
+              <h2>Testemunhos</h2>
+              <p>Histórias de consultores iCliGo no YouTube e no Instagram, para conhecer e partilhar.</p>
+              <p className="vqf-cartao-meta">{testemunhos.length} testemunhos · Pesquisa por tema</p>
+              <Link href="/consultor/formacoes/testemunhos" className="vqf-botao">Ver testemunhos</Link>
+            </div>}
             {categorias.map((c) => (
               <div className="vqf-cartao" key={c.id}>
                 <h2>{c.titulo}</h2>

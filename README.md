@@ -96,7 +96,7 @@ categorias, bytes e conhecimento. A migração `051_documentos_pasta_be_a_leader
 corrige o nome da pasta, preservando o seu ID. Novas importações do mesmo congresso usam essa
 pasta. Testes com tabelas temporárias: `node --import tsx scripts/testes-documentos-pastas.ts`.
 
-### Testemunhos na nova área
+### Testemunhos nas Formações e na nova área
 
 Em **A minha organização → Testemunhos**, os 23 vídeos da playlist iCliGo e 30
 testemunhos Instagram revistos aparecem juntos em cards compactos com título e duração.
@@ -106,7 +106,9 @@ A lista está em `src/lib/testemunhos.json`; para voltar a importar os títulos
 públicos, executar `node scripts/importar-testemunhos.mjs` e publicar a alteração;
 essa importação preserva os testemunhos Instagram. Para atualizar os testemunhos
 Instagram a partir da recolha revista, executar `node scripts/importar-testemunhos-instagram.mjs`.
-Esta secção fica limitada à nova área da conta de teste.
+Na área atual, o cartão **Testemunhos** em `/consultor/formacoes` abre a mesma
+biblioteca em `/consultor/formacoes/testemunhos` para os consultores com acesso
+às Formações. A nova área e o seletor continuam limitados à conta de teste.
 
 O mesmo catálogo alimenta as sugestões na resolução de objeções já disponível
 para a equipa. A seleção usa o contexto e os limites dos testemunhos Instagram,
