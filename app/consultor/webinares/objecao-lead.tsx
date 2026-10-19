@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { TestemunhoObjecao } from "@/lib/objecoes";
+import { linkTestemunho } from "@/lib/testemunhos";
 
 type Estado = "pronto" | "a-gerar";
 
@@ -146,20 +147,20 @@ export function ObjecaoLead({ email, leadEmail, objecaoInicial, respostasIniciai
         ))}
       {abertas && testemunho && (
         <div className="vqw-objecao-testemunho">
-          <img src={`https://i.ytimg.com/vi/${testemunho.id}/mqdefault.jpg`} alt="" width="96" height="54" loading="lazy" />
+          {testemunho.plataforma !== "instagram" && <img src={`https://i.ytimg.com/vi/${testemunho.id}/mqdefault.jpg`} alt="" width="96" height="54" loading="lazy" />}
           <div>
             <span className="vqw-objecao-etiqueta">Testemunho para o follow-up</span>
             <strong>{testemunho.titulo}</strong>
             {testemunho.comoUsar && <p>{testemunho.comoUsar}</p>}
             <div className="vqw-objecao-botoes">
-              <a href={`https://www.youtube.com/watch?v=${testemunho.id}`} target="_blank" rel="noopener noreferrer">
-                Ver vídeo{testemunho.duracao && ` (${testemunho.duracao})`} ↗
+              <a href={linkTestemunho(testemunho)} target="_blank" rel="noopener noreferrer">
+                {testemunho.plataforma === "instagram" ? "Ver no Instagram" : "Ver vídeo"}{testemunho.duracao && ` (${testemunho.duracao})`} ↗
               </a>
               <button
                 type="button"
                 className="vqw-objecao-toggle"
                 onClick={() => {
-                  navigator.clipboard.writeText(`https://youtu.be/${testemunho.id}`).then(() => setCopiado(true), () => {});
+                  navigator.clipboard.writeText(linkTestemunho(testemunho)).then(() => setCopiado(true), () => {});
                 }}
               >
                 {copiado ? "Link copiado" : "Copiar link"}

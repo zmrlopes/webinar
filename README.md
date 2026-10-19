@@ -98,12 +98,21 @@ pasta. Testes com tabelas temporárias: `node --import tsx scripts/testes-docume
 
 ### Testemunhos na nova área
 
-Em **A minha organização → Testemunhos**, os 23 vídeos da playlist iCliGo aparecem em cards
-compactos com título e duração. A pesquisa combina palavras e ignora acentos.
-Cada card abre o vídeo num diálogo com alternativa para ver no YouTube.
+Em **A minha organização → Testemunhos**, os 23 vídeos da playlist iCliGo e 30
+testemunhos Instagram revistos aparecem juntos em cards compactos com título e duração.
+A pesquisa combina palavras e temas e ignora acentos. Os vídeos YouTube abrem num
+diálogo; os links Instagram abrem o Reel original numa nova aba.
 A lista está em `src/lib/testemunhos.json`; para voltar a importar os títulos
-públicos, executar `node scripts/importar-testemunhos.mjs` e publicar a alteração.
+públicos, executar `node scripts/importar-testemunhos.mjs` e publicar a alteração;
+essa importação preserva os testemunhos Instagram. Para atualizar os testemunhos
+Instagram a partir da recolha revista, executar `node scripts/importar-testemunhos-instagram.mjs`.
 Esta secção fica limitada à nova área da conta de teste.
+
+O mesmo catálogo alimenta as sugestões na resolução de objeções já disponível
+para a equipa. A seleção usa o contexto e os limites dos testemunhos Instagram,
+incluindo o da Ludmila; os botões de abrir e copiar respeitam a plataforma original.
+Os seis excertos formativos mantêm-se apenas na base de conhecimento de objeções.
+Testes: `node --import tsx scripts/testes-testemunhos.ts`.
 
 ### Página inicial da nova área
 

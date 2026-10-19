@@ -159,3 +159,10 @@ publicado para todos os consultores na área atual: a resolução de objeções 
 um campo geral no topo das Leads (sem coluna por lead). Na nova área, o mesmo
 campo é um separador próprio, “Resolução de objeções”, em A minha organização,
 e não aparece nas Leads.
+
+Por indicação explícita do utilizador, os testemunhos Instagram revistos juntam-se
+aos vídeos YouTube em `src/lib/testemunhos.json`, com links originais, contexto e
+limites para a sugestão de follow-up. Os botões de ver e copiar respeitam a plataforma.
+A secção Testemunhos continua limitada à nova área da conta de teste; a resolução
+de objeções da área atual reutiliza o mesmo catálogo para a equipa. Excertos
+formativos permanecem no conhecimento de objeções, sem serem tratados como relatos pessoais.

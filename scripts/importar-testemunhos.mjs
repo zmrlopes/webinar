@@ -31,5 +31,7 @@ const lista = [...videos.values()];
 if (incompleta || !lista.length || lista.some(v => !/^[\w-]{11}$/.test(v.id) || !v.titulo)) {
   throw new Error('A playlist não foi lida por completo. A lista existente foi preservada.');
 }
-await writeFile('src/lib/testemunhos.json', JSON.stringify(lista, null, 2) + '\n');
-console.log(`${lista.length} testemunhos importados com títulos, links e durações.`);
+const atuais = JSON.parse(await readFile('src/lib/testemunhos.json', 'utf8'));
+const outrasFontes = atuais.filter(t => t.plataforma && t.plataforma !== 'youtube');
+await writeFile('src/lib/testemunhos.json', JSON.stringify([...lista, ...outrasFontes], null, 2) + '\n');
+console.log(`${lista.length} testemunhos YouTube importados; ${outrasFontes.length} de outras fontes preservados.`);

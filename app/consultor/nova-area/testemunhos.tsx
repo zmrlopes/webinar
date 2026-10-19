@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import testemunhos from "@/lib/testemunhos.json";
+import { testemunhos, linkTestemunho, type Testemunho } from "@/lib/testemunhos";
 import estilos from "./nova-area.module.css";
 import css from "./testemunhos.module.css";
 
@@ -10,18 +10,28 @@ function normalizar(texto: string) {
   return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
+function ConteudoCartao({ video }: { video: Testemunho }) {
+  return <>
+    <span className={css.miniatura}>
+      {video.plataforma !== "instagram" && <img src={`https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`} alt="" loading="lazy" width="88" height="50" />}
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#4b5320" /><path d="m10 7 7 5-7 5Z" fill="white" /></svg>
+    </span>
+    <span className={css.texto}><strong>{video.titulo}</strong><span>{video.duracao && `${video.duracao} · `}{video.plataforma === "instagram" ? "Ver no Instagram ↗" : "Ver testemunho"}</span></span>
+  </>;
+}
+
 export function TestemunhosNovaArea() {
   const [pesquisa, setPesquisa] = useState("");
-  const [selecionado, setSelecionado] = useState<typeof testemunhos[number] | null>(null);
+  const [selecionado, setSelecionado] = useState<Testemunho | null>(null);
   const dialogo = useRef<HTMLDialogElement>(null);
   const palavras = normalizar(pesquisa).trim().split(/\s+/).filter(Boolean);
-  const resultados = testemunhos.filter(t => palavras.every(p => normalizar(t.titulo).includes(p)));
+  const resultados = testemunhos.filter(t => palavras.every(p => normalizar(`${t.titulo} ${t.temas?.join(" ") ?? ""}`).includes(p)));
 
   useEffect(() => {
     if (selecionado && !dialogo.current?.open) dialogo.current?.showModal();
   }, [selecionado]);
 
-  function abrir(video: typeof testemunhos[number], botao: HTMLButtonElement) {
+  function abrir(video: Testemunho, botao: HTMLButtonElement) {
     botao.focus({ preventScroll: true });
     setSelecionado(video);
   }
@@ -42,13 +52,9 @@ export function TestemunhosNovaArea() {
       <p role="status">{resultados.length} {resultados.length === 1 ? "testemunho" : "testemunhos"}{pesquisa.trim() ? " encontrados" : " disponíveis"}</p>
     </div>
     {resultados.length ? <div className={css.grade}>
-      {resultados.map(video => <button key={video.id} type="button" className={css.cartao} onClick={e => abrir(video, e.currentTarget)} aria-label={`Ver testemunho: ${video.titulo}`} aria-haspopup="dialog">
-        <span className={css.miniatura}>
-          <img src={`https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`} alt="" loading="lazy" width="88" height="50" />
-          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#4b5320" /><path d="m10 7 7 5-7 5Z" fill="white" /></svg>
-        </span>
-        <span className={css.texto}><strong>{video.titulo}</strong><span>{video.duracao && `${video.duracao} · `}Ver testemunho</span></span>
-      </button>)}
+      {resultados.map(video => video.plataforma === "instagram"
+        ? <a key={video.id} className={css.cartao} href={linkTestemunho(video)} target="_blank" rel="noopener noreferrer" aria-label={`Ver no Instagram: ${video.titulo}`}><ConteudoCartao video={video} /></a>
+        : <button key={video.id} type="button" className={css.cartao} onClick={e => abrir(video, e.currentTarget)} aria-label={`Ver testemunho: ${video.titulo}`} aria-haspopup="dialog"><ConteudoCartao video={video} /></button>)}
     </div> : <div className={estilos.vazioOrganizacao}><strong>Nenhum testemunho corresponde à pesquisa</strong><p>Experimenta outras palavras ou limpa a pesquisa para ver todos.</p></div>}
     <a className={css.playlist} href={`https://www.youtube.com/playlist?list=${PLAYLIST}`} target="_blank" rel="noopener noreferrer">Ver a playlist no YouTube ↗</a>
     <dialog ref={dialogo} className={css.dialogo} aria-labelledby="titulo-testemunho" onClose={() => setSelecionado(null)} onClick={e => { if (e.target === e.currentTarget) dialogo.current?.close(); }}>

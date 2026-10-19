@@ -4,13 +4,10 @@ import {
   conhecimentoParaTemas,
   TEMAS_CONHECIMENTO,
 } from "./formacoes-conhecimento";
-import testemunhos from "./testemunhos.json";
+import { testemunhos, type Testemunho } from "./testemunhos";
 
-/** Testemunho da playlist iCliGo sugerido para o follow-up de uma objeção. */
-export interface TestemunhoObjecao {
-  id: string;
-  titulo: string;
-  duracao: string;
+/** Testemunho iCliGo sugerido para o follow-up de uma objeção. */
+export interface TestemunhoObjecao extends Testemunho {
   /** Frase curta do modelo: porque ajuda e como o enviar à lead. */
   comoUsar: string;
 }
@@ -435,12 +432,16 @@ export async function gerarRespostasObjecao(
       `formador de referência, termina essa MESMA string com uma última linha "Base: <formação ou formador>" (não a ponhas como hipótese à parte) — só se vier ` +
       `mesmo do conhecimento acima, nunca inventada.` +
       (comTestemunho
-        ? `\n\nEm "testemunho", escolhe da lista abaixo o vídeo de um consultor que passou pela MESMA dúvida ` +
-          `e a ultrapassou — é para o consultor enviar à lead no follow-up. Usa o id exato. Em "comoUsar", ` +
+        ? `\n\nEm "testemunho", escolhe da lista abaixo um vídeo cuja experiência relatada se relacione ` +
+          `diretamente com a dúvida — é para o consultor enviar à lead no follow-up. Usa o id exato, incluindo ` +
+          `o prefixo instagram: quando exista. Respeita os limites e não atribuas uma superação ou resultados ` +
+          `que o vídeo não demonstra. Quando for pedido um testemunho pelo nome, prefere-o se constar da lista ` +
+          `e for pertinente. Em "comoUsar", ` +
           `explica numa ou duas frases curtas porque este testemunho ajuda e sugere uma frase para ` +
           `acompanhar o link no WhatsApp. Se nenhum se relacionar com a dúvida, usa "testemunho": null.\n` +
-          `Testemunhos disponíveis (id: título):\n` +
-          testemunhos.map((t) => `${t.id}: ${t.titulo}`).join("\n")
+          `Testemunhos disponíveis (id: título e contexto):\n` +
+          testemunhos.map((t) => `${t.id}: ${t.titulo}` +
+            (t.resumo ? `\nExperiência: ${t.resumo}\nLimites: ${t.limites}` : "")).join("\n")
         : ""),
     objecao,
     comTestemunho ? 1800 : 1500,
@@ -458,7 +459,7 @@ export async function gerarRespostasObjecao(
         if (/^\s*Base:/i.test(r) && juntas.length > 0) juntas[juntas.length - 1] += `\n${r.trim()}`;
         else juntas.push(r);
       }
-      // Só aceita um id que exista mesmo na playlist.
+      // Só aceita um id que exista mesmo no catálogo, preservando o link original.
       const escolhido = comTestemunho
         ? testemunhos.find((t) => t.id === dados.testemunho?.id)
         : undefined;
