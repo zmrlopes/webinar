@@ -82,7 +82,7 @@ export function AtualizarCliente() {
       pendentes.current.set(id, r => {
         if (r.erro) return reject(new Error(r.erro));
         if (r.status === 401 || r.status === 403) return reject(new Error("a sessão do MyOffice terminou — entra outra vez no MyOffice e repete"));
-        if (!r.status || r.status >= 400) return reject(new Error(`o MyOffice respondeu ${r.status}`));
+        if (!r.status || r.status >= 400) return reject(new Error(`o MyOffice respondeu ${r.status} em ${new URL(url).pathname}`));
         try { resolve(JSON.parse(r.corpo ?? "null")); } catch { reject(new Error("resposta do MyOffice ilegível")); }
       });
       (window.opener as Window).postMessage({ id, url }, "*");
@@ -126,30 +126,47 @@ export function AtualizarCliente() {
       const plano = await (await fetch("/api/admin/dashboard-negocio/sincronizar")).json() as { periodos: Periodo[] };
       await enviar({ acao: "inicio" });
 
-      const indicadores = registar("Ligação ao Metabase (faturação)…");
-      const ind = await pedir(`${MYOFFICE}/api/indicators/team`);
-      await enviar({ acao: "parte", chave: "indicadores", corpo: ind });
-      const iframeUrl = procurarIframe(ind);
-      if (!iframeUrl) throw new Error("o MyOffice não devolveu o link dos indicadores");
-      indicadores("feito", "Ligação ao Metabase (faturação)");
+      const faturacao = async () => {
+        const passo = registar("Faturação (Metabase)…");
+        let iframeUrl: string | null = null;
+        let ultimoErro: unknown = null;
+        // O endereço dos indicadores já mudou no MyOffice; tenta-se cada um.
+        for (const caminho of ["/api/indicators/team", "/api/indicators/team/", "/api/indicators"]) {
+          try {
+            const ind = await pedir(`${MYOFFICE}${caminho}`);
+            iframeUrl = procurarIframe(ind);
+            if (iframeUrl) { await enviar({ acao: "parte", chave: "indicadores", corpo: ind }); break; }
+          } catch (falha) { ultimoErro = falha; }
+        }
+        if (!iframeUrl) throw ultimoErro ?? new Error("o MyOffice não devolveu o link dos indicadores");
+        await enviar({ acao: "metabase", iframeUrl, periodos: plano.periodos });
+        passo("feito", "Faturação (Metabase)");
+      };
 
-      const tarefas: (() => Promise<unknown>)[] = [
-        () => paginas("equipa", `${API}/team/affiliates`, 100),
+      const tarefas: [string, () => Promise<unknown>][] = [
+        ["Equipa", () => paginas("equipa", `${API}/team/affiliates`, 100)],
         ...plano.periodos.flatMap(p => [
-          () => paginas(`equipa-${p.chave}`, `${API}/team/affiliates?startDate=${p.inicio}&endDate=${p.fim}`, 100),
-          () => paginas(`movimentos-${p.chave}`, `${API}/account/movements?startDate=${p.inicio}&endDate=${p.fim}`, 1000),
-        ]),
-        async () => {
-          const passo = registar("Faturação (Metabase)…");
-          await enviar({ acao: "metabase", iframeUrl, periodos: plano.periodos });
-          passo("feito", "Faturação (Metabase)");
-        },
+          [`Equipa ${p.chave}`, () => paginas(`equipa-${p.chave}`, `${API}/team/affiliates?startDate=${p.inicio}&endDate=${p.fim}`, 100)],
+          [`Movimentos ${p.chave}`, () => paginas(`movimentos-${p.chave}`, `${API}/account/movements?startDate=${p.inicio}&endDate=${p.fim}`, 1000)],
+        ] as [string, () => Promise<unknown>][]),
+        ["Faturação (Metabase)", faturacao],
       ];
       // Três pedidos de cada vez: o MyOffice às vezes demora minutos a responder.
+      // Um passo que falhe não impede os outros; no fim diz-se quais falharam.
+      const falhas: string[] = [];
       let proxima = 0;
       await Promise.all(Array.from({ length: 3 }, async () => {
-        while (proxima < tarefas.length) await tarefas[proxima++]!();
+        while (proxima < tarefas.length) {
+          const [nome, tarefa] = tarefas[proxima++]!;
+          try { await tarefa(); } catch (falha) {
+            const motivo = falha instanceof Error ? falha.message : String(falha);
+            falhas.push(`${nome}: ${motivo}`);
+            registar(`${nome}: ${motivo}`)("erro");
+          }
+        }
       }));
+      await enviar({ acao: "parte", chave: "falhas", corpo: falhas });
+      if (falhas.length) throw new Error(`${falhas.length} passo(s) falharam — ver a lista acima`);
       setModo("feito");
     } catch (falha) {
       setErro(falha instanceof Error ? falha.message : String(falha));
