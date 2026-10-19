@@ -203,7 +203,10 @@ export default async function DashboardNegocio({
       </Link>
       <h1>Dashboard Negócio</h1>
       <p className="dn-cabecalho-sub">
-        A tua equipa, em números. Construído por separadores — a começar pelos eventos.
+        A tua equipa, em números. Construído por separadores — a começar pelos eventos.{" "}
+        <Link href="/admin/dashboard-negocio/atualizar" style={{ color: "#4b5320", fontWeight: 600 }}>
+          Atualizar dados →
+        </Link>
       </p>
 
       <div className="dn-abas">
