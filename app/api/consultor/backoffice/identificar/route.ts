@@ -19,6 +19,7 @@ import { precisaResponderTrofeus } from "@/lib/trofeus";
 import { questionariosPendentes } from "@/lib/questionarios";
 import { listarFormacoesExternasFuturas } from "@/lib/formacoes-externas";
 import { listarWelcomeAboardDaEquipa, obterElegibilidadeWelcomeAboard } from "@/lib/welcome-aboard";
+import { obterLinkGrupoWelcomeAboard } from "@/lib/welcome-aboard-grupo";
 
 /**
  * Identifica o consultor no backoffice: valida o email em `equipa_afiliados`
@@ -68,6 +69,7 @@ export async function POST(request: Request): Promise<Response> {
       precisaResponderTrofeusBool,
       precisaResponderHotelBool,
       pedidoConvencao,
+      linkGrupoWelcomeAboard,
     ] = await Promise.all([
       buscarWebinarFormacao(),
       buscarProximoWebinarPublico(),
@@ -84,6 +86,7 @@ export async function POST(request: Request): Promise<Response> {
         console.error("falha ao buscar pedido da Convenção:", erro);
         return "erro" as const;
       }),
+      obterLinkGrupoWelcomeAboard(emailNormalizado),
     ]);
 
     // Só vale a pena ir buscar a próxima sessão a quem realmente vai ver o
@@ -122,6 +125,7 @@ export async function POST(request: Request): Promise<Response> {
       nome: membro.nome,
       link,
       ehConsultorEquipa: true,
+      linkGrupoWelcomeAboard,
       formacao: formacao
         ? { titulo: formacao.titulo, sessaoExternaEm: formacao.sessaoExternaEm }
         : null,

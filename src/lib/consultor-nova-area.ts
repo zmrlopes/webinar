@@ -27,6 +27,7 @@ export interface ProximoWebinarNovaArea {
 
 export interface DadosNovaArea {
   nome: string;
+  linkGrupoWelcomeAboard: string;
   linkPartilha: string | null;
   upline: { nome: string | null; email: string } | null;
   welcomeAboard: { sessao1Concluida: boolean; sessao2Concluida: boolean } | null;

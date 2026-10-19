@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   LINK_CURSO_TRAVEL_PARTNER,
-  LINK_GRUPO_WELCOME_ABOARD,
   podeVerNovaArea,
   type DadosNovaArea,
 } from "@/lib/consultor-nova-area";
@@ -343,8 +342,8 @@ export default function NovaAreaConsultor() {
                 <div className={estilos.grupo}>
                   <span className={estilos.grupoIcone} aria-hidden="true"><svg width="25" height="25" viewBox="0 0 24 24" fill="none"><path d="M20 11.5a8 8 0 0 1-12 7L4 20l1.5-4A8 8 0 1 1 20 11.5Z" stroke="currentColor" strokeWidth="1.7" /><path d="M8.5 8.5c.8 3.2 2.5 4.8 5.5 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg></span>
                   <div><h3>Welcome Aboard</h3><p>Primeiros passos, dúvidas e boas-vindas à comunidade.</p></div>
-                  {LINK_GRUPO_WELCOME_ABOARD
-                    ? <a className={estilos.botao} href={LINK_GRUPO_WELCOME_ABOARD} target="_blank" rel="noopener noreferrer">Entrar no grupo <Seta /></a>
+                  {dados.linkGrupoWelcomeAboard
+                    ? <a className={estilos.botao} href={dados.linkGrupoWelcomeAboard} target="_blank" rel="noopener noreferrer">Entrar no grupo <Seta /></a>
                     : <div className={estilos.convitePendente}><button className={estilos.botao} type="button" disabled>Entrar no grupo <Seta /></button><small>Convite disponível em breve</small></div>}
                 </div>
               </Passo>

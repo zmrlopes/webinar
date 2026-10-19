@@ -7,7 +7,6 @@ import { ConvencaoCartao, type PedidoConvencao } from "./convencao-cartao";
 import { EventoForm } from "./evento-form";
 import { NotificacoesPush } from "./notificacoes-push";
 import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
-import { LINK_GRUPO_WELCOME_ABOARD } from "@/lib/consultor-nova-area";
 import { AlternarArea } from "./alternar-area";
 import { AvisoRelatorioCore } from "./nova-area/core-rank";
 
@@ -15,6 +14,7 @@ interface DadosIdentificacao {
   nome: string | null;
   link: string;
   ehConsultorEquipa: boolean;
+  linkGrupoWelcomeAboard: string;
   formacao: { titulo: string; sessaoExternaEm: string } | null;
   inscritoFormacao: boolean;
   proximoWebinar: { titulo: string; sessaoExternaEm: string } | null;
@@ -660,7 +660,7 @@ export function BackofficeHome() {
               {dados.ehConsultorEquipa && (
                 <a
                   className="vqb-aviso-destaque vqb-grupo-whatsapp"
-                  href={LINK_GRUPO_WELCOME_ABOARD}
+                  href={dados.linkGrupoWelcomeAboard}
                   target="_blank"
                   rel="noopener noreferrer"
                 >

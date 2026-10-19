@@ -6,6 +6,7 @@ import { buscarProximaSessaoWelcomeAboard, buscarProximoWebinarPublico, buscarWe
 import { listarFormacoesExternasFuturas } from "@/lib/formacoes-externas";
 import { obterProgressoConsultor } from "@/lib/progresso-consultor";
 import { obterAvisosConsultor } from "@/lib/avisos-consultor";
+import { obterLinkGrupoWelcomeAboard } from "@/lib/welcome-aboard-grupo";
 
 export async function POST(request: Request): Promise<Response> {
   const corpo = await request.json().catch(() => null);
@@ -26,7 +27,7 @@ export async function POST(request: Request): Promise<Response> {
     if (!membro) {
       return NextResponse.json({ erro: "Não encontrámos esta conta na equipa." }, { status: 403 });
     }
-    const [welcomeAboard, sessao, proximoWebinar, equipa, links, formacao, formacoesEquipa, formacoesExternas, primeirosPassos, avisosInicio] = await Promise.all([
+    const [welcomeAboard, sessao, proximoWebinar, equipa, links, formacao, formacoesEquipa, formacoesExternas, primeirosPassos, avisosInicio, linkGrupoWelcomeAboard] = await Promise.all([
       obterElegibilidadeWelcomeAboard(email),
       buscarProximaSessaoWelcomeAboard(),
       buscarProximoWebinarPublico(),
@@ -44,6 +45,7 @@ export async function POST(request: Request): Promise<Response> {
         console.error("falha ao carregar avisos da página inicial:", erro);
         return { avisos: [], erro: true };
       }),
+      obterLinkGrupoWelcomeAboard(email),
     ]);
     async function jaInscrito(webinarId: string | undefined): Promise<boolean> {
       if (!webinarId) return false;
@@ -62,6 +64,7 @@ export async function POST(request: Request): Promise<Response> {
     ]);
     const dados: DadosNovaArea = {
       nome: membro.nome,
+      linkGrupoWelcomeAboard,
       primeirosPassos,
       avisos: avisosInicio.avisos,
       erroAvisos: avisosInicio.erro,
