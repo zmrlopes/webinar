@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { calcularDashboard } from "@/lib/dashboard-calcular";
 import { lerConfig } from "@/lib/dashboard-negocio";
 import {
-  faturacaoMetabase,
   guardarBruto,
   hojeLisboa,
   lerBruto,
@@ -22,7 +21,6 @@ export const maxDuration = 300;
  * POST { acao: "inicio" }                       → apaga as respostas anteriores e devolve o plano
  * POST { acao: "calcular", gravar }             → recalcula os separadores (ver src/lib/dashboard-calcular.ts)
  * POST { acao: "parte", chave, corpo }          → guarda uma resposta do MyOffice
- * POST { acao: "metabase", iframeUrl, periodos } → faturação de cada período
  */
 async function plano(): Promise<{ hoje: string; periodos: Periodo[] }> {
   const hoje = hojeLisboa();
@@ -44,7 +42,6 @@ export async function POST(request: Request): Promise<Response> {
     acao?: string;
     chave?: string;
     corpo?: unknown;
-    iframeUrl?: string;
     periodos?: Periodo[];
     gravar?: boolean;
   } | null;
@@ -62,18 +59,6 @@ export async function POST(request: Request): Promise<Response> {
     if (corpo?.acao === "parte" && typeof corpo.chave === "string" && corpo.corpo !== undefined) {
       await guardarBruto(corpo.chave, corpo.corpo);
       return NextResponse.json({ ok: true });
-    }
-    if (corpo?.acao === "metabase" && typeof corpo.iframeUrl === "string" && Array.isArray(corpo.periodos)) {
-      const valores: Record<string, number | string> = {};
-      for (const p of corpo.periodos) {
-        try {
-          valores[p.chave] = await faturacaoMetabase(corpo.iframeUrl, p.inicio, p.fim);
-        } catch (erro) {
-          valores[p.chave] = erro instanceof Error ? erro.message : String(erro);
-        }
-      }
-      await guardarBruto("metabase", valores);
-      return NextResponse.json({ valores });
     }
   } catch (erro) {
     const mensagem = erro instanceof Error ? erro.message : String(erro);

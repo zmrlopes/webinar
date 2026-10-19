@@ -103,7 +103,6 @@ export async function calcularDashboard(gravar: boolean): Promise<Resultado> {
 
   // ---------------------------------------------------------------- Mapas
   const mapas = await lerConfig<DadosMapas>("mapas");
-  const metabase = (bruto["metabase"]?.corpo ?? {}) as Record<string, number | string>;
   let novoMapas: DadosMapas | null = null;
   if (!mapas) avisos.push("Mapas: ainda não há snapshot");
   else if (mapas.years_recent[mapas.years_recent.length - 1] !== ano || !("ytd_2026" in (mapas.metrics.pontos ?? {})) || ano !== 2026) {
@@ -111,27 +110,36 @@ export async function calcularDashboard(gravar: boolean): Promise<Resultado> {
   } else {
     const anterior = `parcial-${ano - 1}-${String(mes).padStart(2, "0")}`;
     const valores: Record<string, { mes: Map<number, number>; parcial: number } | null> = {};
-    const fat = new Map<number, number>();
-    let fatOk = typeof metabase[anterior] === "number";
-    for (const p of meses) {
-      const v = metabase[p.chave];
-      if (typeof v === "number") fat.set(Number(p.chave.slice(-2)) - 1, r2(v));
-      else fatOk = false;
-    }
-    if (!fatOk) avisos.push("Mapas: a faturação do Metabase não chegou — os Mapas não foram atualizados");
-    const pts = new Map<number, number>(), cons = new Map<number, number>(), com = new Map<number, number>();
+    let fatOk = true;
+    // Faturação = vendas da equipa no período (o novo MyOffice já não tem o
+    // Metabase dos Indicadores); o mês de controlo mostra a diferença.
+    const fat = new Map<number, number>(), pts = new Map<number, number>(), cons = new Map<number, number>(), com = new Map<number, number>();
     for (const p of meses) {
       const i = Number(p.chave.slice(-2)) - 1;
       const t = totais(bruto, `equipa-${p.chave}`);
       const c = comissoes(bruto, `movimentos-${p.chave}`);
       if (!t || c === null) { avisos.push(`Mapas: faltam os dados de ${MESES[i]}`); fatOk = false; continue; }
-      pts.set(i, r2(t.points)); cons.set(i, t.subscriptions); com.set(i, c);
+      fat.set(i, r2(t.sales)); pts.set(i, r2(t.points)); cons.set(i, t.subscriptions); com.set(i, c);
+    }
+    const controlo = plano.periodos.find((p) => p.chave.startsWith("controlo-"));
+    if (controlo) {
+      const i = Number(controlo.chave.slice(-2)) - 1;
+      const t = totais(bruto, `equipa-${controlo.chave}`);
+      const c = comissoes(bruto, `movimentos-${controlo.chave}`);
+      const no = (k: string) => mapas.metrics[k]?.monthly_recent[String(ano)]?.[i];
+      resumo.controlo = {
+        mes: MESES[i],
+        faturacao: `dashboard ${no("faturacao")} · MyOffice ${t ? r2(t.sales) : "—"}`,
+        pontos: `dashboard ${no("pontos")} · MyOffice ${t ? r2(t.points) : "—"}`,
+        consultores: `dashboard ${no("consultores")} · MyOffice ${t?.subscriptions ?? "—"}`,
+        comissoes: `dashboard ${no("comissoes")} · MyOffice ${c ?? "—"}`,
+      };
     }
     const tp = totais(bruto, `equipa-${anterior}`);
     const cp = comissoes(bruto, `movimentos-${anterior}`);
     if (!tp || cp === null) { avisos.push("Mapas: faltam os dados do mesmo período do ano passado"); fatOk = false; }
     if (fatOk && tp && cp !== null) {
-      valores.faturacao = { mes: fat, parcial: r2(metabase[anterior] as number) };
+      valores.faturacao = { mes: fat, parcial: r2(tp.sales) };
       valores.pontos = { mes: pts, parcial: r2(tp.points) };
       valores.consultores = { mes: cons, parcial: tp.subscriptions };
       valores.comissoes = { mes: com, parcial: cp };

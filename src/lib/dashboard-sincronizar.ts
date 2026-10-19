@@ -31,6 +31,16 @@ const ultimoDia = (ano: number, mes: number) => new Date(Date.UTC(ano, mes, 0)).
 export function periodosAPedir(hoje: string, primeiroMes: number): Periodo[] {
   const [ano, mes, dia] = hoje.split("-").map(Number) as [number, number, number];
   const periodos: Periodo[] = [];
+  // O último mês já fechado no dashboard volta a pedir-se só para confirmar
+  // que as contas daqui batem com os números que lá estão.
+  const controlo = Math.min(primeiroMes, mes) - 1;
+  if (controlo >= 1) {
+    periodos.push({
+      chave: `controlo-${ano}-${dois(controlo)}`,
+      inicio: `${ano}-${dois(controlo)}-01`,
+      fim: `${ano}-${dois(controlo)}-${dois(ultimoDia(ano, controlo))}`,
+    });
+  }
   for (let m = Math.max(1, Math.min(primeiroMes, mes)); m <= mes; m++) {
     const fim = m === mes ? hoje : `${ano}-${dois(m)}-${dois(ultimoDia(ano, m))}`;
     periodos.push({ chave: `mes-${ano}-${dois(m)}`, inicio: `${ano}-${dois(m)}-01`, fim });
@@ -66,22 +76,3 @@ export async function limparBruto(): Promise<void> {
   await db().query(`delete from dashboard_bruto`);
 }
 
-/**
- * Faturação do período no Metabase da iCliGo: o cartão «Volume Negócio Total»
- * dos Indicadores de Equipa (dashcard 210, card 185), somando a coluna Valor.
- * O link do Metabase vem do MyOffice já assinado, por isso pede-se daqui.
- */
-export async function faturacaoMetabase(iframeUrl: string, inicio: string, fim: string): Promise<number> {
-  const token = iframeUrl.match(/\/embed\/dashboard\/([^#?/]+)/)?.[1];
-  if (!token) throw new Error("link do Metabase sem token");
-  const url =
-    `https://metabase.icligo.com/api/embed/dashboard/${token}/dashcard/210/card/185` +
-    `?start_date=${inicio}&end_date=${fim}`;
-  const resposta = await fetch(url, { cache: "no-store" });
-  if (!resposta.ok) throw new Error(`Metabase respondeu ${resposta.status}`);
-  const corpo = (await resposta.json()) as { data?: { cols?: { name?: string; display_name?: string }[]; rows?: unknown[][] } };
-  const cols = corpo.data?.cols ?? [];
-  const idx = cols.findIndex((c) => /valor/i.test(c.display_name ?? c.name ?? ""));
-  if (idx < 0) throw new Error("Metabase sem coluna Valor");
-  return (corpo.data?.rows ?? []).reduce((soma, linha) => soma + (Number(linha[idx]) || 0), 0);
-}
