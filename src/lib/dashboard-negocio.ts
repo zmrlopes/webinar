@@ -214,7 +214,7 @@ export interface LinhaPatamar {
  */
 const CONTAS_PROPRIAS = ["gabriela miranda", "sara miranda"];
 
-function ehContaPropria(nome: string): boolean {
+export function ehContaPropria(nome: string): boolean {
   const n = nome
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")

@@ -12,6 +12,8 @@ import { useEffect, useRef, useState } from "react";
 const SITE = "https://webinar.viajareviver.net";
 const API = "https://api.icligo.com/legacy-system/v1";
 const MYOFFICE = "https://myoffice.icligo.com";
+/** Enquanto as contas não forem confirmadas com dados reais, só se calcula, sem gravar. */
+const GRAVAR = false;
 
 /** O código do favorito: corre no MyOffice e serve de ponte para os pedidos desta página. */
 const FAVORITO = `javascript:(async()=>{const S='${SITE}';if(!/(^|\\.)icligo\\.com$/.test(location.hostname)){alert('Abre primeiro o MyOffice da iCliGo, entra na tua conta e carrega outra vez neste botão.');return}let t=null;try{t=(await(await fetch('/api/auth/session')).json())?.token?.accessToken||null}catch(e){}const w=window.open(S+'/admin/dashboard-negocio/atualizar?ponte=2','dn-atualizar');if(!w){alert('O browser bloqueou a janela. Permite janelas do MyOffice e carrega outra vez.');return}const mb=d=>d&&d.querySelector('iframe[src*="metabase.icligo.com/embed/dashboard/"]')?.src;window.addEventListener('message',async e=>{if(e.origin!==S||e.source!==w)return;const{id,url,tipo}=e.data||{};if(tipo==='metabase'){let s=mb(document);if(s)return w.postMessage({id,status:200,corpo:JSON.stringify({iframeUrl:s})},S);const f=document.createElement('iframe');f.style.cssText='position:fixed;width:1200px;height:800px;left:-5000px;top:0';f.src='/team/indicators';document.body.appendChild(f);for(let i=0;i<120&&!s;i++){await new Promise(r=>setTimeout(r,1000));try{s=mb(f.contentDocument)}catch(x){}}f.remove();return w.postMessage(s?{id,status:200,corpo:JSON.stringify({iframeUrl:s})}:{id,erro:'a página Indicadores do MyOffice não mostrou o painel'},S)}let u;try{u=new URL(url)}catch(x){return}if(u.protocol!=='https:'||!/^(api|myoffice)\\.icligo\\.com$/.test(u.hostname)){w.postMessage({id,erro:'endereço não permitido'},S);return}try{const r=await fetch(u.href,{credentials:'include',headers:t?{Authorization:'Bearer '+t}:{}});w.postMessage({id,status:r.status,corpo:await r.text()},S)}catch(x){w.postMessage({id,erro:String(x)},S)}})})();`;
@@ -22,7 +24,7 @@ type Linha = { texto: string; estado: "a-decorrer" | "feito" | "erro" };
 function itensDaPagina(corpo: unknown): unknown[] {
   if (Array.isArray(corpo)) return corpo;
   const o = corpo as Record<string, unknown> | null;
-  for (const caminho of [o?.content, (o?.data as Record<string, unknown>)?.content, (o?.page as Record<string, unknown>)?.content, o?.data, o?.items]) {
+  for (const caminho of [o?.content, (o?.list as Record<string, unknown>)?.content, (o?.data as Record<string, unknown>)?.content, (o?.page as Record<string, unknown>)?.content, o?.data, o?.items]) {
     if (Array.isArray(caminho)) return caminho;
   }
   return [];
@@ -30,7 +32,7 @@ function itensDaPagina(corpo: unknown): unknown[] {
 
 function totalPaginas(corpo: unknown): number | null {
   const o = corpo as Record<string, unknown> | null;
-  const n = o?.totalPages ?? (o?.page as Record<string, unknown>)?.totalPages ?? (o?.data as Record<string, unknown>)?.totalPages;
+  const n = o?.totalPages ?? (o?.list as Record<string, unknown>)?.totalPages ?? (o?.page as Record<string, unknown>)?.totalPages ?? (o?.data as Record<string, unknown>)?.totalPages;
   return typeof n === "number" ? n : null;
 }
 
@@ -43,6 +45,8 @@ export function AtualizarCliente() {
   const [modo, setModo] = useState<"instrucoes" | "a-correr" | "feito" | "erro">("instrucoes");
   const [linhas, setLinhas] = useState<Linha[]>([]);
   const [erro, setErro] = useState("");
+  const [avisos, setAvisos] = useState<string[]>([]);
+  const [gravado, setGravado] = useState(false);
   const favorito = useRef<HTMLAnchorElement>(null);
   const pendentes = useRef(new Map<number, (r: { status?: number; corpo?: string; erro?: string }) => void>());
   const proximoId = useRef(1);
@@ -123,8 +127,7 @@ export function AtualizarCliente() {
   async function correr() {
     setModo("a-correr");
     try {
-      const plano = await (await fetch("/api/admin/dashboard-negocio/sincronizar")).json() as { periodos: Periodo[] };
-      await enviar({ acao: "inicio" });
+      const plano = await enviar({ acao: "inicio" }) as unknown as { periodos: Periodo[] };
 
       const faturacao = async () => {
         const passo = registar("Faturação (Metabase)…");
@@ -162,6 +165,12 @@ export function AtualizarCliente() {
         }
       }));
       await enviar({ acao: "parte", chave: "falhas", corpo: falhas });
+
+      const contas = registar("Contas do dashboard…");
+      const resultado = await enviar({ acao: "calcular", gravar: GRAVAR }) as { avisos: string[]; gravado: boolean };
+      contas("feito", "Contas do dashboard");
+      setAvisos(resultado.avisos);
+      setGravado(resultado.gravado);
       if (falhas.length) throw new Error(`${falhas.length} passo(s) falharam — ver a lista acima`);
       setModo("feito");
     } catch (falha) {
@@ -188,7 +197,10 @@ export function AtualizarCliente() {
       {linhas.map((l, i) => <li key={i} data-estado={l.estado}>{l.estado === "feito" ? "✓" : l.estado === "erro" ? "✕" : "…"} {l.texto}</li>)}
     </ul>}
     {modo === "a-correr" && <p className="at-nota">O MyOffice às vezes demora alguns minutos a responder. Não feches esta janela nem o MyOffice.</p>}
-    {modo === "feito" && <p className="at-ok">Dados recolhidos do MyOffice.</p>}
+    {modo === "feito" && (gravado
+      ? <p className="at-ok">Dashboard atualizado. <a href="/admin/dashboard-negocio">Ver o dashboard →</a></p>
+      : <p className="at-ok">Dados recolhidos do MyOffice. As contas estão a ser confirmadas pelo Claude antes de passarem a gravar sozinhas.</p>)}
+    {avisos.length > 0 && <ul className="at-lista">{avisos.map(a => <li key={a} data-estado="erro">! {a}</li>)}</ul>}
     {modo === "erro" && <p className="at-erro" role="alert">Não foi possível atualizar: {erro}</p>}
   </div>;
 }

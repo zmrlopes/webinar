@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { calcularDashboard } from "@/lib/dashboard-calcular";
 import { lerConfig } from "@/lib/dashboard-negocio";
 import {
   faturacaoMetabase,
@@ -18,19 +19,24 @@ export const maxDuration = 300;
  *
  * GET            → o plano: que períodos pedir ao MyOffice
  * GET ?bruto=1   → as respostas guardadas da última atualização
- * POST { acao: "inicio" }                       → apaga as respostas anteriores
+ * POST { acao: "inicio" }                       → apaga as respostas anteriores e devolve o plano
+ * POST { acao: "calcular", gravar }             → recalcula os separadores (ver src/lib/dashboard-calcular.ts)
  * POST { acao: "parte", chave, corpo }          → guarda uma resposta do MyOffice
  * POST { acao: "metabase", iframeUrl, periodos } → faturação de cada período
  */
-export async function GET(request: Request): Promise<Response> {
-  if (new URL(request.url).searchParams.get("bruto")) {
-    return NextResponse.json(await lerBruto());
-  }
+async function plano(): Promise<{ hoje: string; periodos: Periodo[] }> {
   const hoje = hojeLisboa();
   const mapas = await lerConfig<{ ytd_through_idx?: number }>("mapas");
   // O último mês que o dashboard já tem pode ter ficado a meio: volta a pedir-se.
   const primeiroMes = (mapas?.ytd_through_idx ?? Number(hoje.slice(5, 7)) - 1) + 1;
-  return NextResponse.json({ hoje, periodos: periodosAPedir(hoje, primeiroMes) });
+  return { hoje, periodos: periodosAPedir(hoje, primeiroMes) };
+}
+
+export async function GET(request: Request): Promise<Response> {
+  if (new URL(request.url).searchParams.get("bruto")) {
+    return NextResponse.json(await lerBruto());
+  }
+  return NextResponse.json(await plano());
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -40,12 +46,18 @@ export async function POST(request: Request): Promise<Response> {
     corpo?: unknown;
     iframeUrl?: string;
     periodos?: Periodo[];
+    gravar?: boolean;
   } | null;
 
   try {
     if (corpo?.acao === "inicio") {
       await limparBruto();
-      return NextResponse.json({ ok: true });
+      const p = await plano();
+      await guardarBruto("plano", p);
+      return NextResponse.json(p);
+    }
+    if (corpo?.acao === "calcular") {
+      return NextResponse.json(await calcularDashboard(corpo.gravar === true));
     }
     if (corpo?.acao === "parte" && typeof corpo.chave === "string" && corpo.corpo !== undefined) {
       await guardarBruto(corpo.chave, corpo.corpo);
