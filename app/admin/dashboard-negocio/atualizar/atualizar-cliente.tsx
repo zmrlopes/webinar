@@ -14,7 +14,7 @@ const API = "https://api.icligo.com/legacy-system/v1";
 const MYOFFICE = "https://myoffice.icligo.com";
 
 /** O código do favorito: corre no MyOffice e serve de ponte para os pedidos desta página. */
-const FAVORITO = `javascript:(async()=>{const S='${SITE}';if(!/(^|\\.)icligo\\.com$/.test(location.hostname)){alert('Abre primeiro o MyOffice da iCliGo, entra na tua conta e carrega outra vez neste botão.');return}let t=null;try{t=(await(await fetch('/api/auth/session')).json())?.token?.accessToken||null}catch(e){}const w=window.open(S+'/admin/dashboard-negocio/atualizar?ponte=1','dn-atualizar');if(!w){alert('O browser bloqueou a janela. Permite janelas do MyOffice e carrega outra vez.');return}window.addEventListener('message',async e=>{if(e.origin!==S||e.source!==w)return;const{id,url}=e.data||{};let u;try{u=new URL(url)}catch(x){return}if(u.protocol!=='https:'||!/^(api|myoffice)\\.icligo\\.com$/.test(u.hostname)){w.postMessage({id,erro:'endereço não permitido'},S);return}try{const r=await fetch(u.href,{credentials:'include',headers:t?{Authorization:'Bearer '+t}:{}});w.postMessage({id,status:r.status,corpo:await r.text()},S)}catch(x){w.postMessage({id,erro:String(x)},S)}})})();`;
+const FAVORITO = `javascript:(async()=>{const S='${SITE}';if(!/(^|\\.)icligo\\.com$/.test(location.hostname)){alert('Abre primeiro o MyOffice da iCliGo, entra na tua conta e carrega outra vez neste botão.');return}let t=null;try{t=(await(await fetch('/api/auth/session')).json())?.token?.accessToken||null}catch(e){}const w=window.open(S+'/admin/dashboard-negocio/atualizar?ponte=2','dn-atualizar');if(!w){alert('O browser bloqueou a janela. Permite janelas do MyOffice e carrega outra vez.');return}const mb=d=>d&&d.querySelector('iframe[src*="metabase.icligo.com/embed/dashboard/"]')?.src;window.addEventListener('message',async e=>{if(e.origin!==S||e.source!==w)return;const{id,url,tipo}=e.data||{};if(tipo==='metabase'){let s=mb(document);if(s)return w.postMessage({id,status:200,corpo:JSON.stringify({iframeUrl:s})},S);const f=document.createElement('iframe');f.style.cssText='position:fixed;width:1200px;height:800px;left:-5000px;top:0';f.src='/team/indicators';document.body.appendChild(f);for(let i=0;i<120&&!s;i++){await new Promise(r=>setTimeout(r,1000));try{s=mb(f.contentDocument)}catch(x){}}f.remove();return w.postMessage(s?{id,status:200,corpo:JSON.stringify({iframeUrl:s})}:{id,erro:'a página Indicadores do MyOffice não mostrou o painel'},S)}let u;try{u=new URL(url)}catch(x){return}if(u.protocol!=='https:'||!/^(api|myoffice)\\.icligo\\.com$/.test(u.hostname)){w.postMessage({id,erro:'endereço não permitido'},S);return}try{const r=await fetch(u.href,{credentials:'include',headers:t?{Authorization:'Bearer '+t}:{}});w.postMessage({id,status:r.status,corpo:await r.text()},S)}catch(x){w.postMessage({id,erro:String(x)},S)}})})();`;
 
 interface Periodo { chave: string; inicio: string; fim: string }
 type Linha = { texto: string; estado: "a-decorrer" | "feito" | "erro" };
@@ -76,7 +76,7 @@ export function AtualizarCliente() {
   }
 
   /** Pede um endereço da iCliGo ao separador do MyOffice. */
-  function pedir(url: string): Promise<unknown> {
+  function pedir(url: string, tipo?: "metabase"): Promise<unknown> {
     const id = proximoId.current++;
     return new Promise((resolve, reject) => {
       pendentes.current.set(id, r => {
@@ -85,7 +85,7 @@ export function AtualizarCliente() {
         if (!r.status || r.status >= 400) return reject(new Error(`o MyOffice respondeu ${r.status} em ${new URL(url).pathname}`));
         try { resolve(JSON.parse(r.corpo ?? "null")); } catch { reject(new Error("resposta do MyOffice ilegível")); }
       });
-      (window.opener as Window).postMessage({ id, url }, "*");
+      (window.opener as Window).postMessage({ id, url, tipo }, "*");
     });
   }
 
@@ -128,17 +128,13 @@ export function AtualizarCliente() {
 
       const faturacao = async () => {
         const passo = registar("Faturação (Metabase)…");
-        let iframeUrl: string | null = null;
-        let ultimoErro: unknown = null;
-        // O endereço dos indicadores já mudou no MyOffice; tenta-se cada um.
-        for (const caminho of ["/api/indicators/team", "/api/indicators/team/", "/api/indicators"]) {
-          try {
-            const ind = await pedir(`${MYOFFICE}${caminho}`);
-            iframeUrl = procurarIframe(ind);
-            if (iframeUrl) { await enviar({ acao: "parte", chave: "indicadores", corpo: ind }); break; }
-          } catch (falha) { ultimoErro = falha; }
+        // O favorito novo (ponte=2) lê o link do painel na página Indicadores do
+        // MyOffice; o endereço /api/indicators/team que o antigo usava já não existe.
+        if (new URLSearchParams(window.location.search).get("ponte") === "1") {
+          throw new Error("o favorito está desatualizado — volta a arrastar o botão «Atualizar dashboard» desta página para a barra de favoritos");
         }
-        if (!iframeUrl) throw ultimoErro ?? new Error("o MyOffice não devolveu o link dos indicadores");
+        const iframeUrl = procurarIframe(await pedir(`${MYOFFICE}/team/indicators`, "metabase"));
+        if (!iframeUrl) throw new Error("o MyOffice não devolveu o link dos indicadores");
         await enviar({ acao: "metabase", iframeUrl, periodos: plano.periodos });
         passo("feito", "Faturação (Metabase)");
       };
