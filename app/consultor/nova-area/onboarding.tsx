@@ -31,13 +31,14 @@ const FASES: Fase[] = [
   {
     quando: "Dia 1",
     titulo: "Bem-vindo à equipa",
-    marco: "Estás ligado à equipa e tens a chamada de arranque marcada.",
+    marco: "Estás no grupo, começaste o curso obrigatório e tens o Welcome Aboard e a chamada de arranque marcados.",
     acoes: [
       { titulo: "Entra no grupo Welcome Aboard", texto: "É o ponto de encontro da equipa. Antes de perguntares, procura no grupo: muitas respostas já lá estão.", base: "Integração de um novo afiliado › Ações n.º 1 e n.º 2", externo: "grupo" },
+      { titulo: "Começa hoje o curso Be a Travel Partner", texto: "É obrigatório para poderes vender, por isso vem antes de tudo o resto. Termina-o nos primeiros dias: nenhum orçamento ou venda antes de o concluíres.", base: "Be a Travel Partner (iCliGo Academy)", externo: "curso" },
+      { titulo: "Inscreve-te no Welcome Aboard desta quarta-feira", texto: "Vai à Sessão 1 já na primeira quarta-feira (21:20) e à Sessão 2 na quarta seguinte. Quanto mais cedo, mais depressa arrancas acompanhado.", base: "Integração › Ação primordial: participar nas formações semanais" },
       { titulo: "Marca a chamada de arranque com o teu upline", texto: "Uma chamada de 45 minutos, nos dois primeiros dias. Não é só para se conhecerem: sais dela com objetivo, lista e o primeiro convite feito.", base: "Be a Pro › Os 5 passos essenciais para iniciar um novo Travel Partner" },
-      { titulo: "Prepara o teu perfil", texto: "Foto tua (não um logótipo), nome igual em todas as redes, bio com o que fazes como Consultor(a) Independente iCliGo e o teu link pessoal de consultor.", base: "Profissionalizar os perfis online · Canva › Encontra os teus links de consultor" },
     ],
-    upline: "Dá as boas-vindas no grupo e numa story, e valida a decisão: tomou uma decisão inteligente.",
+    upline: "Dá as boas-vindas no grupo e numa story, valida a decisão e confirma que o curso e o Welcome Aboard ficaram tratados.",
   },
   {
     quando: "Dias 2–3",
@@ -46,6 +47,7 @@ const FASES: Fase[] = [
     acoes: [
       { titulo: "Expectativas reais", texto: "Isto é uma competência, não magia: vais ouvir “não”, vais sentir desconforto e os resultados vêm da consistência.", base: "Be a Pro › Erros mais comuns ao iniciar · Eric Worre › Estabelecer expectativas reais" },
       { titulo: "O teu porquê e o primeiro objetivo", texto: "Qual é o teu sonho e o que queres que isto mude na tua vida? Depois, um primeiro objetivo mensurável: a primeira reserva, os primeiros 1.000 € em vendas ou as primeiras 3 apresentações. Combinem também o ritmo de acompanhamento: todos os dias, de dois em dois dias ou uma vez por semana.", base: "Be a Leader › 1.ª sessão · Integração › Fundamentos e objetivo da integração" },
+      { titulo: "Define as tuas horas sagradas", texto: "Quantas horas por semana e em que dias, como num emprego. Blocos de 15 minutos também contam. Usa-os para convidar, apresentar e fazer follow-up; estudar fica fora destas horas.", base: "Eric Worre › Como gerir o tempo e as tarefas" },
       { titulo: "Lista de 100 nomes, sem filtrar", texto: "Feita durante a chamada: mercado quente (família, amigos), morno (conhecidos, vizinhos, colegas) e frio (redes sociais). Não decidas por ninguém. Se não há lista, não há negócio.", base: "Be a Pro › Lista inicial: mercado quente, morno e frio · Be a Travel Partner › Como atrair os primeiros clientes" },
       { titulo: "O primeiro convite, feito por ti, em direto", texto: "Convidas alguém da lista para o webinar com o teu link pessoal, com o upline a orientar. O convite abre a porta; não explica o negócio.", base: "Be a Leader › 1.ª sessão (passo 6) · Be a Pro › O convite serve para abrir porta", destino: ["leads", "Ver o meu link nas Leads"] },
     ],
@@ -53,22 +55,23 @@ const FASES: Fase[] = [
   },
   {
     quando: "Semana 1",
-    titulo: "Aprende o essencial e anuncia",
-    marco: "Já contaste a tua história e tens os primeiros pedidos de orçamento.",
+    titulo: "Curso concluído, Sessão 1 e anúncio",
+    marco: "Curso Be a Travel Partner concluído, Sessão 1 feita, história contada e primeiros pedidos de orçamento.",
     acoes: [
-      { titulo: "Faz o curso Be a Travel Partner", texto: "Continua obrigatório. Começa por “Antes da Reserva” (as 7 perguntas ao cliente) e “Criar Orçamentos”: é o que vais usar primeiro.", base: "Be a Travel Partner (iCliGo Academy)", externo: "curso" },
+      { titulo: "Conclui o Be a Travel Partner", texto: "Se ainda não terminaste, é a prioridade da semana: só depois dele podes vender. Usa já o que aprendeste em “Antes da Reserva” (as 7 perguntas) e “Criar Orçamentos”.", base: "Be a Travel Partner (iCliGo Academy)", externo: "curso" },
+      { titulo: "Welcome Aboard: Sessão 1", texto: "Na primeira quarta-feira, às 21:20, com os líderes. Foco em começar e fazer as primeiras reservas.", base: "Integração › Ação primordial: participar nas formações semanais" },
+      { titulo: "Prepara o teu perfil", texto: "Foto tua (não um logótipo), nome igual em todas as redes, bio com o que fazes como Consultor(a) Independente iCliGo e o teu link pessoal de consultor.", base: "Profissionalizar os perfis online · Canva › Encontra os teus links de consultor" },
       { titulo: "Escreve a tua história", texto: "Em quatro partes: quem eras, o que não gostavas, o que encontraste e como vês o futuro. A parte mais importante é a segunda. Conta-a ao teu upline.", base: "Eric Worre › Conta a tua história · 7 Skills › A importância da tua história" },
-      { titulo: "Anuncia que és Travel Partner e pede apoio", texto: "Aos 10 contactos mais próximos: “Comecei a fazer consultoria de viagens. Ajudas-me com a tua próxima viagem?” Dá sempre uma saída e envia o teu link de pedido de orçamento.", base: "Be a Travel Partner › Como começar a atrair os teus primeiros clientes · Eric Worre › Ganhar o teu primeiro cliente" },
-      { titulo: "Define as tuas horas sagradas", texto: "Quantas horas por semana e em que dias, como num emprego. Blocos de 15 minutos também contam. Usa-os para convidar, apresentar e fazer follow-up; estudar fica fora destas horas.", base: "Eric Worre › Como gerir o tempo e as tarefas" },
+      { titulo: "Anuncia que és Travel Partner e pede apoio", texto: "Com o curso concluído, aos 10 contactos mais próximos: “Comecei a fazer consultoria de viagens. Ajudas-me com a tua próxima viagem?” Dá sempre uma saída e envia o teu link de pedido de orçamento.", base: "Be a Travel Partner › Como começar a atrair os teus primeiros clientes · Eric Worre › Ganhar o teu primeiro cliente" },
     ],
-    upline: "Confirma que o curso está em andamento e revê a história contigo.",
+    upline: "Confirma que o curso ficou concluído e que esteve na Sessão 1, e revê a história contigo.",
   },
   {
-    quando: "Semanas 2–3",
+    quando: "Semana 2",
     titulo: "Primeiros resultados, com apoio",
-    marco: "Primeiro orçamento enviado e primeiras apresentações feitas a três.",
+    marco: "Sessão 2 feita, primeiro orçamento enviado e primeiras apresentações feitas a três.",
     acoes: [
-      { titulo: "Vai ao Welcome Aboard: Sessão 1 e Sessão 2", texto: "Todas as quartas-feiras, às 21:20. A Sessão 1 é sobre começar e fazer as primeiras reservas; a Sessão 2, na semana seguinte, é sobre crescer até Sénior.", base: "Integração › Ação primordial: participar nas formações semanais" },
+      { titulo: "Welcome Aboard: Sessão 2", texto: "Na quarta-feira seguinte à Sessão 1, às 21:20. Foco no crescimento e em atingir o patamar de Sénior.", base: "Integração › Ação primordial: participar nas formações semanais" },
       { titulo: "O teu primeiro orçamento", texto: "Faz as 7 perguntas antes de abrir o motor de pesquisa, envia 2 ou 3 opções explicadas e faz follow-up às 24 h e às 72 h.", base: "Be a Travel Partner › Antes da Reserva e Como enviar o orçamento · Metodologia de Trabalho (Cátia Rafael)" },
       { titulo: "Primeiras apresentações a três", texto: "O convidado vê o webinar e a conversa a seguir é contigo e com o teu upline. Tu não explicas o negócio: és o mensageiro, a ferramenta explica. Começa por “O que gostaste mais?”.", base: "Be a Pro › Os 5 passos (passos 3 e 4) · Be a Leader › 2.ª, 3.ª e 4.ª sessões", destino: ["proximo-webinar", "Ver o próximo webinar"] },
       { titulo: "Regista a tua atividade todos os dias", texto: "Contactos, convites e follow-ups no Core Rank. Os números mostram o que está a funcionar.", base: "Be a Leader › Checklist do mentor (consciência das métricas)", destino: ["core-rank", "Abrir o Core Rank"] },
@@ -91,8 +94,8 @@ const FASES: Fase[] = [
 const COMPARACAO: [string, string][] = [
   ["Grupo WhatsApp Welcome Aboard", "Fica, no dia 1."],
   ["1.ª videochamada com o upline", "Passa a chamada de arranque: expectativas, objetivo, lista de 100 e primeiro convite em direto."],
-  ["Curso Be a Travel Partner", "Fica, na semana 1, com os módulos a fazer primeiro."],
-  ["Welcome Aboard — Sessão 1 e Sessão 2", "Ficam, nas semanas 2 e 3."],
+  ["Curso Be a Travel Partner", "Começa no dia 1 e conclui-se na semana 1, antes de qualquer venda: é obrigatório para vender."],
+  ["Welcome Aboard — Sessão 1 e Sessão 2", "O mais cedo possível: inscrição no dia 1, Sessão 1 na primeira quarta-feira e Sessão 2 na seguinte."],
   ["2.ª videochamada (objetivos)", "Passa ao dia 30, com os números do mês e o objetivo do Core Rank."],
 ];
 
