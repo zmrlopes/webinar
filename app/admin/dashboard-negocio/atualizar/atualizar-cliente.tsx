@@ -12,8 +12,8 @@ import { useEffect, useRef, useState } from "react";
 const SITE = "https://webinar.viajareviver.net";
 const API = "https://api.icligo.com/legacy-system/v1";
 const MYOFFICE = "https://myoffice.icligo.com";
-/** Enquanto as contas não forem confirmadas com dados reais, só se calcula, sem gravar. */
-const GRAVAR = false;
+/** Contas confirmadas com os dados reais a 2026-10-19; com false só se calcula, sem gravar. */
+const GRAVAR = true;
 
 /** O código do favorito: corre no MyOffice e serve de ponte para os pedidos desta página. */
 const FAVORITO = `javascript:(async()=>{const S='${SITE}';if(!/(^|\\.)icligo\\.com$/.test(location.hostname)){alert('Abre primeiro o MyOffice da iCliGo, entra na tua conta e carrega outra vez neste botão.');return}let t=null;try{t=(await(await fetch('/api/auth/session')).json())?.token?.accessToken||null}catch(e){}const w=window.open(S+'/admin/dashboard-negocio/atualizar?ponte=2','dn-atualizar');if(!w){alert('O browser bloqueou a janela. Permite janelas do MyOffice e carrega outra vez.');return}window.addEventListener('message',async e=>{if(e.origin!==S||e.source!==w)return;const{id,url}=e.data||{};let u;try{u=new URL(url)}catch(x){return}if(u.protocol!=='https:'||!/^(api|myoffice)\\.icligo\\.com$/.test(u.hostname)){w.postMessage({id,erro:'endereço não permitido'},S);return}try{const r=await fetch(u.href,{credentials:'include',headers:t?{Authorization:'Bearer '+t}:{}});w.postMessage({id,status:r.status,corpo:await r.text()},S)}catch(x){w.postMessage({id,erro:String(x)},S)}})})();`;
