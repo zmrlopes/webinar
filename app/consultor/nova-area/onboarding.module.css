@@ -1,0 +1,38 @@
+.principios { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 28px; }
+.principios > div { min-width: 0; padding: 18px; border: 1px solid #dfe1cd; border-radius: 14px; background: #f5f6ef; }
+.principios strong { display: block; color: #4b5320; font-size: 15px; font-weight: 750; }
+.principios p { margin: 6px 0 0; color: #55574f; font-size: 14px; line-height: 1.6; }
+.fases { display: grid; gap: 18px; margin: 0; padding: 0; list-style: none; }
+.fase { min-width: 0; padding: 24px; border: 1px solid #e2e2da; border-radius: 20px; background: #fff; box-shadow: 0 3px 14px #4b532006; }
+.faseCabecalho { display: flex; align-items: center; gap: 14px; }
+.faseNumero { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; background: #4b5320; color: #fff; font-size: 17px; font-weight: 750; }
+.quando { display: block; color: #4b5320; font-size: 12px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+.faseCabecalho h2 { margin: 0; color: #000; font-size: 20px; font-weight: 750; letter-spacing: -.02em; line-height: 1.35; }
+.marco { margin: 16px 0 0; padding: 12px 16px; border-left: 3px solid #4b5320; border-radius: 0 10px 10px 0; background: #fbfaf6; color: #55574f; font-size: 15px; }
+.marco strong, .upline strong { color: #000; font-weight: 700; }
+.acoes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 18px 0 0; padding: 0; list-style: none; }
+.acao { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; padding: 18px; border: 1px solid #eeede7; border-radius: 14px; }
+.acao h3 { margin: 0; color: #000; font-size: 16px; font-weight: 700; line-height: 1.45; }
+.acao p { margin: 8px 0 0; color: #55574f; font-size: 14px; line-height: 1.65; }
+.ligacao { display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; padding: 0; border: none; background: none; color: #4b5320; font: inherit; font-size: 14px; font-weight: 700; text-decoration: none; cursor: pointer; }
+.ligacao:hover { text-decoration: underline; }
+.ligacao:focus-visible { outline: 2px solid #4b5320; outline-offset: 3px; border-radius: 4px; }
+.base { display: block; margin-top: auto; padding-top: 12px; color: #6b6a63; font-size: 12px; line-height: 1.5; }
+.upline { margin: 16px 0 0; color: #55574f; font-size: 14px; }
+.comparacao { margin-top: 28px; padding: 24px; border: 1px solid #e2e2da; border-radius: 20px; background: #fff; }
+.comparacao h2 { margin: 0 0 14px; color: #000; font-size: 20px; font-weight: 750; letter-spacing: -.02em; }
+.comparacao dl { margin: 0; }
+.comparacao dl > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: 16px; padding: 12px 0; border-top: 1px solid #eeede7; font-size: 14px; }
+.comparacao dt { color: #000; font-weight: 650; }
+.comparacao dd { margin: 0; color: #55574f; }
+.novoTitulo { margin: 18px 0 8px; color: #000; font-size: 14px; font-weight: 700; }
+.novo { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.novo li { padding: 5px 12px; border-radius: 999px; background: #4b532013; color: #4b5320; font-size: 13px; font-weight: 650; }
+.nota { margin: 18px 0 0; color: #6b6a63; font-size: 13px; }
+@media (max-width: 1100px) { .acoes { grid-template-columns: 1fr; } }
+@media (max-width: 760px) {
+  .principios { grid-template-columns: 1fr; }
+  .fase, .comparacao { padding: 18px; }
+  .acao { padding: 14px; }
+  .comparacao dl > div { grid-template-columns: 1fr; gap: 4px; }
+}
