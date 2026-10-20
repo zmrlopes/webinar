@@ -189,3 +189,6 @@ com copiar textos e “Já publiquei” guardado por consultor. Está em
 `/consultor/calendario-criativo` (área atual) e em Redes sociais na nova área,
 por agora apenas para a conta de teste (`podeVerCalendarioCriativo`), incluindo a
 API. Publicar para os restantes consultores requer nova instrução explícita.
+No calendário criativo, as fases usam cores vivas por indicação do utilizador:
+laranja iCliGo (`#f0603f`) em “Inspirar e crescer”, rosa (`#e6337a`) em “Aquecer
+a audiência” e preto na Black Friday. É uma exceção limitada a este calendário.

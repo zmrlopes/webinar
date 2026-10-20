@@ -132,7 +132,7 @@ export function CalendarioCriativo({ email }: { email: string }) {
 
     <div className={s.notas}>
       <div className={s.nota} data-fase="black-friday"><h2>Black Friday</h2><p>{NOTAS_CALENDARIO_CRIATIVO.blackFriday}</p></div>
-      <div className={s.nota}><h2>Música e trends</h2><p>{NOTAS_CALENDARIO_CRIATIVO.musica}</p></div>
+      <div className={s.nota} data-fase="aquecer"><h2>Música e trends</h2><p>{NOTAS_CALENDARIO_CRIATIVO.musica}</p></div>
     </div>
 
     <div className={s.contentor}>
@@ -171,7 +171,7 @@ export function CalendarioCriativo({ email }: { email: string }) {
     </div>
 
     <dialog ref={dialogo} className={s.dialogo} aria-labelledby="titulo-dia-criativo" onCancel={() => setAberto(null)} onClick={e => { if (e.target === e.currentTarget) setAberto(null); }}>
-      {aberto && <div>
+      {aberto && <div data-fase={aberto.fase}>
         <div className={s.topoDialogo}>
           <span className={s.fase} data-fase={aberto.fase}><span className={s.ponto} aria-hidden="true" />{NOMES_FASES[aberto.fase]}</span>
           <button type="button" className={s.fechar} onClick={() => setAberto(null)} aria-label="Fechar">×</button>
