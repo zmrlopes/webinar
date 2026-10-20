@@ -18,10 +18,6 @@ function dataLonga(dia: string): string {
   return new Date(`${dia}T12:00:00Z`).toLocaleDateString("pt-PT", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Lisbon" });
 }
 
-function dataCurta(dia: string): string {
-  return new Date(`${dia}T12:00:00Z`).toLocaleDateString("pt-PT", { weekday: "short", day: "numeric", month: "short", timeZone: "Europe/Lisbon" });
-}
-
 function nomeMes(mes: string): string {
   return new Date(`${mes}-01T12:00:00Z`).toLocaleDateString("pt-PT", { month: "long", timeZone: "Europe/Lisbon" });
 }
@@ -51,6 +47,9 @@ export function CalendarioCriativo({ email }: { email: string }) {
   const [erroMarcar, setErroMarcar] = useState("");
   const [copiado, setCopiado] = useState<string | null>(null);
   const dialogo = useRef<HTMLDialogElement>(null);
+  // No telemóvel, o dia escolhido aparece por baixo do calendário (começa em hoje ou no primeiro dia).
+  const [selecionado, setSelecionado] = useState(POR_DATA.get(hoje) ?? (hoje > DIAS_CALENDARIO_CRIATIVO.at(-1)!.data ? DIAS_CALENDARIO_CRIATIVO.at(-1)! : DIAS_CALENDARIO_CRIATIVO[0]!));
+  const painel = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -84,6 +83,15 @@ export function CalendarioCriativo({ email }: { email: string }) {
     setMes(dia.data.slice(0, 7));
   }
 
+  function escolher(dia: DiaCalendarioCriativo, deslocar = true) {
+    setSelecionado(dia);
+    if (!window.matchMedia("(max-width: 760px)").matches) { abrir(dia); return; }
+    setErroMarcar("");
+    setCopiado(null);
+    setMes(dia.data.slice(0, 7));
+    if (deslocar) painel.current?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+  }
+
   async function alternarPublicado(id: string) {
     if (aGuardar) return;
     setAGuardar(id);
@@ -111,13 +119,51 @@ export function CalendarioCriativo({ email }: { email: string }) {
   }
 
   const feitosNoDia = (dia: DiaCalendarioCriativo) => FORMATOS_CONTEUDO.filter(f => publicados.includes(idPublicacao(dia.data, f))).length;
-  const diasDoMesAtual = DIAS_CALENDARIO_CRIATIVO.filter(d => d.data.startsWith(mes));
-  const indiceAberto = aberto ? DIAS_CALENDARIO_CRIATIVO.indexOf(aberto) : -1;
 
-  function Progresso({ dia }: { dia: DiaCalendarioCriativo }) {
+  function progresso(dia: DiaCalendarioCriativo) {
     if (estado !== "pronto") return null;
     const feitos = feitosNoDia(dia);
     return <span className={s.progresso} data-completo={feitos === 4}>{feitos === 4 ? "✓ 4/4" : `${feitos}/4`}</span>;
+  }
+
+  /** O mesmo conteúdo serve o popup (computador) e o painel por baixo do calendário (telemóvel). */
+  function detalhe(dia: DiaCalendarioCriativo, idTitulo: string, fechar?: () => void) {
+    const indice = DIAS_CALENDARIO_CRIATIVO.indexOf(dia);
+    const irPara = (outro: DiaCalendarioCriativo) => fechar ? abrir(outro) : escolher(outro, false);
+    return <div data-fase={dia.fase}>
+      <div className={s.topoDialogo}>
+        <span className={s.fase} data-fase={dia.fase}><span className={s.ponto} aria-hidden="true" />{NOMES_FASES[dia.fase]}</span>
+        {fechar ? <button type="button" className={s.fechar} onClick={fechar} aria-label="Fechar">×</button> : progresso(dia)}
+      </div>
+      <p className={s.dataDialogo}>{dataLonga(dia.data)}</p>
+      <h2 id={idTitulo}>{dia.tema}</h2>
+      {dia.fase === "black-friday" && <p className={s.avisoBlackFriday}>Mantém «Black Friday — em breve». Não anuncies descontos, datas ou preços sem confirmação oficial.</p>}
+      {erroMarcar && <p role="alert" className={s.erroMarcar}>{erroMarcar}</p>}
+      <div className={s.ideias}>
+        {dia.ideias.map((ideia, i) => {
+          const id = idPublicacao(dia.data, ideia.formato);
+          const feito = publicados.includes(id);
+          return <article key={ideia.formato} className={s.ideia} data-feito={feito}>
+            <header>
+              <span className={s.numeroIdeia}>0{i + 1}</span>
+              <div><h3>{NOMES_FORMATOS[ideia.formato]}</h3><p>{ideia.objetivo}</p></div>
+            </header>
+            <dl>{ideia.campos.map(c => <div key={c.rotulo}><dt>{c.rotulo}</dt><dd>{c.texto}</dd></div>)}</dl>
+            <div className={s.acoesIdeia}>
+              <button type="button" className={s.copiar} onClick={() => void copiar(dia, ideia)}>{copiado === id ? "✓ Copiado" : "Copiar textos"}</button>
+              <button type="button" className={s.publicado} aria-pressed={feito} disabled={estado !== "pronto" || aGuardar !== null} onClick={() => void alternarPublicado(id)}>
+                <span className={s.caixa} aria-hidden="true">{feito && "✓"}</span>
+                {aGuardar === id ? "A guardar…" : feito ? "Publicado" : "Já publiquei"}
+              </button>
+            </div>
+          </article>;
+        })}
+      </div>
+      <nav className={s.navegarDias} aria-label="Outros dias">
+        <button type="button" disabled={indice <= 0} onClick={() => irPara(DIAS_CALENDARIO_CRIATIVO[indice - 1]!)}>‹ Dia anterior</button>
+        <button type="button" disabled={indice >= DIAS_CALENDARIO_CRIATIVO.length - 1} onClick={() => irPara(DIAS_CALENDARIO_CRIATIVO[indice + 1]!)}>Dia seguinte ›</button>
+      </nav>
+    </div>;
   }
 
   return <section id="calendario-criativo" className={s.raiz} aria-label="Calendário criativo">
@@ -151,60 +197,21 @@ export function CalendarioCriativo({ email }: { email: string }) {
           const dia = POR_DATA.get(data);
           const fora = !data.startsWith(mes);
           if (!dia || fora) return <div key={data} className={s.dia} data-vazio="true" data-fora={fora}><span className={s.numero}>{Number(data.slice(-2))}</span></div>;
-          return <button key={data} type="button" className={s.dia} data-fase={dia.fase} data-hoje={data === hoje} data-passado={data < hoje} aria-haspopup="dialog" aria-label={`${dataLonga(data)}: ${dia.tema}`} onClick={() => abrir(dia)}>
-            <span className={s.cabecalhoDia}><span className={s.numero}>{Number(data.slice(-2))}</span><Progresso dia={dia} /></span>
+          return <button key={data} type="button" className={s.dia} data-fase={dia.fase} data-hoje={data === hoje} data-passado={data < hoje} data-selecionado={selecionado === dia} aria-label={`${dataLonga(data)}: ${dia.tema}`} onClick={() => escolher(dia)}>
+            <span className={s.cabecalhoDia}><span className={s.numero}>{Number(data.slice(-2))}</span>{progresso(dia)}</span>
             <span className={s.tema}>{dia.tema}</span>
+            {estado === "pronto" && feitosNoDia(dia) === 4 && <span className={s.marcaFeito} aria-hidden="true">✓</span>}
           </button>;
         })}
       </div>
+    </div>
 
-      <ol className={s.lista} aria-label={`Temas de ${nomeMes(mes)}`}>
-        {diasDoMesAtual.map(dia => <li key={dia.data}>
-          <button type="button" className={s.itemLista} data-fase={dia.fase} data-hoje={dia.data === hoje} data-passado={dia.data < hoje} aria-haspopup="dialog" onClick={() => abrir(dia)}>
-            <span className={s.dataLista}>{dia.data === hoje ? "Hoje" : dataCurta(dia.data)}</span>
-            <span className={s.temaLista}>{dia.tema}</span>
-            <Progresso dia={dia} />
-            <span className={s.seta} aria-hidden="true">›</span>
-          </button>
-        </li>)}
-      </ol>
+    <div ref={painel} className={s.painelDia} tabIndex={-1} aria-live="polite">
+      {detalhe(selecionado, "titulo-dia-criativo-painel")}
     </div>
 
     <dialog ref={dialogo} className={s.dialogo} aria-labelledby="titulo-dia-criativo" onCancel={() => setAberto(null)} onClick={e => { if (e.target === e.currentTarget) setAberto(null); }}>
-      {aberto && <div data-fase={aberto.fase}>
-        <div className={s.topoDialogo}>
-          <span className={s.fase} data-fase={aberto.fase}><span className={s.ponto} aria-hidden="true" />{NOMES_FASES[aberto.fase]}</span>
-          <button type="button" className={s.fechar} onClick={() => setAberto(null)} aria-label="Fechar">×</button>
-        </div>
-        <p className={s.dataDialogo}>{dataLonga(aberto.data)}</p>
-        <h2 id="titulo-dia-criativo">{aberto.tema}</h2>
-        {aberto.fase === "black-friday" && <p className={s.avisoBlackFriday}>Mantém «Black Friday — em breve». Não anuncies descontos, datas ou preços sem confirmação oficial.</p>}
-        {erroMarcar && <p role="alert" className={s.erroMarcar}>{erroMarcar}</p>}
-        <div className={s.ideias}>
-          {aberto.ideias.map((ideia, i) => {
-            const id = idPublicacao(aberto.data, ideia.formato);
-            const feito = publicados.includes(id);
-            return <article key={ideia.formato} className={s.ideia} data-feito={feito}>
-              <header>
-                <span className={s.numeroIdeia}>0{i + 1}</span>
-                <div><h3>{NOMES_FORMATOS[ideia.formato]}</h3><p>{ideia.objetivo}</p></div>
-              </header>
-              <dl>{ideia.campos.map(c => <div key={c.rotulo}><dt>{c.rotulo}</dt><dd>{c.texto}</dd></div>)}</dl>
-              <div className={s.acoesIdeia}>
-                <button type="button" className={s.copiar} onClick={() => void copiar(aberto, ideia)}>{copiado === id ? "✓ Copiado" : "Copiar textos"}</button>
-                <button type="button" className={s.publicado} aria-pressed={feito} disabled={estado !== "pronto" || aGuardar !== null} onClick={() => void alternarPublicado(id)}>
-                  <span className={s.caixa} aria-hidden="true">{feito && "✓"}</span>
-                  {aGuardar === id ? "A guardar…" : feito ? "Publicado" : "Já publiquei"}
-                </button>
-              </div>
-            </article>;
-          })}
-        </div>
-        <nav className={s.navegarDias} aria-label="Outros dias">
-          <button type="button" disabled={indiceAberto <= 0} onClick={() => abrir(DIAS_CALENDARIO_CRIATIVO[indiceAberto - 1]!)}>‹ Dia anterior</button>
-          <button type="button" disabled={indiceAberto >= DIAS_CALENDARIO_CRIATIVO.length - 1} onClick={() => abrir(DIAS_CALENDARIO_CRIATIVO[indiceAberto + 1]!)}>Dia seguinte ›</button>
-        </nav>
-      </div>}
+      {aberto && detalhe(aberto, "titulo-dia-criativo", () => setAberto(null))}
     </dialog>
   </section>;
 }
