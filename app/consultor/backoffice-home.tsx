@@ -636,6 +636,18 @@ export function BackofficeHome() {
               <AvisoRelatorioCore email={email} aoAbrir={() => window.location.assign("/consultor/core-rank#relatorios")} />
             </>}
 
+            {emTesteVisual && (
+              <div className="vqb-urgente">
+                <Link href="/consultor/calendario-criativo" className="vqb-urgente-item">
+                  <span>
+                    <span>📅 Calendário criativo da Black Friday</span>
+                    <span className="vqb-urgente-item-sub">De 22/10 a 30/11: um tema por dia com 4 ideias — Reel, Carrossel, Fotografia e Post estático.</span>
+                  </span>
+                  <span className="vqb-urgente-seta" aria-hidden="true">→</span>
+                </Link>
+              </div>
+            )}
+
             <h2>O teu link de partilha</h2>
             <p className="vqb-mudo">
               É este o link que partilhas para as pessoas se inscreverem no webinar. Quem se inscrever
@@ -802,6 +814,11 @@ export function BackofficeHome() {
               {dados.ehConsultorEquipa && (
                 <Link href="/consultor/core-rank" className="vqb-menu-item">
                   Core Rank
+                </Link>
+              )}
+              {emTesteVisual && (
+                <Link href="/consultor/calendario-criativo" className="vqb-menu-item">
+                  Calendário criativo
                 </Link>
               )}
               <button

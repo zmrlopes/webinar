@@ -14,6 +14,7 @@ import { ProximoWebinar, TarefasIniciaisEquipa } from "./organizacao";
 import { LeadsNovaArea } from "./leads";
 import { ProximasFormacoes, FormacoesGravadas, DocumentosNovaArea } from "./formacao";
 import { CalendarioConsultor } from "./calendario";
+import { CalendarioCriativo } from "./calendario-criativo";
 import { EventosPresenciais } from "./eventos";
 import { InicioNovaArea } from "./inicio";
 import { TestemunhosNovaArea } from "./testemunhos";
@@ -87,7 +88,7 @@ export default function NovaAreaConsultor() {
   const [aInscrever, setAInscrever] = useState(false);
   const [erroSessao, setErroSessao] = useState("");
   const [inscrito, setInscrito] = useState(false);
-  const [seccao, setSeccao] = useState<"inicio" | "comeca-aqui" | "onboarding" | "calendario" | "leads" | "tarefas-equipa" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "testemunhos" | "objecoes" | "documentos" | "eventos-presenciais" | "calculadoras" | "core-rank" | "reservas" | "travel-planner" | "propostas">("inicio");
+  const [seccao, setSeccao] = useState<"inicio" | "comeca-aqui" | "onboarding" | "calendario" | "calendario-criativo" | "leads" | "tarefas-equipa" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "testemunhos" | "objecoes" | "documentos" | "eventos-presenciais" | "calculadoras" | "core-rank" | "reservas" | "travel-planner" | "propostas">("inicio");
   const [reservasAberto, setReservasAberto] = useState(false);
   const [coreAberto, setCoreAberto] = useState(false);
   const [abrirRelatoriosCore, setAbrirRelatoriosCore] = useState(0);
@@ -302,6 +303,9 @@ export default function NovaAreaConsultor() {
               <div className={estilos.grupoMenu}>
                 <button type="button" className={seccao === "calendario" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calendario")} aria-current={seccao === "calendario" ? "page" : undefined} aria-controls="conteudo-nova-area">Calendário <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" strokeWidth="1.6" /><path d="M7 3v4m10-4v4M3 11h18" stroke="currentColor" strokeWidth="1.6" /></svg></button>
               </div>
+              <GrupoMenu titulo="Redes sociais" ativo={seccao === "calendario-criativo"}>
+                <button type="button" className={seccao === "calendario-criativo" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calendario-criativo")} aria-current={seccao === "calendario-criativo" ? "page" : undefined} aria-controls="conteudo-nova-area">Calendário criativo</button>
+              </GrupoMenu>
               <GrupoMenu titulo="A minha organização" ativo={seccao === "leads" || seccao === "tarefas-equipa" || seccao === "proximo-webinar" || seccao === "testemunhos" || seccao === "objecoes"}>
                 <button type="button" className={seccao === "leads" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("leads")} aria-current={seccao === "leads" ? "page" : undefined} aria-controls="conteudo-nova-area">Leads</button>
                 <button type="button" className={seccao === "tarefas-equipa" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("tarefas-equipa")} aria-current={seccao === "tarefas-equipa" ? "page" : undefined} aria-controls="conteudo-nova-area">Tarefas iniciais da equipa</button>
@@ -389,6 +393,7 @@ export default function NovaAreaConsultor() {
             {seccao === "onboarding" && <OnboardingProposta linkGrupo={dados.linkGrupoWelcomeAboard || null} linkCurso={LINK_CURSO_TRAVEL_PARTNER} abrir={abrirSeccao} />}
             {seccao === "leads" && <LeadsNovaArea linkPartilha={dados.linkPartilha} />}
             {seccao === "calendario" && <CalendarioConsultor email={email} nome={dados.nome} />}
+            {seccao === "calendario-criativo" && <CalendarioCriativo email={email} />}
             {seccao === "calculadoras" && <CalculadorasNovaArea />}
             {reservasAberto && <div hidden={seccao !== "reservas"}><ReservasNovaArea email={email} /></div>}
             {seccao === "travel-planner" && <TravelPlannerNovaArea email={email} />}

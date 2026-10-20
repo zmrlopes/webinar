@@ -180,3 +180,12 @@ baseada nas apresentações Canva, Academy, formações internas e YouTube,
 testemunhos e navegação recolhida do MyOffice. Inclui etapas, tarefas,
 resultados a demonstrar e acompanhamento do mentor. É só leitura, exclusivo
 da conta de teste, e não altera os primeiros passos atuais nem envia comunicações.
+
+Por indicação do utilizador, o calendário criativo da Black Friday (PDF da Sara
+`docs/calendario_criativo_160_conteudos_tropa_de_elite.pdf`, dados em
+`src/lib/calendario-criativo.json`) mostra um tema por dia de 22/10 a 30/11; ao
+clicar abre um popup com as 4 ideias (Reel, Carrossel, Fotografia, Post estático),
+com copiar textos e “Já publiquei” guardado por consultor. Está em
+`/consultor/calendario-criativo` (área atual) e em Redes sociais na nova área,
+por agora apenas para a conta de teste (`podeVerCalendarioCriativo`), incluindo a
+API. Publicar para os restantes consultores requer nova instrução explícita.
