@@ -636,7 +636,7 @@ export function BackofficeHome() {
               <AvisoRelatorioCore email={email} aoAbrir={() => window.location.assign("/consultor/core-rank#relatorios")} />
             </>}
 
-            {emTesteVisual && (
+            {dados.ehConsultorEquipa && (
               <div className="vqb-urgente">
                 <Link href="/consultor/calendario-criativo" className="vqb-urgente-item">
                   <span>
@@ -816,7 +816,7 @@ export function BackofficeHome() {
                   Core Rank
                 </Link>
               )}
-              {emTesteVisual && (
+              {dados.ehConsultorEquipa && (
                 <Link href="/consultor/calendario-criativo" className="vqb-menu-item">
                   Calendário criativo
                 </Link>

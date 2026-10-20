@@ -1,5 +1,4 @@
 import calendario from "./calendario-criativo.json";
-import { podeVerNovaArea } from "./consultor-nova-area";
 
 /**
  * Calendário criativo da Black Friday (PDF da Sara em
@@ -45,11 +44,6 @@ export const NOTAS_CALENDARIO_CRIATIVO = {
   blackFriday: "Antes de 14 de novembro, podes criar expectativa com «BLACK FRIDAY — EM BREVE». A partir dessa data, mantém «EM BREVE» até existir confirmação oficial de campanhas. Não anuncies descontos, datas de arranque ou preços sem confirmação.",
   musica: "Para Reels, usa áudios disponíveis e autorizados para a tua conta comercial. Pesquisa semanalmente tendências no Instagram e adapta apenas o formato: transição antes/depois, POV, escolha A/B, lista rápida, ASMR, texto no beat, reação e green screen. Não há garantia de que um áudio esteja em tendência na data de publicação.",
 };
-
-/** Por agora só a conta de teste; abrir à equipa requer instrução explícita do utilizador. */
-export function podeVerCalendarioCriativo(email: string): boolean {
-  return podeVerNovaArea(email);
-}
 
 /** Cada publicação marcada é guardada como "AAAA-MM-DD:formato". */
 export function idPublicacao(data: string, formato: FormatoConteudo): string {

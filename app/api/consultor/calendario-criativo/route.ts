@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { buscarMembroEquipa } from "@/lib/equipa";
-import { podeVerCalendarioCriativo, publicacaoValida } from "@/lib/calendario-criativo";
+import { publicacaoValida } from "@/lib/calendario-criativo";
 import { lerPublicados, marcarPublicado } from "@/lib/calendario-criativo-registos";
 
 export async function POST(request: Request): Promise<Response> {
   const corpo = await request.json().catch(() => null);
   const email = typeof corpo?.email === "string" ? corpo.email.trim().toLowerCase() : "";
-  if (!podeVerCalendarioCriativo(email)) return NextResponse.json({ erro: "Este calendário ainda está em preparação." }, { status: 403 });
+  if (!email.includes("@")) return NextResponse.json({ erro: "Identifica-te com o teu email de consultor." }, { status: 400 });
   if (!corpo || !["consultar", "marcar"].includes(corpo.acao)) return NextResponse.json({ erro: "Pedido inválido." }, { status: 400 });
   if (corpo.acao === "marcar" && (!publicacaoValida(corpo.id) || typeof corpo.publicado !== "boolean")) {
     return NextResponse.json({ erro: "Escolhe uma publicação válida." }, { status: 400 });
