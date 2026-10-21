@@ -30,6 +30,12 @@ O UUID do pedido é inserido antes da chamada paga: repetir esse UUID recupera o
 
 Verificação do fluxo novo: `npm run test:reservas-imagem`. Os testes simulam fornecedor e base de dados, cobrindo isolamento, acesso, validação de ficheiros/dados, imagem de referência enviada, marca, formatos, versões, falhas e idempotência. O ensaio real com o orçamento iCliGo foi executado separadamente, sem inserir dados na base de dados de produção.
 
+No fluxo de referência completa, a publicação já não cria um título automático «X noites em…». Sem frase promocional preenchida, omite esse título; mantém o destino e as datas. Uma frase escrita pelo consultor continua a ser usada.
+
+O editor guarda os sombreados largos e gradientes em `sombreados`, separados da fotografia, e desenha-os entre o novo fundo e os textos/cartões. A sombra das letras também é aplicada aos recortes transparentes da letra original. Ao manter ou repor a fotografia original, não duplica os sombreados já incorporados nela. O escurecimento manual continua disponível como ajuste adicional.
+
+Os editores antigos recebem uma análise dos sombreados ao reabrir, sem repetir o OCR ou gerar outra fotografia. Versões da mesma imagem original reutilizam essa análise privada. Textos, fundos, posições, ajustes existentes e publicações originais são preservados; para artes que ainda não trocaram de fundo, o escurecimento inicial passa a zero quando existem camadas de sombreado, evitando um segundo degradé automático. A separação de uma imagem raster estima a cor e intensidade dos gradientes; artes complexas continuam a precisar de revisão visual. Os testes de editor verificam story/feed, sombra das letras, exportação, ausência de duplicação e migração/reabertura. Continua exclusivo da conta de teste.
+
 ## Editor e materiais anteriores
 
 O percurso anterior continua disponível neste separador recolhido. A sua entrada é **Criar com orçamento**, em três passos: carregar a proposta PDF e confirmar os dados/hotel, escolher o modelo, e acrescentar uma frase opcional antes de gerar.

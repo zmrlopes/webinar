@@ -69,6 +69,12 @@ async function main() {
     assert.equal(r.estado,"pronta");assert(r.imagem);assert.equal(imagens,1);
     assert.equal(ultimoForm!.get("size"),"1008x1792");assert.equal(ultimoForm!.getAll("image[]").length,1);
     const prompt=String(ultimoForm!.get("prompt"));
+    const textoArte=(p:string)=>JSON.parse(p.split("ALLOWED ARTWORK TEXT (sole authority for travel facts and exact headline): ")[1]!.split("\n")[0]!);
+    assert.equal(textoArte(prompt).tituloPromocional,"","Sem frase escolhida, não acrescenta um título com o número de noites");
+    assert(!Object.values(textoArte(prompt)).some(v=>typeof v==="string"&&/5 noites em/i.test(v)));
+    assert.equal(textoArte(promptPublicacaoReserva(ref,{...dados,frase:"Uma pausa à beira-mar"},"story","",false)).tituloPromocional,"Uma pausa à beira-mar");
+    assert.equal(textoArte(promptPublicacaoReserva(ref,{...dados,frase:"   "},"story","",true)).tituloPromocional,"");
+    assert(prompt.includes("Do not calculate a duration from the dates"));
     assert(prompt.includes("1468,33 € / PESSOA"));assert(prompt.includes("Pensão Completa"));assert(prompt.includes("17/11/2026"));
     assert(!prompt.includes("input_file"));assert(prompt.includes("first image is the original design reference"));
     const bytes=Buffer.from(r.imagem!.split(",")[1]!,"base64"),meta=await sharp(bytes).metadata();

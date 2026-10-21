@@ -197,3 +197,10 @@ seletor continuam exclusivos da conta de teste.
 No calendário criativo, as fases usam cores vivas por indicação do utilizador:
 laranja iCliGo (`#f0603f`) em “Inspirar e crescer”, rosa (`#e6337a`) em “Aquecer
 a audiência” e preto na Black Friday. É uma exceção limitada a este calendário.
+
+Por indicação do utilizador, Criar templates não acrescenta automaticamente a
+frase «X noites em…». Sem frase promocional preenchida, omite esse título.
+Os sombreados e gradientes sob os textos são camadas independentes da fotografia
+e mantêm-se ao trocar o fundo, incluindo a sombra das letras originais. Os
+editores antigos recebem a separação dos sombreados ao reabrir, preservando as
+publicações e os ajustes privados. Continua exclusivo da nova área da conta de teste.

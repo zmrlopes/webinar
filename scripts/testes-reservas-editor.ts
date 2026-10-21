@@ -12,6 +12,7 @@ import {abrirImagemReserva,finalizarImagemReserva,logotipoBrancoReserva,VERSAO_L
 import type {PublicacaoImagemReserva,ReferenciaImagemReserva} from "../src/lib/reservas-imagem";
 import {POST} from "../app/api/consultor/nova-area/reservas/imagem/route";
 import {harmonizarMarcaPublicacao} from "../src/lib/reservas-imagem-ocr";
+import {validarSombreadosPublicacao,desenharSombreadosPublicacao,type SombreadoPublicacao} from "../src/lib/reservas-imagem-sombras";
 async function main(){
  process.env.DATABASE_URL||="postgres://test:test@localhost/test";
  const email=EMAIL_PAINEL_DEMONSTRACAO,pool=db(),originalQuery=pool.query,originalFetch=globalThis.fetch,registos=new Map<string,unknown>();let chamadasIA=0;
@@ -24,7 +25,7 @@ async function main(){
   const baseComMarca=await finalizarImagemReserva(base,ref,"story"),arte=createCanvas(1080,1920),arteCtx=arte.getContext("2d");arteCtx.drawImage(await loadImage(baseComMarca),0,0);arteCtx.fillStyle="#ffffff";arteCtx.fillRect(33,39,258,94);arteCtx.font="bold 70px sans-serif";arteCtx.fillText("GRAN CANARIA",54,1310);const source=arte.toBuffer("image/png");
   const r:PublicacaoImagemReserva={id:randomUUID(),tipo:"publicacao",nome:"Gran Canaria",formato:"story",estado:"pronta",criadaEm:new Date().toISOString(),referenciaId:ref.id,dados:{...dadosReservaVazios(),destino:"Gran Canaria",ida:"2026-11-17",regresso:"2026-11-22",viajantes:3,hoteis:[{...hotelVazio(),nome:"Hotel",total:4405}]},notas:"",imagem:url(source)};
   const textos=[{id:"titulo",nome:"Destino",texto:"GRAN CANARIA",fonte:"geometrica" as const,tamanho:70,cor:"#ffffff",negrito:true,italico:false,sombra:true,alinhar:"left" as const,x:5,y:65,w:85,h:7}];
-  const logo=await logotipoBrancoReserva(),editor:EditorPublicacaoReserva={versao:1,origemId:r.id,imagemOriginal:r.imagem!,fundoLimpo:url(base),textos,decoracoes:[],marca:ref.marca,marcaPreparada:true,marcaSuave:true,logoBranco:`data:image/png;base64,${logo.toString("base64")}`,ajustes:ajustesIniciaisPublicacao(textos)};
+  const logo=await logotipoBrancoReserva(),editor:EditorPublicacaoReserva={versao:1,origemId:r.id,imagemOriginal:r.imagem!,fundoLimpo:url(base),textos,decoracoes:[],sombreados:[],marca:ref.marca,marcaPreparada:true,marcaSuave:true,logoBranco:`data:image/png;base64,${logo.toString("base64")}`,ajustes:ajustesIniciaisPublicacao(textos)};
   const rgba=await sharp(logo).ensureAlpha().raw().toBuffer();let transparentes=0,brancos=0;for(let i=0;i<rgba.length;i+=4){if(rgba[i+3]===0)transparentes++;if(rgba[i+3]!>200){assert(rgba[i]!>250&&rgba[i+1]!>250&&rgba[i+2]!>250);brancos++;}}assert(transparentes>100&&brancos>100,"Ícone e letras brancos sem cartão opaco");
   assert.equal(createHash("sha256").update(await readFile("public/icligo-logo-branco.png")).digest("hex"),"14dcbf59ddd1d65ce641f09e0a316893a3bfbf79af33105b3f9bb0b5542c70c8","É exatamente o PNG icligo branco fornecido pelo utilizador");
   const metaLogo=await sharp(logo).metadata();assert.equal(metaLogo.width,570);assert.equal(metaLogo.height,184);const ladoIcone=metaLogo.height!,icone=await sharp(logo).extract({left:0,top:0,width:ladoIcone,height:ladoIcone}).ensureAlpha().raw().toBuffer(),opacos=icone.filter((v,i)=>i%4===3&&v>200).length;assert(opacos>1000&&opacos<ladoIcone*ladoIcone/2,"O ícone mantém os detalhes brancos e a transparência do ficheiro fornecido");
@@ -75,6 +76,46 @@ async function main(){
   const fundo=await sharp({create:{width:800,height:500,channels:3,background:"#b97732"}}).webp().toBuffer();ajustes.fundo=url(fundo);
   const comFundo=await guardarEdicaoPublicacao(email,{id:r.id,ajustes});const bytes=Buffer.from(comFundo.imagem!.split(",")[1]!,"base64"),meta=await sharp(bytes).metadata();assert.equal(meta.width,1080);assert.equal(meta.height,1920);
   const marca=await sharp(bytes).extract({left:33,top:39,width:255,height:90}).raw().toBuffer();assert(marca.some(v=>v>240),"A marca continua aplicada por cima da fotografia");
+  const sombreados:SombreadoPublicacao[]=[{x:0,y:50,w:100,h:50,cor:"#000000",direcao:"baixo",paragens:[{posicao:0,opacidade:0},{posicao:1,opacidade:.8}]}];
+  assert.deepEqual(validarSombreadosPublicacao(sombreados),sombreados);
+  for(const invalido of [null,{},Array(9).fill(sombreados[0]),[{...sombreados[0],x:101}],[{...sombreados[0],cor:"red"}],[{...sombreados[0],direcao:"outra"}],[{...sombreados[0],paragens:[{posicao:0,opacidade:2},{posicao:1,opacidade:0}]}],[{...sombreados[0],paragens:[{posicao:1,opacidade:0},{posicao:0,opacidade:1}]}]])assert.throws(()=>validarSombreadosPublicacao(invalido));
+  const editorSombra={...editor,sombreados},ajustesSombra={...structuredClone(editor.ajustes),fundo:url(fundo),escurecimento:0};
+  const novaFoto=await loadImage(fundo);
+  for(const h of [1920,1350]){
+    const render=createCanvas(1080,h),contexto=render.getContext("2d");
+    desenharEditorPublicacao(contexto as unknown as CanvasRenderingContext2D,img as unknown as CanvasImageSource,limpo as unknown as CanvasImageSource,novaFoto as unknown as CanvasImageSource,editorSombra,ajustesSombra,1080,h);
+    const cima=contexto.getImageData(100,Math.round(h*.3),1,1).data[0]!,baixo=contexto.getImageData(100,Math.round(h*.9),1,1).data[0]!;
+    assert(cima>170&&baixo<85,"Story e feed mantêm o sombreado na zona certa, sem escurecer a fotografia inteira");
+  }
+  // Sem substituir a fotografia, o sombreado já está no original: não o duplica.
+  desenharEditorPublicacao(ctx as unknown as CanvasRenderingContext2D,img as unknown as CanvasImageSource,limpo as unknown as CanvasImageSource,null,editorSombra,editor.ajustes,1080,1920);
+  assert(Buffer.from(ctx.getImageData(0,0,1080,1920).data).equals(Buffer.from(original.getContext("2d").getImageData(0,0,1080,1920).data)));
+  // A sombra das letras também acompanha o recorte transparente original.
+  const letras=createCanvas(100,40);letras.getContext("2d").fillStyle="#ffffff";letras.getContext("2d").fillRect(10,5,70,20);
+  const comRecorte=new Map([[textos[0]!.id,letras as unknown as CanvasImageSource]]);
+  const renderizarRecorte=(sombra:boolean)=>{const c=createCanvas(1080,1920),cx=c.getContext("2d");desenharEditorPublicacao(cx as unknown as CanvasRenderingContext2D,img as unknown as CanvasImageSource,limpo as unknown as CanvasImageSource,novaFoto as unknown as CanvasImageSource,{...editor,textos:[{...textos[0]!,sombra}]},ajustesSombra,1080,1920,comRecorte);return cx.getImageData(0,1200,1080,230).data;};
+  const semSombra=renderizarRecorte(false),comSombra=renderizarRecorte(true);
+  assert(comSombra.some((v,i)=>i%4===0&&v+5<semSombra[i]!),"O recorte mantém uma sombra visível sobre a fotografia nova");
+  const radial=createCanvas(200,100),cr=radial.getContext("2d");cr.fillStyle="#ffffff";cr.fillRect(0,0,200,100);
+  desenharSombreadosPublicacao(cr as unknown as CanvasRenderingContext2D,[{x:0,y:0,w:100,h:100,cor:"#000000",direcao:"radial",paragens:[{posicao:0,opacidade:.8},{posicao:1,opacidade:0}]}],200,100);
+  assert(cr.getImageData(100,50,1,1).data[0]!<65&&cr.getImageData(3,50,1,1).data[0]!>235,"O sombreado radial é elíptico e transparente nas bordas");
+  registos.set(`reservas:editor:v1:${email}:${r.id}`,editorSombra);
+  const guardadaSombra=await guardarEdicaoPublicacao(email,{id:r.id,ajustes:ajustesSombra}),reabertaSombra=await prepararEditorPublicacao(email,guardadaSombra.id);
+  assert.deepEqual(reabertaSombra.sombreados,sombreados);assert.equal(reabertaSombra.ajustes.escurecimento,0);assert.equal(chamadasIA,0);
+  const guardadaPixels=await sharp(Buffer.from(guardadaSombra.imagem!.split(",")[1]!,"base64")).extract({left:100,top:1728,width:1,height:1}).raw().toBuffer();assert(guardadaPixels[0]!<85,"A exportação do servidor conserva o sombreado");
+  // Migra uma versão antiga uma vez, reutilizando a análise nas outras versões.
+  const chaveIA=process.env.OPENAI_API_KEY;process.env.OPENAI_API_KEY="teste-sem-rede";
+  try{
+    const legado=structuredClone(editor);delete legado.sombreados;
+    registos.set(`reservas:editor:v1:${email}:${r.id}`,legado);
+    const legadoFilho={...structuredClone(reabertaSombra),sombreados:undefined};
+    registos.set(`reservas:editor:v1:${email}:${guardadaSombra.id}`,legadoFilho);
+    globalThis.fetch=(async(_url,init)=>{chamadasIA++;const pedido=JSON.parse(String(init?.body));assert.equal(pedido.input[0].content[0].image_url,editor.imagemOriginal);return Response.json({output:[{content:[{type:"output_text",text:JSON.stringify({sombreados})}]}]});}) as typeof fetch;
+    const migrado=await prepararEditorPublicacao(email,guardadaSombra.id);
+    assert.deepEqual(migrado.sombreados,sombreados);assert.deepEqual(migrado.ajustes,legadoFilho.ajustes);assert.equal(migrado.fundoLimpo,legadoFilho.fundoLimpo);assert.deepEqual(migrado.textos,legadoFilho.textos);
+    const origemMigrada=await prepararEditorPublicacao(email,r.id);assert.deepEqual(origemMigrada.sombreados,sombreados);assert.equal(origemMigrada.ajustes.escurecimento,0);
+    await prepararEditorPublicacao(email,guardadaSombra.id);assert.equal(chamadasIA,1,"Uma única análise de sombreados, sem repetir o OCR ou gerar outra fotografia");assert.deepEqual(await abrirImagemReserva(email,r.id),antes);
+  }finally{if(chaveIA===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=chaveIA;}
   console.log("OK: acesso privado, original preservado, correção e remoção de textos na imagem, restauro, persistência, fontes/tamanhos, fundo, marca e reabertura sem IA. Sem rede nem alterações reais.");
  }finally{pool.query=originalQuery;globalThis.fetch=originalFetch;await fecharDb();}
 }

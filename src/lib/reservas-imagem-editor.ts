@@ -1,5 +1,6 @@
 import {ErroReserva, imagemReserva, type CaixaReserva} from "./reservas";
 import {FONTES_RESERVA, fonteReserva, pesoFonteReserva, type FonteReserva} from "./reservas-fontes";
+import {desenharSombreadosPublicacao, type SombreadoPublicacao} from "./reservas-imagem-sombras";
 
 export const FONTES_EDITOR_PUBLICACAO = FONTES_RESERVA.filter(f => f.ficheiros.length > 0);
 export interface TextoEditorPublicacao extends CaixaReserva {
@@ -15,6 +16,7 @@ export interface EditorPublicacaoReserva {
   versao: 1; origemId: string; imagemOriginal: string; fundoLimpo: string; textos: TextoEditorPublicacao[];
   decoracoes: (CaixaReserva & {tipo?:"cartao"|"emoji"})[]; marca: CaixaReserva; ajustes: AjustesEditorPublicacao;
   marcaPreparada?:boolean; marcaSuave?:boolean; logoBranco?:string; logoVersao?:string; marcaDaReferencia?:boolean;
+  sombreados?: SombreadoPublicacao[];
 }
 export function ajustesIniciaisPublicacao(textos: TextoEditorPublicacao[]): AjustesEditorPublicacao {
   return {textos: textos.map(({id,fonte,tamanho,cor,negrito,italico,x,y})=>({id,fonte,tamanho,cor,negrito,italico,x,y,manterOriginal:true})),fundo:"",escurecimento:.5,credito:""};
@@ -68,6 +70,7 @@ export function desenharEditorPublicacao(ctx: CanvasRenderingContext2D, original
     const img=fundo as HTMLImageElement,iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height,escala=Math.max(largura/iw,altura/ih);
     ctx.drawImage(fundo,(largura-iw*escala)/2,(altura-ih*escala)/2,iw*escala,ih*escala);
     const gradiente=ctx.createLinearGradient(0,0,0,altura);gradiente.addColorStop(0,`rgba(0,0,0,${ajustes.escurecimento*.4})`);gradiente.addColorStop(1,`rgba(0,0,0,${ajustes.escurecimento})`);ctx.fillStyle=gradiente;ctx.fillRect(0,0,largura,altura);
+    desenharSombreadosPublicacao(ctx,editor.sombreados??[],largura,altura);
     for(const b of editor.decoracoes){const x=b.x/100*largura,y=b.y/100*altura,w=b.w/100*largura,h=b.h/100*altura;ctx.save();ctx.beginPath();if(b.tipo==="emoji")ctx.ellipse(x+w/2,y+h/2,w/2,h/2,0,0,Math.PI*2);else ctx.roundRect(x,y,w,h,Math.min(18,h*.15));ctx.clip();ctx.drawImage(limpo,x,y,w,h,x,y,w,h);ctx.restore();}
   } else {
     ctx.drawImage(original,0,0,largura,altura);
@@ -80,7 +83,9 @@ export function desenharEditorPublicacao(ctx: CanvasRenderingContext2D, original
     if(!textoVisivelPublicacao(t,estilo))continue;
     const recorte=recortes.get(t.id);
     if(recorte&&conteudoTextoPublicacao(t,estilo)===t.texto&&estilo.manterOriginal!==false&&estilo.fonte===t.fonte&&estilo.cor===t.cor&&estilo.negrito===t.negrito&&estilo.italico===t.italico){
-      const escala=estilo.tamanho/t.tamanho;ctx.drawImage(recorte,estilo.x/100*largura,estilo.y/100*altura,t.w/100*largura*escala,t.h/100*altura*escala);continue;
+      const escala=estilo.tamanho/t.tamanho;ctx.save();
+      if(t.sombra){ctx.shadowColor="#00000099";ctx.shadowBlur=Math.max(2,estilo.tamanho*.08);ctx.shadowOffsetY=2;}
+      ctx.drawImage(recorte,estilo.x/100*largura,estilo.y/100*altura,t.w/100*largura*escala,t.h/100*altura*escala);ctx.restore();continue;
     }
     ctx.save();const {linhas,subida}=prepararTextoEditor(ctx,t,estilo,largura),x=estilo.x/100*largura,y=estilo.y/100*altura,w=t.w/100*largura;
     ctx.fillStyle=estilo.cor;ctx.textAlign=t.alinhar;ctx.textBaseline="alphabetic";
