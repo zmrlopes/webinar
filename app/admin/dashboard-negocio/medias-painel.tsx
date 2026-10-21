@@ -1,83 +1,78 @@
-import { ehContaPropria, lerConfig } from "@/lib/dashboard-negocio";
-import { db } from "@/lib/db";
-import { type DadosMapas } from "./mapas-cliente";
+import Link from "next/link";
+import { lerConfig } from "@/lib/dashboard-negocio";
+import { type DadosReservasMedias, resumir } from "@/lib/reservas-medias";
 
-interface LinhaAno {
-  ano: number;
-  vendas: number;
-  meses: number;
-  consultores: number;
-  parcial: boolean;
+const eur = (v: number, d = 0) => `${v.toLocaleString("pt-PT", { minimumFractionDigits: d, maximumFractionDigits: d })} €`;
+const num = (v: number, d = 0) => v.toLocaleString("pt-PT", { maximumFractionDigits: d });
+
+function dataCurta(iso: string): string {
+  const [a, m, d] = iso.split("-").map(Number) as [number, number, number];
+  return new Date(Date.UTC(a, m - 1, d)).toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 }
 
-const eur = (v: number) => `${Math.round(v).toLocaleString("pt-PT")} €`;
-const num = (v: number, d = 1) => v.toLocaleString("pt-PT", { maximumFractionDigits: d });
-
 /**
- * Servidor: médias de venda (reservas) por ano — da equipa inteira e de um
- * consultor da equipa. As vendas mês a mês vêm do snapshot dos Mapas; o número
- * de consultores de cada ano conta-se em equipa_afiliados (quem já se tinha
- * registado até ao fim desse ano, sem as contas próprias). Nada no código.
+ * Servidor: a reserva média da equipa e de um consultor, ano a ano, como o
+ * Analisador de Organização do MyOffice a calcula (valor ÷ nº de reservas).
+ * Os números vêm de dashboard_config.reservas_medias, gravado pelo botão
+ * «Atualizar dashboard» — ver src/lib/reservas-medias.ts.
  */
 export async function MediasPainel(): Promise<React.JSX.Element> {
-  const dados = await lerConfig<DadosMapas>("mapas");
-  const fat = dados?.metrics.faturacao;
-  if (!dados || !fat) return <p className="dn-nota">Ainda não há snapshot dos Mapas carregado.</p>;
-
-  const { rows } = await db().query<{ nome: string; data_registo: string | null }>(
-    "select nome, data_registo from equipa_afiliados",
-  );
-  const registos = rows
-    .filter((r) => !ehContaPropria(r.nome) && r.data_registo)
-    .map((r) => new Date(r.data_registo!).getUTCFullYear());
-
-  const anoAtual = dados.years_recent[dados.years_recent.length - 1]!;
-  const anos = Object.keys(fat.monthly_recent).map(Number).sort((a, b) => a - b);
-  const linhas: LinhaAno[] = [];
-  for (const ano of anos) {
-    const m = fat.monthly_recent[String(ano)] ?? [];
-    const parcial = ano === anoAtual;
-    const valores = parcial ? m.slice(0, dados.ytd_through_idx + 1) : m;
-    // Os meses contam a partir da primeira venda (o 1.º ano pode não ser completo).
-    const primeiro = linhas.length ? 0 : Math.max(0, valores.findIndex((v) => v > 0));
-    const vendas = valores.reduce((a, b) => a + b, 0);
-    if (vendas <= 0) continue;
-    const meses = parcial ? dados.pat_meses_2026 - primeiro : valores.length - primeiro;
-    const consultores = registos.filter((a) => a <= ano).length;
-    linhas.push({ ano, vendas, meses, consultores, parcial });
+  const dados = await lerConfig<DadosReservasMedias>("reservas_medias");
+  if (!dados?.anos.length) {
+    return (
+      <p className="dn-nota">
+        Ainda não há reservas médias guardadas. Carrega em{" "}
+        <Link href="/admin/dashboard-negocio/atualizar" style={{ color: "#4b5320", fontWeight: 600 }}>
+          Atualizar dados
+        </Link>{" "}
+        — a primeira vez vai buscar todos os anos desde 2019 e demora alguns minutos.
+      </p>
+    );
   }
 
-  const total = linhas.reduce((a, l) => a + l.vendas, 0);
-  const mesesTotal = linhas.reduce((a, l) => a + l.meses, 0);
-  const porConsultor = linhas.reduce((a, l) => a + (l.consultores ? l.vendas / l.consultores : 0), 0);
-  const fechados = linhas.filter((l) => !l.parcial);
-  const mediaAnualEquipa = fechados.length ? fechados.reduce((a, l) => a + l.vendas, 0) / fechados.length : 0;
-  const mediaAnualConsultor = fechados.length
-    ? fechados.reduce((a, l) => a + (l.consultores ? l.vendas / l.consultores : 0), 0) / fechados.length
-    : 0;
-  const primeiroAno = linhas[0]?.ano;
+  const anos = dados.anos;
+  const volume = anos.reduce((s, a) => s + a.volume, 0);
+  const reservas = anos.reduce((s, a) => s + a.reservas, 0);
+  // Desde sempre, por consultor: as reservas pessoais de cada um somadas em todos os anos.
+  const porPessoa = new Map<string, [number, number]>();
+  for (const a of anos) {
+    for (const [id, [v, c]] of Object.entries(a.pessoas)) {
+      const t = porPessoa.get(id) ?? [0, 0];
+      porPessoa.set(id, [t[0] + v, t[1] + c]);
+    }
+  }
+  const sempre = resumir([...porPessoa.values()]);
+  const atual = anos[anos.length - 1]!;
 
   return (
     <div>
       <p className="dn-nota">
-        Quanto a equipa vende em reservas, em média, em cada ano — e quanto vende, em média, um consultor da equipa. A
-        venda é a faturação da equipa dos Mapas; o consultor médio é essa venda dividida pelos consultores que já
-        estavam na equipa nesse ano (registados até 31 de dezembro, sem as contas próprias).
-        {linhas.some((l) => l.parcial) && ` ${anoAtual} ainda vai a meio: conta até hoje.`}
+        A <strong>reserva média</strong> é a mesma conta do Analisador de Organização do MyOffice: o valor total das
+        reservas a dividir pelo número de reservas. A <strong>da equipa</strong> junta as tuas reservas e as de toda a
+        equipa. A <strong>de um consultor</strong> olha para as reservas pessoais de cada consultor que reservou nesse
+        ano, faz a média de cada um e depois a média entre todos — cada pessoa conta uma vez, faça 2 ou 50 reservas.
+        Ficam de fora as tuas reservas e as das contas próprias.
       </p>
 
       <div className="dn-stats">
         <div className="dn-stat">
-          <div className="dn-stat-v">{eur(mediaAnualEquipa)}</div>
-          <div className="dn-stat-l">Média por ano da equipa (anos fechados)</div>
+          <div className="dn-stat-v">{eur(reservas ? volume / reservas : 0, 2)}</div>
+          <div className="dn-stat-l">Reserva média da equipa, desde {anos[0]!.ano}</div>
+          <div className="dn-stat-delta">
+            {atual.ano}: {eur(atual.media, 2)}
+          </div>
         </div>
         <div className="dn-stat">
-          <div className="dn-stat-v">{eur(mediaAnualConsultor)}</div>
-          <div className="dn-stat-l">Média por ano de um consultor (anos fechados)</div>
+          <div className="dn-stat-v">{eur(sempre.mediaConsultor, 2)}</div>
+          <div className="dn-stat-l">Reserva média de um consultor, desde {anos[0]!.ano}</div>
+          <div className="dn-stat-delta">
+            {atual.ano}: {eur(atual.mediaConsultor, 2)}
+          </div>
         </div>
         <div className="dn-stat">
-          <div className="dn-stat-v">{eur(mesesTotal ? total / mesesTotal : 0)}</div>
-          <div className="dn-stat-l">Média por mês da equipa, desde {primeiroAno}</div>
+          <div className="dn-stat-v">{num(reservas)}</div>
+          <div className="dn-stat-l">Reservas da equipa desde {anos[0]!.ano}</div>
+          <div className="dn-stat-delta">{eur(volume)} no total</div>
         </div>
       </div>
 
@@ -86,57 +81,71 @@ export async function MediasPainel(): Promise<React.JSX.Element> {
           <thead>
             <tr>
               <th>Ano</th>
-              <th className="dn-num">Vendas da equipa</th>
-              <th className="dn-num">Média por mês (equipa)</th>
-              <th className="dn-num">Consultores</th>
-              <th className="dn-num">Média de um consultor no ano</th>
-              <th className="dn-num">Média de um consultor por mês</th>
+              <th className="dn-num">Reservas da equipa</th>
+              <th className="dn-num">Nº de reservas</th>
+              <th className="dn-num">Reserva média da equipa</th>
+              <th className="dn-num">Consultores que reservaram</th>
+              <th className="dn-num">Reserva média de um consultor</th>
+              <th className="dn-num">Reservas por consultor</th>
+              <th className="dn-num">Venda por consultor</th>
             </tr>
           </thead>
           <tbody>
-            {linhas.map((l) => {
-              const consultor = l.consultores ? l.vendas / l.consultores : 0;
-              return (
-                <tr key={l.ano}>
-                  <td>
-                    <strong>{l.ano}</strong>
-                    {l.parcial && <span className="dn-nivel"> · até hoje</span>}
-                  </td>
-                  <td className="dn-num">{eur(l.vendas)}</td>
-                  <td className="dn-num">{eur(l.meses ? l.vendas / l.meses : 0)}</td>
-                  <td className="dn-num">{l.consultores || "—"}</td>
-                  <td className="dn-num">{l.consultores ? eur(consultor) : "—"}</td>
-                  <td className="dn-num">{l.consultores && l.meses ? eur(consultor / l.meses) : "—"}</td>
-                </tr>
-              );
-            })}
+            {anos.map((a) => (
+              <tr key={a.ano}>
+                <td>
+                  <strong>{a.ano}</strong>
+                  {a.parcial && <span className="dn-nivel"> · até {dataCurta(a.ate)}</span>}
+                </td>
+                <td className="dn-num">{eur(a.volume)}</td>
+                <td className="dn-num">{num(a.reservas)}</td>
+                <td className="dn-num">
+                  <strong>{eur(a.media, 2)}</strong>
+                </td>
+                <td className="dn-num">{num(a.consultores)}</td>
+                <td className="dn-num">
+                  <strong>{eur(a.mediaConsultor, 2)}</strong>
+                </td>
+                <td className="dn-num">{num(a.reservasPorConsultor, 1)}</td>
+                <td className="dn-num">{eur(a.vendaPorConsultor)}</td>
+              </tr>
+            ))}
           </tbody>
           <tfoot>
             <tr>
               <td>
                 <strong>Desde sempre</strong>
-                <span className="dn-nivel"> · {num(mesesTotal)} meses</span>
               </td>
               <td className="dn-num">
-                <strong>{eur(total)}</strong>
+                <strong>{eur(volume)}</strong>
               </td>
               <td className="dn-num">
-                <strong>{eur(mesesTotal ? total / mesesTotal : 0)}</strong>
-              </td>
-              <td className="dn-num">—</td>
-              <td className="dn-num">
-                <strong>{eur(linhas.length ? porConsultor / linhas.length : 0)}</strong>
+                <strong>{num(reservas)}</strong>
               </td>
               <td className="dn-num">
-                <strong>{eur(mesesTotal ? porConsultor / mesesTotal : 0)}</strong>
+                <strong>{eur(reservas ? volume / reservas : 0, 2)}</strong>
+              </td>
+              <td className="dn-num">
+                <strong>{num(sempre.consultores)}</strong>
+              </td>
+              <td className="dn-num">
+                <strong>{eur(sempre.mediaConsultor, 2)}</strong>
+              </td>
+              <td className="dn-num">
+                <strong>{num(sempre.reservasPorConsultor, 1)}</strong>
+              </td>
+              <td className="dn-num">
+                <strong>{eur(sempre.vendaPorConsultor)}</strong>
               </td>
             </tr>
           </tfoot>
         </table>
       </div>
       <p className="dn-rodape">
-        Na linha «Desde sempre», a média de um consultor no ano é a média dos anos da tabela (incluindo o ano em curso,
-        ainda parcial). Consultores que entretanto saíram contam nos anos em que já estavam registados.
+        Mediana de um consultor (o consultor «do meio», menos puxada pelos casos extremos):{" "}
+        {anos.map((a) => `${a.ano} ${eur(a.medianaConsultor)}`).join(" · ")} · desde sempre {eur(sempre.medianaConsultor)}.
+        <br />O número de reservas é o valor ÷ a reserva média que o MyOffice mostra. Atualizado a {dataCurta(dados.ate)}{" "}
+        com o botão «Atualizar dados»; os anos fechados ficam guardados e só o ano em curso volta a ser pedido.
       </p>
     </div>
   );

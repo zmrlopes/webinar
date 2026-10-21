@@ -1,5 +1,6 @@
 import { ehContaPropria, gravarConfig, lerConfig } from "./dashboard-negocio";
 import { lerBruto, type Periodo } from "./dashboard-sincronizar";
+import { calcularAno, juntarAnos, type AnoReservas, type ArvoreReservas, type DadosReservasMedias } from "./reservas-medias";
 import { importarLinhasEquipa, type LinhaEquipa } from "./equipa-import";
 import type { DadosCoreRank } from "../../app/admin/dashboard-negocio/core-rank-cliente";
 import type { DadosIncentivos } from "../../app/admin/dashboard-negocio/incentivos-cliente";
@@ -302,6 +303,21 @@ export async function calcularDashboard(gravar: boolean): Promise<Resultado> {
     resumo.coreRank = { consultores: `${core.consultores.length} → ${novo.consultores.length}` };
   }
 
+  // ------------------------------------------------------ Reservas médias
+  // Independente da lista da equipa: cada ano que chegou do Analisador de
+  // Organização substitui o que estava guardado; os outros mantêm-se.
+  const reservas = await lerConfig<DadosReservasMedias>("reservas_medias");
+  const anosRecebidos: AnoReservas[] = [];
+  for (const chave of Object.keys(bruto).filter((k) => /^reservas-d{4}$/.test(k))) {
+    const arvore = bruto[chave]!.corpo as ArvoreReservas;
+    if (!arvore?.raiz || !Array.isArray(arvore.nos)) continue;
+    anosRecebidos.push(calcularAno(Number(chave.slice(-4)), arvore, hoje));
+  }
+  const novasReservas = anosRecebidos.length ? juntarAnos(reservas, anosRecebidos, hoje) : null;
+  if (novasReservas) {
+    resumo.reservasMedias = Object.fromEntries(anosRecebidos.map((a) => [a.ano, `${a.media} € · ${a.reservas} reservas · consultor ${a.mediaConsultor} €`]));
+  }
+
   // ---------------------------------------------------------------- Equipa
   const linhasEquipa: LinhaEquipa[] = [...equipa.values()]
     .filter((a) => a.user.email)
@@ -323,6 +339,7 @@ export async function calcularDashboard(gravar: boolean): Promise<Resultado> {
       ["linha_direta", linha, novaLinha],
       ["incentivos", incentivos, novosIncentivos],
       ["core_rank", core, novoCore],
+      ["reservas_medias", reservas, novasReservas],
     ];
     for (const [chave, antes, depois] of gravacoes) {
       if (!depois) continue;

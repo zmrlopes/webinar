@@ -9,6 +9,7 @@ import {
   periodosAPedir,
   type Periodo,
 } from "@/lib/dashboard-sincronizar";
+import { anosReservasAPedir, type DadosReservasMedias } from "@/lib/reservas-medias";
 
 export const maxDuration = 300;
 
@@ -22,12 +23,14 @@ export const maxDuration = 300;
  * POST { acao: "calcular", gravar }             → recalcula os separadores (ver src/lib/dashboard-calcular.ts)
  * POST { acao: "parte", chave, corpo }          → guarda uma resposta do MyOffice
  */
-async function plano(): Promise<{ hoje: string; periodos: Periodo[] }> {
+async function plano(): Promise<{ hoje: string; periodos: Periodo[]; anosReservas: number[] }> {
   const hoje = hojeLisboa();
   const mapas = await lerConfig<{ ytd_through_idx?: number }>("mapas");
   // O último mês que o dashboard já tem pode ter ficado a meio: volta a pedir-se.
   const primeiroMes = (mapas?.ytd_through_idx ?? Number(hoje.slice(5, 7)) - 1) + 1;
-  return { hoje, periodos: periodosAPedir(hoje, primeiroMes) };
+  const reservas = await lerConfig<DadosReservasMedias>("reservas_medias");
+  const anosReservas = anosReservasAPedir(reservas, Number(hoje.slice(0, 4)));
+  return { hoje, periodos: periodosAPedir(hoje, primeiroMes), anosReservas };
 }
 
 export async function GET(request: Request): Promise<Response> {
