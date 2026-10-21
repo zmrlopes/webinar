@@ -308,7 +308,7 @@ export async function calcularDashboard(gravar: boolean): Promise<Resultado> {
   // Organização substitui o que estava guardado; os outros mantêm-se.
   const reservas = await lerConfig<DadosReservasMedias>("reservas_medias");
   const anosRecebidos: AnoReservas[] = [];
-  for (const chave of Object.keys(bruto).filter((k) => /^reservas-d{4}$/.test(k))) {
+  for (const chave of Object.keys(bruto).filter((k) => /^reservas-\d{4}$/.test(k))) {
     const arvore = bruto[chave]!.corpo as ArvoreReservas;
     if (!arvore?.raiz || !Array.isArray(arvore.nos)) continue;
     anosRecebidos.push(calcularAno(Number(chave.slice(-4)), arvore, hoje));
