@@ -8,6 +8,7 @@ import { IncentivosPainel } from "./incentivos-painel";
 import { LinhaDiretaPainel } from "./linha-direta-painel";
 import { MapasPainel } from "./mapas-painel";
 import { type DadosMapas } from "./mapas-cliente";
+import { MediasPainel } from "./medias-painel";
 import { ObjetivosCliente } from "./objetivos-cliente";
 import { TrofeusPainel } from "./trofeus-painel";
 
@@ -16,6 +17,7 @@ export const dynamic = "force-dynamic";
 const ABAS = [
   { id: "mapas", label: "Mapas" },
   { id: "objetivos", label: "Objetivos" },
+  { id: "medias", label: "Médias" },
   { id: "eventos", label: "Eventos" },
   { id: "linha-direta", label: "Linha direta" },
   { id: "incentivos", label: "Incentivos" },
@@ -236,6 +238,8 @@ export default async function DashboardNegocio({
         <LinhaDiretaPainel />
       ) : ativa === "incentivos" ? (
         <IncentivosPainel />
+      ) : ativa === "medias" ? (
+        <MediasPainel />
       ) : ativa === "core-rank" ? (
         <CoreRankPainel />
       ) : (
