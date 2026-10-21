@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { calcularDashboard } from "@/lib/dashboard-calcular";
-import { lerConfig } from "@/lib/dashboard-negocio";
+import { gravarConfig, lerConfig } from "@/lib/dashboard-negocio";
 import {
   guardarBruto,
   hojeLisboa,
@@ -9,7 +9,13 @@ import {
   periodosAPedir,
   type Periodo,
 } from "@/lib/dashboard-sincronizar";
-import { anosReservasAPedir, type DadosReservasMedias } from "@/lib/reservas-medias";
+import {
+  anosReservasAPedir,
+  calcularAno,
+  juntarAnos,
+  type ArvoreReservas,
+  type DadosReservasMedias,
+} from "@/lib/reservas-medias";
 
 export const maxDuration = 300;
 
@@ -61,6 +67,16 @@ export async function POST(request: Request): Promise<Response> {
     }
     if (corpo?.acao === "parte" && typeof corpo.chave === "string" && corpo.corpo !== undefined) {
       await guardarBruto(corpo.chave, corpo.corpo);
+      // Cada ano das reservas médias grava-se logo: não fica à espera de
+      // listas da equipa que o MyOffice pode demorar minutos a devolver.
+      if (/^reservas-\d{4}$/.test(corpo.chave)) {
+        const arvore = corpo.corpo as ArvoreReservas;
+        if (arvore?.raiz && Array.isArray(arvore.nos)) {
+          const ano = calcularAno(Number(corpo.chave.slice(-4)), arvore, hojeLisboa());
+          const anterior = await lerConfig<DadosReservasMedias>("reservas_medias");
+          await gravarConfig("reservas_medias", juntarAnos(anterior, [ano], hojeLisboa()));
+        }
+      }
       return NextResponse.json({ ok: true });
     }
   } catch (erro) {
