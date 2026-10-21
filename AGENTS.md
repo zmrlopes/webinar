@@ -177,8 +177,9 @@ continuam exclusivos da conta de teste.
 Por indicação do utilizador, a nova área tem um separador temporário
 “onboarding codex” com uma sugestão de onboarding dos primeiros 90 dias,
 baseada nas apresentações Canva, Academy, formações internas e YouTube,
-testemunhos e navegação recolhida do MyOffice. Inclui etapas, tarefas,
-resultados a demonstrar e acompanhamento do mentor. É só leitura, exclusivo
+testemunhos e navegação recolhida do MyOffice. Por indicação do utilizador,
+mostra apenas 5 passos curtos, no formato dos primeiros passos; os detalhes
+ficam para as reuniões com o upline. É só leitura, exclusivo
 da conta de teste, e não altera os primeiros passos atuais nem envia comunicações.
 
 Por indicação do utilizador, o calendário criativo da Black Friday (PDF da Sara
