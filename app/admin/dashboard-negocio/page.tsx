@@ -68,7 +68,7 @@ export default async function DashboardNegocio({
   const ativa = ABAS.some((a) => a.id === aba) ? aba : "mapas";
 
   return (
-    <main className="dn-pagina">
+    <main className="dn-pagina" style={ativa === "medias" ? { maxWidth: 1240 } : undefined}>
       <style>{`
         .dn-pagina {
           max-width: 960px;

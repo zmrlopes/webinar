@@ -109,8 +109,7 @@ export async function MediasPainel(): Promise<React.JSX.Element> {
       </div>
 
       <style>{`
-        /* A tabela tem 10 colunas: sai da largura da página (960px) para os números caberem numa linha. */
-        .md-largo { width: min(1320px, calc(100vw - 2.5rem)); margin-left: 50%; transform: translateX(-50%); }
+        /* A tabela tem 10 colunas: a página fica mais larga neste separador (ver page.tsx). */
         .md-largo .dn-tabela td { white-space: nowrap; }
         .md-largo .dn-tabela th { min-width: 92px; vertical-align: bottom; }
       `}</style>
