@@ -55,7 +55,9 @@ export async function MediasPainel(): Promise<React.JSX.Element> {
   });
   const volume = anos.reduce((s, a) => s + a.volume, 0);
   const reservas = anos.reduce((s, a) => s + a.reservas, 0);
-  const meses = anos.reduce((s, a) => s + a.meses, 0);
+  // Por mês, desde sempre: a faturação de cada ano a dividir pelos meses que
+  // os consultores que faturaram nesse ano lá estiveram (consultor × meses).
+  const consultorMeses = anos.reduce((s, a) => s + a.consultores * a.meses, 0);
   const faturacao = anos.reduce((s, a) => s + a.faturacao, 0);
   const equipaHoje = registos.length;
   // Desde sempre, por consultor: as reservas pessoais de cada um somadas em todos os anos.
@@ -171,7 +173,7 @@ export async function MediasPainel(): Promise<React.JSX.Element> {
                 <strong>{eur(sempre.vendaPorConsultor)}</strong>
               </td>
               <td className="dn-num">
-                <strong>{eur(meses ? sempre.vendaPorConsultor / meses : 0)}</strong>
+                <strong>{eur(consultorMeses ? faturacao / consultorMeses : 0)}</strong>
               </td>
               <td className="dn-num">
                 <strong>{num(equipaHoje)}</strong>
@@ -185,7 +187,8 @@ export async function MediasPainel(): Promise<React.JSX.Element> {
       </div>
       <p className="dn-rodape">
         Na linha «Desde sempre», a faturação por consultor é tudo o que cada um faturou desde {anos[0]!.ano}, em média
-        entre os {num(sempre.consultores)} que já faturaram; por mês, a dividir por {num(meses)} meses. Os consultores na
+        entre os {num(sempre.consultores)} que já faturaram; por mês, é a média de cada mês em que um consultor faturou
+        no ano (somando os anos). Os consultores na
         equipa são os registados até 31 de dezembro de cada ano (quem saiu conta nos anos em que lá estava).
         <br />
         Mediana da reserva de um consultor (o consultor «do meio»):{" "}
