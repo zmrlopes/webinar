@@ -179,7 +179,9 @@ Por indicação do utilizador, a nova área tem um separador temporário
 baseada nas apresentações Canva, Academy, formações internas e YouTube,
 testemunhos e navegação recolhida do MyOffice. Por indicação do utilizador,
 mostra apenas 5 passos curtos, no formato dos primeiros passos; os detalhes
-ficam para as reuniões com o upline. É só leitura, exclusivo
+ficam para as reuniões com o upline. Cada tarefa tem um check guardado no
+navegador (curso + 1.ª reunião; Sessões 1 e 2; 2.ª reunião para objetivos,
+dúvidas e tarefas). Não grava dados no servidor, é exclusivo
 da conta de teste, e não altera os primeiros passos atuais nem envia comunicações.
 
 Por indicação do utilizador, o calendário criativo da Black Friday (PDF da Sara

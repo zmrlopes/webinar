@@ -2,3 +2,12 @@
 .nota { margin: 18px 0 0; color: #6b6a63; font-size: 13px; }
 .linkTexto { padding: 0; border: 0; background: none; color: #4b5320; font: inherit; text-decoration: underline; cursor: pointer; }
 .linkTexto:focus-visible { outline: 2px solid #4b5320; outline-offset: 4px; }
+.tarefas { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.tarefa { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 14px; padding: 6px 0; border-top: 1px solid #eeede7; }
+.tarefa:first-child { border-top: none; }
+.tarefaTitulo, .tarefaFeita { color: #000; font-size: 14px; font-weight: 600; text-align: left; }
+.tarefaFeita { color: #4b5320; text-decoration: line-through; }
+.ligacao { display: inline-flex; align-items: center; gap: 8px; padding: 0; border: none; background: none; color: #4b5320; font: inherit; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; }
+.ligacao:hover { text-decoration: underline; }
+.ligacao:focus-visible { outline: 2px solid #4b5320; outline-offset: 3px; border-radius: 4px; }
+.pendente { color: #6b6a63; font-size: 12px; }
