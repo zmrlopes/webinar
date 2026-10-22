@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { lerEmailGuardado } from "../armazenamento";
+import { AcoesLeads, FunilLeads } from "./metricas-leads";
 import { ObjecaoLead } from "./objecao-lead";
 import { SessaoUnica } from "./sessao-unica";
 import type { TestemunhoObjecao } from "@/lib/objecoes";
@@ -24,6 +25,8 @@ interface LeadConsolidado {
   respostasObjecao: string[] | null;
   testemunhoObjecao: TestemunhoObjecao | null;
   assistiuCorrigido: boolean;
+  estadoAtualizadoEm: string | null;
+  ultimaSessaoInscrita: string | null;
 }
 
 interface SessaoResumo {
@@ -232,6 +235,49 @@ export function WebinaresPagina({ embutida = false }: { embutida?: boolean } = {
         .vqw-pilula.vqw-ativa-follow_up { background: #f1e6c9; color: #4a3c10; border-color: #e2cf94; }
         .vqw-pilula.vqw-ativa-convertido { background: #e4f3e4; color: #0ca30c; border-color: #c9e8c9; }
         .vqw-pilula.vqw-ativa-desistiu { background: #f8e2e0; color: #a33; border-color: #f0c4c1; }
+        .vqw-funil {
+          list-style: none;
+          padding: 0;
+          margin: 0 0 1.25rem;
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          gap: 0.75rem;
+        }
+        .vqw-funil-passo {
+          position: relative;
+          background: #f7f6f3;
+          border: 1px solid #000000;
+          border-radius: 10px;
+          padding: 1rem 1.15rem;
+        }
+        .vqw-funil-passo:last-child { background: #4b5320; border-color: #4b5320; }
+        .vqw-funil-passo:last-child .vqw-numero,
+        .vqw-funil-passo:last-child .vqw-legenda,
+        .vqw-funil-passo:last-child .vqw-funil-detalhe { color: #ffffff; }
+        .vqw-funil-detalhe { color: #4b5320; font-size: 0.78rem; font-weight: 600; margin-top: 0.35rem; }
+        .vqw-acoes { margin-bottom: 1.5rem; }
+        .vqw-acoes h2 { font-size: 1.05rem; margin: 0 0 0.6rem; }
+        .vqw-acoes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.75rem; align-items: start; }
+        .vqw-acao { background: #fbfaf6; border: 1px solid #e5e5da; border-radius: 10px; }
+        .vqw-acao > summary { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.85rem 1rem; cursor: pointer; list-style: none; }
+        .vqw-acao > summary::-webkit-details-marker { display: none; }
+        .vqw-acao > summary strong { display: block; font-size: 0.9rem; }
+        .vqw-acao > summary small { display: block; color: #6b6a63; font-size: 0.78rem; margin-top: 0.15rem; }
+        .vqw-acao-numero {
+          flex: none;
+          display: grid;
+          place-items: center;
+          min-width: 2rem;
+          height: 2rem;
+          border-radius: 999px;
+          background: #4b5320;
+          color: #ffffff;
+          font-weight: 800;
+        }
+        .vqw-acao ul { list-style: none; margin: 0; padding: 0 1rem 0.85rem; display: grid; gap: 0.45rem; }
+        .vqw-acao li { display: flex; flex-direction: column; font-size: 0.88rem; border-top: 1px solid #eae7de; padding-top: 0.45rem; }
+        .vqw-acao li .vqw-mudo { font-size: 0.78rem; }
+        .vqw-acao > .vqw-mudo { margin: 0; padding: 0 1rem 0.85rem; }
         .vqw-abas { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; }
         .vqw-aba {
           background: transparent;
@@ -302,7 +348,7 @@ export function WebinaresPagina({ embutida = false }: { embutida?: boolean } = {
               <SessaoUnica email={email} webinarId={sessaoSelecionada} />
             ) : (
               <>
-                <div className="vqw-grid">
+                {!embutida && <div className="vqw-grid">
                   <div className="vqw-cartao">
                     <div className="vqw-numero">{dados.leadsTotais}</div>
                     <div className="vqw-legenda">Leads totais</div>
@@ -319,7 +365,7 @@ export function WebinaresPagina({ embutida = false }: { embutida?: boolean } = {
                     <div className="vqw-numero">{dados.convertidos}</div>
                     <div className="vqw-legenda">Convertidos</div>
                   </div>
-                </div>
+                </div>}
 
                 <div className="vqw-abas">
                   <button
@@ -337,6 +383,9 @@ export function WebinaresPagina({ embutida = false }: { embutida?: boolean } = {
                     Leads equipa ({leadsEquipa.length})
                   </button>
                 </div>
+
+                {embutida && <FunilLeads leads={leadsVisiveis} />}
+                {embutida && aba === "pessoais" && <AcoesLeads leads={leadsPessoais} />}
 
                 {leadsVisiveis.length === 0 ? (
                   <p className="vqw-mudo">

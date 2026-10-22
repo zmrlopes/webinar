@@ -154,6 +154,10 @@ Por indicação explícita do utilizador, nas Leads da área atual
 (`/consultor/webinares`), cada sessão separa as leads em “Leads pessoais” e
 “Leads equipa”, tal como em “Todas as sessões”, para todos os consultores.
 A nova área usa o mesmo componente. Esta autorização abrange apenas esta separação.
+Por indicação do utilizador, só nas Leads da nova área (conta de teste), os 4
+cartões dão lugar a um funil (inscritas → assistiram → follow up → converteram)
+da aba visível e, nas Leads pessoais, a um bloco “A precisar de ação”
+(assistiram sem estado, follow up parado há mais de 7 dias, faltaram).
 
 Na resolução de objeções das Leads, além das 2-3 respostas geradas a partir da
 base de conhecimento, a IA sugere um testemunho da playlist iCliGo

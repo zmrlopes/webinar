@@ -24,6 +24,10 @@ export interface LeadConsolidado {
   respostasObjecao: string[] | null;
   testemunhoObjecao: TestemunhoObjecao | null;
   assistiuCorrigido: boolean;
+  /** Quando o estado foi mudado pela última vez — para o "follow up parado". */
+  estadoAtualizadoEm: string | null;
+  /** Sessão mais recente em que a lead se inscreveu — para saber se já faltou. */
+  ultimaSessaoInscrita: string | null;
 }
 
 export interface ResumoLeads {
@@ -63,6 +67,8 @@ export async function listarLeadsConsolidado(
     objecao: string | null;
     respostas_objecao: unknown;
     assistiu_manual: boolean | null;
+    estado_atualizado_em: string | null;
+    ultima_sessao_inscrita: string | null;
   }>(
     `select
        r.email,
@@ -79,10 +85,12 @@ export async function listarLeadsConsolidado(
          end
        ) as percentagem_assistencia,
        max(case when r.presenca = 'attended' then w.sessao_externa_em end) as ultima_sessao_assistida,
+       max(w.sessao_externa_em) as ultima_sessao_inscrita,
        (array_agg(ea.nome order by r.criado_em desc))[1] as trazido_por_nome,
        (array_agg(r.referencia_email order by r.criado_em desc))[1] as referencia_email_mais_recente,
        bool_or(r.referencia_email = $3) as pode_editar,
        el.estado,
+       el.atualizado_em as estado_atualizado_em,
        ol.objecao,
        ol.respostas as respostas_objecao
      from registrations r
@@ -95,7 +103,7 @@ export async function listarLeadsConsolidado(
        and r.cancelada_em is null
        and r.referencia_email = any($2::text[])
        and not exists (select 1 from equipa_afiliados ea2 where ea2.email = r.email)
-     group by r.email, el.estado, ol.objecao, ol.respostas, pm.assistiu
+     group by r.email, el.estado, el.atualizado_em, ol.objecao, ol.respostas, pm.assistiu
      order by max(r.criado_em) desc`,
     [TITULO_WEBINAR_PUBLICO, referenciaEmails, proprioEmail],
   );
@@ -118,6 +126,8 @@ export async function listarLeadsConsolidado(
       respostasObjecao: guardadas?.respostas ?? null,
       testemunhoObjecao: guardadas?.testemunho ?? null,
       assistiuCorrigido: r.assistiu_manual !== null,
+      estadoAtualizadoEm: r.estado_atualizado_em,
+      ultimaSessaoInscrita: r.ultima_sessao_inscrita,
     };
   });
 
