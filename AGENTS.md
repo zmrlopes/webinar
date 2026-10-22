@@ -10,6 +10,17 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Alterações na área de consultor
 
+Por indicação do utilizador, o Início da nova área inclui uma frase diária sobre
+o modelo de negócio, com reflexões originais inspiradas em referências de network
+marketing e ligação à fonte. A rotação segue o dia em `Europe/Lisbon`, com os
+textos em `src/lib/frase-do-dia.ts`. Continua exclusiva da nova área da conta de teste.
+
+Por indicação do utilizador, o Início da nova área inclui também uma notícia diária
+de turismo, recolhida nas APIs públicas da Turisver e Ambitur, com título, fonte,
+data real e ligação para o original. O destaque é guardado em cache por dia de Lisboa;
+sem notícias do dia, identifica a última disponível (até 7 dias). Falhas permitem
+nova tentativa. O cartão e a API continuam exclusivos da nova área da conta de teste.
+
 As novas alterações de visual e organização devem ficar visíveis apenas na
 conta de teste `zmrlopes@gmail.com`. Publicar estas alterações para todos os
 consultores requer uma instrução explícita do utilizador. Reutilizar o email

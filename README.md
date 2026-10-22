@@ -9,6 +9,30 @@ base de dados Postgres (Neon) ligada.
 
 ## Estado
 
+### Frase diária no Início da nova área
+
+O Início de `/consultor/nova-area` inclui 60 reflexões originais sobre relações,
+competências, acompanhamento e liderança, inspiradas em Eric Worre, Sandro Cazzato,
+Daniel G, Jim Rohn e Ray Higdon, com ligação à referência consultada. Não são citações.
+A frase muda por dia de calendário em `Europe/Lisbon`, mesmo com a página aberta,
+e é igual em todos os dispositivos nesse dia. A coleção repete após 60 dias.
+Os textos e as referências estão em `src/lib/frase-do-dia.ts`; não há geração por IA
+em cada visita nem gravação de dados. Mantém-se o acesso exclusivo à conta de teste,
+através da restrição já existente da nova área.
+
+### Notícia diária de turismo na nova área
+
+O Início inclui também **Notícia do dia**, com título, fonte, data de publicação
+e ligação para o original, recolhidos nas APIs públicas da Turisver e Ambitur.
+O primeiro acesso de cada dia de Lisboa escolhe a notícia mais recente disponível
+e mantém o destaque em cache nesse dia, sem IA nem alterações à base de dados.
+Se uma fonte falhar, usa a outra; se nenhuma devolver notícias dos últimos 7 dias,
+mostra indisponibilidade e permite tentar novamente. Notícias de dias anteriores
+mantêm a data real e a indicação de última notícia disponível.
+O cartão atualiza quando o dia muda ou se regressa à página. O cartão e a API
+`/api/consultor/nova-area/noticia-turismo` mantêm a restrição à conta de teste.
+Testes: `node --import tsx scripts/testes-noticia-turismo.ts`.
+
 ### Gestão de formações gravadas
 
 Em `/admin/formacoes-gravadas`, o admin adiciona título e link (YouTube ou

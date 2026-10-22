@@ -1,0 +1,16 @@
+.cartao { margin-bottom: 26px; padding: 26px 30px; border: 1px solid #dfe1d6; border-left: 4px solid #4b5320; border-radius: 18px; background: #f7f8f2; }
+.topo { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 18px; }
+.topo h2 { margin: 0; color: #4b5320; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.topo time { color: #626652; font-size: 12px; }
+.tema { color: #4b5320; font-size: 12px; font-weight: 650; }
+.frase { max-width: 900px; margin: 8px 0 20px; color: #000; font-size: clamp(20px, 1.8vw, 27px); font-weight: 600; line-height: 1.45; letter-spacing: -.025em; overflow-wrap: break-word; }
+.referencia { margin: 0; color: #626652; font-size: 12px; line-height: 1.6; }
+.referencia a { display: inline-block; color: #4b5320; text-underline-offset: 3px; }
+.referencia a:hover { text-decoration-thickness: 2px; }
+.referencia a:focus-visible { outline: 2px solid #4b5320; outline-offset: 4px; border-radius: 2px; }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 760px) {
+  .cartao { margin-bottom: 20px; padding: 20px; border-radius: 14px; }
+  .topo { margin-bottom: 14px; }
+  .frase { margin-bottom: 16px; font-size: 20px; }
+}

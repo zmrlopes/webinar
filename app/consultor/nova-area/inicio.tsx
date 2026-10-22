@@ -5,6 +5,8 @@ import type { AvisoInicio } from "@/lib/consultor-nova-area";
 import estilos from "./inicio.module.css";
 import comuns from "./nova-area.module.css";
 import { AvisoRelatorioCore } from "./core-rank";
+import { FraseDoDia } from "./frase-do-dia";
+import { NoticiaTurismo } from "./noticia-turismo";
 
 function Icone({ tipo }: { tipo: AvisoInicio["icone"] | "comunicado" }) {
   return <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -48,6 +50,8 @@ export function InicioNovaArea({ avisos, erroAvisos, feitos, aoComecar, acabadoA
       <p>Os teus avisos, questionários e novidades da equipa.</p>
     </div>
 
+    <FraseDoDia />
+    <NoticiaTurismo email={email} />
     <AvisoRelatorioCore email={email} aoAbrir={aoAbrirCore} />
     {acabadoAgora && <div role="status" className={estilos.concluido}>
       <span aria-hidden="true">✓</span>
