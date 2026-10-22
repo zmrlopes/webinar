@@ -1,6 +1,7 @@
 .calculadoras > div > p { color: #55574f; }
 .cartao { padding: 28px; border: 1px solid #e2e2da; border-radius: 20px; background: #fff; box-shadow: 0 3px 14px #4b532006; }
 .cartao + .cartao { margin-top: 24px; }
+.cartao .calcularVirtuais { margin: 20px 0 24px; }
 .cabecalho { display: flex; align-items: flex-start; gap: 14px; }
 .icone { display: grid; place-items: center; flex: none; width: 48px; height: 48px; border-radius: 14px; color: #4b5320; background: #4b532013; }
 .cabecalho h2 { margin: 1px 0 5px; color: #000; font-size: 20px; font-weight: 750; letter-spacing: -.02em; line-height: 1.4; }
