@@ -204,3 +204,11 @@ Os sombreados e gradientes sob os textos são camadas independentes da fotografi
 e mantêm-se ao trocar o fundo, incluindo a sombra das letras originais. Os
 editores antigos recebem a separação dos sombreados ao reabrir, preservando as
 publicações e os ajustes privados. Continua exclusivo da nova área da conta de teste.
+
+Por indicação do utilizador, os cartões, retângulos e outras formas preenchidas
+dos templates também são camadas independentes da fotografia. No editor, entram
+em “Formas e cartões”, com seleção na imagem, mudança da cor do preenchimento,
+desfazer e reposição da cor original. Preservar transparência, contornos irregulares,
+textos e pictogramas sobre o novo fundo; não limitar a deteção a branco/amarelo.
+As publicações antigas recebem esta preparação ao reabrir, mantendo as versões
+originais e os ajustes privados. Continua exclusivo da nova área da conta de teste.

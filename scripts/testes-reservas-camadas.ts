@@ -1,0 +1,48 @@
+import assert from "node:assert/strict";
+import {createCanvas,loadImage} from "@napi-rs/canvas";
+import {desenharEditorPublicacao,ajustesIniciaisPublicacao,type EditorPublicacaoReserva} from "../src/lib/reservas-imagem-editor";
+import {validarFormasPublicacao,validarGraficosPublicacao,estilosFormasPublicacao,type FormaPublicacao} from "../src/lib/reservas-imagem-camadas";
+import {extrairGraficosPublicacao,refinarFormasPublicacao} from "../src/lib/reservas-imagem-camadas-servidor";
+
+async function main(){
+  const largura=1080,altura=1350,cor="#e0b64d";
+  const formas:FormaPublicacao[]=validarFormasPublicacao([{nome:"Cartão colorido",x:10,y:30,w:80,h:40,cor,opacidade:.8,figura:"retangulo",raio:0,pontos:[]}]);
+  const foto=createCanvas(largura,altura),f=foto.getContext("2d");f.fillStyle="#283c50";f.fillRect(0,0,largura,altura);f.fillStyle="#3c5064";f.fillRect(250,0,100,altura);
+  const placa=createCanvas(largura,altura),p=placa.getContext("2d");p.drawImage(foto,0,0);p.fillStyle="rgba(224,182,77,.8)";p.fillRect(108,405,864,540);
+  p.fillStyle="#c80060";p.beginPath();p.arc(540,800,35,0,Math.PI*2);p.fill();p.fillStyle="#ffffff";p.fillRect(522,795,36,10);p.fillRect(535,782,10,36);
+  const original=createCanvas(largura,altura),o=original.getContext("2d");o.drawImage(placa,0,0);o.fillStyle="#ffffff";o.fillRect(200,490,250,40);
+  const medidas=await refinarFormasPublicacao(original.toBuffer("image/png"),[{...formas[0]!,x:8,y:34,w:84,h:36}],largura,altura);
+  assert(Math.abs(medidas[0]!.x-10)<.5&&Math.abs(medidas[0]!.y-30)<.5&&Math.abs(medidas[0]!.h-40)<.5,"O recorte local corrige coordenadas imprecisas da IA num cartão de cor");
+  const textos=[{id:"texto-1",nome:"Título",texto:"HOTEL",fonte:"poppins" as const,tamanho:40,cor:"#ffffff",negrito:true,italico:false,sombra:false,alinhar:"left" as const,x:200/largura*100,y:490/altura*100,w:250/largura*100,h:40/altura*100}];
+  const letras=createCanvas(250,40);letras.getContext("2d").fillStyle="#ffffff";letras.getContext("2d").fillRect(0,0,250,40);
+  const graficos=await extrairGraficosPublicacao(original.toBuffer("image/png"),validarGraficosPublicacao([{nome:"Ícone rosa com pictograma branco",x:46.5,y:56.5,w:7,h:6,cor:"#c80060",mascara:"elipse"}]),largura,altura);
+  assert.equal(graficos.length,1);const g=graficos[0]!,grafico=await loadImage(Buffer.from(g.imagem.split(",")[1]!,"base64"));
+  const recorte=createCanvas(grafico.width,grafico.height),rc=recorte.getContext("2d");rc.drawImage(grafico,0,0);
+  assert.equal(rc.getImageData(0,0,1,1).data[3],0,"O gráfico tem transparência, sem levar consigo o fundo antigo");
+  assert(rc.getImageData(Math.floor(grafico.width/2),Math.floor(grafico.height/2),1,1).data[0]!>240,"O pictograma branco interior é conservado");
+  const editor:EditorPublicacaoReserva={versao:1,origemId:"teste",imagemOriginal:"",fundoLimpo:"",textos,decoracoes:[],marca:{x:0,y:0,w:1,h:1},ajustes:{...ajustesIniciaisPublicacao(textos),escurecimento:0,formas:estilosFormasPublicacao(formas)},formas,graficos,camadasPreparadas:true,sombreados:[]};
+  const novaFoto=createCanvas(largura,altura);novaFoto.getContext("2d").fillStyle="#8a2b12";novaFoto.getContext("2d").fillRect(0,0,largura,altura);
+  const render=createCanvas(largura,altura),ctx=render.getContext("2d"),letrasMap=new Map([[textos[0]!.id,letras as unknown as CanvasImageSource]]),graficosMap=new Map([[g.id,grafico as unknown as CanvasImageSource]]);
+  const desenhar=(fundo:CanvasImageSource|null,corEscolhida=cor)=>desenharEditorPublicacao(ctx as unknown as CanvasRenderingContext2D,original as unknown as CanvasImageSource,placa as unknown as CanvasImageSource,fundo,editor,{...editor.ajustes,formas:[{id:formas[0]!.id,cor:corEscolhida}]},largura,altura,letrasMap,undefined,graficosMap);
+  desenhar(null);
+  assert(Buffer.from(ctx.getImageData(0,0,largura,altura).data).equals(Buffer.from(o.getImageData(0,0,largura,altura).data)),"Abrir conserva o original exatamente, sem duplicar o cartão");
+  desenhar(novaFoto as unknown as CanvasImageSource);
+  const pixel=ctx.getImageData(400,650,1,1).data;assert(Math.abs(pixel[0]!-(224*.8+138*.2))<3&&Math.abs(pixel[1]!-(182*.8+43*.2))<3,"O cartão colorido mantém-se translúcido sobre a fotografia nova");
+  assert(ctx.getImageData(540,800,1,1).data[0]!>240,"O pictograma branco mantém-se por cima do novo fundo e do cartão");
+  assert(ctx.getImageData(510,800,1,1).data[0]!>180&&ctx.getImageData(510,800,1,1).data[1]!<30,"Ícones rosa também sobrevivem à troca de fundo");
+  assert(ctx.getImageData(220,510,1,1).data[0]!>240,"As letras mantêm-se por cima do cartão");
+  desenhar(novaFoto as unknown as CanvasImageSource,"#4050b0");assert(ctx.getImageData(400,650,1,1).data[2]!>130,"A cor escolhida aparece no fundo novo");
+  desenhar(null,"#4050b0");
+  const tintado=ctx.getImageData(400,650,1,1).data,antes=p.getImageData(400,650,1,1).data;
+  assert(Math.abs(tintado[0]!-(antes[0]!+(64-224)*.8))<2,"Mudar a cor no original não exige trocar a fotografia");
+  const texturaA=ctx.getImageData(270,650,1,1).data[2]!,texturaB=ctx.getImageData(400,650,1,1).data[2]!;assert(texturaA>texturaB,"A textura da fotografia continua visível através do cartão recolorido");
+  assert(ctx.getImageData(220,510,1,1).data[0]!>240&&ctx.getImageData(540,800,1,1).data[0]!>240,"Recolorir preserva as letras e os pictogramas brancos");
+  const fora=ctx.getImageData(10,1000,1,1).data;assert.deepEqual([...fora],[40,60,80,255],"O resto da fotografia permanece intacto");
+  const poligono=validarFormasPublicacao([{...formas[0],figura:"poligono",pontos:[{x:0,y:15},{x:50,y:0},{x:100,y:15},{x:100,y:85},{x:50,y:100},{x:0,y:85}]}]);
+  const edPol={...editor,formas:poligono};desenharEditorPublicacao(ctx as unknown as CanvasRenderingContext2D,original as unknown as CanvasImageSource,placa as unknown as CanvasImageSource,novaFoto as unknown as CanvasImageSource,edPol,{...editor.ajustes,formas:estilosFormasPublicacao(poligono)},largura,altura,letrasMap,undefined,graficosMap);
+  assert.deepEqual([...ctx.getImageData(115,410,1,1).data],[138,43,18,255],"O cartão irregular mantém o seu contorno, sem criar um retângulo opaco à volta");
+  for(const invalido of [null,{},Array(17).fill(formas[0]),[{...formas[0],x:100}],[{...formas[0],cor:"url(fora)"}],[{...formas[0],opacidade:2}],[{...formas[0],figura:"poligono",pontos:[{x:500,y:0}]}]])assert.throws(()=>validarFormasPublicacao(invalido));
+  for(const invalido of [[{id:"marca",cor:"#000000"}],[{id:formas[0]!.id,cor:"red"}],[]])assert.throws(()=>estilosFormasPublicacao(formas,invalido));
+  console.log("OK: cartões coloridos e irregulares, transparência sobre outra fotografia, cor editável no original, ícones rosa/brancos, textura e limites de edição.");
+}
+main().catch(e=>{console.error(e);process.exitCode=1;});

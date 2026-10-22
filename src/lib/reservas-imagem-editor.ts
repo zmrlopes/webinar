@@ -1,6 +1,7 @@
 import {ErroReserva, imagemReserva, type CaixaReserva} from "./reservas";
 import {FONTES_RESERVA, fonteReserva, pesoFonteReserva, type FonteReserva} from "./reservas-fontes";
 import {desenharSombreadosPublicacao, type SombreadoPublicacao} from "./reservas-imagem-sombras";
+import {desenharFormasPublicacao,recolorirFormaPublicacao,formaAlteradaPublicacao,estilosFormasPublicacao,type FormaPublicacao,type GraficoPublicacao,type EstiloFormaPublicacao} from "./reservas-imagem-camadas";
 
 export const FONTES_EDITOR_PUBLICACAO = FONTES_RESERVA.filter(f => f.ficheiros.length > 0);
 export interface TextoEditorPublicacao extends CaixaReserva {
@@ -11,12 +12,14 @@ export interface TextoEditorPublicacao extends CaixaReserva {
 export interface EstiloTextoPublicacao {id: string; fonte: FonteReserva; tamanho: number; cor: string; negrito: boolean; italico: boolean; x: number; y: number; manterOriginal?:boolean; texto?:string; apagado?:boolean}
 export interface AjustesEditorPublicacao {
   textos: EstiloTextoPublicacao[]; fundo: string; escurecimento: number; credito: string; marca?:{x:number;y:number};
+  formas?:EstiloFormaPublicacao[];
 }
 export interface EditorPublicacaoReserva {
   versao: 1; origemId: string; imagemOriginal: string; fundoLimpo: string; textos: TextoEditorPublicacao[];
   decoracoes: (CaixaReserva & {tipo?:"cartao"|"emoji"})[]; marca: CaixaReserva; ajustes: AjustesEditorPublicacao;
   marcaPreparada?:boolean; marcaSuave?:boolean; logoBranco?:string; logoVersao?:string; marcaDaReferencia?:boolean;
   sombreados?: SombreadoPublicacao[];
+  formas?:FormaPublicacao[]; graficos?:GraficoPublicacao[]; camadasPreparadas?:boolean;
 }
 export function ajustesIniciaisPublicacao(textos: TextoEditorPublicacao[]): AjustesEditorPublicacao {
   return {textos: textos.map(({id,fonte,tamanho,cor,negrito,italico,x,y})=>({id,fonte,tamanho,cor,negrito,italico,x,y,manterOriginal:true})),fundo:"",escurecimento:.5,credito:""};
@@ -42,7 +45,8 @@ export function validarAjustesPublicacao(valor: unknown, editor: EditorPublicaca
   if (typeof v.escurecimento !== "number" || !Number.isFinite(v.escurecimento) || v.escurecimento < 0 || v.escurecimento > .85 || typeof v.credito !== "string" || v.credito.length > 300) throw new ErroReserva("O fundo escolhido é inválido.");
   if(v.marca&&(!editor.marcaPreparada||!editor.logoBranco||!Number.isFinite(v.marca.x)||!Number.isFinite(v.marca.y)||v.marca.x<0||v.marca.y<0||v.marca.x>100-editor.marca.w||v.marca.y>100-editor.marca.h))throw new ErroReserva("Mantém o logótipo dentro da publicação.");
   if(v.marca!==undefined&&(!v.marca||typeof v.marca!=="object"))throw new ErroReserva("A posição do logótipo é inválida.");
-  return {textos,fundo:imagemReserva(v.fundo),escurecimento:v.escurecimento,credito:v.credito.trim(),...(v.marca?{marca:{x:v.marca.x,y:v.marca.y}}:{})};
+  const formas=estilosFormasPublicacao(editor.formas??[],v.formas===undefined?editor.ajustes.formas:v.formas);
+  return {textos,fundo:imagemReserva(v.fundo),escurecimento:v.escurecimento,credito:v.credito.trim(),...(v.marca?{marca:{x:v.marca.x,y:v.marca.y}}:{}),...(editor.camadasPreparadas?{formas}: {})};
 }
 function linhasEditor(ctx: CanvasRenderingContext2D, texto: string, largura: number): string[] {
   return texto.split("\n").flatMap(paragrafo => {
@@ -64,22 +68,29 @@ export function ajustarConteudoTextoPublicacao(ctx:CanvasRenderingContext2D,text
   return proximo;
 }
 /** O original é o ponto de partida; só os textos alterados recebem um remendo do fundo limpo. */
-export function desenharEditorPublicacao(ctx: CanvasRenderingContext2D, original: CanvasImageSource, limpo: CanvasImageSource, fundo: CanvasImageSource | null, editor: EditorPublicacaoReserva, ajustes: AjustesEditorPublicacao, largura: number, altura: number, recortes:Map<string,CanvasImageSource>=new Map(),logoBranco?:CanvasImageSource) {
+export function desenharEditorPublicacao(ctx: CanvasRenderingContext2D, original: CanvasImageSource, limpo: CanvasImageSource, fundo: CanvasImageSource | null, editor: EditorPublicacaoReserva, ajustes: AjustesEditorPublicacao, largura: number, altura: number, recortes:Map<string,CanvasImageSource>=new Map(),logoBranco?:CanvasImageSource,graficos:Map<string,CanvasImageSource>=new Map()) {
+  const formasAlteradas=(editor.formas??[]).filter(f=>formaAlteradaPublicacao(f,ajustes.formas));
+  const intersecta=(a:CaixaReserva,b:CaixaReserva)=>a.x+a.w>b.x&&a.x<b.x+b.w&&a.y+a.h>b.y&&a.y<b.y+b.h;
   ctx.clearRect(0,0,largura,altura);
   if (fundo) {
     const img=fundo as HTMLImageElement,iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height,escala=Math.max(largura/iw,altura/ih);
     ctx.drawImage(fundo,(largura-iw*escala)/2,(altura-ih*escala)/2,iw*escala,ih*escala);
     const gradiente=ctx.createLinearGradient(0,0,0,altura);gradiente.addColorStop(0,`rgba(0,0,0,${ajustes.escurecimento*.4})`);gradiente.addColorStop(1,`rgba(0,0,0,${ajustes.escurecimento})`);ctx.fillStyle=gradiente;ctx.fillRect(0,0,largura,altura);
     desenharSombreadosPublicacao(ctx,editor.sombreados??[],largura,altura);
-    for(const b of editor.decoracoes){const x=b.x/100*largura,y=b.y/100*altura,w=b.w/100*largura,h=b.h/100*altura;ctx.save();ctx.beginPath();if(b.tipo==="emoji")ctx.ellipse(x+w/2,y+h/2,w/2,h/2,0,0,Math.PI*2);else ctx.roundRect(x,y,w,h,Math.min(18,h*.15));ctx.clip();ctx.drawImage(limpo,x,y,w,h,x,y,w,h);ctx.restore();}
+    if(editor.camadasPreparadas)desenharFormasPublicacao(ctx,editor.formas??[],ajustes.formas,largura,altura);
+    else for(const b of editor.decoracoes){const x=b.x/100*largura,y=b.y/100*altura,w=b.w/100*largura,h=b.h/100*altura;ctx.save();ctx.beginPath();if(b.tipo==="emoji")ctx.ellipse(x+w/2,y+h/2,w/2,h/2,0,0,Math.PI*2);else ctx.roundRect(x,y,w,h,Math.min(18,h*.15));ctx.clip();ctx.drawImage(limpo,x,y,w,h,x,y,w,h);ctx.restore();}
   } else {
     ctx.drawImage(original,0,0,largura,altura);
     if(ajustes.marca&&editor.marcaPreparada){const m=editor.marca,x=Math.max(0,Math.floor(m.x/100*largura)-28),y=Math.max(0,Math.floor(m.y/100*altura)-28),w=Math.min(largura-x,Math.ceil((m.x+m.w)/100*largura)+28-x),h=Math.min(altura-y,Math.ceil((m.y+m.h)/100*altura)+28-y);ctx.drawImage(limpo,x,y,w,h,x,y,w,h);}
     for(const t of editor.textos){const estilo=ajustes.textos.find(e=>e.id===t.id)!;if(!textoAlteradoPublicacao(t,estilo))continue;
       const x=Math.max(0,t.x/100*largura-10),y=Math.max(0,t.y/100*altura-10),w=Math.min(largura-x,t.w/100*largura+20),h=Math.min(altura-y,t.h/100*altura+20);ctx.drawImage(limpo,x,y,w,h,x,y,w,h);
     }
+    // A placa limpa conserva a fotografia e a transparência original do cartão.
+    for(const f of formasAlteradas){const x=Math.floor(f.x/100*largura),y=Math.floor(f.y/100*altura),w=Math.min(largura-x,Math.ceil(f.w/100*largura)),h=Math.min(altura-y,Math.ceil(f.h/100*altura));ctx.drawImage(limpo,x,y,w,h,x,y,w,h);}
+    for(const f of formasAlteradas)recolorirFormaPublicacao(ctx,f,ajustes.formas!.find(e=>e.id===f.id)!.cor,largura,altura,(editor.formas??[]).slice((editor.formas??[]).indexOf(f)+1));
   }
-  for(const t of editor.textos){const estilo=ajustes.textos.find(e=>e.id===t.id)!,m=editor.marca,sobMarca=ajustes.marca&&editor.marcaPreparada&&t.x+t.w>m.x-28/largura*100&&t.x<m.x+m.w+28/largura*100&&t.y+t.h>m.y-28/altura*100&&t.y<m.y+m.h+28/altura*100;if(!fundo&&!sobMarca&&!textoAlteradoPublicacao(t,estilo))continue;
+  for(const g of editor.graficos??[]){const imagem=graficos.get(g.id);if(imagem&&(fundo||formasAlteradas.some(f=>intersecta(f,g))))ctx.drawImage(imagem,g.x/100*largura,g.y/100*altura,g.w/100*largura,g.h/100*altura);}
+  for(const t of editor.textos){const estilo=ajustes.textos.find(e=>e.id===t.id)!,m=editor.marca,sobMarca=ajustes.marca&&editor.marcaPreparada&&t.x+t.w>m.x-28/largura*100&&t.x<m.x+m.w+28/largura*100&&t.y+t.h>m.y-28/altura*100&&t.y<m.y+m.h+28/altura*100;if(!fundo&&!sobMarca&&!formasAlteradas.some(f=>intersecta(f,t))&&!textoAlteradoPublicacao(t,estilo))continue;
     if(!textoVisivelPublicacao(t,estilo))continue;
     const recorte=recortes.get(t.id);
     if(recorte&&conteudoTextoPublicacao(t,estilo)===t.texto&&estilo.manterOriginal!==false&&estilo.fonte===t.fonte&&estilo.cor===t.cor&&estilo.negrito===t.negrito&&estilo.italico===t.italico){

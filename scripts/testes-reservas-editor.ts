@@ -13,6 +13,7 @@ import type {PublicacaoImagemReserva,ReferenciaImagemReserva} from "../src/lib/r
 import {POST} from "../app/api/consultor/nova-area/reservas/imagem/route";
 import {harmonizarMarcaPublicacao} from "../src/lib/reservas-imagem-ocr";
 import {validarSombreadosPublicacao,desenharSombreadosPublicacao,type SombreadoPublicacao} from "../src/lib/reservas-imagem-sombras";
+import {validarFormasPublicacao,estilosFormasPublicacao} from "../src/lib/reservas-imagem-camadas";
 async function main(){
  process.env.DATABASE_URL||="postgres://test:test@localhost/test";
  const email=EMAIL_PAINEL_DEMONSTRACAO,pool=db(),originalQuery=pool.query,originalFetch=globalThis.fetch,registos=new Map<string,unknown>();let chamadasIA=0;
@@ -25,7 +26,7 @@ async function main(){
   const baseComMarca=await finalizarImagemReserva(base,ref,"story"),arte=createCanvas(1080,1920),arteCtx=arte.getContext("2d");arteCtx.drawImage(await loadImage(baseComMarca),0,0);arteCtx.fillStyle="#ffffff";arteCtx.fillRect(33,39,258,94);arteCtx.font="bold 70px sans-serif";arteCtx.fillText("GRAN CANARIA",54,1310);const source=arte.toBuffer("image/png");
   const r:PublicacaoImagemReserva={id:randomUUID(),tipo:"publicacao",nome:"Gran Canaria",formato:"story",estado:"pronta",criadaEm:new Date().toISOString(),referenciaId:ref.id,dados:{...dadosReservaVazios(),destino:"Gran Canaria",ida:"2026-11-17",regresso:"2026-11-22",viajantes:3,hoteis:[{...hotelVazio(),nome:"Hotel",total:4405}]},notas:"",imagem:url(source)};
   const textos=[{id:"titulo",nome:"Destino",texto:"GRAN CANARIA",fonte:"geometrica" as const,tamanho:70,cor:"#ffffff",negrito:true,italico:false,sombra:true,alinhar:"left" as const,x:5,y:65,w:85,h:7}];
-  const logo=await logotipoBrancoReserva(),editor:EditorPublicacaoReserva={versao:1,origemId:r.id,imagemOriginal:r.imagem!,fundoLimpo:url(base),textos,decoracoes:[],sombreados:[],marca:ref.marca,marcaPreparada:true,marcaSuave:true,logoBranco:`data:image/png;base64,${logo.toString("base64")}`,ajustes:ajustesIniciaisPublicacao(textos)};
+  const logo=await logotipoBrancoReserva(),editor:EditorPublicacaoReserva={versao:1,origemId:r.id,imagemOriginal:r.imagem!,fundoLimpo:url(base),textos,decoracoes:[],sombreados:[],formas:[],graficos:[],camadasPreparadas:true,marca:ref.marca,marcaPreparada:true,marcaSuave:true,logoBranco:`data:image/png;base64,${logo.toString("base64")}`,ajustes:ajustesIniciaisPublicacao(textos)};
   const rgba=await sharp(logo).ensureAlpha().raw().toBuffer();let transparentes=0,brancos=0;for(let i=0;i<rgba.length;i+=4){if(rgba[i+3]===0)transparentes++;if(rgba[i+3]!>200){assert(rgba[i]!>250&&rgba[i+1]!>250&&rgba[i+2]!>250);brancos++;}}assert(transparentes>100&&brancos>100,"Ícone e letras brancos sem cartão opaco");
   assert.equal(createHash("sha256").update(await readFile("public/icligo-logo-branco.png")).digest("hex"),"14dcbf59ddd1d65ce641f09e0a316893a3bfbf79af33105b3f9bb0b5542c70c8","É exatamente o PNG icligo branco fornecido pelo utilizador");
   const metaLogo=await sharp(logo).metadata();assert.equal(metaLogo.width,570);assert.equal(metaLogo.height,184);const ladoIcone=metaLogo.height!,icone=await sharp(logo).extract({left:0,top:0,width:ladoIcone,height:ladoIcone}).ensureAlpha().raw().toBuffer(),opacos=icone.filter((v,i)=>i%4===3&&v>200).length;assert(opacos>1000&&opacos<ladoIcone*ladoIcone/2,"O ícone mantém os detalhes brancos e a transparência do ficheiro fornecido");
@@ -116,6 +117,25 @@ async function main(){
     const origemMigrada=await prepararEditorPublicacao(email,r.id);assert.deepEqual(origemMigrada.sombreados,sombreados);assert.equal(origemMigrada.ajustes.escurecimento,0);
     await prepararEditorPublicacao(email,guardadaSombra.id);assert.equal(chamadasIA,1,"Uma única análise de sombreados, sem repetir o OCR ou gerar outra fotografia");assert.deepEqual(await abrirImagemReserva(email,r.id),antes);
   }finally{if(chaveIA===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=chaveIA;}
+  const chaveCamadas=process.env.OPENAI_API_KEY;process.env.OPENAI_API_KEY="teste-sem-rede";
+  try{
+    const formas=validarFormasPublicacao([{nome:"Cartão azul",x:10,y:55,w:80,h:25,cor:"#183d52",opacidade:1,figura:"retangulo",raio:0,pontos:[]}]);
+    const legado=structuredClone(reabertaSombra);delete legado.camadasPreparadas;delete legado.formas;delete legado.graficos;delete legado.ajustes.formas;
+    legado.ajustes.textos[0]!.x=20;legado.ajustes.textos[0]!.y=30;
+    registos.set(`reservas:editor:v1:${email}:${guardadaSombra.id}`,legado);
+    const raiz=structuredClone(editor);delete raiz.camadasPreparadas;delete raiz.formas;delete raiz.graficos;
+    registos.set(`reservas:editor:v1:${email}:${r.id}`,raiz);
+    const chamadasAntes=chamadasIA;
+    globalThis.fetch=(async(_url,init)=>{chamadasIA++;const pedido=JSON.parse(String(init?.body));assert(pedido.instructions.includes("cartões"));return Response.json({output:[{content:[{type:"output_text",text:JSON.stringify({formas,graficos:[],sombreados})}]}]});}) as typeof fetch;
+    const migrado=await prepararEditorPublicacao(email,guardadaSombra.id);
+    assert.deepEqual(migrado.formas,formas);assert.equal(migrado.camadasPreparadas,true);assert.deepEqual(migrado.ajustes.textos,legado.ajustes.textos);assert.equal(migrado.fundoLimpo,legado.fundoLimpo);assert.deepEqual(migrado.ajustes.formas,estilosFormasPublicacao(formas));
+    await prepararEditorPublicacao(email,r.id);await prepararEditorPublicacao(email,guardadaSombra.id);assert.equal(chamadasIA,chamadasAntes+1,"Os cartões antigos são separados uma vez e reutilizados nas versões da mesma imagem");
+    const ajustes={...structuredClone(migrado.ajustes),fundo:url(fundo),escurecimento:0,formas:[{id:formas[0]!.id,cor:"#6044aa"}]};
+    const colorida=await guardarEdicaoPublicacao(email,{id:guardadaSombra.id,ajustes}),aberta=await prepararEditorPublicacao(email,colorida.id);
+    assert.deepEqual(aberta.ajustes.formas,ajustes.formas);assert.deepEqual(colorida.dados,r.dados);assert.deepEqual(await abrirImagemReserva(email,r.id),antes);assert.equal(chamadasIA,chamadasAntes+1,"Guardar e reabrir uma cor não chama novamente a IA");
+    const pixel=await sharp(Buffer.from(colorida.imagem!.split(",")[1]!,"base64")).extract({left:900,top:1450,width:1,height:1}).raw().toBuffer();assert(Math.abs(pixel[0]!-96)<8&&Math.abs(pixel[1]!-68)<8&&Math.abs(pixel[2]!-170)<8,"A exportação guarda a cor do cartão por cima do novo fundo");
+    for(const formasInvalidas of [[{id:"marca",cor:"#000000"}],[{id:formas[0]!.id,cor:"red"}],[]])assert.throws(()=>validarAjustesPublicacao({...ajustes,formas:formasInvalidas},migrado));
+  }finally{if(chaveCamadas===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=chaveCamadas;}
   console.log("OK: acesso privado, original preservado, correção e remoção de textos na imagem, restauro, persistência, fontes/tamanhos, fundo, marca e reabertura sem IA. Sem rede nem alterações reais.");
  }finally{pool.query=originalQuery;globalThis.fetch=originalFetch;await fecharDb();}
 }

@@ -28,6 +28,7 @@
     "test:reservas": "tsx scripts/testes-reservas.ts",
     "test:reservas-imagem": "tsx scripts/testes-reservas-imagem.ts",
     "test:reservas-editor": "tsx scripts/testes-reservas-editor.ts",
+    "test:reservas-camadas": "tsx scripts/testes-reservas-camadas.ts",
     "importar-documentos": "tsx scripts/importar-documentos.ts"
   },
   "dependencies": {
