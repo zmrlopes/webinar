@@ -282,10 +282,10 @@ export default function NovaAreaConsultor() {
         <div className={estilos.layout}>
           <aside className={estilos.lateral}>
             <nav id="menu-nova-area" ref={menu} aria-label="Secções da nova área">
-              <GrupoMenu titulo="A minha área" ativo={seccao === "inicio"}>
+              <div className={estilos.grupoMenu}>
                 <button type="button" className={seccao === "inicio" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("inicio")} aria-current={seccao === "inicio" ? "page" : undefined} aria-controls="conteudo-nova-area">Início <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3V10Z" stroke="currentColor" strokeWidth="1.6" /><path d="M9 20v-7h6v7" stroke="currentColor" strokeWidth="1.6" /></svg></button>
-              </GrupoMenu>
-              {totalFeitos < 5 && <GrupoMenu titulo="Primeiros passos" ativo={seccao === "comeca-aqui"}>
+              </div>
+              {totalFeitos < 5 && <div className={estilos.grupoMenu}>
                 <button type="button" className={seccao === "comeca-aqui" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("comeca-aqui")} aria-current={seccao === "comeca-aqui" ? "page" : undefined} aria-controls="conteudo-nova-area">Começa aqui <span>{5 - totalFeitos}</span></button>
                 {seccao === "comeca-aqui" && <div className={estilos.resumo}>
                   <span className={estilos.etiqueta}>O TEU ARRANQUE</span>
@@ -296,40 +296,36 @@ export default function NovaAreaConsultor() {
                     {TITULOS.map((titulo, i) => <li key={titulo}><a href={`#passo-${i + 1}`}><span className={feitos.includes(i + 1) ? estilos.miniFeito : estilos.miniNumero}>{feitos.includes(i + 1) ? "✓" : i + 1}</span>{titulo}</a></li>)}
                   </ol>
                 </div>}
-              </GrupoMenu>}
-              <div className={estilos.grupoMenu}>
-                <button type="button" className={seccao === "onboarding" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("onboarding")} aria-current={seccao === "onboarding" ? "page" : undefined} aria-controls="conteudo-nova-area">onboarding codex <span>Temp.</span></button>
-              </div>
+              </div>}
               <div className={estilos.grupoMenu}>
                 <button type="button" className={seccao === "calendario" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calendario")} aria-current={seccao === "calendario" ? "page" : undefined} aria-controls="conteudo-nova-area">Calendário <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" strokeWidth="1.6" /><path d="M7 3v4m10-4v4M3 11h18" stroke="currentColor" strokeWidth="1.6" /></svg></button>
               </div>
-              <GrupoMenu titulo="Redes sociais" ativo={seccao === "calendario-criativo"}>
+              <GrupoMenu titulo="A minha organização" ativo={seccao === "leads" || seccao === "proximo-webinar" || seccao === "objecoes" || seccao === "testemunhos" || seccao === "tarefas-equipa"}>
+                <button type="button" className={seccao === "leads" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("leads")} aria-current={seccao === "leads" ? "page" : undefined} aria-controls="conteudo-nova-area">Leads</button>
+                <button type="button" className={seccao === "proximo-webinar" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("proximo-webinar")} aria-current={seccao === "proximo-webinar" ? "page" : undefined} aria-controls="conteudo-nova-area">Próximo webinar</button>
+                <button type="button" className={seccao === "objecoes" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("objecoes")} aria-current={seccao === "objecoes" ? "page" : undefined} aria-controls="conteudo-nova-area">Resolução de objeções</button>
+                <button type="button" className={seccao === "testemunhos" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("testemunhos")} aria-current={seccao === "testemunhos" ? "page" : undefined} aria-controls="conteudo-nova-area">Testemunhos</button>
+                <button type="button" className={seccao === "tarefas-equipa" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("tarefas-equipa")} aria-current={seccao === "tarefas-equipa" ? "page" : undefined} aria-controls="conteudo-nova-area">Tarefas iniciais da equipa</button>
+              </GrupoMenu>
+              <GrupoMenu titulo="Reservas" ativo={seccao === "propostas" || seccao === "travel-planner" || seccao === "reservas" || seccao === "calendario-criativo"}>
+                <button type="button" className={seccao === "propostas" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("propostas")} aria-current={seccao === "propostas" ? "page" : undefined} aria-controls="conteudo-nova-area">Propostas</button>
+                <button type="button" className={seccao === "travel-planner" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("travel-planner")} aria-current={seccao === "travel-planner" ? "page" : undefined} aria-controls="conteudo-nova-area">Travel planner</button>
+                <button type="button" className={seccao === "reservas" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("reservas")} aria-current={seccao === "reservas" ? "page" : undefined} aria-controls="conteudo-nova-area">Criar templates</button>
                 <button type="button" className={seccao === "calendario-criativo" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calendario-criativo")} aria-current={seccao === "calendario-criativo" ? "page" : undefined} aria-controls="conteudo-nova-area">Calendário criativo</button>
               </GrupoMenu>
-              <GrupoMenu titulo="A minha organização" ativo={seccao === "leads" || seccao === "tarefas-equipa" || seccao === "proximo-webinar" || seccao === "testemunhos" || seccao === "objecoes"}>
-                <button type="button" className={seccao === "leads" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("leads")} aria-current={seccao === "leads" ? "page" : undefined} aria-controls="conteudo-nova-area">Leads</button>
-                <button type="button" className={seccao === "tarefas-equipa" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("tarefas-equipa")} aria-current={seccao === "tarefas-equipa" ? "page" : undefined} aria-controls="conteudo-nova-area">Tarefas iniciais da equipa</button>
-                <button type="button" className={seccao === "proximo-webinar" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("proximo-webinar")} aria-current={seccao === "proximo-webinar" ? "page" : undefined} aria-controls="conteudo-nova-area">Próximo webinar</button>
-                <button type="button" className={seccao === "testemunhos" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("testemunhos")} aria-current={seccao === "testemunhos" ? "page" : undefined} aria-controls="conteudo-nova-area">Testemunhos</button>
-                <button type="button" className={seccao === "objecoes" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("objecoes")} aria-current={seccao === "objecoes" ? "page" : undefined} aria-controls="conteudo-nova-area">Resolução de objeções</button>
-              </GrupoMenu>
-              <GrupoMenu titulo="Objetivos" ativo={seccao === "calculadoras" || seccao === "core-rank"}>
-                <button type="button" className={seccao === "calculadoras" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calculadoras")} aria-current={seccao === "calculadoras" ? "page" : undefined} aria-controls="conteudo-nova-area">Calculadoras</button>
+              <GrupoMenu titulo="Objetivos" ativo={seccao === "core-rank" || seccao === "calculadoras"}>
                 <button type="button" className={seccao === "core-rank" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("core-rank")} aria-current={seccao === "core-rank" ? "page" : undefined} aria-controls="conteudo-nova-area">Core Rank</button>
+                <button type="button" className={seccao === "calculadoras" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calculadoras")} aria-current={seccao === "calculadoras" ? "page" : undefined} aria-controls="conteudo-nova-area">Calculadoras</button>
               </GrupoMenu>
-              <GrupoMenu titulo="Reservas" ativo={seccao === "reservas" || seccao === "travel-planner" || seccao === "propostas"}>
-                <button type="button" className={seccao === "reservas" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("reservas")} aria-current={seccao === "reservas" ? "page" : undefined} aria-controls="conteudo-nova-area">Criar templates</button>
-                <button type="button" className={seccao === "travel-planner" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("travel-planner")} aria-current={seccao === "travel-planner" ? "page" : undefined} aria-controls="conteudo-nova-area">Travel planner</button>
-                <button type="button" className={seccao === "propostas" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("propostas")} aria-current={seccao === "propostas" ? "page" : undefined} aria-controls="conteudo-nova-area">Propostas</button>
-              </GrupoMenu>
-              <GrupoMenu titulo="Formação" ativo={seccao === "proximas-formacoes" || seccao === "formacoes-gravadas" || seccao === "documentos"}>
+              <GrupoMenu titulo="Formação e eventos" ativo={seccao === "proximas-formacoes" || seccao === "formacoes-gravadas" || seccao === "documentos" || seccao === "eventos-presenciais"}>
                 <button type="button" className={seccao === "proximas-formacoes" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("proximas-formacoes")} aria-current={seccao === "proximas-formacoes" ? "page" : undefined} aria-controls="conteudo-nova-area">Próximas formações</button>
                 <button type="button" className={seccao === "formacoes-gravadas" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("formacoes-gravadas")} aria-current={seccao === "formacoes-gravadas" ? "page" : undefined} aria-controls="conteudo-nova-area">Formações gravadas</button>
                 <button type="button" className={seccao === "documentos" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("documentos")} aria-current={seccao === "documentos" ? "page" : undefined} aria-controls="conteudo-nova-area">Documentos</button>
-              </GrupoMenu>
-              <GrupoMenu titulo="Eventos" ativo={seccao === "eventos-presenciais"}>
                 <button type="button" className={seccao === "eventos-presenciais" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("eventos-presenciais")} aria-current={seccao === "eventos-presenciais" ? "page" : undefined} aria-controls="conteudo-nova-area">Eventos presenciais</button>
               </GrupoMenu>
+              <div className={`${estilos.grupoMenu} ${estilos.menuTemporario}`}>
+                <button type="button" className={seccao === "onboarding" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("onboarding")} aria-current={seccao === "onboarding" ? "page" : undefined} aria-controls="conteudo-nova-area">onboarding codex <span>Temp.</span></button>
+              </div>
             </nav>
             <Link className={estilos.voltar} href="/consultor">Consultar a área atual <Seta /></Link>
           </aside>

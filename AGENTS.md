@@ -34,6 +34,10 @@ Os avisos importantes da página Início mantêm o destaque dourado da área
 atual, com fundo claro e contorno `#c9971c`, por indicação do utilizador.
 No telemóvel, estes destaques usam linhas compactas clicáveis, com ícone,
 título, descrição curta e seta, como na versão atual.
+Por indicação do utilizador, o menu da nova área tem Início, Começa aqui e
+Calendário fora de separadores, seguidos de A minha organização, Reservas
+(Propostas, Travel planner, Criar templates, Calendário criativo), Objetivos e
+Formação e eventos; o onboarding temporário fica no fim.
 Os grupos do menu começam recolhidos no computador e no telemóvel; clicar
 no nome do separador mostra ou esconde as opções desse grupo.
 Na nova área, os Documentos são organizados em pastas. Os PDFs Be a Leader
@@ -189,7 +193,7 @@ Por indicação do utilizador, o calendário criativo da Black Friday (PDF da Sa
 `src/lib/calendario-criativo.json`) mostra um tema por dia de 22/10 a 30/11; ao
 clicar abre um popup com as 4 ideias (Reel, Carrossel, Fotografia, Post estático),
 com copiar textos e “Já publiquei” guardado por consultor. Está em
-`/consultor/calendario-criativo` (área atual) e em Redes sociais na nova área.
+`/consultor/calendario-criativo` (área atual) e em Reservas na nova área.
 Por indicação explícita do utilizador, está publicado na área atual para todos os
 consultores da equipa (destaque e botão no menu), com progresso privado por
 consultor. Esta autorização abrange apenas o calendário criativo; a nova área e o
