@@ -6,7 +6,7 @@ import { carregarNoticiaTurismo, type DestaqueTurismo } from "./noticia-turismo"
 // entre pedidos e instâncias. Erros não ficam guardados como notícia do dia.
 const destaqueDiario = unstable_cache(async (dia: string): Promise<DestaqueTurismo> => {
   return { dia, noticia: await carregarNoticiaTurismo() };
-}, ["noticia-turismo-diaria-v1"], { revalidate: 172800 });
+}, ["noticia-turismo-diaria-v2-imagens"], { revalidate: 172800 });
 
 export function obterNoticiaTurismo() {
   return destaqueDiario(dataLisboa());

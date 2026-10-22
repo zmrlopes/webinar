@@ -50,8 +50,10 @@ export function InicioNovaArea({ avisos, erroAvisos, feitos, aoComecar, acabadoA
       <p>Os teus avisos, questionários e novidades da equipa.</p>
     </div>
 
-    <FraseDoDia />
-    <NoticiaTurismo email={email} />
+    <div className={estilos.destaquesDiarios}>
+      <FraseDoDia />
+      <NoticiaTurismo email={email} />
+    </div>
     <AvisoRelatorioCore email={email} aoAbrir={aoAbrirCore} />
     {acabadoAgora && <div role="status" className={estilos.concluido}>
       <span aria-hidden="true">✓</span>

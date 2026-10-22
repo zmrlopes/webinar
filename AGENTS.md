@@ -22,6 +22,11 @@ data real e ligação para o original. O destaque é guardado em cache por dia d
 sem notícias do dia, identifica a última disponível (até 7 dias). Falhas permitem
 nova tentativa. O cartão e a API continuam exclusivos da nova área da conta de teste.
 
+Por indicação do utilizador, a frase diária é compacta e fica à esquerda da notícia
+na mesma linha no computador. A notícia usa a fotografia publicada no feed quando
+disponível, com alternativa visual se não carregar. Em ecrãs estreitos, os cartões
+ficam em coluna. Este ajuste continua exclusivo da nova área da conta de teste.
+
 As novas alterações de visual e organização devem ficar visíveis apenas na
 conta de teste `zmrlopes@gmail.com`. Publicar estas alterações para todos os
 consultores requer uma instrução explícita do utilizador. Reutilizar o email

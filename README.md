@@ -34,6 +34,13 @@ O cartão atualiza quando o dia muda ou se regressa à página. O cartão e a AP
 `/api/consultor/nova-area/noticia-turismo` mantêm a restrição à conta de teste.
 Testes: `node --import tsx scripts/testes-noticia-turismo.ts`.
 
+Os destaques diários ficam em dois cartões compactos lado a lado no computador:
+frase à esquerda e notícia à direita, com fotografia do feed e ligação à fonte.
+Em ecrãs estreitos passam a coluna. As imagens são carregadas diretamente da
+publicação ou do seu CDN WordPress; imagens ausentes ou com erro recebem
+um símbolo discreto. A cache v2 inclui a imagem sem reutilizar destaques antigos
+que ainda não tinham esse campo.
+
 ### Gestão de formações gravadas
 
 Em `/admin/formacoes-gravadas`, o admin adiciona título e link (YouTube ou

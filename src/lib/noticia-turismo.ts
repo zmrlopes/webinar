@@ -1,8 +1,11 @@
+import { XMLParser } from "fast-xml-parser";
+
 export interface NoticiaTurismo {
   titulo: string;
   url: string;
   fonte: string;
   publicadaEm: string;
+  imagem: string | null;
 }
 
 export interface DestaqueTurismo { dia: string; noticia: NoticiaTurismo }
@@ -15,13 +18,34 @@ export class FontesTurismoIndisponiveis extends Error {
 
 // Feeds públicos das publicações, com a API como alternativa. Só se recolhem título, ligação e data.
 export const FONTES_TURISMO = [
-  { nome: "Turisver", dominio: "turisver.pt", rss: "https://turisver.pt/feed/", url: "https://turisver.pt/wp-json/wp/v2/posts?per_page=10&_fields=date_gmt,link,title&orderby=date&order=desc" },
-  { nome: "Ambitur", dominio: "ambitur.pt", rss: "https://www.ambitur.pt/feed/", url: "https://www.ambitur.pt/wp-json/wp/v2/posts?per_page=10&_fields=date_gmt,link,title&orderby=date&order=desc" },
-  { nome: "TNews", dominio: "tnews.pt", rss: "https://tnews.pt/feed/", url: "https://tnews.pt/wp-json/wp/v2/posts?per_page=10&_fields=date_gmt,link,title&orderby=date&order=desc" },
+  { nome: "Turisver", dominio: "turisver.pt", rss: "https://turisver.pt/feed/", url: "https://turisver.pt/wp-json/wp/v2/posts?per_page=10&_embed=wp:featuredmedia&_fields=date_gmt,link,title,_embedded&orderby=date&order=desc" },
+  { nome: "Ambitur", dominio: "ambitur.pt", rss: "https://www.ambitur.pt/feed/", url: "https://www.ambitur.pt/wp-json/wp/v2/posts?per_page=10&_embed=wp:featuredmedia&_fields=date_gmt,link,title,_embedded&orderby=date&order=desc" },
+  { nome: "TNews", dominio: "tnews.pt", rss: "https://tnews.pt/feed/", url: "https://tnews.pt/wp-json/wp/v2/posts?per_page=10&_embed=wp:featuredmedia&_fields=date_gmt,link,title,_embedded&orderby=date&order=desc" },
 ] as const;
 
 function objeto(valor: unknown): Record<string, unknown> | null {
   return valor !== null && typeof valor === "object" && !Array.isArray(valor) ? valor as Record<string, unknown> : null;
+}
+
+function imagemSegura(valor: unknown, fonte: typeof FONTES_TURISMO[number]): string | null {
+  if (typeof valor !== "string") return null;
+  try {
+    const url = new URL(tituloLimpo(valor), fonte.rss);
+    const dominio = url.hostname.replace(/^www\./, "");
+    const proprio = dominio === fonte.dominio || dominio.endsWith("." + fonte.dominio);
+    const wordpress = /^i[0-3]\.wp\.com$/.test(dominio) && url.pathname.startsWith("/" + fonte.dominio + "/");
+    if (url.protocol !== "https:" || (!proprio && !wordpress) || url.username || url.password || url.port) return null;
+    if (!/\.(?:jpe?g|png|webp|avif|gif)$/i.test(url.pathname)) return null;
+    return url.href;
+  } catch { return null; }
+}
+
+function imagemApi(item: Record<string, unknown>, fonte: typeof FONTES_TURISMO[number]): string | null {
+  const media = objeto(item._embedded)?.["wp:featuredmedia"];
+  const primeira = Array.isArray(media) ? objeto(media[0]) : null;
+  const tamanhos = objeto(objeto(primeira?.media_details)?.sizes);
+  return imagemSegura(item.imagem, fonte) ?? imagemSegura(objeto(tamanhos?.medium_large)?.source_url, fonte)
+    ?? imagemSegura(objeto(tamanhos?.medium)?.source_url, fonte) ?? imagemSegura(primeira?.source_url, fonte);
 }
 
 function tituloLimpo(texto: string): string {
@@ -54,7 +78,7 @@ export function lerNoticiasTurismo(dados: unknown, fonte: typeof FONTES_TURISMO[
       const texto = tituloLimpo(titulo);
       if (texto.length < 8 || texto.length > 350) continue;
       url.hash = "";
-      noticias.push({ titulo: texto, url: url.href, fonte: fonte.nome, publicadaEm: data.toISOString() });
+      noticias.push({ titulo: texto, url: url.href, fonte: fonte.nome, publicadaEm: data.toISOString(), imagem: imagemApi(item, fonte) });
     } catch { /* Ignora apenas a notícia inválida, preservando as restantes. */ }
   }
   return noticias;
@@ -91,12 +115,9 @@ export async function carregarNoticiaTurismo(agora = new Date(), buscar: typeof 
   })) });
   return noticias[0];
 }
-import { XMLParser } from "fast-xml-parser";
-
-
 export function lerNoticiasRss(xml: string, fonte: typeof FONTES_TURISMO[number], agora = new Date()): NoticiaTurismo[] {
   if (xml.length > 1_000_000 || /<!DOCTYPE/i.test(xml)) return [];
-  const parser = new XMLParser({ ignoreAttributes: true, parseTagValue: false, isArray: nome => nome === "item" });
+  const parser = new XMLParser({ ignoreAttributes: false, parseTagValue: false, isArray: nome => nome === "item" });
   const raiz = objeto(parser.parse(xml));
   const canal = objeto(objeto(raiz?.rss)?.channel);
   if (!Array.isArray(canal?.item)) return [];
@@ -105,7 +126,11 @@ export function lerNoticiasRss(xml: string, fonte: typeof FONTES_TURISMO[number]
     if (typeof item?.pubDate !== "string") return [];
     const data = new Date(item.pubDate);
     if (!Number.isFinite(data.getTime())) return [];
-    return [{ date_gmt: data.toISOString().slice(0, 19) + "Z", link: item.link, title: { rendered: item.title } }];
+    const html = [item.description, item["content:encoded"]].filter((valor): valor is string => typeof valor === "string").join(" ");
+    const fotoHtml = html.match(/<img\b[^>]*\ssrc\s*=\s*["']([^"']+)["']/i)?.[1];
+    const imagem = imagemSegura(objeto(item["media:thumbnail"])?.["@_url"], fonte)
+      ?? imagemSegura(objeto(item["media:content"])?.["@_url"], fonte) ?? imagemSegura(fotoHtml, fonte);
+    return [{ date_gmt: data.toISOString().slice(0, 19) + "Z", link: item.link, title: { rendered: item.title }, imagem }];
   });
   return lerNoticiasTurismo(posts, fonte, agora);
 }
