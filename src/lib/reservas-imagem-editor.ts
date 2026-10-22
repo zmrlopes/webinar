@@ -19,7 +19,7 @@ export interface EditorPublicacaoReserva {
   decoracoes: (CaixaReserva & {tipo?:"cartao"|"emoji"})[]; marca: CaixaReserva; ajustes: AjustesEditorPublicacao;
   marcaPreparada?:boolean; marcaSuave?:boolean; logoBranco?:string; logoVersao?:string; marcaDaReferencia?:boolean;
   sombreados?: SombreadoPublicacao[];
-  formas?:FormaPublicacao[]; graficos?:GraficoPublicacao[]; camadasPreparadas?:boolean;
+  formas?:FormaPublicacao[]; graficos?:GraficoPublicacao[]; camadasPreparadas?:boolean; camadasVersao?:number;
 }
 export function ajustesIniciaisPublicacao(textos: TextoEditorPublicacao[]): AjustesEditorPublicacao {
   return {textos: textos.map(({id,fonte,tamanho,cor,negrito,italico,x,y})=>({id,fonte,tamanho,cor,negrito,italico,x,y,manterOriginal:true})),fundo:"",escurecimento:.5,credito:""};

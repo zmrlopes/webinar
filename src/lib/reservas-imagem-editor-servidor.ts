@@ -23,10 +23,10 @@ const bytesImagem=(imagem:string)=>Buffer.from(imagem.split(",")[1]!,"base64");
 const dataUrl=(bytes:Buffer)=>`data:image/webp;base64,${bytes.toString("base64")}`;
 const propriedadesCamadas={formas:esquemaFormasPublicacao,graficos:esquemaGraficosPublicacao,sombreados:esquemaSombreadosPublicacao};
 async function atualizarCamadasEditor(email:string,editor:EditorPublicacaoReserva,formato:PublicacaoImagemReserva["formato"]){
-  if(editor.camadasPreparadas)return false;
+  if(editor.camadasPreparadas&&editor.camadasVersao===2)return false;
   const {largura,altura}=dimensoesReserva(formato);
   const origem=await carregarEditor(email,editor.origemId);
-  if(origem?.camadasPreparadas&&origem.imagemOriginal===editor.imagemOriginal){
+  if(origem?.camadasPreparadas&&origem.camadasVersao===2&&origem.imagemOriginal===editor.imagemOriginal){
     editor.formas=origem.formas;editor.graficos=origem.graficos;
     if(editor.sombreados===undefined)editor.sombreados=origem.sombreados;
   }else{
@@ -35,7 +35,7 @@ async function atualizarCamadasEditor(email:string,editor:EditorPublicacaoReserv
     editor.graficos=await extrairGraficosPublicacao(bytesImagem(editor.imagemOriginal),validarGraficosPublicacao(analise.graficos),largura,altura);
     if(editor.sombreados===undefined)editor.sombreados=validarSombreadosPublicacao(analise.sombreados);
     if(origem&&origem.imagemOriginal===editor.imagemOriginal){
-      origem.formas=editor.formas;origem.graficos=editor.graficos;origem.camadasPreparadas=true;
+      origem.formas=editor.formas;origem.graficos=editor.graficos;origem.camadasPreparadas=true;origem.camadasVersao=2;
       origem.ajustes.formas=estilosFormasPublicacao(origem.formas,origem.ajustes.formas);
       if(origem.sombreados===undefined)origem.sombreados=editor.sombreados;
       if(origem.formas.length||origem.graficos.length)await refinarRecortesCamadas(origem,largura,altura);
@@ -45,6 +45,7 @@ async function atualizarCamadasEditor(email:string,editor:EditorPublicacaoReserv
   editor.ajustes.formas=estilosFormasPublicacao(editor.formas??[],editor.ajustes.formas);
   if(editor.formas?.length||editor.graficos?.length)await refinarRecortesCamadas(editor,largura,altura);
   editor.camadasPreparadas=true;
+  editor.camadasVersao=2;
   return true;
 }
 async function atualizarSombreadosEditor(email:string,editor:EditorPublicacaoReserva){
@@ -100,7 +101,7 @@ Identifica TODOS os blocos de texto da PUBLICAÇÃO FINAL desta imagem, para edi
   // O reconhecimento e a limpeza são pedidos separados: cada um cabe no tempo da função.
   const refinados=await refinarTextosPublicacao(bytesImagem(r.imagem),textos,largura,altura);
   const formas=await refinarFormasPublicacao(bytesImagem(r.imagem),validarFormasPublicacao(analise.formas),largura,altura),graficos=await extrairGraficosPublicacao(bytesImagem(r.imagem),validarGraficosPublicacao(analise.graficos),largura,altura);
-  const editor:EditorPublicacaoReserva={versao:1,origemId:r.id,imagemOriginal:r.imagem,fundoLimpo:"",textos:refinados,decoracoes:[],marca:ref.marca,marcaDaReferencia:ref.temMarca,ajustes:{...ajustesIniciaisPublicacao(refinados),formas:estilosFormasPublicacao(formas)},sombreados:validarSombreadosPublicacao(analise.sombreados),formas,graficos,camadasPreparadas:true};
+  const editor:EditorPublicacaoReserva={versao:1,origemId:r.id,imagemOriginal:r.imagem,fundoLimpo:"",textos:refinados,decoracoes:[],marca:ref.marca,marcaDaReferencia:ref.temMarca,ajustes:{...ajustesIniciaisPublicacao(refinados),formas:estilosFormasPublicacao(formas)},sombreados:validarSombreadosPublicacao(analise.sombreados),formas,graficos,camadasPreparadas:true,camadasVersao:2};
   if(editor.sombreados?.length)editor.ajustes.escurecimento=0;
   if(formas.length||graficos.length)await refinarRecortesCamadas(editor,largura,altura);
   await atualizarLogotipoEditor(editor);

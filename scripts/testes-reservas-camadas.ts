@@ -10,13 +10,15 @@ async function main(){
   const foto=createCanvas(largura,altura),f=foto.getContext("2d");f.fillStyle="#283c50";f.fillRect(0,0,largura,altura);f.fillStyle="#3c5064";f.fillRect(250,0,100,altura);
   const placa=createCanvas(largura,altura),p=placa.getContext("2d");p.drawImage(foto,0,0);p.fillStyle="rgba(224,182,77,.8)";p.fillRect(108,405,864,540);
   p.fillStyle="#c80060";p.beginPath();p.arc(540,800,35,0,Math.PI*2);p.fill();p.fillStyle="#ffffff";p.fillRect(522,795,36,10);p.fillRect(535,782,10,36);
+  p.fillStyle="#c80060";p.fillRect(800,780,55,30);p.fillRect(795,815,10,10);p.fillRect(847,815,10,10);
   const original=createCanvas(largura,altura),o=original.getContext("2d");o.drawImage(placa,0,0);o.fillStyle="#ffffff";o.fillRect(200,490,250,40);
   const medidas=await refinarFormasPublicacao(original.toBuffer("image/png"),[{...formas[0]!,x:8,y:34,w:84,h:36}],largura,altura);
   assert(Math.abs(medidas[0]!.x-10)<.5&&Math.abs(medidas[0]!.y-30)<.5&&Math.abs(medidas[0]!.h-40)<.5,"O recorte local corrige coordenadas imprecisas da IA num cartão de cor");
   const textos=[{id:"texto-1",nome:"Título",texto:"HOTEL",fonte:"poppins" as const,tamanho:40,cor:"#ffffff",negrito:true,italico:false,sombra:false,alinhar:"left" as const,x:200/largura*100,y:490/altura*100,w:250/largura*100,h:40/altura*100}];
   const letras=createCanvas(250,40);letras.getContext("2d").fillStyle="#ffffff";letras.getContext("2d").fillRect(0,0,250,40);
-  const graficos=await extrairGraficosPublicacao(original.toBuffer("image/png"),validarGraficosPublicacao([{nome:"Ícone rosa com pictograma branco",x:46.5,y:56.5,w:7,h:6,cor:"#c80060",mascara:"elipse"}]),largura,altura);
-  assert.equal(graficos.length,1);const g=graficos[0]!,grafico=await loadImage(Buffer.from(g.imagem.split(",")[1]!,"base64"));
+  const graficos=await extrairGraficosPublicacao(original.toBuffer("image/png"),validarGraficosPublicacao([{nome:"Ícone rosa com pictograma branco",x:46.5,y:56.5,w:7,h:6,cor:"#c80060",mascara:"elipse"},{nome:"Transfer com cor e coordenadas mal lidas",x:73,y:70,w:7,h:5,cor:"#3333ff",mascara:"cor"}]),largura,altura);
+  assert.equal(graficos.length,2);const g=graficos[0]!,grafico=await loadImage(Buffer.from(g.imagem.split(",")[1]!,"base64"));
+  const transferencia=await loadImage(Buffer.from(graficos[1]!.imagem.split(",")[1]!,"base64")),ct=createCanvas(transferencia.width,transferencia.height).getContext("2d");ct.drawImage(transferencia,0,0);assert(ct.getImageData(0,0,transferencia.width,transferencia.height).data.some((v,i)=>i%4===3&&v>200),"Uma cor mal lida não faz desaparecer o ícone: reutiliza a paleta dos pictogramas vizinhos");
   const recorte=createCanvas(grafico.width,grafico.height),rc=recorte.getContext("2d");rc.drawImage(grafico,0,0);
   assert.equal(rc.getImageData(0,0,1,1).data[3],0,"O gráfico tem transparência, sem levar consigo o fundo antigo");
   assert(rc.getImageData(Math.floor(grafico.width/2),Math.floor(grafico.height/2),1,1).data[0]!>240,"O pictograma branco interior é conservado");

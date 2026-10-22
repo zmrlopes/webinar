@@ -90,19 +90,24 @@ export async function refinarRecortesCamadas(editor:EditorPublicacaoReserva,larg
 export async function extrairGraficosPublicacao(bytes:Buffer,leituras:LeituraGraficoPublicacao[],largura:number,altura:number):Promise<GraficoPublicacao[]>{
   const {data,info}=await sharp(bytes).resize(largura,altura).ensureAlpha().raw().toBuffer({resolveWithObject:true});
   const usadas:CaixaSelecionada[]=[];
+  const paleta:number[][]=[];
   type CaixaSelecionada={x0:number;y0:number;x1:number;y1:number};
   return Promise.all(leituras.map(async(g,i)=>{
     let left=Math.floor(g.x/100*largura),top=Math.floor(g.y/100*altura),right=Math.min(largura,Math.ceil((g.x+g.w)/100*largura)),bottom=Math.min(altura,Math.ceil((g.y+g.h)/100*altura));
-    const rgb=[1,3,5].map(n=>parseInt(g.cor.slice(n,n+2),16));
+    let rgb=[1,3,5].map(n=>parseInt(g.cor.slice(n,n+2),16));
     const distancia=(p:number)=>Math.max(...rgb.map((v,c)=>Math.abs(v-data[p+c]!)));
     let mascara=g.mascara;
+    if(mascara==="recorte"&&Math.min(...rgb)>220)mascara="cor";
     if(mascara!=="recorte"){
       const gw=right-left,gh=bottom-top,cx=(left+right)/2,cy=(top+bottom)/2;
-      const candidatos=componentes(data,largura,altura,rgb,65).filter(c=>c.pixels.length>gw*gh*.12&&c.x1-c.x0>gw*.3&&c.x1-c.x0<gw*2&&c.y1-c.y0>gh*.25&&c.y1-c.y0<gh*2&&!usadas.some(u=>Math.abs(c.x0-u.x0)<10&&Math.abs(c.y0-u.y0)<10)).sort((a,b)=>Math.hypot((a.x0+a.x1)/2-cx,(a.y0+a.y1)/2-cy)-Math.hypot((b.x0+b.x1)/2-cx,(b.y0+b.y1)/2-cy));
-      const c=candidatos[0];
+      const procurar=(cor:number[])=>componentes(data,largura,altura,cor,65).filter(c=>c.pixels.length>gw*gh*.12&&c.x1-c.x0>gw*.3&&c.x1-c.x0<gw*2&&c.y1-c.y0>gh*.25&&c.y1-c.y0<gh*2&&!usadas.some(u=>Math.abs(c.x0-u.x0)<10&&Math.abs(c.y0-u.y0)<10)).sort((a,b)=>Math.hypot((a.x0+a.x1)/2-cx,(a.y0+a.y1)/2-cy)-Math.hypot((b.x0+b.x1)/2-cx,(b.y0+b.y1)/2-cy));
+      let c=procurar(rgb)[0];
+      if(!c)for(const cor of paleta){const candidato=procurar(cor)[0];if(candidato){rgb=cor;c=candidato;break;}}
       if(c){
+        rgb=[0,1,2].map(canal=>{const v=c!.pixels.map(p=>data[p*4+canal]!).sort((a,b)=>a-b);return v[Math.floor(v.length/2)]!;});
+        if(!paleta.some(cor=>cor.every((v,i)=>Math.abs(v-rgb[i]!)<15)))paleta.push(rgb);
         // Junta pequenos pormenores soltos do mesmo pictograma (rodas, alças...).
-        const proximos=componentes(data,largura,altura,rgb,65,{x0:Math.max(0,c.x0-24),y0:Math.max(0,c.y0-24),x1:Math.min(largura-1,c.x1+24),y1:Math.min(altura-1,c.y1+24)});
+        const proximos=componentes(data,largura,altura,rgb,65,{x0:Math.max(0,c.x0-32),y0:Math.max(0,c.y0-32),x1:Math.min(largura-1,c.x1+32),y1:Math.min(altura-1,c.y1+32)});
         left=Math.min(...proximos.map(p=>p.x0));top=Math.min(...proximos.map(p=>p.y0));right=Math.max(...proximos.map(p=>p.x1))+1;bottom=Math.max(...proximos.map(p=>p.y1))+1;
         usadas.push({x0:c.x0,y0:c.y0,x1:c.x1,y1:c.y1});
         if(c.pixels.length/((right-left)*(bottom-top))<.45)mascara="cor";
