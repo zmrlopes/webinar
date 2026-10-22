@@ -7,6 +7,12 @@ export interface NoticiaTurismo {
 
 export interface DestaqueTurismo { dia: string; noticia: NoticiaTurismo }
 
+export class FontesTurismoIndisponiveis extends Error {
+  constructor(public diagnostico: { consultadaEm: string; fontes: { fonte: string; erro: string }[] }) {
+    super("Não há notícias recentes disponíveis nas fontes de turismo.");
+  }
+}
+
 // APIs públicas das próprias publicações. Só se recolhem título, ligação e data.
 export const FONTES_TURISMO = [
   { nome: "Turisver", dominio: "turisver.pt", url: "https://turisver.pt/wp-json/wp/v2/posts?per_page=10&_fields=date_gmt,link,title&orderby=date&order=desc" },
@@ -58,11 +64,19 @@ export async function carregarNoticiaTurismo(agora = new Date(), buscar: typeof 
     const resposta = await buscar(fonte.url, {
       cache: "no-store", signal: AbortSignal.timeout(7000), headers: { Accept: "application/json" },
     });
-    if (!resposta.ok) throw new Error(`Fonte de turismo indisponível: ${fonte.nome}`);
-    return lerNoticiasTurismo(await resposta.json(), fonte, agora);
+    if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+    const dados: unknown = await resposta.json();
+    const noticias = lerNoticiasTurismo(dados, fonte, agora);
+    if (!noticias.length) {
+      const primeiraData = Array.isArray(dados) ? objeto(dados[0])?.date_gmt : null;
+      throw new Error(`Sem notícias válidas (${Array.isArray(dados) ? dados.length : 0} itens; primeira data: ${typeof primeiraData === "string" ? primeiraData.slice(0, 30) : "indisponível"})`);
+    }
+    return noticias;
   }));
   const noticias = resultados.flatMap(r => r.status === "fulfilled" ? r.value : []);
   noticias.sort((a, b) => b.publicadaEm.localeCompare(a.publicadaEm) || a.url.localeCompare(b.url));
-  if (!noticias[0]) throw new Error("Não há notícias recentes disponíveis nas fontes de turismo.");
+  if (!noticias[0]) throw new FontesTurismoIndisponiveis({ consultadaEm: agora.toISOString(), fontes: resultados.map((r, i) => ({
+    fonte: FONTES_TURISMO[i]!.nome, erro: r.status === "rejected" && r.reason instanceof Error ? r.reason.message : "Sem notícias recentes",
+  })) });
   return noticias[0];
 }
