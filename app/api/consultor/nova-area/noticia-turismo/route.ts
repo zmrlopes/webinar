@@ -3,7 +3,7 @@ import { podeVerNovaArea } from "@/lib/consultor-nova-area";
 import { obterNoticiaTurismo } from "@/lib/noticia-turismo-servidor";
 import { FontesTurismoIndisponiveis } from "@/lib/noticia-turismo";
 
-export const maxDuration = 15;
+export const maxDuration = 25;
 
 export async function POST(request: Request) {
   const corpo = await request.json().catch(() => null);

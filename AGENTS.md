@@ -16,7 +16,8 @@ marketing e ligação à fonte. A rotação segue o dia em `Europe/Lisbon`, com 
 textos em `src/lib/frase-do-dia.ts`. Continua exclusiva da nova área da conta de teste.
 
 Por indicação do utilizador, o Início da nova área inclui também uma notícia diária
-de turismo, recolhida nas APIs públicas da Turisver e Ambitur, com título, fonte,
+de turismo, recolhida nos feeds públicos da Turisver, Ambitur e TNews (com API
+alternativa), com título, fonte,
 data real e ligação para o original. O destaque é guardado em cache por dia de Lisboa;
 sem notícias do dia, identifica a última disponível (até 7 dias). Falhas permitem
 nova tentativa. O cartão e a API continuam exclusivos da nova área da conta de teste.

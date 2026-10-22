@@ -13,10 +13,11 @@ export class FontesTurismoIndisponiveis extends Error {
   }
 }
 
-// APIs públicas das próprias publicações. Só se recolhem título, ligação e data.
+// Feeds públicos das publicações, com a API como alternativa. Só se recolhem título, ligação e data.
 export const FONTES_TURISMO = [
-  { nome: "Turisver", dominio: "turisver.pt", url: "https://turisver.pt/wp-json/wp/v2/posts?per_page=10&_fields=date_gmt,link,title&orderby=date&order=desc" },
-  { nome: "Ambitur", dominio: "ambitur.pt", url: "https://www.ambitur.pt/wp-json/wp/v2/posts?per_page=10&_fields=date_gmt,link,title&orderby=date&order=desc" },
+  { nome: "Turisver", dominio: "turisver.pt", rss: "https://turisver.pt/feed/", url: "https://turisver.pt/wp-json/wp/v2/posts?per_page=10&_fields=date_gmt,link,title&orderby=date&order=desc" },
+  { nome: "Ambitur", dominio: "ambitur.pt", rss: "https://www.ambitur.pt/feed/", url: "https://www.ambitur.pt/wp-json/wp/v2/posts?per_page=10&_fields=date_gmt,link,title&orderby=date&order=desc" },
+  { nome: "TNews", dominio: "tnews.pt", rss: "https://tnews.pt/feed/", url: "https://tnews.pt/wp-json/wp/v2/posts?per_page=10&_fields=date_gmt,link,title&orderby=date&order=desc" },
 ] as const;
 
 function objeto(valor: unknown): Record<string, unknown> | null {
@@ -61,10 +62,20 @@ export function lerNoticiasTurismo(dados: unknown, fonte: typeof FONTES_TURISMO[
 
 export async function carregarNoticiaTurismo(agora = new Date(), buscar: typeof fetch = fetch): Promise<NoticiaTurismo> {
   const resultados = await Promise.allSettled(FONTES_TURISMO.map(async fonte => {
+    let erroRss = "";
+    try {
+      const respostaRss = await buscar(fonte.rss, {
+        cache: "no-store", signal: AbortSignal.timeout(7000), headers: { Accept: "application/rss+xml, application/xml, text/xml" },
+      });
+      if (!respostaRss.ok) throw new Error(`HTTP ${respostaRss.status}`);
+      const noticiasRss = lerNoticiasRss(await respostaRss.text(), fonte, agora);
+      if (!noticiasRss.length) throw new Error("Sem notícias recentes no feed");
+      return noticiasRss;
+    } catch (erro) { erroRss = erro instanceof Error ? erro.message : "Feed indisponível"; }
     const resposta = await buscar(fonte.url, {
       cache: "no-store", signal: AbortSignal.timeout(7000), headers: { Accept: "application/json" },
     });
-    if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+    if (!resposta.ok) throw new Error(`RSS: ${erroRss}; API: HTTP ${resposta.status}`);
     const dados: unknown = await resposta.json();
     const noticias = lerNoticiasTurismo(dados, fonte, agora);
     if (!noticias.length) {
@@ -79,4 +90,22 @@ export async function carregarNoticiaTurismo(agora = new Date(), buscar: typeof 
     fonte: FONTES_TURISMO[i]!.nome, erro: r.status === "rejected" && r.reason instanceof Error ? r.reason.message : "Sem notícias recentes",
   })) });
   return noticias[0];
+}
+import { XMLParser } from "fast-xml-parser";
+
+
+export function lerNoticiasRss(xml: string, fonte: typeof FONTES_TURISMO[number], agora = new Date()): NoticiaTurismo[] {
+  if (xml.length > 1_000_000 || /<!DOCTYPE/i.test(xml)) return [];
+  const parser = new XMLParser({ ignoreAttributes: true, parseTagValue: false, isArray: nome => nome === "item" });
+  const raiz = objeto(parser.parse(xml));
+  const canal = objeto(objeto(raiz?.rss)?.channel);
+  if (!Array.isArray(canal?.item)) return [];
+  const posts = canal.item.slice(0, 20).flatMap((valor: unknown) => {
+    const item = objeto(valor);
+    if (typeof item?.pubDate !== "string") return [];
+    const data = new Date(item.pubDate);
+    if (!Number.isFinite(data.getTime())) return [];
+    return [{ date_gmt: data.toISOString().slice(0, 19) + "Z", link: item.link, title: { rendered: item.title } }];
+  });
+  return lerNoticiasTurismo(posts, fonte, agora);
 }

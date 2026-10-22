@@ -23,10 +23,11 @@ através da restrição já existente da nova área.
 ### Notícia diária de turismo na nova área
 
 O Início inclui também **Notícia do dia**, com título, fonte, data de publicação
-e ligação para o original, recolhidos nas APIs públicas da Turisver e Ambitur.
+e ligação para o original, recolhidos nos feeds RSS públicos da Turisver,
+Ambitur e TNews, com as APIs públicas como alternativa.
 O primeiro acesso de cada dia de Lisboa escolhe a notícia mais recente disponível
 e mantém o destaque em cache nesse dia, sem IA nem alterações à base de dados.
-Se uma fonte falhar, usa a outra; se nenhuma devolver notícias dos últimos 7 dias,
+Se uma fonte falhar, usa as restantes; se nenhuma devolver notícias dos últimos 7 dias,
 mostra indisponibilidade e permite tentar novamente. Notícias de dias anteriores
 mantêm a data real e a indicação de última notícia disponível.
 O cartão atualiza quando o dia muda ou se regressa à página. O cartão e a API

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { dataLisboa } from "../src/lib/data-lisboa";
-import { FONTES_TURISMO, lerNoticiasTurismo, carregarNoticiaTurismo } from "../src/lib/noticia-turismo";
+import { FONTES_TURISMO, lerNoticiasTurismo, lerNoticiasRss, carregarNoticiaTurismo } from "../src/lib/noticia-turismo";
 
 const agora = new Date("2026-10-22T15:00:00Z");
 const fonte = FONTES_TURISMO[0];
@@ -27,6 +27,17 @@ assert.equal(dataLisboa(new Date("2026-10-22T23:30:00Z")), "2026-10-23");
 assert.equal(dataLisboa(new Date("2026-10-25T23:30:00Z")), "2026-10-25");
 
 const buscar = (fn: (url: string) => Response | Promise<Response>) => (async (url: string | URL | Request) => fn(String(url))) as typeof fetch;
+const rss = `<?xml version="1.0"?><rss><channel><item><title><![CDATA[Viagens &amp; turismo em Portugal]]></title><link>https://turisver.pt/noticia-de-teste/</link><pubDate>Thu, 22 Oct 2026 13:00:00 +0000</pubDate></item></channel></rss>`;
+assert.equal(lerNoticiasRss(rss, fonte, agora)[0]?.titulo, "Viagens & turismo em Portugal");
+assert.equal(lerNoticiasRss("<!DOCTYPE rss []>" + rss, fonte, agora).length, 0);
+assert.equal(lerNoticiasRss("x".repeat(1_000_001), fonte, agora).length, 0);
+let chamadasApi = 0;
+const soRss = buscar(url => {
+  if (url.includes("wp-json")) { chamadasApi++; return new Response("", { status: 403 }); }
+  return new Response(rss, { headers: { "Content-Type": "application/rss+xml" } });
+});
+assert.equal((await carregarNoticiaTurismo(agora, soRss)).fonte, "Turisver");
+assert.equal(chamadasApi, 2); // As outras fontes rejeitam o link de domínio alheio do fixture.
 const duasFontes = buscar(url => Response.json(url.includes("ambitur") ? [post({
   link: "https://www.ambitur.pt/outra-noticia/", date_gmt: "2026-10-22T14:00:00",
 })] : [post()]));
