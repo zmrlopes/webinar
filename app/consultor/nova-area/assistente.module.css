@@ -1,0 +1,63 @@
+.painel { max-width: 1050px; min-width: 0; border: 1px solid #dfe1d6; border-radius: 18px; background: #fff; overflow: hidden; }
+.cabecalho { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding: 22px 26px; border-bottom: 1px solid #e8eadd; background: #f7f8f2; }
+.identidade { display: flex; align-items: center; gap: 12px; }
+.simbolo { display: grid; place-items: center; width: 42px; height: 42px; flex: none; border-radius: 13px; background: #4b5320; color: #fff; font-size: 25px; }
+.identidade strong { display: block; font-size: 16px; }
+.identidade div > span { display: block; margin-top: 3px; font-size: 12px; color: #626652; }
+.painel button { font: inherit; cursor: pointer; }
+.painel button:disabled { cursor: default; opacity: .55; }
+.painel button:focus-visible, .fontes a:focus-visible { outline: 3px solid #4b5320; outline-offset: 3px; }
+.discreto { padding: 8px 0; border: 0; background: transparent; color: #4b5320; font-size: 12px !important; font-weight: 650 !important; text-align: left; }
+.discreto:hover { text-decoration: underline; text-underline-offset: 3px; }
+.sugestoes { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; padding: 26px; }
+.sugestoes button { position: relative; min-width: 0; padding: 16px 38px 16px 17px; border: 1px solid #e1e4d5; border-radius: 12px; background: #fff; text-align: left; color: #222; font-size: 13px; line-height: 1.5; }
+.sugestoes button:hover { background: #f7f8f2; border-color: #a4ad85; }
+.sugestoes button > span:first-child { display: block; margin-bottom: 6px; color: #4b5320; font-size: 10px; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
+.seta { position: absolute; right: 15px; bottom: 16px; color: #4b5320; font-size: 18px; }
+.conversa { padding: 0 26px; }
+.troca { padding: 24px 0; }
+.troca + .troca { border-top: 1px solid #e8eadd; }
+.pergunta { width: fit-content; max-width: 88%; margin-left: auto; padding: 13px 17px; border-radius: 14px 14px 3px 14px; background: #eef0e4; }
+.pergunta > span, .autor { color: #4b5320; font-size: 10px; font-weight: 750; letter-spacing: .04em; }
+.pergunta p { margin: 4px 0 0; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.resposta { margin-top: 22px; font-size: 14px; line-height: 1.75; overflow-wrap: anywhere; }
+.texto { margin: 9px 0 13px; white-space: pre-wrap; }
+.passos { padding-left: 22px; margin: 12px 0; }
+.passos li { padding-left: 4px; margin-bottom: 7px; }
+.passos li::marker { color: #4b5320; font-weight: 700; }
+.exemplo { margin: 18px 0; padding: 15px 18px; border-left: 3px solid #4b5320; border-radius: 0 10px 10px 0; background: #f7f8f2; }
+.exemplo strong { font-size: 11px; color: #4b5320; }
+.exemplo p { margin: 6px 0 0; white-space: pre-wrap; }
+.fontes { margin: 22px 0 8px; }
+.fontes h2 { margin: 0 0 9px; font-size: 11px; color: #626652; font-weight: 650; }
+.fontes ul { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; margin: 0; padding: 0; list-style: none; }
+.fontes a, .fontes li > div { display: block; height: 100%; padding: 11px 13px; border: 1px solid #e3e6d9; border-radius: 9px; color: inherit; text-decoration: none; }
+.fontes a:hover { border-color: #4b5320; background: #fafbf7; }
+.fontes a > span, .fontes li > div > span { display: block; color: #626652; font-size: 10px; line-height: 1.4; }
+.fontes strong { display: block; margin-top: 5px; font-size: 12px; font-weight: 600; line-height: 1.5; }
+.fontes strong span { color: #4b5320; }
+.aPesquisar { margin: 9px 0 0; color: #626652; }
+.erro { margin: 0 26px 18px; color: #922e23; font-size: 13px; }
+.formulario { margin: 8px 26px 0; padding: 17px; border: 1px solid #dce1cb; border-radius: 13px; background: #fff; }
+.formulario label { display: block; margin-bottom: 9px; font-size: 12px; font-weight: 650; color: #4b5320; }
+.formulario textarea { display: block; width: 100%; min-height: 85px; padding: 0; resize: vertical; border: 0; background: transparent; color: #000; font: inherit; font-size: 14px; line-height: 1.6; }
+.formulario textarea:focus-visible { outline: 2px solid #4b5320; outline-offset: 5px; border-radius: 4px; }
+.rodape { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 13px; }
+.rodape > span { flex: 1 1 220px; font-size: 10px; line-height: 1.5; color: #626652; }
+.rodape button { display: inline-flex; align-items: center; gap: 18px; min-height: 42px; padding: 10px 17px; border: 0; border-radius: 9px; background: #4b5320; color: #fff; font-size: 13px; font-weight: 650; }
+.rodape button:hover:not(:disabled) { background: #626c2b; }
+.rodape button span { font-size: 18px; }
+.privacidade { margin: 12px 26px 20px; font-size: 10px; line-height: 1.5; color: #727568; }
+@media (max-width: 760px) {
+  .cabecalho { padding: 18px; }
+  .identidade strong { font-size: 14px; }
+  .identidade div > span { font-size: 10px; }
+  .sugestoes { grid-template-columns: minmax(0,1fr); padding: 18px; gap: 10px; }
+  .conversa { padding: 0 18px; }
+  .pergunta { max-width: 95%; }
+  .fontes ul { grid-template-columns: minmax(0,1fr); }
+  .formulario { margin: 8px 18px 0; padding: 14px; }
+  .formulario textarea { font-size: 16px; }
+  .erro { margin: 0 18px 16px; }
+  .privacidade { margin: 12px 18px 18px; }
+}

@@ -9,6 +9,25 @@ base de dados Postgres (Neon) ligada.
 
 ## Estado
 
+### Assistente da equipa na nova área
+
+Em **A minha organização → Assistente da equipa**, a conta de teste pode perguntar
+sobre vendas de viagens, contactos, acompanhamento, organização e liderança.
+A pesquisa usa os resumos de `formacoes_conhecimento`, os fragmentos de documentos
+publicados e as orientações de objeções. A resposta inclui orientação curta, até
+quatro passos, um exemplo quando útil e as fontes usadas, com ligações obtidas
+dos registos existentes. Os links de documentos mantêm a assinatura habitual.
+Não devolve transcrições nem o contexto interno completo e não pesquisa a Internet.
+Quando a base não sustenta uma resposta, pede mais contexto ou confirmação.
+
+A conversa permite perguntas seguintes, copiar respostas e começar de novo.
+Permanece em memória ao navegar entre secções e termina ao atualizar ou sair.
+Não há histórico de conversas na base de dados; apenas um contador de até 20 pedidos
+por dez minutos em `dashboard_config`, separado de Reservas. Não há migração.
+O painel e `/api/consultor/nova-area/assistente` mantêm acesso exclusivo à conta de
+teste, através do email de demonstração já definido. Testes:
+`node --import tsx scripts/testes-assistente-equipa.ts`.
+
 ### Frase diária no Início da nova área
 
 O Início de `/consultor/nova-area` inclui 60 reflexões originais sobre relações,

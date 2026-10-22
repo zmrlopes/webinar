@@ -10,6 +10,15 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Alterações na área de consultor
 
+Por indicação do utilizador, a nova área inclui “Assistente da equipa” em
+A minha organização, no painel da direita. Pesquisa os resumos das formações,
+os documentos publicados e as orientações da equipa para dar uma resposta curta,
+passos práticos, exemplo e fontes. As ligações são resolvidas pelo servidor apenas
+para fontes existentes; sem base suficiente, indica-o. A conversa só permanece
+durante a visita, incluindo ao mudar de secção, e não é guardada no servidor.
+O acesso ao painel e à API é exclusivo da conta de teste; há um limite de pedidos
+separado das outras ferramentas de IA. Não envia mensagens nem altera leads.
+
 Por indicação do utilizador, o Início da nova área inclui uma frase diária sobre
 o modelo de negócio, com reflexões originais inspiradas em referências de network
 marketing e ligação à fonte. A rotação segue o dia em `Europe/Lisbon`, com os
