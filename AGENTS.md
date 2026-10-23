@@ -19,6 +19,13 @@ durante a visita, incluindo ao mudar de secção, e não é guardada no servidor
 O acesso ao painel e à API é exclusivo da conta de teste; há um limite de pedidos
 separado das outras ferramentas de IA. Não envia mensagens nem altera leads.
 
+Por indicação do utilizador, no primeiro contacto com uma lead que acabou de
+assistir ao webinar ou de ver a apresentação, o Assistente da equipa responde
+apenas “O que gostaste mais?”. Não acrescenta perguntas, passos, pedidos de decisão
+nem mensagens alternativas. Esta orientação tem prioridade sobre respostas genéricas
+das fontes e mantém-se ao reformular a mesma situação. Uma objeção já expressa
+pela lead é uma situação distinta. A alteração continua exclusiva da conta de teste.
+
 Por indicação do utilizador, o Início da nova área inclui uma frase diária sobre
 o modelo de negócio, com reflexões originais inspiradas em referências de network
 marketing e ligação à fonte. A rotação segue o dia em `Europe/Lisbon`, com os

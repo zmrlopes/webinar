@@ -28,6 +28,12 @@ O painel e `/api/consultor/nova-area/assistente` mantêm acesso exclusivo à con
 teste, através do email de demonstração já definido. Testes:
 `node --import tsx scripts/testes-assistente-equipa.ts`.
 
+No primeiro contacto após o webinar/apresentação, a orientação explícita da equipa
+tem prioridade: a resposta é apenas **“O que gostaste mais?”**, sem perguntas ou
+passos adicionais. Os casos reconhecidos usam a resposta fixa antes da pesquisa/IA;
+as instruções do modelo também preservam a regra. As objeções já expressas pela
+lead continuam a seguir o fluxo de resposta com conhecimento e fontes.
+
 ### Frase diária no Início da nova área
 
 O Início de `/consultor/nova-area` inclui 60 reflexões originais sobre relações,

@@ -18,6 +18,34 @@ export interface RespostaAssistente {
   semBase: boolean;
 }
 
+export const PERGUNTA_APOS_APRESENTACAO = "O que gostaste mais?";
+
+/** Orientação explícita da equipa para o primeiro contacto após a apresentação. */
+export function respostaInicialAposApresentacao(pergunta: string, historico: MensagemAssistente[] = []): RespostaAssistente | null {
+  const normalizar = (texto: string) => texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const reformulacao = /reformula|reescrev|mais (?:curt|simples|natural|exempl|opco|alternativ)|outr[ao]s? (?:mensage|fras|pergunt|opco)|(?:so|apenas).*(?:mensagem|frase|pergunta)|como digo isso|o que lhe digo/;
+  const outraSituacao = /\b(?:nao|nunca|nem)\s+(?:(?:ainda|chegou a|conseguiu)\s+)?(?:assist|viu|ver|vi\b)|\b(?:objec|duvida|caro\b|preco|investimento|hotel|orcamento|reserva)|\b(?:disse|respondeu|perguntou|comentou|achou)\b|nao (?:tem|tenho) (?:tempo|dinheiro)|nao (?:quer|gostou|responde)|sem (?:dinheiro|tempo|interesse|resposta)/;
+  const primeiroContacto = (texto: string) => {
+    const normal = normalizar(texto);
+    if (outraSituacao.test(normal)) return false;
+    const apresentacao = /\b(?:webinar|webinario|apresentacao)\b/.test(normal);
+    const depois = /\b(?:apos|depois|acabou|acabado|terminou|terminado|fim|final|assistiu|assistido|viu|visto)\b/.test(normal);
+    const inicio = /o que (?:devo |posso |vou |se )?(?:dizer|digo|perguntar|pergunto|falar|responder)|como (?:devo |posso )?(?:abord|contact|inici|comec|fal|respond|retom)|(?:primeir[ao]|proxim[ao]).*(?:contacto|abordagem|mensagem|pergunta)|qual.*pergunta|(?:lead|pessoa|interessad[oa]).*(?:acabou|terminou|assistiu|viu)/.test(normal);
+    return apresentacao && depois && inicio;
+  };
+  if (outraSituacao.test(normalizar(pergunta))) return null;
+  let aplica = primeiroContacto(pergunta);
+  if (!aplica && reformulacao.test(normalizar(pergunta))) {
+    // Mantém a regra ao reformular a mesma situação, sem atravessar mudanças de assunto.
+    const anteriores = historico.filter(m => m.papel === "utilizador").map(m => m.texto).reverse();
+    for (const anterior of anteriores) {
+      if (primeiroContacto(anterior)) { aplica = true; break; }
+      if (!reformulacao.test(normalizar(anterior))) break;
+    }
+  }
+  return aplica ? { resposta: PERGUNTA_APOS_APRESENTACAO, passos: [], exemplo: null, fontes: [], semBase: false } : null;
+}
+
 const IGNORAR = new Set("como para uma umas uns que quem qual quais quando onde porque por nao sim com sem dos das aos nas nos pelo pela pelos pelas isto isso esta este estas estes tenho tem temos quero queria posso pode podes podemos fazer faz mais menos muito minha meu meus minhas sua seu seus suas esse essa ser estar foi sao era sou estou depois antes sobre favor ajuda ajudar responde resposta explica explicar melhor ola obrigado obrigada tambem ainda agora hoje dia dias coisa coisas".split(" "));
 
 export function termosAssistente(texto: string): string[] {
@@ -77,6 +105,10 @@ export function interpretarRespostaAssistente(texto: string, fontes: Conheciment
   const valor = JSON.parse(texto.slice(inicio, fim + 1)) as Record<string, unknown>;
   const resposta = textoCurto(valor.resposta, 3000);
   if (!resposta || typeof valor.semBase !== "boolean" || !Array.isArray(valor.fontes) || !Array.isArray(valor.passos)) throw new Error("Resposta do assistente incompleta");
+  // A orientação expressa da equipa também é válida quando identificada pelo modelo.
+  if (resposta === PERGUNTA_APOS_APRESENTACAO && valor.semBase === false) {
+    return { resposta, passos: [], exemplo: null, fontes: [], semBase: false };
+  }
   const usadas = [...new Set(valor.fontes.filter((n): n is number => Number.isInteger(n) && n >= 1 && n <= fontes.length))].slice(0, 6);
   if (valor.semBase || !usadas.length) return respostaSemBase();
   const passos = valor.passos.slice(0, 4).map(p => textoCurto(p, 600));
