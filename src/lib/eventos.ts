@@ -320,8 +320,11 @@ export interface ParticipanteEvento {
   email: string;
   telemovel: string;
   adultos: number;
-  criancas0a13: number;
-  criancas14Mais: number;
+  criancasAte5: number;
+  criancas6a12: number;
+  criancas13Mais: number;
+  /** Texto livre do questionário do hotel, tal como foi escrito. */
+  idadesIndicadas: string;
   /** null quando ainda não respondeu ao questionário do hotel. */
   querQuarto: boolean | null;
   tipoQuarto: "single" | "duplo" | null;
@@ -333,15 +336,15 @@ export interface ParticipanteEvento {
 /**
  * Todos os inscritos no evento, um por email (soma as inscrições de quem
  * se inscreveu mais do que uma vez — mesma lógica de
- * listarInscritosComFaturacao), com as crianças em dois escalões (0 a 13 e
- * 14 ou mais) e o quarto de hotel pedido, com as noites.
+ * listarInscritosComFaturacao), com as crianças em três escalões (até 5,
+ * 6 a 12, e 13 ou mais) e o quarto de hotel pedido, com as noites.
  *
  * A idade real só existe para quem respondeu ao questionário do quarto de
  * hotel e disse que leva crianças (respostas_hotel.idades_criancas, texto
- * livre). Sem idade, as crianças inscritas como -10 anos contam nos 0 a 13
- * (de certeza); as +10 anos entram nos 14 ou mais (mesma regra já pedida
- * antes: quem não se sabe a idade, considera-se crescida), com nota para
- * confirmar, porque podem ter 10 a 13.
+ * livre). Sem idade, cada criança entra no escalão mais velho possível
+ * (regra já pedida: quem não se sabe a idade, considera-se crescida) — as
+ * inscritas como -10 anos nos 6 a 12, as +10 anos nos 13 ou mais — com nota
+ * para confirmar.
  */
 export async function listarParticipantesEvento(): Promise<ParticipanteEvento[]> {
   const { rows } = await db().query<{
@@ -375,20 +378,17 @@ export async function listarParticipantesEvento(): Promise<ParticipanteEvento[]>
     const idades = extrairIdades(r.idades_criancas);
     const notas: string[] = [];
 
-    let criancas0a13: number;
-    let criancas14Mais: number;
-    if (idades.length >= totalCriancas && idades.length > 0) {
-      criancas0a13 = idades.filter((i) => i <= 13).length;
-      criancas14Mais = idades.filter((i) => i >= 14).length;
-      if (idades.length > totalCriancas) notas.push("confirmar idades — não batem com as crianças inscritas");
-    } else {
-      const ate13Conhecidas = idades.filter((i) => i <= 13).length;
-      const de14Conhecidas = idades.filter((i) => i >= 14).length;
+    let criancasAte5 = idades.filter((i) => i <= 5).length;
+    let criancas6a12 = idades.filter((i) => i >= 6 && i <= 12).length;
+    let criancas13Mais = idades.filter((i) => i >= 13).length;
+    if (idades.length > totalCriancas) {
+      notas.push("confirmar idades — não batem com as crianças inscritas");
+    } else if (idades.length < totalCriancas) {
       const menos10Sem = Math.max(0, menos10 - idades.filter((i) => i < 10).length);
       const mais10Sem = Math.max(0, totalCriancas - idades.length - menos10Sem);
-      criancas0a13 = ate13Conhecidas + menos10Sem;
-      criancas14Mais = de14Conhecidas + mais10Sem;
-      if (mais10Sem > 0) notas.push("confirmar idades das crianças +10 anos");
+      criancas6a12 += menos10Sem;
+      criancas13Mais += mais10Sem;
+      notas.push(`confirmar idades — ${menos10Sem + mais10Sem} criança(s) sem idade indicada`);
     }
 
     const querQuarto = r.quer_quarto;
@@ -397,8 +397,10 @@ export async function listarParticipantesEvento(): Promise<ParticipanteEvento[]>
       email: r.email,
       telemovel: r.telemovel ?? "",
       adultos: Number(r.adultos),
-      criancas0a13,
-      criancas14Mais,
+      criancasAte5,
+      criancas6a12,
+      criancas13Mais,
+      idadesIndicadas: r.idades_criancas ?? "",
       querQuarto,
       tipoQuarto: querQuarto ? r.tipo_quarto : null,
       noiteAnterior: querQuarto === true && r.noite_anterior === true,
@@ -426,8 +428,10 @@ export async function gerarExcelParticipantesEvento(participantes: ParticipanteE
     { nome: "Email", largura: 30 },
     { nome: "Telemóvel", largura: 15 },
     { nome: "Adultos", largura: 10, totalsRowFunction: "sum" },
-    { nome: "Crianças 0 a 13", largura: 15, totalsRowFunction: "sum" },
-    { nome: "Crianças 14 ou mais", largura: 18, totalsRowFunction: "sum" },
+    { nome: "Crianças até 5", largura: 15, totalsRowFunction: "sum" },
+    { nome: "Crianças 6 a 12", largura: 15, totalsRowFunction: "sum" },
+    { nome: "Crianças 13 ou mais", largura: 18, totalsRowFunction: "sum" },
+    { nome: "Idades indicadas", largura: 16 },
     { nome: "Total de pessoas", largura: 15, totalsRowFunction: "sum" },
     { nome: "Quarto", largura: 14 },
     { nome: "Noite 13-14", largura: 12 },
@@ -442,9 +446,11 @@ export async function gerarExcelParticipantesEvento(participantes: ParticipanteE
     p.email,
     p.telemovel,
     p.adultos,
-    p.criancas0a13,
-    p.criancas14Mais,
-    p.adultos + p.criancas0a13 + p.criancas14Mais,
+    p.criancasAte5,
+    p.criancas6a12,
+    p.criancas13Mais,
+    p.idadesIndicadas,
+    p.adultos + p.criancasAte5 + p.criancas6a12 + p.criancas13Mais,
     p.querQuarto === null
       ? "Sem resposta"
       : !p.querQuarto
