@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { ErroReserva } from "@/lib/reservas";
 import { acessoReservas, lerBytesReserva } from "@/lib/reservas-servidor";
 import { abrirImagemReserva, apagarImagemReserva, criarReferenciaImagemReserva, gerarImagemReserva, listarImagensReserva, verificarImagemReserva } from "@/lib/reservas-imagem-servidor";
-import {guardarEdicaoPublicacao,limparFundoEditorPublicacao,prepararEditorPublicacao} from "@/lib/reservas-imagem-editor-servidor";
+import {guardarEdicaoPublicacao,limparFundoEditorPublicacao,prepararEditorPublicacao,prepararCamadasEditorPublicacao} from "@/lib/reservas-imagem-editor-servidor";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -20,6 +20,7 @@ export async function POST(request: Request) {
       case "gerar": return json(await gerarImagemReserva(email, corpo));
       case "verificar": return json(await verificarImagemReserva(email, corpo.id));
       case "preparar-editor": return json(await prepararEditorPublicacao(email, corpo.id));
+      case "preparar-camadas": return json(await prepararCamadasEditorPublicacao(email, corpo.id));
       case "limpar-editor": return json(await limparFundoEditorPublicacao(email, corpo.id));
       case "guardar-edicao": return json(await guardarEdicaoPublicacao(email, corpo));
       case "apagar": await apagarImagemReserva(email, corpo.id); return json({ok: true});

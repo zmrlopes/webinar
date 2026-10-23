@@ -1,11 +1,15 @@
 import assert from "node:assert/strict";
 import {createCanvas,loadImage} from "@napi-rs/canvas";
 import {desenharEditorPublicacao,ajustesIniciaisPublicacao,type EditorPublicacaoReserva} from "../src/lib/reservas-imagem-editor";
-import {validarFormasPublicacao,validarGraficosPublicacao,estilosFormasPublicacao,type FormaPublicacao} from "../src/lib/reservas-imagem-camadas";
+import {validarFormasPublicacao,validarGraficosPublicacao,estilosFormasPublicacao,ajustarLimitesLeituraPublicacao,type FormaPublicacao} from "../src/lib/reservas-imagem-camadas";
 import {extrairGraficosPublicacao,refinarFormasPublicacao} from "../src/lib/reservas-imagem-camadas-servidor";
 
 async function main(){
   const largura=1080,altura=1350,cor="#e0b64d";
+  const leituraMargem={x:46.5,y:97.1,w:6.3,h:3.6,nome:"Instagram",cor:"#dab470",mascara:"cor"};
+  const margem=validarGraficosPublicacao(ajustarLimitesLeituraPublicacao([leituraMargem]));
+  assert.equal(margem[0]!.y+margem[0]!.h,100,"Um ícone lido a ultrapassar ligeiramente a margem não bloqueia toda a publicação");
+  for(const y of [NaN,-1,100,938])assert.throws(()=>validarGraficosPublicacao(ajustarLimitesLeituraPublicacao([{...leituraMargem,y}])));
   const formas:FormaPublicacao[]=validarFormasPublicacao([{nome:"Cartão colorido",x:10,y:30,w:80,h:40,cor,opacidade:.8,figura:"retangulo",raio:0,pontos:[]}]);
   const foto=createCanvas(largura,altura),f=foto.getContext("2d");f.fillStyle="#283c50";f.fillRect(0,0,largura,altura);f.fillStyle="#3c5064";f.fillRect(250,0,100,altura);
   const placa=createCanvas(largura,altura),p=placa.getContext("2d");p.drawImage(foto,0,0);p.fillStyle="rgba(224,182,77,.8)";p.fillRect(108,405,864,540);

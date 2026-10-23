@@ -8,14 +8,14 @@ export interface SombreadoPublicacao extends CaixaReserva {
 }
 const direcoes = ["baixo", "cima", "esquerda", "direita", "radial"] as const;
 export const esquemaSombreadosPublicacao = {
-  type: "array", items: {
+  type: "array", maxItems: 8, items: {
     type: "object", additionalProperties: false,
     properties: {
-      x: {type: "number"}, y: {type: "number"}, w: {type: "number"}, h: {type: "number"},
+      x: {type: "number", minimum: 0, maximum: 100}, y: {type: "number", minimum: 0, maximum: 100}, w: {type: "number", minimum: 0, maximum: 100}, h: {type: "number", minimum: 0, maximum: 100},
       cor: {type: "string"}, direcao: {type: "string", enum: direcoes},
-      paragens: {type: "array", items: {
+      paragens: {type: "array", minItems: 2, maxItems: 8, items: {
         type: "object", additionalProperties: false,
-        properties: {posicao: {type: "number"}, opacidade: {type: "number"}},
+        properties: {posicao: {type: "number", minimum: 0, maximum: 1}, opacidade: {type: "number", minimum: 0, maximum: 1}},
         required: ["posicao", "opacidade"],
       }},
     }, required: ["x", "y", "w", "h", "cor", "direcao", "paragens"],

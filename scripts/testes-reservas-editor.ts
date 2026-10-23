@@ -7,20 +7,21 @@ import {db,fecharDb} from "../src/lib/db";
 import {EMAIL_PAINEL_DEMONSTRACAO} from "../src/lib/demo";
 import {dadosReservaVazios,hotelVazio} from "../src/lib/reservas";
 import {ajustesIniciaisPublicacao,ajustarConteudoTextoPublicacao,desenharEditorPublicacao,prepararTextoEditor,validarAjustesPublicacao,type EditorPublicacaoReserva} from "../src/lib/reservas-imagem-editor";
-import {prepararEditorPublicacao,limparFundoEditorPublicacao,guardarEdicaoPublicacao} from "../src/lib/reservas-imagem-editor-servidor";
+import {prepararEditorPublicacao as prepararTextosPublicacao,prepararCamadasEditorPublicacao,limparFundoEditorPublicacao,guardarEdicaoPublicacao} from "../src/lib/reservas-imagem-editor-servidor";
 import {abrirImagemReserva,finalizarImagemReserva,logotipoBrancoReserva,VERSAO_LOGOTIPO_BRANCO_RESERVA} from "../src/lib/reservas-imagem-servidor";
 import type {PublicacaoImagemReserva,ReferenciaImagemReserva} from "../src/lib/reservas-imagem";
 import {POST} from "../app/api/consultor/nova-area/reservas/imagem/route";
 import {harmonizarMarcaPublicacao} from "../src/lib/reservas-imagem-ocr";
 import {validarSombreadosPublicacao,desenharSombreadosPublicacao,type SombreadoPublicacao} from "../src/lib/reservas-imagem-sombras";
 import {validarFormasPublicacao,estilosFormasPublicacao} from "../src/lib/reservas-imagem-camadas";
+async function prepararEditorPublicacao(email:string,id:unknown){await prepararTextosPublicacao(email,id);return prepararCamadasEditorPublicacao(email,id);}
 async function main(){
  process.env.DATABASE_URL||="postgres://test:test@localhost/test";
  const email=EMAIL_PAINEL_DEMONSTRACAO,pool=db(),originalQuery=pool.query,originalFetch=globalThis.fetch,registos=new Map<string,unknown>();let chamadasIA=0;
  pool.query=(async(sql:string,args:unknown[]=[])=>{const key=String(args[0]);if(sql.startsWith("select"))return{rows:registos.has(key)?[{valor:structuredClone(registos.get(key))}]:[]};if(sql.startsWith("insert")){registos.set(key,JSON.parse(String(args[1])));return{rows:[{chave:key}]};}throw Error("Consulta inesperada");}) as typeof pool.query;
  globalThis.fetch=(async()=>{chamadasIA++;throw Error("O editor preparado não deve chamar IA");}) as typeof fetch;
  try{
-  for(const acao of ["preparar-editor","limpar-editor","guardar-edicao"])assert.equal((await POST(new Request("http://localhost/api",{method:"POST",body:JSON.stringify({acao,email:"outra@example.com"})}))).status,403);
+  for(const acao of ["preparar-editor","preparar-camadas","limpar-editor","guardar-edicao"])assert.equal((await POST(new Request("http://localhost/api",{method:"POST",body:JSON.stringify({acao,email:"outra@example.com"})}))).status,403);
   const base=await sharp({create:{width:1080,height:1920,channels:3,background:"#183d52"}}).webp().toBuffer(),url=(b:Buffer)=>`data:image/webp;base64,${b.toString("base64")}`;
   const ref:ReferenciaImagemReserva={id:randomUUID(),tipo:"referencia",nome:"Modelo pessoal",formato:"story",imagem:url(base),miniatura:"",estilo:"Desenho de teste",marca:{x:3,y:2,w:24,h:5}};
   const baseComMarca=await finalizarImagemReserva(base,ref,"story"),arte=createCanvas(1080,1920),arteCtx=arte.getContext("2d");arteCtx.drawImage(await loadImage(baseComMarca),0,0);arteCtx.fillStyle="#ffffff";arteCtx.fillRect(33,39,258,94);arteCtx.font="bold 70px sans-serif";arteCtx.fillText("GRAN CANARIA",54,1310);const source=arte.toBuffer("image/png");
@@ -136,7 +137,37 @@ async function main(){
     const pixel=await sharp(Buffer.from(colorida.imagem!.split(",")[1]!,"base64")).extract({left:900,top:1450,width:1,height:1}).raw().toBuffer();assert(Math.abs(pixel[0]!-96)<8&&Math.abs(pixel[1]!-68)<8&&Math.abs(pixel[2]!-170)<8,"A exportação guarda a cor do cartão por cima do novo fundo");
     for(const formasInvalidas of [[{id:"marca",cor:"#000000"}],[{id:formas[0]!.id,cor:"red"}],[]])assert.throws(()=>validarAjustesPublicacao({...ajustes,formas:formasInvalidas},migrado));
   }finally{if(chaveCamadas===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=chaveCamadas;}
-  console.log("OK: acesso privado, original preservado, correção e remoção de textos na imagem, restauro, persistência, fontes/tamanhos, fundo, marca e reabertura sem IA. Sem rede nem alterações reais.");
+  // Uma falha nas camadas não repete o OCR nem perde os textos já preparados.
+  const chaveEtapas=process.env.OPENAI_API_KEY;process.env.OPENAI_API_KEY="teste-sem-rede";
+  try{
+    const nova={...structuredClone(r),id:randomUUID()};
+    registos.set(`reservas:imagem:v1:${email}:${nova.id}`,nova);
+    let leiturasTexto=0,leiturasCamadas=0,interromper=true;
+    globalThis.fetch=(async(_url,init)=>{
+      const pedido=JSON.parse(String(init?.body)),propriedades=pedido.text.format.schema.properties;
+      if(propriedades.textos){
+        leiturasTexto++;assert.equal(propriedades.formas,undefined);assert.equal(propriedades.graficos,undefined);assert.equal(propriedades.sombreados,undefined);
+        return Response.json({output:[{content:[{type:"output_text",text:JSON.stringify({textos:[{...textos[0],...ref.marca,nome:"Marca protegida",texto:"iCliGo travel partners"},...textos],decoracoes:[]})}]}]});
+      }
+      leiturasCamadas++;assert.equal(propriedades.textos,undefined);
+      if(interromper)return Response.json({status:"incomplete",incomplete_details:{reason:"max_output_tokens"}});
+      return Response.json({output:[{content:[{type:"output_text",text:JSON.stringify({formas:[],graficos:[],sombreados:[]})}]}]});
+    }) as typeof fetch;
+    const preparados=await prepararTextosPublicacao(email,nova.id);
+    assert(preparados.textos.length>0);assert.equal(preparados.camadasPreparadas,undefined);
+    assert(preparados.textos.every(t=>!t.texto.includes("iCliGo")),"A transcrição da marca é excluída sem bloquear o editor");
+    await assert.rejects(()=>prepararCamadasEditorPublicacao(email,nova.id),/complexa/);
+    assert.deepEqual(await prepararTextosPublicacao(email,nova.id),JSON.parse(JSON.stringify(preparados)));
+    await assert.rejects(()=>guardarEdicaoPublicacao(email,{id:nova.id,ajustes:preparados.ajustes}),/Prepara o editor/);
+    interromper=false;
+    const completo=await prepararCamadasEditorPublicacao(email,nova.id);
+    assert.equal(completo.camadasVersao,2);assert.deepEqual(completo.textos,preparados.textos);
+    await prepararEditorPublicacao(email,nova.id);
+    assert.equal(leiturasTexto,1,"Retomar depois de uma falha não repete a análise de texto nem o OCR");
+    assert.equal(leiturasCamadas,2,"Só a etapa interrompida é retomada");
+    assert.deepEqual(await abrirImagemReserva(email,nova.id),nova,"A preparação não altera a publicação original");
+  }finally{if(chaveEtapas===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=chaveEtapas;}
+  console.log("OK: acesso privado, preparação por etapas, retoma após resposta incompleta, original preservado, correção e remoção de textos, restauro, persistência, fontes/tamanhos, fundo, marca e reabertura sem IA. Sem rede nem alterações reais.");
  }finally{pool.query=originalQuery;globalThis.fetch=originalFetch;await fecharDb();}
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

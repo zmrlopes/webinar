@@ -10,13 +10,13 @@ export interface EstiloFormaPublicacao {id:string;cor:string}
 export interface LeituraGraficoPublicacao extends CaixaReserva {
   nome:string;cor:string;mascara:"elipse"|"cor"|"recorte";
 }
-const caixa={x:{type:"number"},y:{type:"number"},w:{type:"number"},h:{type:"number"}};
-export const esquemaFormasPublicacao={type:"array",items:{type:"object",additionalProperties:false,properties:{
+const caixa={x:{type:"number",minimum:0,maximum:100},y:{type:"number",minimum:0,maximum:100},w:{type:"number",minimum:0,maximum:100},h:{type:"number",minimum:0,maximum:100}};
+export const esquemaFormasPublicacao={type:"array",maxItems:16,items:{type:"object",additionalProperties:false,properties:{
   ...caixa,nome:{type:"string"},cor:{type:"string"},opacidade:{type:"number"},
   figura:{type:"string",enum:["retangulo","elipse","poligono"]},raio:{type:"number"},
-  pontos:{type:"array",items:{type:"object",additionalProperties:false,properties:{x:{type:"number"},y:{type:"number"}},required:["x","y"]}},
+  pontos:{type:"array",maxItems:48,items:{type:"object",additionalProperties:false,properties:{x:caixa.x,y:caixa.y},required:["x","y"]}},
 },required:[...Object.keys(caixa),"nome","cor","opacidade","figura","raio","pontos"]}};
-export const esquemaGraficosPublicacao={type:"array",items:{type:"object",additionalProperties:false,properties:{
+export const esquemaGraficosPublicacao={type:"array",maxItems:20,items:{type:"object",additionalProperties:false,properties:{
   ...caixa,nome:{type:"string"},cor:{type:"string"},mascara:{type:"string",enum:["elipse","cor","recorte"]},
 },required:[...Object.keys(caixa),"nome","cor","mascara"]}};
 export const instrucaoCamadasPublicacao=`Separa TODOS os elementos gráficos da fotografia, sem restringir a cores: formas contém cartões, retângulos preenchidos, faixas, fundos de botões e outros painéis geométricos, mesmo brancos, pretos, coloridos ou translúcidos, em qualquer zona da imagem. Cada forma tem {nome,x,y,w,h,cor:"#RRGGBB",opacidade:0.9,figura:"retangulo",raio:0,pontos:[]}. Coordenadas das caixas em PERCENTAGENS da imagem inteira (0–100), opacidade entre 0 e 1. Retângulos arredondados usam raio em percentagem do lado menor (0–50). Elipses usam figura=elipse. Cartões com borda ondulada/rasgada/irregular usam figura=poligono e 12–48 pontos ao longo de TODO o contorno, em ordem; cada ponto está em percentagens LOCAIS da caixa (0–100), e não da imagem inteira. Usa cor e transparência do preenchimento, distinguindo a textura da fotografia visível através dele. Não incluis a fotografia, as sombras naturais da fotografia nem os textos nas formas. Sombreados suaves/degradés ficam em sombreados, sem os duplicar nas formas.
@@ -25,6 +25,14 @@ graficos contém TODOS os ícones, pictogramas, autocolantes e decorações ilus
 function validarCaixa(v:CaixaReserva){
   if(!v||![v.x,v.y,v.w,v.h].every(Number.isFinite)||v.x<0||v.y<0||v.x>=100||v.y>=100||v.w<=0||v.h<=0||v.x+v.w>100.1||v.y+v.h>100.1)throw new ErroReserva("Não foi possível separar uma forma ou um gráfico da publicação.",422);
   return {x:v.x,y:v.y,w:Math.min(v.w,100-v.x),h:Math.min(v.h,100-v.y)};
+}
+/** Recorta a parte visível de caixas aproximadas da IA junto às margens. */
+export function ajustarLimitesLeituraPublicacao(valor:unknown):unknown{
+  if(!Array.isArray(valor))return valor;
+  return valor.map(v=>{
+    if(!v||![v.x,v.y,v.w,v.h].every(n=>Number.isFinite(n)&&n>=0&&n<=100))return v;
+    return {...v,w:Math.min(v.w,100-v.x),h:Math.min(v.h,100-v.y)};
+  });
 }
 function validarNomeCor(v:{nome:string;cor:string}){
   if(typeof v.nome!=="string"||!v.nome.trim()||v.nome.length>100||typeof v.cor!=="string"||!/^#[0-9a-f]{6}$/i.test(v.cor))throw new ErroReserva("Não foi possível reconhecer a cor de um elemento gráfico.",422);

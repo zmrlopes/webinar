@@ -61,7 +61,24 @@ export function CriarPublicacaoImagem({email}: {email: string}) {
     });
   }
   function mostrarResultado(r: PublicacaoImagemReserva) {setResultado(r); setRevisto(false); setVerificacao(r.verificacao?.avisos ?? null); setVerificacaoErro(""); setAjuste("");setEditor(null);setEditorAberto(false);setEditorAlterado(false);}
-  async function abrirEditor(){if(!resultado)return;await fazer("A identificar os textos da publicação…",async()=>{let e=editor??await pedir<EditorPublicacaoReserva>("preparar-editor",{id:resultado.id});setEditor(e);if(!e.fundoLimpo||!e.marcaPreparada){setOcupado("A preparar os textos e o logótipo para mover… Só é necessário uma vez por publicação.");e=await pedir<EditorPublicacaoReserva>("limpar-editor",{id:resultado.id});setEditor(e);}setEditorAberto(true);});}
+  async function abrirEditor(){
+    if(!resultado)return;
+    await fazer("A identificar os textos da publicação…",async()=>{
+      let e=editor??await pedir<EditorPublicacaoReserva>("preparar-editor",{id:resultado.id});
+      setEditor(e);
+      if(!e.camadasPreparadas||e.camadasVersao!==2||e.sombreados===undefined){
+        setOcupado("A preparar os cartões, ícones e sombreados… Os textos já ficaram guardados.");
+        e=await pedir<EditorPublicacaoReserva>("preparar-camadas",{id:resultado.id});
+        setEditor(e);
+      }
+      if(!e.fundoLimpo||!e.marcaPreparada){
+        setOcupado("A preparar os textos e o logótipo para mover… Só é necessário uma vez por publicação.");
+        e=await pedir<EditorPublicacaoReserva>("limpar-editor",{id:resultado.id});
+        setEditor(e);
+      }
+      setEditorAberto(true);
+    });
+  }
   async function guardarEditor(ajustes:AjustesEditorPublicacao){if(!resultado)return;await fazer("A guardar a versão editada…",async()=>{const r=await pedir<PublicacaoImagemReserva>("guardar-edicao",{id:resultado.id,ajustes});mostrarResultado(r);await carregarLista();});}
   async function verificar(id: string) {
     setVerificacaoErro("");
