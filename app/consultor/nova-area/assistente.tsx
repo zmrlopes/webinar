@@ -10,7 +10,7 @@ const SUGESTOES = [
   { tema: "Contactos", pergunta: "Como abordar um contacto frio sem pressionar?" },
   { tema: "Vendas de viagens", pergunta: "Como acompanhar um orçamento que ficou sem resposta?" },
   { tema: "A minha equipa", pergunta: "Como preparar a primeira reunião com um novo TP?" },
-  { tema: "Formação", pergunta: "Que formação recomendas para começar a vender cruzeiros?" },
+  { tema: "Formação", pergunta: "Que formação me recomendas para melhorar as minhas vendas?" },
 ];
 
 export function AssistenteEquipa({ email }: { email: string }) {
