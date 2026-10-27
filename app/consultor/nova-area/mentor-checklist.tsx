@@ -1,7 +1,7 @@
 "use client";
 
 import {useCallback, useEffect, useRef, useState} from "react";
-import {ETAPAS_MENTOR, TOTAL_TAREFAS_MENTOR, type TPMentorado} from "@/lib/mentor-checklist";
+import {CHECKS_TP_MENTOR, ETAPAS_MENTOR, TOTAL_TAREFAS_MENTOR, type TPMentorado} from "@/lib/mentor-checklist";
 import base from "./nova-area.module.css";
 import css from "./mentor-checklist.module.css";
 
@@ -26,43 +26,49 @@ export function ChecklistMentor({email}: {email: string}) {
   const [filtro, setFiltro] = useState<Filtro>("pendentes"), [pesquisa, setPesquisa] = useState("");
   const [aCarregar, setACarregar] = useState(true), [carregado, setCarregado] = useState(false);
   const [aGuardar, setAGuardar] = useState<string | null>(null), [erro, setErro] = useState(""), [mensagem, setMensagem] = useState("");
-  const ocupado = useRef(false), versao = useRef(0), tituloDetalhe = useRef<HTMLHeadingElement>(null);
+  const ocupado = useRef(false), aLer = useRef(false), versao = useRef(0), tituloDetalhe = useRef<HTMLHeadingElement>(null);
 
-  const carregar = useCallback(async (signal?: AbortSignal) => {
-    if (ocupado.current) return;
+  const carregar = useCallback(async (signal?: AbortSignal, silencioso = false) => {
+    if (ocupado.current || aLer.current) return;
+    aLer.current = true;
     const pedido = ++versao.current;
-    setACarregar(true); setErro("");
+    if (!silencioso) {setACarregar(true); setErro("");}
     try {
       const r = await fetch(API, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({email, acao: "listar"}), signal});
       const c = await r.json();
       if (!r.ok) throw new Error(c.erro || "Não foi possível carregar os teus TPs.");
       if (pedido !== versao.current || signal?.aborted) return;
-      setMembros(c.membros); setCarregado(true);
+      setMembros(c.membros); setCarregado(true); setErro("");
       setSelecionado(atual => atual && c.membros.some((m: TPMentorado) => m.email === atual) ? atual : null);
     } catch (e) {
       if (!signal?.aborted && pedido === versao.current) setErro(e instanceof Error ? e.message : "Não foi possível carregar os teus TPs.");
     } finally {
-      if (!signal?.aborted && pedido === versao.current) setACarregar(false);
+      if (pedido === versao.current) {
+        aLer.current = false;
+        if (!signal?.aborted) setACarregar(false);
+      }
     }
   }, [email]);
   useEffect(() => {
     const controller = new AbortController();
     void carregar(controller.signal);
-    const atualizar = () => {if (document.visibilityState === "visible") void carregar(controller.signal);};
+    const atualizar = () => {if (document.visibilityState === "visible") void carregar(controller.signal, true);};
     window.addEventListener("focus", atualizar);
-    return () => {controller.abort(); window.removeEventListener("focus", atualizar);};
+    document.addEventListener("visibilitychange", atualizar);
+    const intervalo = window.setInterval(atualizar, 10_000);
+    return () => {controller.abort(); ++versao.current; aLer.current = false; window.removeEventListener("focus", atualizar); document.removeEventListener("visibilitychange", atualizar); window.clearInterval(intervalo);};
   }, [carregar]);
   useEffect(() => {if (selecionado) tituloDetalhe.current?.focus();}, [selecionado]);
 
   async function marcar(tp: TPMentorado, tarefa: string, concluido: boolean) {
     if (ocupado.current) return;
-    ocupado.current = true; ++versao.current;
+    ocupado.current = true; ++versao.current; aLer.current = false;
     setAGuardar(tarefa); setACarregar(false); setErro(""); setMensagem("");
     try {
       const r = await fetch(API, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({email, acao: "marcar", tpEmail: tp.email, tarefa, concluido})});
       const c = await r.json();
       if (!r.ok) throw new Error(c.erro || "Não foi possível guardar esta tarefa.");
-      setMembros(atuais => atuais.map(m => m.email === tp.email ? {...m, feitos: c.feitos, atualizadoEm: new Date().toISOString()} : m));
+      setMembros(atuais => atuais.map(m => m.email === tp.email ? c.membro : m));
       setMensagem(concluido ? "Tarefa concluída e guardada." : "Tarefa desmarcada e guardada.");
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Não foi possível guardar. A tarefa mantém o estado anterior.");
@@ -92,14 +98,27 @@ export function ChecklistMentor({email}: {email: string}) {
         <div><span className={css.selo}>{estadoTP(tp)}</span><h2 ref={tituloDetalhe} tabIndex={-1}>{tp.nome}</h2><p>{tp.email}</p><small>{tp.dataRegisto ? `Entrou em ${dataCurta(tp.dataRegisto)}` : "Data de entrada ainda não disponível"}</small></div>
         <Progresso tp={tp}/>
       </header>
-      <p className={css.nota}>Este checklist é o teu acompanhamento de {tp.nome}. As marcas ficam guardadas e podes desmarcá-las quando precisares.</p>
+      <p className={css.nota}>Os checks de {tp.nome} atualizam automaticamente as tarefas correspondentes. As restantes marcas são tuas e podes desmarcá-las quando precisares.</p>
+      <section className={css.arranqueTP} aria-labelledby="titulo-arranque-tp">
+        <h3 id="titulo-arranque-tp">Começa aqui · progresso do TP</h3>
+        <p>Atualiza automaticamente enquanto esta página estiver aberta. As presenças Welcome Aboard registadas na plataforma também contam.</p>
+        <ul>{CHECKS_TP_MENTOR.map((titulo, i) => {
+          const peloTP = tp.progressoTP.feitos.includes(i + 1);
+          const presenca = i === 3 ? tp.progressoTP.sessao1Concluida : i === 4 ? tp.progressoTP.sessao2Concluida : false;
+          return <li key={titulo} data-feito={peloTP || presenca}><span aria-hidden="true">{peloTP || presenca ? "✓" : "○"}</span><span>{titulo}</span><small>{peloTP ? "Confirmado pelo TP" : presenca ? "Presença registada" : "Por concluir"}</small></li>;
+        })}</ul>
+      </section>
       <div className={css.etapas}>{ETAPAS_MENTOR.map((etapa, i) => {
         const feitos = etapa.tarefas.filter(t => tp.feitos.includes(t.id)).length;
         return <details key={`${tp.email}:${etapa.id}`} className={css.etapa} open={i === 0}>
           <summary><span className={css.numero} data-feito={feitos === etapa.tarefas.length}>{feitos === etapa.tarefas.length ? "✓" : i + 1}</span><h3>{etapa.titulo}</h3><span className={css.contagem}>{feitos}/{etapa.tarefas.length}</span><span className={css.seta} aria-hidden="true">⌄</span></summary>
-          <div className={css.tarefas}>{etapa.tarefas.map(tarefa => <label key={tarefa.id} className={css.tarefa} data-feito={tp.feitos.includes(tarefa.id)}>
-            <input type="checkbox" checked={tp.feitos.includes(tarefa.id)} disabled={!!aGuardar} onChange={e => void marcar(tp, tarefa.id, e.target.checked)}/><span>{tarefa.texto}</span>
-          </label>)}</div>
+          <div className={css.tarefas}>{etapa.tarefas.map(tarefa => {
+            const automatica = tp.automaticos.find(a => a.tarefa === tarefa.id);
+            return <label key={tarefa.id} className={css.tarefa} data-feito={tp.feitos.includes(tarefa.id)}>
+              <input type="checkbox" checked={tp.feitos.includes(tarefa.id)} disabled={!!aGuardar || !!automatica} onChange={e => void marcar(tp, tarefa.id, e.target.checked)}/>
+              <span>{tarefa.texto}{automatica && <small className={css.automatico}>{automatica.origem === "tp" ? "Concluído pelo TP · automático" : "Welcome Aboard confirmado · automático"}</small>}</span>
+            </label>;
+          })}</div>
         </details>;
       })}</div>
       <p className={css.fonte}>Fonte: Checklist do mentor — Novo Travel Partner · Tropa de Elite.</p>

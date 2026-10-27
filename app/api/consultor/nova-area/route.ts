@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { podeVerNovaArea, type DadosNovaArea } from "@/lib/consultor-nova-area";
-import { listarWelcomeAboardDaEquipa, obterElegibilidadeWelcomeAboard } from "@/lib/welcome-aboard";
+import { obterElegibilidadeWelcomeAboard } from "@/lib/welcome-aboard";
 import { buscarProximaSessaoWelcomeAboard, buscarProximoWebinarPublico, buscarWebinarFormacao, listarFormacoesEquipa } from "@/lib/webinars";
 import { listarFormacoesExternasFuturas } from "@/lib/formacoes-externas";
 import { obterProgressoConsultor } from "@/lib/progresso-consultor";
@@ -27,11 +27,10 @@ export async function POST(request: Request): Promise<Response> {
     if (!membro) {
       return NextResponse.json({ erro: "Não encontrámos esta conta na equipa." }, { status: 403 });
     }
-    const [welcomeAboard, sessao, proximoWebinar, equipa, links, formacao, formacoesEquipa, formacoesExternas, primeirosPassos, avisosInicio, linkGrupoWelcomeAboard] = await Promise.all([
+    const [welcomeAboard, sessao, proximoWebinar, links, formacao, formacoesEquipa, formacoesExternas, primeirosPassos, avisosInicio, linkGrupoWelcomeAboard] = await Promise.all([
       obterElegibilidadeWelcomeAboard(email),
       buscarProximaSessaoWelcomeAboard(),
       buscarProximoWebinarPublico(),
-      listarWelcomeAboardDaEquipa(email),
       db().query<{ referencia: string }>(
         `select referencia from links_consultor where referencia_email = $1
          order by atualizado_em desc limit 1`,
@@ -73,10 +72,6 @@ export async function POST(request: Request): Promise<Response> {
       welcomeAboard,
       proximaSessao: sessao ? { id: sessao.id, comecaEm: sessao.sessaoExternaEm.toISOString() } : null,
       inscritoWelcomeAboard,
-      equipaPrimeirosPassos: equipa.map(m => ({
-        nome: m.nome, email: m.email, dataRegisto: m.dataRegisto?.toISOString() ?? null,
-        sessao1Concluida: m.sessao1Concluida, sessao2Concluida: m.sessao2Concluida,
-      })),
       proximoWebinar: proximoWebinar ? {
         id: proximoWebinar.id, titulo: proximoWebinar.titulo,
         comecaEm: proximoWebinar.sessaoExternaEm.toISOString(),

@@ -1,3 +1,5 @@
+import {limparPrimeirosPassos} from "./primeiros-passos";
+
 /** Transcrição das páginas 1, 2 e 4 de docs/Checklist do mentor — Novo Travel Partner.pdf. */
 export const ETAPAS_MENTOR = [
   {id: "boas-vindas", titulo: "Boas-vindas", tarefas: [
@@ -72,7 +74,36 @@ export function tarefaMentorValida(id: unknown): id is string {
 export function limparTarefasMentor(valor: unknown): string[] {
   return Array.isArray(valor) ? TAREFAS_MENTOR.filter(t => valor.includes(t.id)).map(t => t.id) : [];
 }
+type OrigemAutomatica = "tp" | "welcome-aboard";
+/** Só confirma factos cobertos pelo check do TP; nunca infere as ações do mentor. */
+const TAREFAS_POR_CHECK_TP: Partial<Record<number, readonly string[]>> = {
+  1: ["email-onboarding", "acesso-dashboard", "instalar-app", "ativar-notificacoes", "acesso-comunidade", "grupo-welcome-aboard", "grupo-promo-marketing"],
+  2: ["realizar-primeira-reuniao"],
+  3: ["curso-travel-partner"],
+  6: ["pagina-profissional", "publicar-apresentacao", "primeira-promocao", "lista-contactos"],
+  7: ["proximos-passos"],
+};
+export const CHECKS_TP_MENTOR = [
+  "Acessos e grupos", "Primeira reunião", "Curso Be a Travel Partner", "Sessão 1 Welcome Aboard",
+  "Sessão 2 Welcome Aboard", "Primeiras publicações e conversas", "Segunda reunião e próximos passos",
+];
+
+export function comporProgressoMentor(manual: unknown, progressoTP: unknown, sessao1 = false, sessao2 = false) {
+  const feitosMentor = limparTarefasMentor(manual), feitosTP = limparPrimeirosPassos(progressoTP);
+  const origens = new Map<string, OrigemAutomatica>();
+  for (const check of feitosTP) for (const tarefa of TAREFAS_POR_CHECK_TP[check] ?? []) origens.set(tarefa, "tp");
+  const sessao1Concluida = sessao1 || feitosTP.includes(4), sessao2Concluida = sessao2 || feitosTP.includes(5);
+  if (sessao1Concluida && sessao2Concluida) origens.set("sessoes-welcome-aboard", feitosTP.includes(4) && feitosTP.includes(5) ? "tp" : "welcome-aboard");
+  return {
+    feitos: limparTarefasMentor([...feitosMentor, ...origens.keys()]), feitosMentor,
+    automaticos: [...origens].map(([tarefa, origem]) => ({tarefa, origem})),
+    progressoTP: {feitos: feitosTP, sessao1Concluida, sessao2Concluida},
+  };
+}
 export interface TPMentorado {
   email: string; nome: string; dataRegisto: string | null; estado: string;
   feitos: string[]; atualizadoEm: string | null;
+  feitosMentor: string[];
+  automaticos: {tarefa: string; origem: OrigemAutomatica}[];
+  progressoTP: {feitos: number[]; sessao1Concluida: boolean; sessao2Concluida: boolean; atualizadoEm: string | null};
 }

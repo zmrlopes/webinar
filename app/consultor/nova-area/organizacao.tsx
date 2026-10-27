@@ -1,42 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { MembroPrimeirosPassos, ProximoWebinarNovaArea } from "@/lib/consultor-nova-area";
+import type { ProximoWebinarNovaArea } from "@/lib/consultor-nova-area";
 import estilos from "./nova-area.module.css";
-
-function dataCurta(iso: string): string {
-  return new Date(iso).toLocaleDateString("pt-PT", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Europe/Lisbon" });
-}
-
-export function TarefasIniciaisEquipa({ membros }: { membros: MembroPrimeirosPassos[] }) {
-  const porFazer = membros.filter(m => !m.sessao1Concluida || !m.sessao2Concluida).length;
-  return (
-    <section id="tarefas-equipa" aria-labelledby="titulo-tarefas-equipa">
-      <div className={estilos.intro}>
-        <span className={estilos.etiqueta}>A MINHA ORGANIZAÇÃO</span>
-        <h1 id="titulo-tarefas-equipa">Tarefas iniciais da equipa<span>.</span></h1>
-        <p>Acompanha o Welcome Aboard de quem entrou na tua equipa nos últimos três meses.</p>
-      </div>
-      <div className={estilos.numerosEquipa}>
-        <div><strong>{membros.length}</strong><span>Consultores em acolhimento</span></div>
-        <div><strong>{porFazer}</strong><span>Com sessões por fazer</span></div>
-        <div><strong>{membros.length - porFazer}</strong><span>Acolhimento concluído</span></div>
-      </div>
-      <div className={estilos.cartaoOrganizacao}>
-        <div className={estilos.cabecalhoEquipa}><h2>Welcome Aboard da equipa</h2><span className={estilos.presencaPendente}>2 sessões</span></div>
-        <p className={estilos.descricaoOrganizacao}>Começar bem, fazer as primeiras reservas e preparar o crescimento. Vê quem já participou em cada sessão.</p>
-        {membros.length === 0 ? <div className={estilos.vazioOrganizacao}><strong>Sem novos consultores para acompanhar</strong><p>Quando alguém entrar na tua equipa, o progresso das sessões aparece aqui.</p></div> :
-          <div className={estilos.listaEquipa}>{membros.map(m => (
-            <article key={m.email} className={estilos.membroEquipa}>
-              <div className={estilos.identidadeMembro}><h3>{m.nome}</h3><p>{m.email}</p>{m.dataRegisto && <small>Entrou em {dataCurta(m.dataRegisto)}</small>}</div>
-              <div className={estilos.estadoMembro}><span>Sessão 1</span><strong className={m.sessao1Concluida ? estilos.presencaFeita : estilos.presencaPendente}>{m.sessao1Concluida ? "✓ Concluída" : "Por fazer"}</strong></div>
-              <div className={estilos.estadoMembro}><span>Sessão 2</span><strong className={m.sessao2Concluida ? estilos.presencaFeita : estilos.presencaPendente}>{m.sessao2Concluida ? "✓ Concluída" : "Por fazer"}</strong></div>
-            </article>
-          ))}</div>}
-      </div>
-    </section>
-  );
-}
 
 export function ProximoWebinar({ webinar, email, aoInscrever }: {
   webinar: ProximoWebinarNovaArea | null; email: string; aoInscrever: () => void;

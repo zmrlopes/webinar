@@ -193,6 +193,16 @@ para impedir que uma aba antiga grave os números anteriores nos novos checks.
 As alterações continuam limitadas à conta de teste. Testes com dados temporários:
 `node --import tsx scripts/testes-inicio-consultor.ts` (requer `DATABASE_URL`).
 
+Em **A minha organização → Tenho um novo TP, e agora?**, os checks de “Começa
+aqui” do TP direto confirmam automaticamente as tarefas correspondentes do
+mentor. O detalhe mostra os sete indicadores e distingue confirmações do TP,
+presenças Welcome Aboard e marcas manuais do mentor. Desmarcar no TP retira
+apenas a confirmação automática. A página atualiza a cada dez segundos enquanto
+visível e substitui a antiga secção “Tarefas iniciais da equipa”, sem prazo que
+apague acompanhamentos. Continua exclusiva da conta de teste. Testes:
+`node --import tsx scripts/testes-mentor-checklist.ts`; detalhes em
+`docs/mentor-checklist.md`.
+
 ### Formações do fórum iCliGo na nova área
 
 O calendário de `/consultor/nova-area` importa as formações online de todas as línguas do fórum. Mantém as bandeiras da origem e converte as horas para Portugal. A importação fica limitada à conta definida em `src/lib/demo.ts`; as formações manuais e a área atual continuam independentes.

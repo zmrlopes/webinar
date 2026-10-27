@@ -11,8 +11,11 @@ export async function POST(request: Request): Promise<Response> {
   if (!corpo || !["listar", "marcar"].includes(corpo.acao)) return json({erro: "Pedido inválido."}, 400);
   try {
     if (!await buscarMembroEquipa(email)) return json({erro: "Conta não encontrada na equipa."}, 403);
-    return corpo.acao === "listar" ? json({membros: await listarTPsMentorados(email)})
-      : json({feitos: await marcarTarefaMentor(email, corpo.tpEmail, corpo.tarefa, corpo.concluido)});
+    if (corpo.acao === "listar") return json({membros: await listarTPsMentorados(email)});
+    await marcarTarefaMentor(email, corpo.tpEmail, corpo.tarefa, corpo.concluido);
+    const membro = (await listarTPsMentorados(email)).find(tp => tp.email === corpo.tpEmail.trim().toLowerCase());
+    if (!membro) return json({erro: "Este TP já não está associado a ti. Atualiza a lista."}, 403);
+    return json({feitos: membro.feitos, membro});
   } catch (erro) {
     if (erro instanceof ErroChecklistMentor) return json({erro: erro.message}, erro.status);
     console.error("Checklist do mentor: não foi possível concluir o pedido", erro instanceof Error ? erro.name : "erro");

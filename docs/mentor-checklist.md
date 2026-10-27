@@ -16,7 +16,15 @@ Cada checklist é privado por mentor e TP, em `dashboard_config` com a chave `co
 
 A relação atual é verificada dentro da própria instrução de escrita. Um mentor não pode consultar o progresso ou marcar tarefas de outro mentor, de um TP indireto ou de alguém que lhe deixou de estar associado. Ao mudar a relação na árvore, a antiga mentora perde o acesso e o novo mentor inicia o seu acompanhamento privado. Os registos anteriores são preservados. As chaves têm os dois emails entre separadores, compatíveis com o mecanismo existente de correção de emails do admin.
 
-Não altera os primeiros passos do consultor, a presença nas sessões Welcome Aboard ou as tarefas iniciais da equipa. As marcas são confirmações manuais do mentor, independentes desses indicadores.
+As marcas manuais do mentor continuam privadas e independentes do progresso do TP. Esta página não altera os checks de “Começa aqui” nem os registos de presença Welcome Aboard.
+
+## Progresso automático do novo TP
+
+“Tarefas iniciais da equipa” foi retirado da nova área; o acompanhamento passa a estar nesta página. A leitura cruza a relação direta atual com os sete checks de “Começa aqui” guardados pelo próprio TP (v2; apenas curso e sessões são equivalentes no progresso v1). Mostra os sete indicadores no detalhe e confirma automaticamente as tarefas correspondentes do checklist. Acessos e grupos, primeira reunião, curso, primeiras ações e próximos passos têm correspondências explícitas em `comporProgressoMentor`. O check das duas sessões só fica completo com ambas confirmadas. As presenças Zoom e as correções Welcome Aboard existentes também contam, sem o limite de três meses da página retirada.
+
+Estas confirmações são calculadas em cada leitura, identificadas como automáticas e não copiadas para as marcas privadas do mentor. Desmarcar um check no TP retira a sua confirmação automática; uma confirmação independente do mentor permanece. Não se infere que o mentor explicou processos, conheceu sonhos, avaliou resultados ou que o TP conversou com clientes **e** candidatos a partir de um check que permite uma conversa sobre viagens **ou** oportunidade. As tarefas exclusivas do mentor continuam manuais. Não altera checks do TP, registos Welcome Aboard ou presenças.
+
+A página relê automaticamente os dados de dez em dez segundos enquanto estiver visível, ao regressar à janela e após uma marca manual; não é necessário carregar em Atualizar. A consulta filtra os TPs diretos atuais antes de devolver qualquer progresso. Página e API continuam limitadas à conta de teste; esta alteração não abre a nova área ou os checks aos restantes consultores.
 
 ## Validação
 

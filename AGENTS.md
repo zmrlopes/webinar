@@ -278,3 +278,18 @@ por mentor e TP, com marcas guardadas no servidor, reversíveis e sem prazo que 
 o acompanhamento. A API verifica a relação atual também ao gravar; não envia emails
 nem mensagens e não altera os primeiros passos ou as presenças Welcome Aboard.
 Esta página e a respetiva API continuam exclusivas da nova área da conta de teste.
+
+Por indicação do utilizador, “Tarefas iniciais da equipa” foi retirada da nova
+área, incluindo o menu e os dados dessa secção na API de entrada. O acompanhamento
+fica em “Tenho um novo TP, e agora?”. Os sete checks guardados pelo próprio TP
+em “Começa aqui” atualizam automaticamente as tarefas correspondentes do mentor,
+com origem identificada. As duas sessões Welcome Aboard só confirmam a tarefa
+conjunta quando ambas estiverem concluídas; as presenças reais e correções
+Welcome Aboard existentes também contam. Não infere tarefas exclusivas do mentor.
+As confirmações automáticas são calculadas na leitura, sem copiar ou apagar
+marcas manuais privadas; desmarcar no TP retira a sua confirmação, preservando
+eventuais confirmações independentes do mentor. Mostra também os sete indicadores
+no detalhe do TP. Atualiza a cada dez segundos enquanto visível e ao regressar à
+janela. Só lê os TPs diretos da hierarquia atual, sem prazo de expiração.
+Continua exclusivo da nova área e API da conta de teste; não abre o acesso dos
+restantes consultores nem altera os seus checks ou as presenças Welcome Aboard.
