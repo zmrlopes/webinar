@@ -29,6 +29,15 @@ o admin permite escolher o acumulado anual. Se a meta for atingida, todos os
 TPs com bingo válido recebem os bilhetes de todos os eventos anuais; caso
 contrário, apenas o primeiro bingo válido. Não envia comunicações.
 
+Por indicação do utilizador, o BLACKFRIDAY inclui uma simulação interativa
+exclusiva da conta de teste. Permite anexar um print/PDF, ver a casa pendente,
+simular aprovação ou recusa com motivo e visualizar a casa validada. Funciona
+antes do desafio, usando uma data dentro do período apenas na demonstração.
+Os ficheiros e as marcas ficam só na memória do navegador durante a visita;
+não envia comprovativos à API, não grava participações, não muda as datas
+reais, o admin, o ranking, os prémios ou a faturação. Sair da simulação ou
+da secção limpa a demonstração e recupera o cartão real.
+
 ## Alterações na área de consultor
 
 Por indicação do utilizador, a nova área inclui “Assistente da equipa” em

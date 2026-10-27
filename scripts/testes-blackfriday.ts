@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import {CASAS_BF, CONFIG_BF, hojeBF, periodoBF, referenciaBF, resumirBF, validarReservaBF, type InscricaoBF} from "../src/lib/blackfriday";
+import {criarReservaSimuladaBF} from "../src/lib/blackfriday-simulacao";
 
 const config = {...CONFIG_BF};
 const reserva = {casa: "0", referencia: "AB-123", valor: "2500.50", dataReserva: "2026-11-13", curinga: false};
@@ -36,6 +37,21 @@ assert.deepEqual(periodoBF(config, "2026-11-20"), {inicio: "2026-11-13", fim: "2
 assert.deepEqual(periodoBF(config, "2026-12-14"), {inicio: "2026-11-13", fim: "2026-12-13"});
 assert.deepEqual(periodoBF({...config, periodoFaturacao: "anual"}, "2026-11-20"), {inicio: "2026-01-01", fim: "2026-11-20"});
 console.log("OK: datas de Lisboa, início/fim inclusivos, avião configurável, curinga de reserva única ≥5K, referências normalizadas, linhas só horizontais, progresso pendente, recusa, bingo e ordem pelo envio.");
+
+const ficheiroSim = {nome: "reserva.png", tipo: "image/png", tamanho: 1024, hash: "hash-do-print"};
+const identidadeSim = {id: "simulacao", email: "teste@example.com", enviadoEm: "2026-10-27T12:00:00Z"};
+const anterioresSim: InscricaoBF[] = [];
+const envioSim = criarReservaSimuladaBF(reserva, config, config.inicio, anterioresSim, ficheiroSim, identidadeSim);
+assert.equal(anterioresSim.length, 0, "A simulação não altera os registos existentes.");
+assert.equal(envioSim.estado, "pendente");
+assert.equal(resumirBF([envioSim], config).casas, 2);
+assert.throws(() => criarReservaSimuladaBF({...reserva, casa: 1, referencia: "OUTRA"}, config, config.inicio, [envioSim], ficheiroSim, identidadeSim), /só pode ser usada/);
+assert.throws(() => criarReservaSimuladaBF(reserva, config, config.inicio, [], {...ficheiroSim, tamanho: 4 * 1024 * 1024}, identidadeSim), /3 MB/);
+assert.throws(() => criarReservaSimuladaBF(reserva, config, config.inicio, [], {...ficheiroSim, tipo: "text/html"}, identidadeSim), /PNG/);
+assert.equal(criarReservaSimuladaBF(reserva, config, config.inicio, [], {...ficheiroSim, tipo: "application/pdf"}, identidadeSim).ficheiroTipo, "application/pdf");
+assert.equal(resumirBF([{...envioSim, estado: "recusada"}], config).casas, 1);
+assert.equal(resumirBF([{...envioSim, estado: "aprovada"}], config, true).casas, 2);
+console.log("OK: simulação isolada, ficheiros PNG/PDF, limite de tamanho, duplicação, progresso pendente, aprovação e recusa sem alterar registos reais.");
 
 if (process.argv.includes("--db")) {
   const {loadEnvConfig} = await import("@next/env");
