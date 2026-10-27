@@ -259,3 +259,12 @@ desfazer e reposição da cor original. Preservar transparência, contornos irre
 textos e pictogramas sobre o novo fundo; não limitar a deteção a branco/amarelo.
 As publicações antigas recebem esta preparação ao reabrir, mantendo as versões
 originais e os ajustes privados. Continua exclusivo da nova área da conta de teste.
+
+Por indicação do utilizador, A minha organização inclui “Tenho um novo TP, e agora?”,
+com as 42 tarefas e 10 etapas de `docs/Checklist do mentor — Novo Travel Partner.pdf`.
+Cada TP direto atual aparece automaticamente a partir de `equipa_afiliados.upline_email`
+depois da adição no admin e atualização da árvore da equipa. O checklist é privado
+por mentor e TP, com marcas guardadas no servidor, reversíveis e sem prazo que apague
+o acompanhamento. A API verifica a relação atual também ao gravar; não envia emails
+nem mensagens e não altera os primeiros passos ou as presenças Welcome Aboard.
+Esta página e a respetiva API continuam exclusivas da nova área da conta de teste.
