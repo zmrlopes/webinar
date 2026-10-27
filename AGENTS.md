@@ -224,13 +224,17 @@ continuam exclusivos da conta de teste.
 Por indicação do utilizador, a nova área tem um separador temporário
 “onboarding codex”, refeito a partir da checklist do mentor em
 `src/lib/mentor-checklist.ts`. Para o novo TP mostra apenas 5 passos curtos,
-com um único check por passo: acessos e grupos; primeira reunião para objetivos
-e primeira tarefa; curso Be a Travel Partner e duas sessões Welcome Aboard;
-primeiras publicações e conversas; segunda reunião e próximos passos.
+com poucos checks: acessos e grupos; primeira reunião para objetivos e primeira
+tarefa; formação; primeiras publicações e conversas; segunda reunião e próximos
+passos. A formação tem três checks independentes: curso Be a Travel Partner,
+Sessão 1 e Sessão 2 Welcome Aboard (sete checks no total). O discurso indica
+sempre a próxima ação, incluindo marcar e fazer as reuniões com o upline,
+sem partir do princípio de que já estão marcadas ou realizadas.
 O curso continua obrigatório antes de orçamentos ou vendas. Os detalhes ficam
 para o acompanhamento com o upline. Os checks são reversíveis e guardados
 apenas no navegador, numa chave v2; as antigas marcas v1 são preservadas, sem
-concluir automaticamente os novos passos. Não grava dados no servidor, é
+concluir automaticamente os novos passos. O antigo check agregado de formação
+da v2 preserva a conclusão do curso e das duas sessões ao separá-los. Não grava dados no servidor, é
 exclusivo da conta de teste, e não altera os primeiros passos atuais nem envia
 comunicações.
 

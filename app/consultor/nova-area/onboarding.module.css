@@ -4,6 +4,7 @@
 .linkTexto:focus-visible { outline: 2px solid #4b5320; outline-offset: 4px; }
 .ligacoes { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 20px; margin-bottom: 14px; }
 .checkbox { flex-shrink: 0; }
+.tarefas { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .tarefaTitulo, .tarefaFeita { color: #000; font-size: 14px; font-weight: 600; text-align: left; }
 .tarefaFeita { color: #4b5320; text-decoration: line-through; }
 .ligacao { display: inline-flex; align-items: center; gap: 8px; padding: 0; border: none; background: none; color: #4b5320; font: inherit; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; }
