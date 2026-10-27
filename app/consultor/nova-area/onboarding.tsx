@@ -9,52 +9,51 @@ type Ligacao = { titulo: string } & (
   { destino: Destino; especial?: never } |
   { especial: "grupo" | "curso"; destino?: never }
 );
-interface Tarefa { id: string; titulo: string; ligacao?: Ligacao }
 interface PassoOnboarding {
+  id: string;
   quando: string;
   titulo: string;
   texto: string;
-  tarefas: Tarefa[];
+  confirmacao: string;
+  ligacoes?: Ligacao[];
 }
 
-const CHAVE_TAREFAS = "consultor-nova-area:onboarding-codex:v1";
+// Os checks antigos ficam preservados em v1: não confirmam estes passos mais abrangentes.
+const CHAVE_TAREFAS = "consultor-nova-area:onboarding-codex:v2";
+// Síntese para o novo TP das 10 etapas em src/lib/mentor-checklist.ts.
 const PASSOS: PassoOnboarding[] = [
   {
-    quando: "Dia 1", titulo: "Entra na equipa",
-    texto: "O grupo Welcome Aboard é o teu ponto de encontro para começares acompanhado.",
-    tarefas: [{ id: "grupo", titulo: "Entrar no grupo Welcome Aboard", ligacao: { titulo: "Entrar no grupo", especial: "grupo" } }],
+    id: "acessos-equipa", quando: "Para começar", titulo: "Liga-te à equipa",
+    texto: "Lê o email de boas-vindas, explora o painel e instala a app com as notificações ativas. Através do painel, entra na comunidade WhatsApp e nos grupos Welcome Aboard e Promo e Marketing.",
+    confirmacao: "Já tenho os acessos e entrei nos grupos",
+    ligacoes: [{ titulo: "Entrar no Welcome Aboard", especial: "grupo" }],
   },
   {
-    quando: "Primeiros dias", titulo: "Começa o curso e conhece o teu upline",
-    texto: "O curso é obrigatório e tem de estar concluído antes de fazeres orçamentos ou vendas. Na primeira reunião, tu e o teu upline conhecem-se e combinam o arranque.",
-    tarefas: [
-      { id: "curso", titulo: "Fazer o curso obrigatório Be a Travel Partner", ligacao: { titulo: "Ir para o curso", especial: "curso" } },
-      { id: "reuniao-1", titulo: "Fazer a 1.ª reunião com o upline" },
+    id: "primeira-reuniao", quando: "Primeiros dias", titulo: "Combina o arranque com o teu upline",
+    texto: "Na primeira reunião, partilha o que te trouxe até aqui e o tempo que tens disponível. Definam os teus objetivos e uma primeira tarefa simples.",
+    confirmacao: "Já fiz a primeira reunião e sei por onde começar",
+  },
+  {
+    id: "formacao-inicial", quando: "Ao teu ritmo, com orientação", titulo: "Faz a formação de arranque",
+    texto: "Conclui o curso Be a Travel Partner na iCliGo Academy antes de fazeres orçamentos ou vendas. Participa também nas duas sessões Welcome Aboard, às quartas-feiras, e usa os tutoriais quando precisares.",
+    confirmacao: "Já concluí o curso e participei nas duas sessões",
+    ligacoes: [
+      { titulo: "Ir para o curso", especial: "curso" },
+      { titulo: "Ver as sessões no calendário", destino: "calendario" },
     ],
   },
   {
-    quando: "Primeiras quartas-feiras", titulo: "Vai às duas sessões Welcome Aboard",
-    texto: "Quartas-feiras às 21:20: a Sessão 1 na primeira quarta e a Sessão 2 na semana seguinte.",
-    tarefas: [
-      { id: "sessao-1", titulo: "Participar na Sessão 1", ligacao: { titulo: "Ver no calendário", destino: "calendario" } },
-      { id: "sessao-2", titulo: "Participar na Sessão 2" },
-    ],
+    id: "primeiras-acoes", quando: "Com o apoio do teu upline", titulo: "Passa à prática",
+    texto: "Prepara a tua página profissional, publica a tua apresentação e uma primeira promoção. Faz uma lista de contactos e começa as primeiras conversas sobre viagens ou sobre a oportunidade, com orientação do teu upline.",
+    confirmacao: "Já preparei a página, publiquei e iniciei conversas",
   },
   {
-    quando: "Depois das sessões", titulo: "Faz a 2.ª reunião com o upline",
-    texto: "Leva o que já exploraste na plataforma. Saem da reunião com objetivos e tarefas definidos.",
-    tarefas: [
-      { id: "objetivos", titulo: "Definir os teus objetivos" },
-      { id: "duvidas", titulo: "Tirar dúvidas sobre o que já exploraste na plataforma" },
-      { id: "tarefas", titulo: "Definir as tuas próximas tarefas" },
-    ],
-  },
-  {
-    quando: "Dias 30, 60 e 90", titulo: "Regista a atividade e revê com o upline",
-    texto: "Usa o Core Rank para acompanhar o que fazes e revê com o teu upline o que já fazes sozinho.",
-    tarefas: [
-      { id: "core-rank", titulo: "Registar a atividade no Core Rank", ligacao: { titulo: "Abrir o Core Rank", destino: "core-rank" } },
-      { id: "revisao", titulo: "Fazer as revisões dos 30, 60 e 90 dias" },
+    id: "segunda-reuniao", quando: "Depois da formação e das primeiras ações", titulo: "Revê e escolhe os próximos passos",
+    texto: "Na segunda reunião, revê as ações, os contactos e os resultados, e tira as tuas dúvidas. Combina os próximos passos e uma rotina de formações e acompanhamento; regista a tua atividade no Core Rank.",
+    confirmacao: "Já fiz a segunda reunião e combinei os próximos passos",
+    ligacoes: [
+      { titulo: "Ver o calendário da equipa", destino: "calendario" },
+      { titulo: "Abrir o Core Rank", destino: "core-rank" },
     ],
   },
 ];
@@ -67,12 +66,12 @@ export function OnboardingProposta({ linkGrupo, linkCurso, abrir }: {
   linkGrupo: string | null; linkCurso: string; abrir: (destino: Destino) => void;
 }) {
   const [feitas, setFeitas] = useState<string[]>([]);
-  const total = PASSOS.reduce((soma, passo) => soma + passo.tarefas.length, 0);
+  const total = PASSOS.length;
 
   useEffect(() => {
     try {
       const guardadas: unknown = JSON.parse(localStorage.getItem(CHAVE_TAREFAS) ?? "[]");
-      if (Array.isArray(guardadas)) setFeitas(guardadas.filter((id): id is string => typeof id === "string"));
+      if (Array.isArray(guardadas)) setFeitas(PASSOS.filter(passo => guardadas.includes(passo.id)).map(passo => passo.id));
     } catch { /* Sem acesso ao armazenamento, a lista começa vazia. */ }
   }, []);
 
@@ -88,38 +87,37 @@ export function OnboardingProposta({ linkGrupo, linkCurso, abrir }: {
     <div className={estilos.intro}>
       <span className={estilos.etiqueta}>PROPOSTA · SEPARADOR TEMPORÁRIO</span>
       <h1>onboarding codex<span>.</span></h1>
-      <p>Os primeiros 90 dias em cinco passos. Os detalhes de cada um são combinados nas reuniões com o teu upline. <strong>{feitas.length} de {total} tarefas feitas.</strong></p>
+      <p>O teu arranque em cinco passos, com um check por passo. O teu upline acompanha-te nos detalhes. <strong aria-live="polite">{feitas.length} de {total} passos concluídos.</strong></p>
     </div>
 
     <div className={estilos.passos}>
       {PASSOS.map((passo, i) => {
-        const concluido = passo.tarefas.every(t => feitas.includes(t.id));
-        return <article key={passo.titulo} className={`${estilos.passo} ${concluido ? estilos.passoFeito : ""}`} aria-labelledby={`onboarding-passo-${i + 1}`}>
+        const concluido = feitas.includes(passo.id);
+        return <article key={passo.id} className={`${estilos.passo} ${concluido ? estilos.passoFeito : ""}`} aria-labelledby={`onboarding-passo-${i + 1}`}>
           <div className={estilos.passoCabecalho}>
             <span className={estilos.numero} aria-label={`Passo ${i + 1}`}>{concluido ? "✓" : i + 1}</span>
             <div><span className={css.quando}>{passo.quando}</span><h2 id={`onboarding-passo-${i + 1}`}>{passo.titulo}</h2></div>
           </div>
           <div className={estilos.passoConteudo}>
             <p>{passo.texto}</p>
-            <ul className={css.tarefas}>{passo.tarefas.map(tarefa => {
-              const feita = feitas.includes(tarefa.id);
-              const ligacao = tarefa.ligacao;
-              const url = ligacao?.especial === "grupo" ? linkGrupo : ligacao?.especial === "curso" ? linkCurso : null;
-              return <li key={tarefa.id} className={css.tarefa}>
-                <button type="button" className={estilos.concluir} aria-pressed={feita} onClick={() => alternar(tarefa.id)}>
-                  <span className={estilos.checkbox} aria-hidden="true">{feita && "✓"}</span>
-                  <span className={feita ? css.tarefaFeita : css.tarefaTitulo}>{tarefa.titulo}</span>
-                </button>
-                {ligacao?.destino ? <button type="button" className={css.ligacao} onClick={() => abrir(ligacao.destino)}>{ligacao.titulo} <Seta /></button>
-                  : url ? <a className={css.ligacao} href={url} target="_blank" rel="noopener noreferrer">{ligacao?.titulo} <Seta /></a>
-                  : ligacao ? <span className={css.pendente}>Convite disponível em breve</span> : null}
-              </li>;
-            })}</ul>
+            {passo.ligacoes && <div className={css.ligacoes}>{passo.ligacoes.map(ligacao => {
+              const url = ligacao.especial === "grupo" ? linkGrupo : ligacao.especial === "curso" ? linkCurso : null;
+              return ligacao.destino ? <button key={ligacao.titulo} type="button" className={css.ligacao} onClick={() => abrir(ligacao.destino)}>{ligacao.titulo} <Seta /></button>
+                : url ? <a key={ligacao.titulo} className={css.ligacao} href={url} target="_blank" rel="noopener noreferrer">{ligacao.titulo} <Seta /></a>
+                : <span key={ligacao.titulo} className={css.pendente}>Convite disponível em breve</span>;
+            })}</div>}
+            <div className={estilos.passoRodape}>
+              <button type="button" className={estilos.concluir} aria-pressed={concluido} onClick={() => alternar(passo.id)}>
+                <span className={`${estilos.checkbox} ${css.checkbox}`} aria-hidden="true">{concluido && "✓"}</span>
+                <span className={concluido ? css.tarefaFeita : css.tarefaTitulo}>{passo.confirmacao}</span>
+              </button>
+              {concluido && <span className={estilos.desfazer}>Clica para desmarcar</span>}
+            </div>
           </div>
         </article>;
       })}
     </div>
 
-    <p className={css.nota}>Proposta temporária disponível na nova área da conta de teste; as tarefas marcadas ficam guardadas neste navegador. Os primeiros passos atuais continuam em <button type="button" className={css.linkTexto} onClick={() => abrir("comeca-aqui")}>Começa aqui</button>.</p>
+    <p className={css.nota}>Marca cada passo quando estiver concluído; podes desmarcar a qualquer momento. O progresso fica guardado neste navegador. Para os primeiros passos atuais, abre <button type="button" className={css.linkTexto} onClick={() => abrir("comeca-aqui")}>Começa aqui</button>.</p>
   </section>;
 }

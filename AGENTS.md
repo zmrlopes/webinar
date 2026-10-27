@@ -222,14 +222,17 @@ Esta autorização abrange apenas os Testemunhos; a restante nova área e o sele
 continuam exclusivos da conta de teste.
 
 Por indicação do utilizador, a nova área tem um separador temporário
-“onboarding codex” com uma sugestão de onboarding dos primeiros 90 dias,
-baseada nas apresentações Canva, Academy, formações internas e YouTube,
-testemunhos e navegação recolhida do MyOffice. Por indicação do utilizador,
-mostra apenas 5 passos curtos, no formato dos primeiros passos; os detalhes
-ficam para as reuniões com o upline. Cada tarefa tem um check guardado no
-navegador (curso + 1.ª reunião; Sessões 1 e 2; 2.ª reunião para objetivos,
-dúvidas e tarefas). Não grava dados no servidor, é exclusivo
-da conta de teste, e não altera os primeiros passos atuais nem envia comunicações.
+“onboarding codex”, refeito a partir da checklist do mentor em
+`src/lib/mentor-checklist.ts`. Para o novo TP mostra apenas 5 passos curtos,
+com um único check por passo: acessos e grupos; primeira reunião para objetivos
+e primeira tarefa; curso Be a Travel Partner e duas sessões Welcome Aboard;
+primeiras publicações e conversas; segunda reunião e próximos passos.
+O curso continua obrigatório antes de orçamentos ou vendas. Os detalhes ficam
+para o acompanhamento com o upline. Os checks são reversíveis e guardados
+apenas no navegador, numa chave v2; as antigas marcas v1 são preservadas, sem
+concluir automaticamente os novos passos. Não grava dados no servidor, é
+exclusivo da conta de teste, e não altera os primeiros passos atuais nem envia
+comunicações.
 
 Por indicação do utilizador, o calendário criativo da Black Friday (PDF da Sara
 `docs/calendario_criativo_160_conteudos_tropa_de_elite.pdf`, dados em
