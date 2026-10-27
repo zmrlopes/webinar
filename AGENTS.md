@@ -271,6 +271,7 @@ As publicações antigas recebem esta preparação ao reabrir, mantendo as vers�
 originais e os ajustes privados. Continua exclusivo da nova área da conta de teste.
 
 Por indicação do utilizador, A minha organização inclui “Tenho um novo TP, e agora?”,
+como primeira opção do separador,
 com as 42 tarefas e 10 etapas de `docs/Checklist do mentor — Novo Travel Partner.pdf`.
 Cada TP direto atual aparece automaticamente a partir de `equipa_afiliados.upline_email`
 depois da adição no admin e atualização da árvore da equipa. O checklist é privado
