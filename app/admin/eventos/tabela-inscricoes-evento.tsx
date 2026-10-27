@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { InscricaoEvento } from "@/lib/eventos";
+import { EditarEmailInscricao } from "./editar-email";
 
 function formatarData(data: Date): string {
   return new Date(data).toLocaleString("pt-PT", {
@@ -65,7 +66,7 @@ export function TabelaInscricoesEvento({ inscricoes }: { inscricoes: InscricaoEv
               <tr key={i.id}>
                 <td>{i.nome}</td>
                 <td>{i.telemovel}</td>
-                <td>{i.email}</td>
+                <td><EditarEmailInscricao id={i.id} email={i.email} /></td>
                 <td>{i.adultos}</td>
                 <td>{i.criancasMais10}</td>
                 <td>{i.criancasMenos10}</td>

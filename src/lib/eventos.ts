@@ -548,3 +548,13 @@ export async function substituirComprovativoEvento(
   );
   return (rowCount ?? 0) > 0;
 }
+
+/**
+ * Correção do email de uma inscrição, feita pelo admin quando foi mal
+ * escrito. Com o email certo, a pessoa passa a ver na sua conta o card do
+ * comprovativo e o questionário do hotel. Devolve false se a inscrição não existir.
+ */
+export async function corrigirEmailInscricaoEvento(inscricaoId: string, email: string): Promise<boolean> {
+  const { rowCount } = await db().query(`update evento_inscricoes set email = $2 where id = $1`, [inscricaoId, email]);
+  return (rowCount ?? 0) > 0;
+}
