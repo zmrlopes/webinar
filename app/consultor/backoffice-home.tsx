@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { guardarEmail, lerEmailGuardado, limparEmailGuardado } from "./armazenamento";
 import { ConvencaoCartao, type PedidoConvencao } from "./convencao-cartao";
 import { EventoForm } from "./evento-form";
+import { TeambuildingComprovativo } from "./teambuilding-comprovativo";
 import { NotificacoesPush } from "./notificacoes-push";
 import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
 import { AlternarArea } from "./alternar-area";
@@ -1005,6 +1006,7 @@ export function BackofficeHome() {
                     </p>
                   </div>
                 )}
+                <TeambuildingComprovativo email={email} />
                 <h2>Teambuilding Tropa de Elite</h2>
                 {dados.inscricoesEventoAbertas ? (
                   <EventoForm email={email} nome={dados.nome} />

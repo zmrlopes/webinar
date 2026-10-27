@@ -135,6 +135,12 @@ as letras, as proporções ou a transparência. Remover apenas as margens vazias
 para o posicionar. Editores guardados devem atualizar o recurso de marca,
 preservando os seus textos, posições, fundos e as publicações originais.
 
+Por indicação explícita do utilizador, o separador Eventos da área atual e da
+nova área mostra a todos os consultores inscritos no Teambuilding de 14 de
+novembro um card para trocar o comprovativo de pagamento de cada inscrição
+feita com o seu email (`/api/consultor/evento-comprovativo`). O novo ficheiro
+substitui o anterior e o admin vê-o no mesmo sítio.
+
 Por indicação explícita do utilizador, o card de entrada no grupo WhatsApp
 Welcome Aboard também aparece nos Avisos da área atual (`/consultor`) para
 os consultores da equipa, com o mesmo convite definido em

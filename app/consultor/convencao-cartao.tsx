@@ -27,7 +27,7 @@ function formatarData(iso: string): string {
  * Fotografias tiradas no telemóvel passam facilmente dos 4MB que o servidor
  * aceita: reduz-se para JPEG antes de enviar. PDFs vão tal como estão.
  */
-async function prepararFicheiro(ficheiro: File): Promise<File> {
+export async function prepararFicheiro(ficheiro: File): Promise<File> {
   if (!ficheiro.type.startsWith("image/") || ficheiro.size <= LIMITE_ENVIO) return ficheiro;
   try {
     const imagem = await createImageBitmap(ficheiro);

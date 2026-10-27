@@ -484,3 +484,67 @@ export async function gerarExcelParticipantesEvento(participantes: ParticipanteE
   const arrayBuffer = await livro.xlsx.writeBuffer();
   return Buffer.from(arrayBuffer);
 }
+
+export const TIPOS_COMPROVATIVO_EVENTO = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "application/pdf"];
+export const TAMANHO_MAXIMO_COMPROVATIVO_EVENTO = 4 * 1024 * 1024;
+
+export interface InscricaoEventoConsultor {
+  id: string;
+  adultos: number;
+  criancasMais10: number;
+  criancasMenos10: number;
+  totalPagar: number;
+  comprovativoNome: string | null;
+  criadoEm: string;
+}
+
+/**
+ * As inscrições no Teambuilding feitas com este email — para o cartão do
+ * separador Eventos, onde o próprio consultor pode trocar o comprovativo.
+ */
+export async function listarInscricoesEventoDoEmail(email: string): Promise<InscricaoEventoConsultor[]> {
+  const { rows } = await db().query<{
+    id: string;
+    adultos: number;
+    criancas_mais10: number;
+    criancas_menos10: number;
+    total_pagar: string;
+    comprovativo_nome: string | null;
+    criado_em: Date;
+  }>(
+    `select id, adultos, criancas_mais10, criancas_menos10, total_pagar, comprovativo_nome, criado_em
+     from evento_inscricoes
+     where lower(email) = $1
+     order by criado_em asc`,
+    [email],
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    adultos: r.adultos,
+    criancasMais10: r.criancas_mais10,
+    criancasMenos10: r.criancas_menos10,
+    totalPagar: Number(r.total_pagar),
+    comprovativoNome: r.comprovativo_nome,
+    criadoEm: r.criado_em.toISOString(),
+  }));
+}
+
+/**
+ * Substitui o comprovativo de pagamento de uma inscrição — só se a
+ * inscrição for deste email (verificado aqui, nunca confiado ao pedido).
+ * O anterior deixa de existir; o admin passa a ver o novo no mesmo sítio.
+ * Devolve false quando a inscrição não é deste email.
+ */
+export async function substituirComprovativoEvento(
+  inscricaoId: string,
+  email: string,
+  ficheiro: { bytes: Buffer; nome: string; tipo: string },
+): Promise<boolean> {
+  const { rowCount } = await db().query(
+    `update evento_inscricoes
+     set comprovativo = $3, comprovativo_nome = $4, comprovativo_tipo = $5
+     where id = $1 and lower(email) = $2`,
+    [inscricaoId, email, ficheiro.bytes, ficheiro.nome, ficheiro.tipo],
+  );
+  return (rowCount ?? 0) > 0;
+}

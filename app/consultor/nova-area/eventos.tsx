@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { DadosEventosPresenciais } from "@/lib/consultor-nova-area";
 import { EventoForm } from "../evento-form";
 import { ConvencaoCartao } from "../convencao-cartao";
+import { TeambuildingComprovativo } from "../teambuilding-comprovativo";
 import estilos from "./nova-area.module.css";
 import s from "./eventos.module.css";
 
@@ -66,6 +67,7 @@ export function EventosPresenciais({ email, nome }: { email: string; nome: strin
           <p className={s.local}>{dados.teambuilding.local} <span>·</span> Horário a confirmar</p>
           <p className={s.descricao}>Um dia presencial com a Tropa de Elite. Inscreve-te e indica quem vai contigo.</p>
           <p className={s.nota}>Adultos: {dados.teambuilding.precoAdulto} € · Crianças com mais de 10 anos: {dados.teambuilding.precoCrianca} €</p>
+          <div className={s.pedido}><TeambuildingComprovativo email={email} mostrarCabecalho={false} /></div>
           <button type="button" className={estilos.botao} disabled={!dados.teambuilding.inscricoesAbertas} aria-expanded={acao === "teambuilding"} aria-controls="detalhes-evento-presencial" onClick={() => setAcao("teambuilding")}>{dados.teambuilding.inscricoesAbertas ? "Inscrever-me" : "Inscrições encerradas"}</button>
         </article>
         <article className={s.cartao}>
