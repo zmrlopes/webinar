@@ -36,7 +36,7 @@ assert.equal(resumirBF(completo, {...config, centro: "reserva5k"}).bingo, false)
 assert.deepEqual(periodoBF(config, "2026-11-20"), {inicio: "2026-11-13", fim: "2026-11-20"});
 assert.deepEqual(periodoBF(config, "2026-12-14"), {inicio: "2026-11-13", fim: "2026-12-13"});
 assert.deepEqual(periodoBF({...config, periodoFaturacao: "anual"}, "2026-11-20"), {inicio: "2026-01-01", fim: "2026-11-20"});
-console.log("OK: datas de Lisboa, início/fim inclusivos, avião configurável, curinga de reserva única ≥5K, referências normalizadas, linhas só horizontais, progresso pendente, recusa, bingo e ordem pelo envio.");
+console.log("OK: datas de Lisboa, início/fim inclusivos, avião configurável, joker de reserva única ≥5K, referências normalizadas, linhas só horizontais, progresso pendente, recusa, bingo e ordem pelo envio.");
 
 const ficheiroSim = {nome: "reserva.png", tipo: "image/png", tamanho: 1024, hash: "hash-do-print"};
 const identidadeSim = {id: "simulacao", email: "teste@example.com", enviadoEm: "2026-10-27T12:00:00Z"};

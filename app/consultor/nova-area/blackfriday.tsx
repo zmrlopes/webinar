@@ -31,7 +31,7 @@ export function BlackFriday({email}: {email: string}) {
   const [erro, setErro] = useState("");
   const [casa, setCasa] = useState<number | null>(null);
   const [aGuardar, setAGuardar] = useState(false);
-  const [curinga, setCuringa] = useState(false);
+  const [joker, setJoker] = useState(false);
   const [aviso, setAviso] = useState("");
   const dialogo = useRef<HTMLDialogElement>(null);
   const botaoCasa = useRef<HTMLButtonElement | null>(null);
@@ -65,13 +65,13 @@ export function BlackFriday({email}: {email: string}) {
   }
   function fechar() {if (aGuardar) return; dialogo.current?.close(); setCasa(null); botaoCasa.current?.focus();}
   function abrir(n: number, botao: HTMLButtonElement) {
-    botaoCasa.current = botao; setCasa(n); setCuringa(n === 12); setErro(""); setMotivoSimulado("");
+    botaoCasa.current = botao; setCasa(n); setJoker(n === 12); setErro(""); setMotivoSimulado("");
     dialogo.current?.showModal();
   }
   async function enviar(e: FormEvent<HTMLFormElement>) {
     e.preventDefault(); if (aGuardar || casa === null) return;
     const form = new FormData(e.currentTarget);
-    form.set("email", email); form.set("acao", "enviar"); form.set("casa", String(casa)); form.set("curinga", String(curinga));
+    form.set("email", email); form.set("acao", "enviar"); form.set("casa", String(casa)); form.set("curinga", String(joker));
     setAGuardar(true); setErro("");
     try {
       if (simulacao) {
@@ -125,7 +125,7 @@ export function BlackFriday({email}: {email: string}) {
     const em = new Date().toISOString();
     setReservasSimuladas(anteriores => anteriores.map(i => i.id === reserva.id ? {...i, estado, motivo: motivoSimulado.trim(), revistoEm: em,
       revisoes: [...i.revisoes, {estado, em, motivo: motivoSimulado.trim()}]} : i));
-    setAviso(estado === "aprovada" ? "Casa fechada e validada na simulação! Ficou assinalada a verde com um visto." : "Comprovativo recusado na simulação. A casa deixou de contar e permite um novo envio.");
+    setAviso(estado === "aprovada" ? "Casa fechada e validada na simulação! Ficou assinalada a cores com um visto." : "Comprovativo recusado na simulação. A casa deixou de contar e permite um novo envio.");
     setErro(""); dialogo.current?.close(); setCasa(null); botaoCasa.current?.focus();
   }
   return <section className={css.pagina} aria-label="Desafio Black Friday">
@@ -146,11 +146,11 @@ export function BlackFriday({email}: {email: string}) {
             {CASAS_BF.map((titulo, n) => {
               const i = dados.inscricoes.filter(r => r.casa === n).at(-1);
               const e = n === 12 && dados.config.centro === "livre" ? "livre" : i?.estado ?? "vazia";
-              return <button key={n} type="button" className={css.casa} data-estado={e} data-linha={resumo.linhas.includes(Math.floor(n / 5))} aria-label={`${titulo}: ${e === "vazia" ? "por preencher" : e === "livre" ? "casa livre" : e}. Ver detalhes.`} onClick={ev => abrir(n, ev.currentTarget)}>
+              return <button key={n} type="button" className={css.casa} data-estado={e} data-cor={n % 6} data-linha={resumo.linhas.includes(Math.floor(n / 5))} aria-label={`${titulo}: ${e === "vazia" ? "por preencher" : e === "livre" ? "casa livre" : e}. Ver detalhes.`} onClick={ev => abrir(n, ev.currentTarget)}>
                 {e === "aprovada" && <span className={css.check} aria-hidden="true">✓</span>}
                 {n === 12 ? <Aviao/> : <span className={css.destino}>{titulo}</span>}
                 <small>{e === "livre" ? "Casa livre" : e === "pendente" ? "◷ Em validação" : e === "aprovada" ? "Validada" : e === "recusada" ? "Rever envio" : n === 12 ? "Reserva ≥ 5.000 €" : "+ Reserva"}</small>
-                {i?.curinga && e !== "recusada" && <span className={css.curinga}>5K</span>}
+                {i?.curinga && e !== "recusada" && <span className={css.joker}>5K</span>}
               </button>;
             })}
           </div>
@@ -161,15 +161,15 @@ export function BlackFriday({email}: {email: string}) {
         <aside className={css.premios}>
           <div className={css.premio}><span className={css.selo}>01 / A PRIMEIRA LINHA</span><h3>Cinco casas.<br/>Uma conquista.</h3><p>Completa a tua primeira linha horizontal.</p><strong>{dados.config.premioLinha}</strong><small>Um prémio de linha por TP.</small></div>
           <div className={`${css.premio} ${css.premioPrincipal}`}><span className={css.selo}>02 / O GRANDE BINGO</span><h3>Um ano de<br/>eventos contigo.</h3><strong>{dados.config.premioBingo}</strong><p>Se a equipa atingir <b>3 milhões de euros</b>, todos os TPs com bingo validado recebem o prémio.</p><p>Se a meta não for atingida, recebe apenas o primeiro TP a completar um bingo válido.</p></div>
-          <div className={css.premio}><span className={css.selo}>O TEU CURINGA</span><h3>Uma reserva de 5K.<br/>A casa que quiseres.</h3><p>Uma única reserva de pelo menos 5.000 € pode preencher qualquer casa à tua escolha.</p><small>A reserva e o comprovativo só podem ser usados numa casa.</small></div>
+          <div className={css.premio}><span className={css.selo}>O TEU JOKER</span><h3>Uma reserva de 5K.<br/>A casa que quiseres.</h3><p>Uma única reserva de pelo menos 5.000 € pode preencher qualquer casa à tua escolha.</p><small>A reserva e o comprovativo só podem ser usados numa casa.</small></div>
         </aside>
       </div>
-      <details className={css.regras}><summary>Como funciona o desafio</summary><ol><li>Faz uma reserva durante o desafio e escolhe a casa correspondente.</li><li>Anexa o comprovativo com a referência, a data e o valor da reserva. A casa começa logo a contar, pendente de revisão.</li><li>Cada reserva preenche uma única casa, mesmo quando corresponde a vários destinos ou categorias.</li><li>Uma reserva de pelo menos 5.000 € pode ser usada como curinga numa única casa.</li><li>Só as linhas horizontais contam. Cada TP recebe prémio apenas pela primeira linha.</li><li>Os prémios dependem da validação dos comprovativos. Uma recusa retira a casa do progresso e permite um novo envio.</li><li>A ordem dos bingos é determinada pela hora de envio do último comprovativo necessário, desde que todos sejam aprovados.</li><li>O desafio decorre até às 23h59 de {data(dados.config.fim)}, no horário de Lisboa. A data da viagem pode ser posterior.</li></ol></details>
+      <details className={css.regras}><summary>Como funciona o desafio</summary><ol><li>Faz uma reserva durante o desafio e escolhe a casa correspondente.</li><li>Anexa o comprovativo com a referência, a data e o valor da reserva. A casa começa logo a contar, pendente de revisão.</li><li>Cada reserva preenche uma única casa, mesmo quando corresponde a vários destinos ou categorias.</li><li>Uma reserva de pelo menos 5.000 € pode ser usada como joker numa única casa.</li><li>Só as linhas horizontais contam. Cada TP recebe prémio apenas pela primeira linha.</li><li>Os prémios dependem da validação dos comprovativos. Uma recusa retira a casa do progresso e permite um novo envio.</li><li>A ordem dos bingos é determinada pela hora de envio do último comprovativo necessário, desde que todos sejam aprovados.</li><li>O desafio decorre até às 23h59 de {data(dados.config.fim)}, no horário de Lisboa. A data da viagem pode ser posterior.</li></ol></details>
     </>}
     <dialog ref={dialogo} className={css.dialogo} aria-labelledby="bf-casa-titulo" onCancel={e => {e.preventDefault(); fechar();}} onClose={() => {setCasa(null); botaoCasa.current?.focus();}}>
       {casa !== null && dados && <div><button type="button" className={css.fechar} aria-label="Fechar" disabled={aGuardar} onClick={fechar}>×</button><span className={css.selo}>{simulacao && "SIMULAÇÃO · "}CASA {casa + 1} / 25</span><h2 id="bf-casa-titulo">{CASAS_BF[casa]}</h2>
         {livre ? <p>O avião é uma casa livre neste cartão.</p> : <>
-          {reserva && <div className={css.detalhe}><strong>{reserva.estado === "pendente" ? "Em validação · já conta no cartão" : reserva.estado === "aprovada" ? "Reserva validada" : "Comprovativo recusado"}</strong><p>{reserva.referencia} · {euros(reserva.valorCentimos / 100)} · {data(reserva.dataReserva)}{reserva.curinga && " · Curinga 5K"}</p>{reserva.motivo && <p>Motivo: {reserva.motivo}</p>}{simulacao && reserva.ficheiroTipo.startsWith("image/") && <img className={css.previewSimulado} src={comprovativosSimulados.current.get(reserva.id)} alt="Comprovativo anexado nesta simulação"/>}<button type="button" onClick={() => void verComprovativo(reserva)}>Ver comprovativo</button></div>}
+          {reserva && <div className={css.detalhe}><strong>{reserva.estado === "pendente" ? "Em validação · já conta no cartão" : reserva.estado === "aprovada" ? "Reserva validada" : "Comprovativo recusado"}</strong><p>{reserva.referencia} · {euros(reserva.valorCentimos / 100)} · {data(reserva.dataReserva)}{reserva.curinga && " · Joker 5K"}</p>{reserva.motivo && <p>Motivo: {reserva.motivo}</p>}{simulacao && reserva.ficheiroTipo.startsWith("image/") && <img className={css.previewSimulado} src={comprovativosSimulados.current.get(reserva.id)} alt="Comprovativo anexado nesta simulação"/>}<button type="button" onClick={() => void verComprovativo(reserva)}>Ver comprovativo</button></div>}
           {simulacao && reserva && <div className={css.revisaoSimulada}>
             <strong>Simular revisão do admin</strong><p>Experimenta como o TP vê a casa depois da decisão.</p>
             <label>Motivo da recusa ou nota<textarea rows={2} maxLength={1000} value={motivoSimulado} onChange={e => setMotivoSimulado(e.target.value)} placeholder="Por exemplo: a referência da reserva não está visível"/></label>
@@ -178,8 +178,8 @@ export function BlackFriday({email}: {email: string}) {
           {(!reserva || reserva.estado === "recusada") && (aberto ? <form key={casa} onSubmit={enviar} className={css.formulario}>
             <p>Escolhe esta casa para a tua reserva e envia o comprovativo. Cada reserva só pode ser utilizada uma vez.</p>
             <label>Referência da reserva<input name="referencia" required minLength={3} maxLength={80} autoComplete="off" defaultValue={simulacao ? `TESTE-${casa + 1}` : undefined}/></label>
-            <div className={css.campos}><label>Valor total (€)<input name="valor" required type="number" min={curinga ? "5000" : "0.01"} max="99999999" step="0.01" inputMode="decimal" defaultValue={simulacao ? "5000" : undefined}/></label><label>Data da reserva<input name="dataReserva" type="date" required min={dados.config.inicio} max={dados.hoje < dados.config.fim ? dados.hoje : dados.config.fim} defaultValue={simulacao ? dados.hoje : undefined}/></label></div>
-            <label className={css.opcao}><input type="checkbox" checked={curinga} disabled={casa === 12} onChange={e => setCuringa(e.target.checked)}/> Usar como curinga de 5.000 €</label>
+            <div className={css.campos}><label>Valor total (€)<input name="valor" required type="number" min={joker ? "5000" : "0.01"} max="99999999" step="0.01" inputMode="decimal" defaultValue={simulacao ? "5000" : undefined}/></label><label>Data da reserva<input name="dataReserva" type="date" required min={dados.config.inicio} max={dados.hoje < dados.config.fim ? dados.hoje : dados.config.fim} defaultValue={simulacao ? dados.hoje : undefined}/></label></div>
+            <label className={css.opcao}><input type="checkbox" checked={joker} disabled={casa === 12} onChange={e => setJoker(e.target.checked)}/> Usar como joker de 5.000 €</label>
             <label>Print ou comprovativo<input name="ficheiro" type="file" required accept="image/png,image/jpeg,image/webp,application/pdf" onChange={e => {if (e.target.files?.[0] && e.target.files[0].size > 3 * 1024 * 1024) e.target.setCustomValidity("Escolhe um ficheiro até 3 MB."); else e.target.setCustomValidity("");}}/><small>PNG, JPG, WebP ou PDF · Até 3 MB</small></label>
             <button type="submit" className={css.botao} disabled={aGuardar}>{aGuardar ? "A preparar…" : simulacao ? "Simular envio e assinalar casa" : "Enviar e assinalar casa"}</button>
           </form> : <p>O envio está disponível de {data(dados.config.inicio)} a {data(dados.config.fim)}.</p>)}

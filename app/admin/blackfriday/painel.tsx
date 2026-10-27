@@ -67,7 +67,7 @@ export function PainelBlackFriday() {
       <section className={css.bloco}><h2>Validar comprovativos</h2><div className={css.filtros}><label>Estado<select value={filtro} onChange={e => setFiltro(e.target.value)}><option value="pendente">Em validação</option><option value="aprovada">Aprovadas</option><option value="recusada">Recusadas</option><option value="todas">Todas</option></select></label><label>Pesquisar<input type="search" value={pesquisa} onChange={e => setPesquisa(e.target.value)} placeholder="TP, email, referência ou casa"/></label></div>
         {!visiveis.length && <p>Sem comprovativos nesta seleção.</p>}
         <div className={css.reservas}>{visiveis.map(i => <article className={css.reserva} key={i.id}>
-          <div className={css.reservaTopo}><div><span className={css.selo}>CASA {i.casa + 1} · {i.estado.toUpperCase()}</span><h3>{CASAS_BF[i.casa]} {i.curinga && <span className={css.badge}>CURINGA 5K</span>}</h3><strong>{i.nome}</strong><small>{i.email}</small></div><strong>{euros(i.valorCentimos / 100)}</strong></div>
+          <div className={css.reservaTopo}><div><span className={css.selo}>CASA {i.casa + 1} · {i.estado.toUpperCase()}</span><h3>{CASAS_BF[i.casa]} {i.curinga && <span className={css.badge}>JOKER 5K</span>}</h3><strong>{i.nome}</strong><small>{i.email}</small></div><strong>{euros(i.valorCentimos / 100)}</strong></div>
           <p>Referência <b>{i.referencia}</b> · Reserva de {i.dataReserva.split("-").reverse().join("/")}<br/>Enviada em {dataHora(i.enviadoEm)}</p>
           <a className={css.comprovativo} href={`/api/admin/blackfriday/comprovativo/${i.id}`} target="_blank" rel="noreferrer">Abrir comprovativo ↗<small>{i.ficheiroNome}</small></a>
           {i.motivo && <p><b>Última revisão:</b> {i.motivo}</p>}

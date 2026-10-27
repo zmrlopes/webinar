@@ -17,7 +17,7 @@ a 13/12/2026, inclusive, no horário de Lisboa; as datas e o avião central
 ajustados no admin antes da primeira participação. Cada reserva preenche
 uma única casa escolhida pelo TP, com referência, data, valor e comprovativo.
 Uma única reserva de pelo menos 5.000 € pode preencher qualquer casa como
-curinga e não pode voltar a ser usada noutra casa. O envio conta imediatamente
+joker e não pode voltar a ser usada noutra casa. O envio conta imediatamente
 como pendente; a recusa retira-o do progresso e permite novo envio. O admin
 revê os comprovativos em `/admin/blackfriday`, com motivo e histórico.
 Só a primeira linha horizontal por TP dá prémio (a anunciar). O bingo e
@@ -37,6 +37,13 @@ Os ficheiros e as marcas ficam só na memória do navegador durante a visita;
 não envia comprovativos à API, não grava participações, não muda as datas
 reais, o admin, o ranking, os prémios ou a faturação. Sair da simulação ou
 da secção limpa a demonstração e recupera o cartão real.
+
+Por indicação do utilizador, as casas assinaladas do BLACKFRIDAY usam cores
+vivas variadas (verde, azul, violeta, rosa, laranja e turquesa), estáveis por
+posição, na simulação e no cartão real. As pendentes têm contorno tracejado;
+as aprovadas mantêm o visto. É uma exceção às cores da marca limitada ao bingo.
+A interface de consultor e admin, as regras e os erros usam a palavra “joker”
+para a reserva de pelo menos 5.000 €. Os registos existentes mantêm-se.
 
 ## Alterações na área de consultor
 
