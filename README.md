@@ -21,6 +21,10 @@ Não devolve transcrições nem o contexto interno completo e não pesquisa a In
 Quando a base não sustenta uma resposta, pede mais contexto ou confirmação.
 
 A conversa permite perguntas seguintes, copiar respostas e começar de novo.
+O Assistente inclui também **Resolução de objeções**, que reutiliza as sugestões
+de resposta e os testemunhos existentes. As duas ferramentas abrem no mesmo
+painel, sem opção separada no menu; alternar mantém a conversa e o formulário
+durante a visita. Esta organização continua limitada à nova área da conta de teste.
 Permanece em memória ao navegar entre secções e termina ao atualizar ou sair.
 Não há histórico de conversas na base de dados; apenas um contador de até 20 pedidos
 por dez minutos em `dashboard_config`, separado de Reservas. Não há migração.

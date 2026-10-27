@@ -5,7 +5,7 @@ import { TAREFAS_PRIMEIROS_PASSOS } from "@/lib/primeiros-passos";
 import estilos from "./nova-area.module.css";
 import css from "./onboarding.module.css";
 
-type Destino = "comeca-aqui" | "calendario" | "leads" | "proximo-webinar" | "core-rank" | "testemunhos" | "objecoes" | "formacoes-gravadas" | "documentos";
+type Destino = "comeca-aqui" | "calendario" | "leads" | "proximo-webinar" | "core-rank" | "testemunhos" | "formacoes-gravadas" | "documentos";
 type Ligacao = { titulo: string } & (
   { destino: Destino; especial?: never } |
   { especial: "grupo" | "curso" | "reuniao-1" | "reuniao-2"; destino?: never }

@@ -1,4 +1,11 @@
 .painel { max-width: 1050px; min-width: 0; border: 1px solid #dfe1d6; border-radius: 18px; background: #fff; overflow: hidden; }
+.ferramentas { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.ferramentas button { padding: 11px 16px; border: 1px solid #dfe1d6; border-radius: 12px; background: #fff; color: #4b5320; font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
+.ferramentas button[aria-pressed="true"] { border-color: #4b5320; background: #4b5320; color: #fff; }
+.ferramentas button:focus-visible { outline: 3px solid #4b5320; outline-offset: 3px; }
+.objecoes { box-sizing: border-box; max-width: 1050px; min-width: 0; padding: 26px; border: 1px solid #dfe1d6; border-radius: 18px; background: #fff; }
+.objecoes h2 { margin: 0 0 10px; font-size: 18px; }
+.objecoes > p { margin: 0 0 20px; color: #626652; font-size: 14px; line-height: 1.6; }
 .cabecalho { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding: 22px 26px; border-bottom: 1px solid #e8eadd; background: #f7f8f2; }
 .identidade { display: flex; align-items: center; gap: 12px; }
 .simbolo { display: grid; place-items: center; width: 42px; height: 42px; flex: none; border-radius: 13px; background: #4b5320; color: #fff; font-size: 25px; }
@@ -49,6 +56,7 @@
 .rodape button span { font-size: 18px; }
 .privacidade { margin: 12px 26px 20px; font-size: 10px; line-height: 1.5; color: #727568; }
 @media (max-width: 760px) {
+  .objecoes { padding: 18px; }
   .cabecalho { padding: 18px; }
   .identidade strong { font-size: 14px; }
   .identidade div > span { font-size: 10px; }

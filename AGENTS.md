@@ -204,8 +204,12 @@ base de conhecimento, a IA sugere um testemunho da playlist iCliGo
 o link para enviar à lead. Por indicação explícita do utilizador, está
 publicado para todos os consultores na área atual: a resolução de objeções é
 um campo geral no topo das Leads (sem coluna por lead). Na nova área, o mesmo
-campo é um separador próprio, “Resolução de objeções”, em A minha organização,
-e não aparece nas Leads.
+campo fica dentro do Assistente da equipa (IA), na opção “Resolução de objeções”,
+e não aparece nas Leads nem como opção separada em A minha organização.
+A conversa e o formulário de objeções mantêm o estado ao alternar entre as
+duas ferramentas e ao mudar de secção durante a visita. Esta reorganização
+continua exclusiva da nova área da conta de teste; o campo das Leads da área
+atual e a API existente mantêm-se.
 
 Por indicação explícita do utilizador, os testemunhos Instagram revistos juntam-se
 aos vídeos YouTube em `src/lib/testemunhos.json`, com links originais, contexto e

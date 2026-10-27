@@ -1,15 +1,12 @@
 "use client";
 
 import { ObjecaoLead } from "../webinares/objecao-lead";
-import estilos from "./nova-area.module.css";
+import estilos from "./assistente.module.css";
 
 export function ObjecoesNovaArea({ email }: { email: string }) {
-  return <section id="resolucao-objecoes" aria-label="Resolução de objeções">
-    <div className={estilos.intro}>
-      <span className={estilos.etiqueta}>A MINHA ORGANIZAÇÃO</span>
-      <h1>Resolução de objeções<span>.</span></h1>
-      <p>Escreve a dúvida da lead e recebe sugestões de resposta e um testemunho para o follow-up.</p>
-    </div>
+  return <section id="resolucao-objecoes" className={estilos.objecoes} aria-labelledby="titulo-resolucao-objecoes">
+    <h2 id="titulo-resolucao-objecoes">Resolução de objeções</h2>
+    <p>Escreve a dúvida da lead e recebe sugestões de resposta e um testemunho para o follow-up.</p>
     <ObjecaoLead email={email} />
   </section>;
 }

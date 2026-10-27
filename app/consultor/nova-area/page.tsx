@@ -19,7 +19,6 @@ import { CalendarioCriativo } from "./calendario-criativo";
 import { EventosPresenciais } from "./eventos";
 import { InicioNovaArea } from "./inicio";
 import { TestemunhosNovaArea } from "./testemunhos";
-import { ObjecoesNovaArea } from "./objecoes";
 import { AssistenteEquipa } from "./assistente";
 import { CalculadorasNovaArea } from "./calculadoras";
 import { CoreRankNovaArea } from "./core-rank";
@@ -53,7 +52,7 @@ export default function NovaAreaConsultor() {
   const [aInscrever, setAInscrever] = useState(false);
   const [erroSessao, setErroSessao] = useState("");
   const [inscrito, setInscrito] = useState(false);
-  const [seccao, setSeccao] = useState<"inicio" | "comeca-aqui" | "calendario" | "calendario-criativo" | "leads" | "mentor-checklist" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "testemunhos" | "objecoes" | "assistente" | "documentos" | "eventos-presenciais" | "calculadoras" | "core-rank" | "reservas" | "travel-planner" | "propostas">("inicio");
+  const [seccao, setSeccao] = useState<"inicio" | "comeca-aqui" | "calendario" | "calendario-criativo" | "leads" | "mentor-checklist" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "testemunhos" | "assistente" | "documentos" | "eventos-presenciais" | "calculadoras" | "core-rank" | "reservas" | "travel-planner" | "propostas">("inicio");
   const [assistenteAberto, setAssistenteAberto] = useState(false);
   const [reservasAberto, setReservasAberto] = useState(false);
   const [coreAberto, setCoreAberto] = useState(false);
@@ -270,12 +269,11 @@ export default function NovaAreaConsultor() {
               <div className={estilos.grupoMenu}>
                 <button type="button" className={seccao === "calendario" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calendario")} aria-current={seccao === "calendario" ? "page" : undefined} aria-controls="conteudo-nova-area">Calendário <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" strokeWidth="1.6" /><path d="M7 3v4m10-4v4M3 11h18" stroke="currentColor" strokeWidth="1.6" /></svg></button>
               </div>
-              <GrupoMenu titulo="A minha organização" ativo={seccao === "assistente" || seccao === "leads" || seccao === "proximo-webinar" || seccao === "objecoes" || seccao === "testemunhos" || seccao === "mentor-checklist"}>
+              <GrupoMenu titulo="A minha organização" ativo={seccao === "assistente" || seccao === "leads" || seccao === "proximo-webinar" || seccao === "testemunhos" || seccao === "mentor-checklist"}>
                 <button type="button" className={seccao === "mentor-checklist" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("mentor-checklist")} aria-current={seccao === "mentor-checklist" ? "page" : undefined} aria-controls="conteudo-nova-area">Tenho um novo TP, e agora?</button>
                 <button type="button" className={seccao === "assistente" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("assistente")} aria-current={seccao === "assistente" ? "page" : undefined} aria-controls="conteudo-nova-area">Assistente da equipa <span>IA</span></button>
                 <button type="button" className={seccao === "leads" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("leads")} aria-current={seccao === "leads" ? "page" : undefined} aria-controls="conteudo-nova-area">Leads</button>
                 <button type="button" className={seccao === "proximo-webinar" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("proximo-webinar")} aria-current={seccao === "proximo-webinar" ? "page" : undefined} aria-controls="conteudo-nova-area">Próximo webinar</button>
-                <button type="button" className={seccao === "objecoes" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("objecoes")} aria-current={seccao === "objecoes" ? "page" : undefined} aria-controls="conteudo-nova-area">Resolução de objeções</button>
                 <button type="button" className={seccao === "testemunhos" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("testemunhos")} aria-current={seccao === "testemunhos" ? "page" : undefined} aria-controls="conteudo-nova-area">Testemunhos</button>
               </GrupoMenu>
               <GrupoMenu titulo="Reservas" ativo={seccao === "propostas" || seccao === "travel-planner" || seccao === "reservas" || seccao === "calendario-criativo"}>
@@ -327,7 +325,6 @@ export default function NovaAreaConsultor() {
             } : atual)} />}
             {seccao === "formacoes-gravadas" && <FormacoesGravadas />}
             {seccao === "testemunhos" && <TestemunhosNovaArea />}
-            {seccao === "objecoes" && <ObjecoesNovaArea email={email} />}
             {assistenteAberto && <div hidden={seccao !== "assistente"}><AssistenteEquipa email={email} /></div>}
             {seccao === "documentos" && <DocumentosNovaArea />}
             {seccao === "eventos-presenciais" && <EventosPresenciais email={email} nome={dados.nome} />}

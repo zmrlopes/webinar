@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { MAX_PERGUNTA_ASSISTENTE, textoRespostaAssistente, type MensagemAssistente, type RespostaAssistente } from "@/lib/assistente-equipa";
 import comuns from "./nova-area.module.css";
 import estilos from "./assistente.module.css";
+import { ObjecoesNovaArea } from "./objecoes";
 
 interface Troca { id: string; pergunta: string; resposta: RespostaAssistente | null }
 const SUGESTOES = [
@@ -14,6 +15,7 @@ const SUGESTOES = [
 ];
 
 export function AssistenteEquipa({ email }: { email: string }) {
+  const [ferramenta, setFerramenta] = useState<"conversa" | "objecoes">("conversa");
   const [conversa, setConversa] = useState<Troca[]>([]);
   const [pergunta, setPergunta] = useState("");
   const [ocupado, setOcupado] = useState(false);
@@ -24,14 +26,15 @@ export function AssistenteEquipa({ email }: { email: string }) {
   const campo = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
+    setFerramenta("conversa");
     setConversa([]); setPergunta(""); setErro(""); setCopiado(""); setOcupado(false);
     return () => pedido.current?.abort();
   }, [email]);
 
   useEffect(() => {
-    if (!conversa.length) return;
+    if (ferramenta !== "conversa" || !conversa.length) return;
     fim.current?.scrollIntoView({ block: "nearest", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
-  }, [conversa, ocupado]);
+  }, [conversa, ocupado, ferramenta]);
 
   async function enviar(texto = pergunta) {
     if (ocupado || texto.trim().length < 5 || texto.length > MAX_PERGUNTA_ASSISTENTE) return;
@@ -76,9 +79,13 @@ export function AssistenteEquipa({ email }: { email: string }) {
     <div className={comuns.intro}>
       <span className={comuns.etiqueta}>A MINHA ORGANIZAÇÃO</span>
       <h1 id="titulo-assistente-equipa">Assistente da equipa<span>.</span></h1>
-      <p>Uma dúvida, um próximo passo. Encontra orientação nas formações e nos materiais da equipa.</p>
+      <p>Encontra orientação nos materiais da equipa ou prepara respostas para as objeções das tuas leads.</p>
     </div>
-    <div className={estilos.painel}>
+    <nav className={estilos.ferramentas} aria-label="Ferramentas do assistente">
+      <button type="button" aria-pressed={ferramenta === "conversa"} aria-controls="assistente-conversa" onClick={() => setFerramenta("conversa")}>Conversa com a IA</button>
+      <button type="button" aria-pressed={ferramenta === "objecoes"} aria-controls="assistente-objecoes" onClick={() => setFerramenta("objecoes")}>Resolução de objeções</button>
+    </nav>
+    <div id="assistente-conversa" hidden={ferramenta !== "conversa"} className={estilos.painel}>
       <div className={estilos.cabecalho}>
         <div className={estilos.identidade}><span className={estilos.simbolo} aria-hidden="true">✦</span><div><strong>Em que te posso ajudar?</strong><span>Vendas · Contactos · Organização · Equipa</span></div></div>
         {conversa.length > 0 && <button type="button" className={estilos.discreto} disabled={ocupado} onClick={() => { setConversa([]); setErro(""); setCopiado(""); campo.current?.focus(); }}>Nova conversa</button>}
@@ -113,5 +120,6 @@ export function AssistenteEquipa({ email }: { email: string }) {
       </form>
       <p className={estilos.privacidade}>A conversa mantém-se durante esta visita. Ao atualizar ou sair da página, começa uma nova conversa.</p>
     </div>
+    <div id="assistente-objecoes" hidden={ferramenta !== "objecoes"}><ObjecoesNovaArea key={email} email={email} /></div>
   </section>;
 }
