@@ -46,8 +46,10 @@ A interface de consultor e admin, as regras e os erros usam a palavra “joker�
 para a reserva de pelo menos 5.000 €. Os registos existentes mantêm-se.
 
 Por indicação do utilizador, as seis cores das casas do BLACKFRIDAY mantêm
-um acabamento sofisticado, com tons profundos, reflexos suaves, contornos
-luminosos e pequenos detalhes dourados. Completar uma nova linha horizontal
+um acabamento sofisticado, com cores claras, vivas e alegres, reflexos suaves,
+contornos luminosos e pequenos detalhes dourados. Por indicação mais recente,
+evitar os tons escuros ou apagados das casas e usar texto escuro adequado
+a cada cor para manter a leitura. Completar uma nova linha horizontal
 mostra uma animação breve de parabéns, um reflexo nas casas e partículas
 discretas, respeitando a preferência de movimento reduzido e sem som.
 Não repete para linhas já existentes na leitura inicial, nas atualizações
