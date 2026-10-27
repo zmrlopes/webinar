@@ -33,10 +33,19 @@ Por indicação do utilizador, o BLACKFRIDAY inclui uma simulação interativa
 exclusiva da conta de teste. Permite anexar um print/PDF, ver a casa pendente,
 simular aprovação ou recusa com motivo e visualizar a casa validada. Funciona
 antes do desafio, usando uma data dentro do período apenas na demonstração.
-Os ficheiros e as marcas ficam só na memória do navegador durante a visita;
-não envia comprovativos à API, não grava participações, não muda as datas
-reais, o admin, o ranking, os prémios ou a faturação. Sair da simulação ou
-da secção limpa a demonstração e recupera o cartão real.
+Por indicação mais recente do utilizador, os ficheiros e as marcas desta
+simulação são guardados numa área de testes separada no servidor para
+aparecerem em `/admin/blackfriday?modo=simulacao`. O admin pode abrir o
+comprovativo, aprovar ou recusar com motivo; o cartão de teste lê o estado
+guardado a cada dez segundos enquanto visível e ao regressar à janela.
+Apenas o admin faz a revisão; a conta de teste pode enviar e recomeçar a
+simulação. Os testes permanecem ao mudar de secção ou sair, até se escolher
+“Recomeçar simulação” ou “Limpar apenas os testes”. Essas ações apagam apenas
+os ficheiros e marcas da simulação, nunca os registos reais. As chaves de
+armazenamento, as leituras e as ações de revisão/comprovativo distinguem os
+dois modos no servidor. Os testes não alteram as datas reais, a configuração,
+o ranking, os prémios ou a faturação. As APIs mantêm o acesso exclusivo da
+conta de teste e a autenticação do admin.
 
 Por indicação do utilizador, as casas assinaladas do BLACKFRIDAY usam cores
 vivas variadas (verde, azul, violeta, rosa, laranja e turquesa), estáveis por

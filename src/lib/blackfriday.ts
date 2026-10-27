@@ -23,13 +23,14 @@ export interface InscricaoBF {
   enviadoEm: string; revistoEm?: string; motivo?: string;
   ficheiroNome: string; ficheiroTipo: string; hash: string;
   revisoes: {estado: "aprovada" | "recusada"; em: string; motivo: string}[];
+  simulacao?: boolean;
 }
 export interface FaturacaoBF {
   valor: number; atualizadoEm: string; inicio: string; fim: string;
   periodo: ConfiguracaoBF["periodoFaturacao"];
 }
 export interface DadosBF {
-  config: ConfiguracaoBF; hoje: string; inscricoes: InscricaoBF[]; faturacao: FaturacaoBF | null;
+  config: ConfiguracaoBF; hoje: string; inscricoes: InscricaoBF[]; faturacao: FaturacaoBF | null; simulacao?: boolean;
 }
 export function hojeBF(agora = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", {timeZone: "Europe/Lisbon"}).format(agora);

@@ -1,7 +1,6 @@
 "use client";
 import {useEffect, useRef, useState, type CSSProperties, type FormEvent} from "react";
 import {CASAS_BF, META_BF, resumirBF, type DadosBF, type InscricaoBF} from "@/lib/blackfriday";
-import {criarReservaSimuladaBF} from "@/lib/blackfriday-simulacao";
 import {podeVerNovaArea} from "@/lib/consultor-nova-area";
 import {detetarNovasLinhasBF, type MemoriaLinhasBF} from "@/lib/blackfriday-celebracao";
 import css from "./blackfriday.module.css";
@@ -33,13 +32,10 @@ function ParabensLinha({conquista}: {conquista: CelebracaoBF}) {
 }
 
 export function BlackFriday({email}: {email: string}) {
-  const [dadosReais, setDadosReais] = useState<DadosBF | null>(null);
+  const [dados, setDados] = useState<DadosBF | null>(null);
   const [simulacao, setSimulacao] = useState(false);
-  const [reservasSimuladas, setReservasSimuladas] = useState<InscricaoBF[]>([]);
-  const [motivoSimulado, setMotivoSimulado] = useState("");
-  const comprovativosSimulados = useRef(new Map<string, string>());
-  const dados = dadosReais && simulacao ? {...dadosReais, inscricoes: reservasSimuladas,
-    hoje: dadosReais.hoje < dadosReais.config.inicio ? dadosReais.config.inicio : dadosReais.hoje > dadosReais.config.fim ? dadosReais.config.fim : dadosReais.hoje} : dadosReais;
+  const pedidoAtual = useRef(0);
+  const aGuardarRef = useRef(false);
   const [erro, setErro] = useState("");
   const [casa, setCasa] = useState<number | null>(null);
   const [aGuardar, setAGuardar] = useState(false);
@@ -52,31 +48,29 @@ export function BlackFriday({email}: {email: string}) {
   const dialogo = useRef<HTMLDialogElement>(null);
   const botaoCasa = useRef<HTMLButtonElement | null>(null);
   async function carregar(signal?: AbortSignal) {
+    if (aGuardarRef.current) return;
+    const pedido = ++pedidoAtual.current;
     try {
-      const r = await fetch("/api/consultor/nova-area/blackfriday", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({email, acao: "consultar"}), signal});
+      const r = await fetch("/api/consultor/nova-area/blackfriday", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({email, acao: "consultar", simulacao}), signal});
       const d = await r.json();
       if (!r.ok) throw new Error(d.erro);
-      if (!signal?.aborted) {setDadosReais(d); setErro("");}
-    } catch (e) {if (!signal?.aborted) setErro(e instanceof Error ? e.message : "Não foi possível carregar o bingo.");}
+      if (!signal?.aborted && pedido === pedidoAtual.current) {setDados(d); setErro("");}
+    } catch (e) {if (!signal?.aborted && pedido === pedidoAtual.current) setErro(e instanceof Error ? e.message : "Não foi possível carregar o bingo.");}
   }
   useEffect(() => {
     const controller = new AbortController();
     void carregar(controller.signal);
     const atualizar = () => {if (!document.hidden) void carregar(controller.signal);};
-    const intervalo = setInterval(atualizar, 30_000);
+    const intervalo = setInterval(atualizar, 10_000);
     window.addEventListener("focus", atualizar);
-    return () => {controller.abort(); clearInterval(intervalo); window.removeEventListener("focus", atualizar);};
+    document.addEventListener("visibilitychange", atualizar);
+    return () => {controller.abort(); clearInterval(intervalo); window.removeEventListener("focus", atualizar); document.removeEventListener("visibilitychange", atualizar);};
     // O email permanece o mesmo durante a visita.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [email]);
-  useEffect(() => {
-    const comprovativos = comprovativosSimulados.current;
-    return () => {for (const url of comprovativos.values()) URL.revokeObjectURL(url); comprovativos.clear();};
-  }, []);
+  }, [email, simulacao]);
   function alternarSimulacao() {
     if (aGuardar || !podeVerNovaArea(email)) return;
-    for (const url of comprovativosSimulados.current.values()) URL.revokeObjectURL(url);
-    comprovativosSimulados.current.clear(); setReservasSimuladas([]);
+    ++pedidoAtual.current; setDados(null);
     setSimulacao(!simulacao); setAviso(""); setErro("");
     setCelebracao(null);
   }
@@ -86,48 +80,38 @@ export function BlackFriday({email}: {email: string}) {
     setCelebracao({id: ++numeroCelebracao.current, linhas: [], emValidacao: false, previsualizacao: true});
   }
   function abrir(n: number, botao: HTMLButtonElement) {
-    botaoCasa.current = botao; setCasa(n); setJoker(n === 12); setErro(""); setMotivoSimulado("");
+    botaoCasa.current = botao; setCasa(n); setJoker(n === 12); setErro("");
     dialogo.current?.showModal();
   }
   async function enviar(e: FormEvent<HTMLFormElement>) {
     e.preventDefault(); if (aGuardar || casa === null) return;
     const form = new FormData(e.currentTarget);
     form.set("email", email); form.set("acao", "enviar"); form.set("casa", String(casa)); form.set("curinga", String(joker));
+    form.set("simulacao", String(simulacao));
+    aGuardarRef.current = true; ++pedidoAtual.current;
     setAGuardar(true); setErro("");
     try {
-      if (simulacao) {
-        if (!dados || !podeVerNovaArea(email)) throw new Error("A simulação está disponível apenas na conta de teste.");
-        const ficheiro = form.get("ficheiro");
-        if (!(ficheiro instanceof File) || !ficheiro.size || ficheiro.size > 3 * 1024 * 1024) throw new Error("Anexa um print ou PDF com até 3 MB.");
-        const bytes = await ficheiro.arrayBuffer();
-        const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))).map(b => b.toString(16).padStart(2, "0")).join("");
-        const campos: Record<string, unknown> = {}; form.forEach((valor, chave) => {campos[chave] = valor;});
-        const inscricao = criarReservaSimuladaBF(campos, dados.config, dados.hoje, reservasSimuladas,
-          {nome: ficheiro.name, tipo: ficheiro.type, tamanho: ficheiro.size, hash},
-          {id: crypto.randomUUID(), email, enviadoEm: new Date().toISOString()});
-        comprovativosSimulados.current.set(inscricao.id, URL.createObjectURL(ficheiro));
-        setReservasSimuladas(anteriores => [...anteriores, inscricao]);
-        setAviso("Comprovativo anexado na simulação. A casa já conta e ficou em validação. Clica nela para experimentar a aprovação.");
-        dialogo.current?.close(); setCasa(null); botaoCasa.current?.focus();
-        return;
-      }
       const r = await fetch("/api/consultor/nova-area/blackfriday", {method: "POST", body: form});
       const d = await r.json(); if (!r.ok) throw new Error(d.erro);
-      setDadosReais(d); setAviso("Reserva enviada! Esta casa já conta no teu cartão e aguarda validação.");
+      setDados(d); setAviso(simulacao ? "Comprovativo de teste enviado para o admin. A casa já conta no cartão de simulação e aguarda revisão." : "Reserva enviada! Esta casa já conta no teu cartão e aguarda validação.");
       dialogo.current?.close(); setCasa(null); botaoCasa.current?.focus();
     } catch (e) {setErro(e instanceof Error ? e.message : "Não foi possível enviar a reserva.");}
-    finally {setAGuardar(false);}
+    finally {aGuardarRef.current = false; setAGuardar(false);}
+  }
+  async function recomeçarSimulacao() {
+    if (!simulacao || aGuardarRef.current) return;
+    aGuardarRef.current = true; ++pedidoAtual.current; setAGuardar(true); setErro("");
+    try {
+      const r = await fetch("/api/consultor/nova-area/blackfriday", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({email, acao: "limpar-simulacao", simulacao: true})});
+      const d = await r.json(); if (!r.ok) throw new Error(d.erro);
+      setDados(d); linhasCelebradas.current = null; setCelebracao(null); setAviso("Simulação reiniciada. Apenas os envios e comprovativos de teste foram removidos.");
+    } catch (e) {setErro(e instanceof Error ? e.message : "Não foi possível recomeçar a simulação.");}
+    finally {aGuardarRef.current = false; setAGuardar(false);}
   }
   async function verComprovativo(i: InscricaoBF) {
-    if (simulacao) {
-      const url = comprovativosSimulados.current.get(i.id);
-      if (url) window.open(url, "_blank", "noopener,noreferrer");
-      else setErro("Este comprovativo já não está disponível nesta simulação.");
-      return;
-    }
     const janela = window.open("about:blank", "_blank"); if (janela) janela.opener = null;
     try {
-      const r = await fetch("/api/consultor/nova-area/blackfriday", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({email, acao: "comprovativo", id: i.id})});
+      const r = await fetch("/api/consultor/nova-area/blackfriday", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({email, acao: "comprovativo", id: i.id, simulacao})});
       if (!r.ok) throw new Error("Não foi possível abrir o comprovativo.");
       const url = URL.createObjectURL(await r.blob());
       if (janela) janela.location.href = url;
@@ -158,22 +142,13 @@ export function BlackFriday({email}: {email: string}) {
   const aberto = dados && dados.hoje >= dados.config.inicio && dados.hoje <= dados.config.fim;
   const reserva = casa !== null ? dados?.inscricoes.filter(i => i.casa === casa).at(-1) : null;
   const livre = casa === 12 && dados?.config.centro === "livre";
-  function simularRevisao(estado: "aprovada" | "recusada") {
-    if (!simulacao || !reserva || !podeVerNovaArea(email)) return;
-    if (estado === "recusada" && !motivoSimulado.trim()) {setErro("Indica o motivo da recusa para veres como aparece ao TP."); return;}
-    const em = new Date().toISOString();
-    setReservasSimuladas(anteriores => anteriores.map(i => i.id === reserva.id ? {...i, estado, motivo: motivoSimulado.trim(), revistoEm: em,
-      revisoes: [...i.revisoes, {estado, em, motivo: motivoSimulado.trim()}]} : i));
-    setAviso(estado === "aprovada" ? "Casa fechada e validada na simulação! Ficou assinalada a cores com um visto." : "Comprovativo recusado na simulação. A casa deixou de contar e permite um novo envio.");
-    setErro(""); dialogo.current?.close(); setCasa(null); botaoCasa.current?.focus();
-  }
   return <section className={css.pagina} aria-label="Desafio Black Friday">
     <header className={css.cabecalho}><span className={css.selo}>TROPA DE ELITE · DESAFIO {dados?.config.inicio.slice(0, 4) ?? "2026"}</span><h1>BLACK<span>FRIDAY</span></h1><p>Cada reserva, uma conquista.<br/>A próxima casa pode ser tua.</p><div className={css.datas}>{dados ? `${data(dados.config.inicio)} — ${data(dados.config.fim)}` : "A preparar o desafio…"}</div></header>
     {erro && casa === null && <p role="alert" className={css.erro}>{erro} <button type="button" onClick={() => void carregar()}>Tentar novamente</button></p>}
     {aviso && <p role="status" className={css.aviso}>{aviso}</p>}
-    {dadosReais && podeVerNovaArea(email) && <div className={css.simulacao}>
-      <div><strong>{simulacao ? "SIMULAÇÃO ATIVA" : "Experimenta o envio de um comprovativo"}</strong><p>{simulacao ? "Escolhe uma casa e anexa um print. Depois clica novamente para simular a revisão do admin. Esta demonstração desaparece ao sair e não conta para o desafio." : "Podes testar agora, antes do arranque, e ver uma casa pendente, aprovada ou recusada."}</p></div>
-      <div className={css.acoesSimulacao}>{simulacao && <button type="button" onClick={previsualizarAnimacao}>Ver animação de linha</button>}<button type="button" disabled={aGuardar} onClick={alternarSimulacao}>{simulacao ? "Sair da simulação" : "Experimentar simulação"}</button></div>
+    {dados && podeVerNovaArea(email) && <div className={css.simulacao}>
+      <div><strong>{simulacao ? "SIMULAÇÃO LIGADA AO ADMIN" : "Experimenta o envio de um comprovativo"}</strong><p>{simulacao ? "Anexa um print numa casa e revê-o no admin, em Simulação. O cartão atualiza ao regressares e a cada 10 segundos. Os testes ficam guardados à parte até recomeçares a simulação e não contam para o desafio." : "Podes testar o envio, a aprovação e a recusa pelo admin antes do arranque do desafio."}</p></div>
+      <div className={css.acoesSimulacao}>{simulacao && <><a href="/admin/blackfriday?modo=simulacao" target="_blank" rel="noreferrer">Abrir simulação no admin ↗</a><button type="button" onClick={previsualizarAnimacao}>Ver animação de linha</button><button type="button" disabled={aGuardar} onClick={() => void recomeçarSimulacao()}>Recomeçar simulação</button></>}<button type="button" disabled={aGuardar} onClick={alternarSimulacao}>{simulacao ? "Sair da simulação" : "Experimentar simulação"}</button></div>
     </div>}
     {dados && resumo && confirmado && <>
       <BarraBlackFriday dados={dados}/>
@@ -209,11 +184,10 @@ export function BlackFriday({email}: {email: string}) {
     <dialog ref={dialogo} className={css.dialogo} aria-labelledby="bf-casa-titulo" onCancel={e => {e.preventDefault(); fechar();}} onClose={() => {setCasa(null); botaoCasa.current?.focus();}}>
       {casa !== null && dados && <div><button type="button" className={css.fechar} aria-label="Fechar" disabled={aGuardar} onClick={fechar}>×</button><span className={css.selo}>{simulacao && "SIMULAÇÃO · "}CASA {casa + 1} / 25</span><h2 id="bf-casa-titulo">{CASAS_BF[casa]}</h2>
         {livre ? <p>O avião é uma casa livre neste cartão.</p> : <>
-          {reserva && <div className={css.detalhe}><strong>{reserva.estado === "pendente" ? "Em validação · já conta no cartão" : reserva.estado === "aprovada" ? "Reserva validada" : "Comprovativo recusado"}</strong><p>{reserva.referencia} · {euros(reserva.valorCentimos / 100)} · {data(reserva.dataReserva)}{reserva.curinga && " · Joker 5K"}</p>{reserva.motivo && <p>Motivo: {reserva.motivo}</p>}{simulacao && reserva.ficheiroTipo.startsWith("image/") && <img className={css.previewSimulado} src={comprovativosSimulados.current.get(reserva.id)} alt="Comprovativo anexado nesta simulação"/>}<button type="button" onClick={() => void verComprovativo(reserva)}>Ver comprovativo</button></div>}
+          {reserva && <div className={css.detalhe}><strong>{reserva.estado === "pendente" ? "Em validação · já conta no cartão" : reserva.estado === "aprovada" ? "Reserva validada" : "Comprovativo recusado"}</strong><p>{reserva.referencia} · {euros(reserva.valorCentimos / 100)} · {data(reserva.dataReserva)}{reserva.curinga && " · Joker 5K"}</p>{reserva.motivo && <p>Motivo: {reserva.motivo}</p>}<button type="button" onClick={() => void verComprovativo(reserva)}>Ver comprovativo</button></div>}
           {simulacao && reserva && <div className={css.revisaoSimulada}>
-            <strong>Simular revisão do admin</strong><p>Experimenta como o TP vê a casa depois da decisão.</p>
-            <label>Motivo da recusa ou nota<textarea rows={2} maxLength={1000} value={motivoSimulado} onChange={e => setMotivoSimulado(e.target.value)} placeholder="Por exemplo: a referência da reserva não está visível"/></label>
-            <div><button type="button" disabled={reserva.estado === "aprovada"} onClick={() => simularRevisao("aprovada")}>Simular aprovação</button><button type="button" disabled={reserva.estado === "recusada"} onClick={() => simularRevisao("recusada")}>Simular recusa</button></div>
+            <strong>Revisão no painel admin</strong><p>Abre o comprovativo no admin, aprova ou recusa e regressa a esta janela para veres o resultado.</p>
+            <a href="/admin/blackfriday?modo=simulacao" target="_blank" rel="noreferrer">Rever comprovativo no admin ↗</a>
           </div>}
           {(!reserva || reserva.estado === "recusada") && (aberto ? <form key={casa} onSubmit={enviar} className={css.formulario}>
             <p>Escolhe esta casa para a tua reserva e envia o comprovativo. Cada reserva só pode ser utilizada uma vez.</p>
