@@ -8,6 +8,27 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+Por indicação do utilizador, o separador BLACKFRIDAY da nova área apresenta
+um bingo 5×5 inspirado em `docs/bingo.jpeg`, com gradiente escuro e progresso
+privado por TP. Está em preparação apenas na conta de teste definida em
+`src/lib/demo.ts`, incluindo a API. O desafio começa a 13/11/2026 e termina
+a 13/12/2026, inclusive, no horário de Lisboa; as datas e o avião central
+(por agora casa livre, com opção de exigir reserva de 5.000 €) podem ser
+ajustados no admin antes da primeira participação. Cada reserva preenche
+uma única casa escolhida pelo TP, com referência, data, valor e comprovativo.
+Uma única reserva de pelo menos 5.000 € pode preencher qualquer casa como
+curinga e não pode voltar a ser usada noutra casa. O envio conta imediatamente
+como pendente; a recusa retira-o do progresso e permite novo envio. O admin
+revê os comprovativos em `/admin/blackfriday`, com motivo e histórico.
+Só a primeira linha horizontal por TP dá prémio (a anunciar). O bingo e
+os prémios exigem validação; a ordem usa a hora de envio do último comprovativo
+necessário, preservada na revisão. A meta de 3.000.000 € usa a faturação geral
+da equipa, recolhida no período escolhido ao atualizar os dados do dashboard,
+sem somar os comprovativos do bingo. Até confirmação, o período é o do desafio;
+o admin permite escolher o acumulado anual. Se a meta for atingida, todos os
+TPs com bingo válido recebem os bilhetes de todos os eventos anuais; caso
+contrário, apenas o primeiro bingo válido. Não envia comunicações.
+
 ## Alterações na área de consultor
 
 Por indicação do utilizador, a nova área inclui “Assistente da equipa” em

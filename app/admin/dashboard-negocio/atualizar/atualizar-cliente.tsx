@@ -206,7 +206,7 @@ export function AtualizarCliente() {
         ["Equipa", () => paginas("equipa", `${API}/team/affiliates`, 100)],
         ...plano.periodos.flatMap(p => [
           [`Equipa ${p.chave}`, () => paginas(`equipa-${p.chave}`, `${API}/team/affiliates?startDate=${p.inicio}&endDate=${p.fim}`, 100)],
-          ...(p.chave.startsWith("ano-") ? [] : [
+          ...(p.chave.startsWith("ano-") || p.chave.startsWith("blackfriday-") ? [] : [
             [`Movimentos ${p.chave}`, () => paginas(`movimentos-${p.chave}`, `${API}/account/movements?startDate=${p.inicio}&endDate=${p.fim}`, 1000)],
           ]),
         ] as [string, () => Promise<unknown>][]),

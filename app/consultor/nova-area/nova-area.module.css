@@ -200,3 +200,4 @@
   .valores > span { padding: 0 2px; }
 }
 @media (prefers-reduced-motion: reduce) { .barra > span, .passo { transition: none; } }
+.navBlackFriday{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:15px 18px;border:1px solid #454a35;border-radius:13px;background:linear-gradient(115deg,#10110f,#34392a);color:#f5f6ee;font:inherit;font-size:12px;font-weight:800;letter-spacing:1.4px;text-align:left;cursor:pointer;box-sizing:border-box}.navBlackFriday span{color:#c6d49a;font-size:20px}.navBlackFriday:hover,.navBlackFriday[aria-current=page]{border-color:#a6b57b;background:linear-gradient(115deg,#151810,#4b5320)}.navBlackFriday:focus-visible{outline:3px solid #4b5320;outline-offset:3px}

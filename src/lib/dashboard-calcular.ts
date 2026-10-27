@@ -2,6 +2,8 @@ import { ehContaPropria, gravarConfig, lerConfig } from "./dashboard-negocio";
 import { lerBruto, type Periodo } from "./dashboard-sincronizar";
 import { calcularAno, juntarAnos, type AnoReservas, type ArvoreReservas, type DadosReservasMedias } from "./reservas-medias";
 import { importarLinhasEquipa, type LinhaEquipa } from "./equipa-import";
+import { CAMPANHA_BF, periodoBF, type FaturacaoBF } from "./blackfriday";
+import { CHAVE_FATURACAO_BF, configuracaoBF } from "./blackfriday-servidor";
 import type { DadosCoreRank } from "../../app/admin/dashboard-negocio/core-rank-cliente";
 import type { DadosIncentivos } from "../../app/admin/dashboard-negocio/incentivos-cliente";
 import type { DadosLinhaDireta } from "../../app/admin/dashboard-negocio/linha-direta-cliente";
@@ -333,6 +335,22 @@ export async function calcularDashboard(gravar: boolean): Promise<Resultado> {
     }));
   resumo.equipa = linhasEquipa.length;
 
+  // Black Friday usa o total geral da equipa devolvido pelo MyOffice no
+  // período próprio. Não soma comprovativos nem faturação pessoal dos TPs.
+  const configBF = await configuracaoBF();
+  const intervaloBF = periodoBF(configBF, hoje);
+  const pedidoBF = plano.periodos.find(p => p.chave === `blackfriday-${CAMPANHA_BF}`);
+  const totalBF = totais(bruto, `equipa-blackfriday-${CAMPANHA_BF}`);
+  const falhasRecolha = bruto["falhas"]?.corpo;
+  const falhouBF = Array.isArray(falhasRecolha) && falhasRecolha.some(f => typeof f === "string" && f.startsWith(`Equipa blackfriday-${CAMPANHA_BF}:`));
+  let novaFaturacaoBF: FaturacaoBF | null = null;
+  if (pedidoBF && !falhouBF && pedidoBF.inicio === intervaloBF.inicio && pedidoBF.fim === intervaloBF.fim
+    && totalBF && Number.isFinite(totalBF.sales) && totalBF.sales >= 0) {
+    novaFaturacaoBF = {valor: r2(totalBF.sales), atualizadoEm: new Date().toISOString(),
+      inicio: pedidoBF.inicio, fim: pedidoBF.fim, periodo: configBF.periodoFaturacao};
+    resumo.blackfriday = novaFaturacaoBF;
+  } else if (pedidoBF) avisos.push("Black Friday: não foi possível atualizar o total. Mantém-se o último valor confirmado; volta a atualizar os dados.");
+
   if (gravar) {
     const gravacoes: [string, unknown, unknown][] = [
       ["mapas", mapas, novoMapas],
@@ -347,6 +365,7 @@ export async function calcularDashboard(gravar: boolean): Promise<Resultado> {
       await gravarConfig(chave, depois);
     }
     if (equipaCompleta && linhasEquipa.length) await importarLinhasEquipa(linhasEquipa);
+    if (novaFaturacaoBF) await gravarConfig(CHAVE_FATURACAO_BF, novaFaturacaoBF);
   }
 
   return { hoje, avisos, resumo, gravado: gravar };

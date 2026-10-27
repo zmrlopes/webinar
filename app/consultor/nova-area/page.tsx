@@ -16,6 +16,7 @@ import { LeadsNovaArea } from "./leads";
 import { ProximasFormacoes, FormacoesGravadas, DocumentosNovaArea } from "./formacao";
 import { CalendarioConsultor } from "./calendario";
 import { CalendarioCriativo } from "./calendario-criativo";
+import { BlackFriday } from "./blackfriday";
 import { EventosPresenciais } from "./eventos";
 import { InicioNovaArea } from "./inicio";
 import { TestemunhosNovaArea } from "./testemunhos";
@@ -52,7 +53,7 @@ export default function NovaAreaConsultor() {
   const [aInscrever, setAInscrever] = useState(false);
   const [erroSessao, setErroSessao] = useState("");
   const [inscrito, setInscrito] = useState(false);
-  const [seccao, setSeccao] = useState<"inicio" | "comeca-aqui" | "calendario" | "calendario-criativo" | "leads" | "mentor-checklist" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "testemunhos" | "assistente" | "documentos" | "eventos-presenciais" | "calculadoras" | "core-rank" | "reservas" | "travel-planner" | "propostas">("inicio");
+  const [seccao, setSeccao] = useState<"inicio" | "comeca-aqui" | "calendario" | "blackfriday" | "calendario-criativo" | "leads" | "mentor-checklist" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "testemunhos" | "assistente" | "documentos" | "eventos-presenciais" | "calculadoras" | "core-rank" | "reservas" | "travel-planner" | "propostas">("inicio");
   const [assistenteAberto, setAssistenteAberto] = useState(false);
   const [reservasAberto, setReservasAberto] = useState(false);
   const [coreAberto, setCoreAberto] = useState(false);
@@ -269,6 +270,9 @@ export default function NovaAreaConsultor() {
               <div className={estilos.grupoMenu}>
                 <button type="button" className={seccao === "calendario" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calendario")} aria-current={seccao === "calendario" ? "page" : undefined} aria-controls="conteudo-nova-area">Calendário <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" strokeWidth="1.6" /><path d="M7 3v4m10-4v4M3 11h18" stroke="currentColor" strokeWidth="1.6" /></svg></button>
               </div>
+              <div className={estilos.grupoMenu}>
+                <button type="button" className={estilos.navBlackFriday} onClick={() => abrirSeccao("blackfriday")} aria-current={seccao === "blackfriday" ? "page" : undefined} aria-controls="conteudo-nova-area">BLACKFRIDAY <span aria-hidden="true">✦</span></button>
+              </div>
               <GrupoMenu titulo="A minha organização" ativo={seccao === "assistente" || seccao === "leads" || seccao === "proximo-webinar" || seccao === "testemunhos" || seccao === "mentor-checklist"}>
                 <button type="button" className={seccao === "mentor-checklist" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("mentor-checklist")} aria-current={seccao === "mentor-checklist" ? "page" : undefined} aria-controls="conteudo-nova-area">Tenho um novo TP, e agora?</button>
                 <button type="button" className={seccao === "assistente" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("assistente")} aria-current={seccao === "assistente" ? "page" : undefined} aria-controls="conteudo-nova-area">Assistente da equipa <span>IA</span></button>
@@ -313,6 +317,7 @@ export default function NovaAreaConsultor() {
             {seccao === "leads" && <LeadsNovaArea linkPartilha={dados.linkPartilha} />}
             {seccao === "calendario" && <CalendarioConsultor email={email} nome={dados.nome} />}
             {seccao === "calendario-criativo" && <CalendarioCriativo email={email} />}
+            {seccao === "blackfriday" && <BlackFriday email={email} />}
             {seccao === "calculadoras" && <CalculadorasNovaArea />}
             {reservasAberto && <div hidden={seccao !== "reservas"}><ReservasNovaArea email={email} /></div>}
             {seccao === "travel-planner" && <TravelPlannerNovaArea email={email} />}

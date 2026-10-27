@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { calcularDashboard } from "@/lib/dashboard-calcular";
 import { gravarConfig, lerConfig } from "@/lib/dashboard-negocio";
+import { CAMPANHA_BF, periodoBF } from "@/lib/blackfriday";
+import { configuracaoBF } from "@/lib/blackfriday-servidor";
 import {
   guardarBruto,
   hojeLisboa,
@@ -36,7 +38,10 @@ async function plano(): Promise<{ hoje: string; periodos: Periodo[]; anosReserva
   const primeiroMes = (mapas?.ytd_through_idx ?? Number(hoje.slice(5, 7)) - 1) + 1;
   const reservas = await lerConfig<DadosReservasMedias>("reservas_medias");
   const anosReservas = anosReservasAPedir(reservas, Number(hoje.slice(0, 4)));
-  return { hoje, periodos: periodosAPedir(hoje, primeiroMes), anosReservas };
+  const periodos = periodosAPedir(hoje, primeiroMes);
+  const bf = periodoBF(await configuracaoBF(), hoje);
+  if (bf.fim >= bf.inicio) periodos.push({chave: `blackfriday-${CAMPANHA_BF}`, ...bf});
+  return { hoje, periodos, anosReservas };
 }
 
 export async function GET(request: Request): Promise<Response> {
