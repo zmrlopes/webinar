@@ -45,6 +45,16 @@ as aprovadas mantêm o visto. É uma exceção às cores da marca limitada ao bi
 A interface de consultor e admin, as regras e os erros usam a palavra “joker”
 para a reserva de pelo menos 5.000 €. Os registos existentes mantêm-se.
 
+Por indicação do utilizador, as seis cores das casas do BLACKFRIDAY mantêm
+um acabamento sofisticado, com tons profundos, reflexos suaves, contornos
+luminosos e pequenos detalhes dourados. Completar uma nova linha horizontal
+mostra uma animação breve de parabéns, um reflexo nas casas e partículas
+discretas, respeitando a preferência de movimento reduzido e sem som.
+Não repete para linhas já existentes na leitura inicial, nas atualizações
+ou na aprovação da mesma linha durante a visita. Distingue a conquista do
+prémio sujeito a validação. A simulação permite pré-visualizar a animação
+sem preencher ou gravar casas. Mantém-se exclusivo da conta de teste.
+
 ## Alterações na área de consultor
 
 Por indicação do utilizador, a nova área inclui “Assistente da equipa” em

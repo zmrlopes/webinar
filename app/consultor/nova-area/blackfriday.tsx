@@ -1,8 +1,9 @@
 "use client";
-import {useEffect, useRef, useState, type FormEvent} from "react";
+import {useEffect, useRef, useState, type CSSProperties, type FormEvent} from "react";
 import {CASAS_BF, META_BF, resumirBF, type DadosBF, type InscricaoBF} from "@/lib/blackfriday";
 import {criarReservaSimuladaBF} from "@/lib/blackfriday-simulacao";
 import {podeVerNovaArea} from "@/lib/consultor-nova-area";
+import {detetarNovasLinhasBF, type MemoriaLinhasBF} from "@/lib/blackfriday-celebracao";
 import css from "./blackfriday.module.css";
 
 const euros = (v: number) => new Intl.NumberFormat("pt-PT", {style: "currency", currency: "EUR", maximumFractionDigits: 0}).format(v);
@@ -19,6 +20,17 @@ export function BarraBlackFriday({dados}: {dados: DadosBF}) {
   </div>;
 }
 function Aviao() {return <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4L22 2Z" strokeLinejoin="round"/><path d="m11 13 6-6" strokeLinecap="round"/></svg>;}
+type CelebracaoBF = {id: number; linhas: number[]; emValidacao: boolean; previsualizacao?: boolean};
+function ParabensLinha({conquista}: {conquista: CelebracaoBF}) {
+  return <div className={css.celebracao} role="status" aria-live="polite" aria-atomic="true">
+    <div className={css.confetes} aria-hidden="true">{Array.from({length: 16}, (_, n) => <i key={n} style={{"--bf-angulo": `${n * 22.5}deg`, "--bf-distancia": `${70 + n % 4 * 20}px`, "--bf-atraso": `${n % 5 * 35}ms`} as CSSProperties}/>)}</div>
+    <div className={css.conquista}>
+      <span className={css.medalha} aria-hidden="true"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z" strokeLinejoin="round"/></svg></span>
+      <span className={css.conquistaEtiqueta}>UMA NOVA CONQUISTA</span><h3>Parabéns!<br/>Linha completa.</h3><p>Mais um passo até ao bingo.</p>
+      <small>{conquista.previsualizacao ? "Pré-visualização · o cartão não é alterado" : conquista.emValidacao ? "O prémio fica sujeito à validação dos comprovativos." : "A tua linha está validada. Continua assim!"}</small>
+    </div>
+  </div>;
+}
 
 export function BlackFriday({email}: {email: string}) {
   const [dadosReais, setDadosReais] = useState<DadosBF | null>(null);
@@ -33,6 +45,10 @@ export function BlackFriday({email}: {email: string}) {
   const [aGuardar, setAGuardar] = useState(false);
   const [joker, setJoker] = useState(false);
   const [aviso, setAviso] = useState("");
+  const [celebracao, setCelebracao] = useState<CelebracaoBF | null>(null);
+  const linhasCelebradas = useRef<MemoriaLinhasBF | null>(null);
+  const numeroCelebracao = useRef(0);
+  const cartaoBingo = useRef<HTMLDivElement>(null);
   const dialogo = useRef<HTMLDialogElement>(null);
   const botaoCasa = useRef<HTMLButtonElement | null>(null);
   async function carregar(signal?: AbortSignal) {
@@ -62,8 +78,13 @@ export function BlackFriday({email}: {email: string}) {
     for (const url of comprovativosSimulados.current.values()) URL.revokeObjectURL(url);
     comprovativosSimulados.current.clear(); setReservasSimuladas([]);
     setSimulacao(!simulacao); setAviso(""); setErro("");
+    setCelebracao(null);
   }
   function fechar() {if (aGuardar) return; dialogo.current?.close(); setCasa(null); botaoCasa.current?.focus();}
+  function previsualizarAnimacao() {
+    cartaoBingo.current?.scrollIntoView({block: "center", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth"});
+    setCelebracao({id: ++numeroCelebracao.current, linhas: [], emValidacao: false, previsualizacao: true});
+  }
   function abrir(n: number, botao: HTMLButtonElement) {
     botaoCasa.current = botao; setCasa(n); setJoker(n === 12); setErro(""); setMotivoSimulado("");
     dialogo.current?.showModal();
@@ -116,6 +137,24 @@ export function BlackFriday({email}: {email: string}) {
   }
   const resumo = dados ? resumirBF(dados.inscricoes, dados.config) : null;
   const confirmado = dados ? resumirBF(dados.inscricoes, dados.config, true) : null;
+  const chaveLinhas = resumo ? resumo.linhas.join(",") : null;
+  const chaveValidadas = confirmado ? confirmado.linhas.join(",") : "";
+  useEffect(() => {
+    if (chaveLinhas === null) return;
+    const contexto = `${email}:${simulacao ? "simulacao" : "real"}`;
+    const atuais = chaveLinhas ? chaveLinhas.split(",").map(Number) : [];
+    setCelebracao(ativa => ativa && !ativa.previsualizacao && ativa.linhas.some(l => !atuais.includes(l)) ? null : ativa);
+    const resultado = detetarNovasLinhasBF(linhasCelebradas.current, contexto, atuais);
+    linhasCelebradas.current = resultado.memoria;
+    if (!resultado.novas.length) return;
+    const validadas = chaveValidadas ? chaveValidadas.split(",").map(Number) : [];
+    setCelebracao({id: ++numeroCelebracao.current, linhas: resultado.novas, emValidacao: resultado.novas.some(l => !validadas.includes(l))});
+  }, [chaveLinhas, chaveValidadas, email, simulacao]);
+  useEffect(() => {
+    if (!celebracao) return;
+    const temporizador = setTimeout(() => setCelebracao(null), 4_800);
+    return () => clearTimeout(temporizador);
+  }, [celebracao]);
   const aberto = dados && dados.hoje >= dados.config.inicio && dados.hoje <= dados.config.fim;
   const reserva = casa !== null ? dados?.inscricoes.filter(i => i.casa === casa).at(-1) : null;
   const livre = casa === 12 && dados?.config.centro === "livre";
@@ -134,19 +173,20 @@ export function BlackFriday({email}: {email: string}) {
     {aviso && <p role="status" className={css.aviso}>{aviso}</p>}
     {dadosReais && podeVerNovaArea(email) && <div className={css.simulacao}>
       <div><strong>{simulacao ? "SIMULAÇÃO ATIVA" : "Experimenta o envio de um comprovativo"}</strong><p>{simulacao ? "Escolhe uma casa e anexa um print. Depois clica novamente para simular a revisão do admin. Esta demonstração desaparece ao sair e não conta para o desafio." : "Podes testar agora, antes do arranque, e ver uma casa pendente, aprovada ou recusada."}</p></div>
-      <button type="button" disabled={aGuardar} onClick={alternarSimulacao}>{simulacao ? "Sair da simulação" : "Experimentar simulação"}</button>
+      <div className={css.acoesSimulacao}>{simulacao && <button type="button" onClick={previsualizarAnimacao}>Ver animação de linha</button>}<button type="button" disabled={aGuardar} onClick={alternarSimulacao}>{simulacao ? "Sair da simulação" : "Experimentar simulação"}</button></div>
     </div>}
     {dados && resumo && confirmado && <>
       <BarraBlackFriday dados={dados}/>
       <div className={css.layout}>
-        <div className={css.cartao}>
+        <div className={css.cartao} ref={cartaoBingo}>
+          {celebracao && <ParabensLinha key={celebracao.id} conquista={celebracao}/>}
           <div className={css.cartaoTopo}><div><span className={css.selo}>{simulacao ? "CARTÃO DE SIMULAÇÃO" : "O TEU CARTÃO"}</span><h2>Próxima paragem: bingo.</h2></div><span className={css.contador}>{resumo.casas}<small>/25</small></span></div>
           <div className={css.letras} aria-hidden="true">{"BINGO".split("").map(l => <span key={l}>{l}</span>)}</div>
           <div className={css.grelha}>
             {CASAS_BF.map((titulo, n) => {
               const i = dados.inscricoes.filter(r => r.casa === n).at(-1);
               const e = n === 12 && dados.config.centro === "livre" ? "livre" : i?.estado ?? "vazia";
-              return <button key={n} type="button" className={css.casa} data-estado={e} data-cor={n % 6} data-linha={resumo.linhas.includes(Math.floor(n / 5))} aria-label={`${titulo}: ${e === "vazia" ? "por preencher" : e === "livre" ? "casa livre" : e}. Ver detalhes.`} onClick={ev => abrir(n, ev.currentTarget)}>
+              return <button key={n} type="button" className={css.casa} data-estado={e} data-cor={n % 6} data-linha={resumo.linhas.includes(Math.floor(n / 5))} data-celebrar={celebracao?.linhas.includes(Math.floor(n / 5)) ?? false} aria-label={`${titulo}: ${e === "vazia" ? "por preencher" : e === "livre" ? "casa livre" : e}. Ver detalhes.`} onClick={ev => abrir(n, ev.currentTarget)}>
                 {e === "aprovada" && <span className={css.check} aria-hidden="true">✓</span>}
                 {n === 12 ? <Aviao/> : <span className={css.destino}>{titulo}</span>}
                 <small>{e === "livre" ? "Casa livre" : e === "pendente" ? "◷ Em validação" : e === "aprovada" ? "Validada" : e === "recusada" ? "Rever envio" : n === 12 ? "Reserva ≥ 5.000 €" : "+ Reserva"}</small>

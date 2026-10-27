@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import {CASAS_BF, CONFIG_BF, hojeBF, periodoBF, referenciaBF, resumirBF, validarReservaBF, type InscricaoBF} from "../src/lib/blackfriday";
 import {criarReservaSimuladaBF} from "../src/lib/blackfriday-simulacao";
+import {detetarNovasLinhasBF} from "../src/lib/blackfriday-celebracao";
 
 const config = {...CONFIG_BF};
 const reserva = {casa: "0", referencia: "AB-123", valor: "2500.50", dataReserva: "2026-11-13", curinga: false};
@@ -52,6 +53,18 @@ assert.equal(criarReservaSimuladaBF(reserva, config, config.inicio, [], {...fich
 assert.equal(resumirBF([{...envioSim, estado: "recusada"}], config).casas, 1);
 assert.equal(resumirBF([{...envioSim, estado: "aprovada"}], config, true).casas, 2);
 console.log("OK: simulação isolada, ficheiros PNG/PDF, limite de tamanho, duplicação, progresso pendente, aprovação e recusa sem alterar registos reais.");
+
+const carregamentoLinhas = detetarNovasLinhasBF(null, "real", [0]);
+assert.deepEqual(carregamentoLinhas.novas, [], "Não festeja linhas que já existiam ao entrar.");
+const novaLinha = detetarNovasLinhasBF(carregamentoLinhas.memoria, "real", [0, 2]);
+assert.deepEqual(novaLinha.novas, [2]);
+assert.deepEqual(detetarNovasLinhasBF(novaLinha.memoria, "real", [0, 2]).novas, [], "Atualizar ou aprovar a mesma linha não repete a animação.");
+const linhaRecusada = detetarNovasLinhasBF(novaLinha.memoria, "real", [0]);
+assert.deepEqual(detetarNovasLinhasBF(linhaRecusada.memoria, "real", [0, 2]).novas, [], "Reenviar a mesma linha não repete a conquista nesta visita.");
+const inicioSimulacao = detetarNovasLinhasBF(novaLinha.memoria, "simulacao", []);
+assert.deepEqual(detetarNovasLinhasBF(inicioSimulacao.memoria, "simulacao", [0]).novas, [0]);
+assert.deepEqual(detetarNovasLinhasBF(inicioSimulacao.memoria, "real", [0, 2]).novas, [], "Sair da simulação recupera a base real sem festejos falsos.");
+console.log("OK: animação só para novas linhas, sem repetir na leitura inicial, aprovação, atualização ou passagem entre cartões real e simulado.");
 
 if (process.argv.includes("--db")) {
   const {loadEnvConfig} = await import("@next/env");
