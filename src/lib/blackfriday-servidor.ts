@@ -17,7 +17,8 @@ function verificarSimulacao(email: string | undefined, simulacao: boolean) {
 }
 export async function configuracaoBF(cliente: Pool | PoolClient = db()): Promise<ConfiguracaoBF> {
   const {rows} = await cliente.query<{valor: Partial<ConfiguracaoBF>}>("select valor from dashboard_config where chave = $1", [PREFIXO + "config"]);
-  return {...CONFIG_BF, ...rows[0]?.valor};
+  // Aplica também a regra atual a configurações guardadas com o antigo centro livre.
+  return {...CONFIG_BF, ...rows[0]?.valor, centro: "reserva5k"};
 }
 export async function listarReservasBF(email?: string, simulacao = false): Promise<InscricaoBF[]> {
   verificarSimulacao(email, simulacao);
@@ -39,7 +40,7 @@ export async function dadosBF(email?: string, simulacao = false): Promise<DadosB
 export async function guardarConfigBF(corpo: unknown) {
   const c = corpo as ConfiguracaoBF | null;
   if (!c || !dataValidaBF(c.inicio) || !dataValidaBF(c.fim) || c.fim < c.inicio
-    || !["livre", "reserva5k"].includes(c.centro) || !["desafio", "anual"].includes(c.periodoFaturacao)
+    || c.centro !== "reserva5k" || !["desafio", "anual"].includes(c.periodoFaturacao)
     || typeof c.premioLinha !== "string" || !c.premioLinha.trim() || c.premioLinha.length > 400
     || typeof c.premioBingo !== "string" || !c.premioBingo.trim() || c.premioBingo.length > 400) throw new ErroBF("Revê as datas e os prémios do desafio.");
   const config: ConfiguracaoBF = {inicio: c.inicio, fim: c.fim, centro: c.centro, periodoFaturacao: c.periodoFaturacao,

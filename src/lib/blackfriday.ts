@@ -13,7 +13,7 @@ export interface ConfiguracaoBF {
   premioLinha: string; premioBingo: string;
 }
 export const CONFIG_BF: ConfiguracaoBF = {
-  inicio: "2026-11-13", fim: "2026-12-13", centro: "livre", periodoFaturacao: "desafio",
+  inicio: "2026-11-13", fim: "2026-12-13", centro: "reserva5k", periodoFaturacao: "desafio",
   premioLinha: "A anunciar", premioBingo: "Bilhetes pagos para todos os eventos anuais",
 };
 export interface InscricaoBF {
@@ -48,7 +48,7 @@ export function resumirBF(inscricoes: InscricaoBF[], config: ConfiguracaoBF, ape
   // Uma nova tentativa recusada nunca elimina uma reserva aprovada.
   const validas = inscricoes.filter(i => apenasAprovadas ? i.estado === "aprovada" : i.estado !== "recusada");
   const casas = new Set(validas.map(i => i.casa));
-  if (config.centro === "livre") casas.add(12);
+  // O avião central também exige comprovativo; configurações antigas não dão casas gratuitas.
   const linhas = Array.from({length: 5}, (_, linha) => linha).filter(l =>
     Array.from({length: 5}, (_, col) => l * 5 + col).every(c => casas.has(c)));
   const bingo = casas.size === 25;
@@ -60,7 +60,7 @@ export function referenciaBF(valor: string): string {
 }
 export function validarReservaBF(corpo: Record<string, unknown>, config: ConfiguracaoBF, hoje: string) {
   const casa = Number(corpo.casa);
-  if (!Number.isInteger(casa) || casa < 0 || casa >= CASAS_BF.length || (casa === 12 && config.centro === "livre")) throw new Error("Escolhe uma casa disponível.");
+  if (!Number.isInteger(casa) || casa < 0 || casa >= CASAS_BF.length) throw new Error("Escolhe uma casa disponível.");
   if (hoje < config.inicio || hoje > config.fim) throw new Error("O envio de reservas está disponível entre o início e o fim do desafio.");
   const referencia = typeof corpo.referencia === "string" ? referenciaBF(corpo.referencia) : "";
   if (!/^[\p{L}\p{N}/]{3,80}$/u.test(referencia)) throw new Error("Indica a referência da reserva (3 a 80 letras ou números).");

@@ -141,7 +141,6 @@ export function BlackFriday({email}: {email: string}) {
   }, [celebracao]);
   const aberto = dados && dados.hoje >= dados.config.inicio && dados.hoje <= dados.config.fim;
   const reserva = casa !== null ? dados?.inscricoes.filter(i => i.casa === casa).at(-1) : null;
-  const livre = casa === 12 && dados?.config.centro === "livre";
   return <section className={css.pagina} aria-label="Desafio Black Friday">
     <header className={css.cabecalho}><span className={css.selo}>TROPA DE ELITE · DESAFIO {dados?.config.inicio.slice(0, 4) ?? "2026"}</span><h1>BLACK<span>FRIDAY</span></h1><p>Cada reserva, uma conquista.<br/>A próxima casa pode ser tua.</p><div className={css.datas}>{dados ? `${data(dados.config.inicio)} — ${data(dados.config.fim)}` : "A preparar o desafio…"}</div></header>
     {erro && casa === null && <p role="alert" className={css.erro}>{erro} <button type="button" onClick={() => void carregar()}>Tentar novamente</button></p>}
@@ -160,11 +159,11 @@ export function BlackFriday({email}: {email: string}) {
           <div className={css.grelha}>
             {CASAS_BF.map((titulo, n) => {
               const i = dados.inscricoes.filter(r => r.casa === n).at(-1);
-              const e = n === 12 && dados.config.centro === "livre" ? "livre" : i?.estado ?? "vazia";
-              return <button key={n} type="button" className={css.casa} data-estado={e} data-cor={n % 6} data-linha={resumo.linhas.includes(Math.floor(n / 5))} data-celebrar={celebracao?.linhas.includes(Math.floor(n / 5)) ?? false} aria-label={`${titulo}: ${e === "vazia" ? "por preencher" : e === "livre" ? "casa livre" : e}. Ver detalhes.`} onClick={ev => abrir(n, ev.currentTarget)}>
+              const e = i?.estado ?? "vazia";
+              return <button key={n} type="button" className={css.casa} data-estado={e} data-cor={n % 6} data-linha={resumo.linhas.includes(Math.floor(n / 5))} data-celebrar={celebracao?.linhas.includes(Math.floor(n / 5)) ?? false} aria-label={`${titulo}: ${e === "vazia" ? "por preencher" : e}. Ver detalhes.`} onClick={ev => abrir(n, ev.currentTarget)}>
                 {e === "aprovada" && <span className={css.check} aria-hidden="true">✓</span>}
                 {n === 12 ? <Aviao/> : <span className={css.destino}>{titulo}</span>}
-                <small>{e === "livre" ? "Casa livre" : e === "pendente" ? "◷ Em validação" : e === "aprovada" ? "Validada" : e === "recusada" ? "Rever envio" : n === 12 ? "Reserva ≥ 5.000 €" : "+ Reserva"}</small>
+                <small>{e === "pendente" ? "◷ Em validação" : e === "aprovada" ? "Validada" : e === "recusada" ? "Rever envio" : n === 12 ? "Reserva ≥ 5.000 €" : "+ Reserva"}</small>
                 {i?.curinga && e !== "recusada" && <span className={css.joker}>5K</span>}
               </button>;
             })}
@@ -183,7 +182,7 @@ export function BlackFriday({email}: {email: string}) {
     </>}
     <dialog ref={dialogo} className={css.dialogo} aria-labelledby="bf-casa-titulo" onCancel={e => {e.preventDefault(); fechar();}} onClose={() => {setCasa(null); botaoCasa.current?.focus();}}>
       {casa !== null && dados && <div><button type="button" className={css.fechar} aria-label="Fechar" disabled={aGuardar} onClick={fechar}>×</button><span className={css.selo}>{simulacao && "SIMULAÇÃO · "}CASA {casa + 1} / 25</span><h2 id="bf-casa-titulo">{CASAS_BF[casa]}</h2>
-        {livre ? <p>O avião é uma casa livre neste cartão.</p> : <>
+        <>
           {reserva && <div className={css.detalhe}><strong>{reserva.estado === "pendente" ? "Em validação · já conta no cartão" : reserva.estado === "aprovada" ? "Reserva validada" : "Comprovativo recusado"}</strong><p>{reserva.referencia} · {euros(reserva.valorCentimos / 100)} · {data(reserva.dataReserva)}{reserva.curinga && " · Joker 5K"}</p>{reserva.motivo && <p>Motivo: {reserva.motivo}</p>}<button type="button" onClick={() => void verComprovativo(reserva)}>Ver comprovativo</button></div>}
           {simulacao && reserva && <div className={css.revisaoSimulada}>
             <strong>Revisão no painel admin</strong><p>Abre o comprovativo no admin, aprova ou recusa e regressa a esta janela para veres o resultado.</p>
@@ -197,7 +196,7 @@ export function BlackFriday({email}: {email: string}) {
             <label>Print ou comprovativo<input name="ficheiro" type="file" required accept="image/png,image/jpeg,image/webp,application/pdf" onChange={e => {if (e.target.files?.[0] && e.target.files[0].size > 3 * 1024 * 1024) e.target.setCustomValidity("Escolhe um ficheiro até 3 MB."); else e.target.setCustomValidity("");}}/><small>PNG, JPG, WebP ou PDF · Até 3 MB</small></label>
             <button type="submit" className={css.botao} disabled={aGuardar}>{aGuardar ? "A preparar…" : simulacao ? "Simular envio e assinalar casa" : "Enviar e assinalar casa"}</button>
           </form> : <p>O envio está disponível de {data(dados.config.inicio)} a {data(dados.config.fim)}.</p>)}
-        </>}{erro && <p className={css.erro} role="alert">{erro}</p>}</div>}
+        </>{erro && <p className={css.erro} role="alert">{erro}</p>}</div>}
     </dialog>
   </section>;
 }

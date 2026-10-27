@@ -15,8 +15,9 @@ assert.throws(() => validarReservaBF(reserva, config, "2026-12-14"), /início e 
 assert.throws(() => validarReservaBF({...reserva, dataReserva: "2026-11-12"}, config, "2026-11-13"), /data da reserva/);
 assert.throws(() => validarReservaBF({...reserva, dataReserva: "2026-11-14"}, config, "2026-11-13"), /data da reserva/);
 assert.throws(() => validarReservaBF({...reserva, curinga: true, valor: "4999.99"}, config, "2026-11-13"), /5.000/);
-assert.throws(() => validarReservaBF({...reserva, casa: "12", valor: "5000"}, config, "2026-11-13"), /casa disponível/);
-assert.throws(() => validarReservaBF({...reserva, casa: "12", valor: "4999"}, {...config, centro: "reserva5k"}, "2026-11-13"), /5.000/);
+assert.equal(config.centro, "reserva5k");
+assert.equal(validarReservaBF({...reserva, casa: "12", valor: "5000"}, config, "2026-11-13").curinga, true);
+assert.throws(() => validarReservaBF({...reserva, casa: "12", valor: "4999"}, config, "2026-11-13"), /5.000/);
 assert.equal(validarReservaBF({...reserva, casa: "12", valor: "5000"}, {...config, centro: "reserva5k"}, "2026-11-13").curinga, true);
 assert.equal(referenciaBF(" ab-12.3 _ "), "AB123");
 const claim = (casa: number, estado: InscricaoBF["estado"] = "pendente"): InscricaoBF => ({
@@ -24,17 +25,21 @@ const claim = (casa: number, estado: InscricaoBF["estado"] = "pendente"): Inscri
   dataReserva: "2026-11-13", curinga: false, enviadoEm: `2026-11-13T12:${String(casa).padStart(2, "0")}:00Z`,
   ficheiroNome: "reserva.png", ficheiroTipo: "image/png", hash: String(casa), revisoes: [],
 });
-assert.equal(resumirBF([], config).casas, 1);
+assert.equal(resumirBF([], config).casas, 0);
+assert.equal(resumirBF([], {...config, centro: "livre"}).casas, 0, "Configurações antigas não marcam o avião automaticamente.");
+assert.deepEqual(resumirBF([10, 11, 13, 14].map(c => claim(c)), config).linhas, [], "A linha central exige o comprovativo do avião.");
 assert.deepEqual(resumirBF([0, 5, 10, 15, 20].map(c => claim(c)), config).linhas, []);
 assert.deepEqual(resumirBF([0, 6, 18, 24].map(c => claim(c)), config).linhas, []);
 assert.deepEqual(resumirBF([0, 1, 2, 3, 4].map(c => claim(c)), config).linhas, [0]);
 assert.deepEqual(resumirBF([0, 1, 2, 3, 4].map(c => claim(c)), config, true).linhas, []);
-const completo = CASAS_BF.flatMap((_, c) => c === 12 ? [] : [claim(c)]);
+const semCentro = CASAS_BF.flatMap((_, c) => c === 12 ? [] : [claim(c)]);
+assert.equal(resumirBF(semCentro, config).bingo, false);
+const completo = CASAS_BF.map((_, c) => claim(c));
 assert.equal(resumirBF(completo, config).bingo, true);
 assert.equal(resumirBF(completo, config, true).bingo, false);
 assert.equal(resumirBF(completo.map(i => ({...i, estado: "aprovada" as const, revistoEm: "2026-12-13T23:00:00Z"})), config, true).bingoEm, "2026-11-13T12:24:00Z");
 assert.equal(resumirBF(completo.map(i => i.casa === 24 ? {...i, estado: "recusada" as const} : i), config).bingo, false);
-assert.equal(resumirBF(completo, {...config, centro: "reserva5k"}).bingo, false);
+assert.equal(resumirBF(completo.map(i => i.casa === 12 ? {...i, estado: "recusada" as const} : i), config).bingo, false);
 assert.deepEqual(periodoBF(config, "2026-11-20"), {inicio: "2026-11-13", fim: "2026-11-20"});
 assert.deepEqual(periodoBF(config, "2026-12-14"), {inicio: "2026-11-13", fim: "2026-12-13"});
 assert.deepEqual(periodoBF({...config, periodoFaturacao: "anual"}, "2026-11-20"), {inicio: "2026-01-01", fim: "2026-11-20"});
@@ -107,6 +112,10 @@ if (process.argv.includes("--db")) {
       };
       assert.equal((await consultor.POST(json("/api/consultor/nova-area/blackfriday", {email: "outra@example.com", acao: "consultar", simulacao: true}))).status, 403);
       assert.equal((await consultor.POST(json("/api/consultor/nova-area/blackfriday", {email: EMAIL_PAINEL_DEMONSTRACAO, acao: "consultar", simulacao: "qualquer"}))).status, 400);
+      await db().query("insert into dashboard_config (chave,valor) values ($1,$2::jsonb)", ["blackfriday:2026:config", JSON.stringify({...CONFIG_BF, centro: "livre"})]);
+      const antigoNormalizado = await (await consultaSim()).json();
+      assert.equal(antigoNormalizado.config.centro, "reserva5k");
+      assert.equal(resumirBF(antigoNormalizado.inscricoes, antigoNormalizado.config).casas, 0);
       const envioSim = await enviarSim(); assert.equal(envioSim.status, 200);
       const corpoSim = await envioSim.json();
       const registoSim = corpoSim.inscricoes[0] as InscricaoBF;
@@ -129,7 +138,7 @@ if (process.argv.includes("--db")) {
       assert.equal((await admin.POST(json("/api/admin/blackfriday", {acao: "rever", id: registoSim.id, estado: "recusada", motivo: "", simulacao: true}))).status, 400);
       assert.equal((await admin.POST(json("/api/admin/blackfriday", {acao: "rever", id: registoSim.id, estado: "recusada", motivo: "Falta referência visível", simulacao: true}))).status, 200);
       const recusadoSim = await (await consultaSim()).json();
-      assert.equal(recusadoSim.inscricoes[0].motivo, "Falta referência visível"); assert.equal(resumirBF(recusadoSim.inscricoes, CONFIG_BF).casas, 1);
+      assert.equal(recusadoSim.inscricoes[0].motivo, "Falta referência visível"); assert.equal(resumirBF(recusadoSim.inscricoes, CONFIG_BF).casas, 0);
       assert.equal((await enviarSim()).status, 200, "Pode reenviar depois de uma recusa.");
       assert.equal((await admin.POST(json("/api/admin/blackfriday", {acao: "configurar", config: {...CONFIG_BF, centro: "reserva5k"}, simulacao: true}))).status, 400);
       assert.deepEqual(await api.configuracaoBF(), CONFIG_BF);
@@ -167,7 +176,7 @@ if (process.argv.includes("--db")) {
       await api.reverReservaBF(primeira.id, "aprovada", "Confirmada");
       assert.equal((await api.dadosBF(email)).inscricoes[0]?.enviadoEm, primeira.enviadoEm);
       await api.reverReservaBF(primeira.id, "recusada", "Reserva não elegível");
-      assert.equal(resumirBF((await api.dadosBF(email)).inscricoes, (await api.configuracaoBF())).casas, 1);
+      assert.equal(resumirBF((await api.dadosBF(email)).inscricoes, (await api.configuracaoBF())).casas, 0);
       const segunda = await api.enviarReservaBF(email, "TP", {...corpo, casa: 1}, await ficheiro("red"));
       await assert.rejects(() => api.reverReservaBF(primeira.id, "aprovada", ""), /outra participação/);
       const concorrentes = await Promise.allSettled(["green", "yellow"].map(async cor => api.enviarReservaBF(email, "TP", {...corpo, casa: 2, referencia: "CONCORRENTE"}, await ficheiro(cor))));

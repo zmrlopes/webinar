@@ -12,9 +12,12 @@ Por indicação do utilizador, o separador BLACKFRIDAY da nova área apresenta
 um bingo 5×5 inspirado em `docs/bingo.jpeg`, com gradiente escuro e progresso
 privado por TP. Está em preparação apenas na conta de teste definida em
 `src/lib/demo.ts`, incluindo a API. O desafio começa a 13/11/2026 e termina
-a 13/12/2026, inclusive, no horário de Lisboa; as datas e o avião central
-(por agora casa livre, com opção de exigir reserva de 5.000 €) podem ser
-ajustados no admin antes da primeira participação. Cada reserva preenche
+a 13/12/2026, inclusive, no horário de Lisboa; as datas podem ser ajustadas
+no admin antes da primeira participação. Por indicação mais recente, o
+avião central começa vazio e exige uma reserva de pelo menos 5.000 € com
+comprovativo. Como as outras casas, exige envio e revisão. Não oferece
+uma marca automática, incluindo em configurações antigas e na simulação.
+A linha central e o bingo exigem também essa reserva. Cada reserva preenche
 uma única casa escolhida pelo TP, com referência, data, valor e comprovativo.
 Uma única reserva de pelo menos 5.000 € pode preencher qualquer casa como
 joker e não pode voltar a ser usada noutra casa. O envio conta imediatamente
