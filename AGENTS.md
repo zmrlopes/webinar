@@ -23,6 +23,13 @@ Uma única reserva de pelo menos 5.000 € pode preencher qualquer casa como
 joker e não pode voltar a ser usada noutra casa. O envio conta imediatamente
 como pendente; a recusa retira-o do progresso e permite novo envio. O admin
 revê os comprovativos em `/admin/blackfriday`, com motivo e histórico.
+Por indicação do utilizador, o admin organiza as reservas por consultor:
+mostra primeiro a lista de nomes, com pesquisa, progresso e quantidades
+por validar. Clicar num nome abre apenas as reservas e comprovativos desse
+consultor, com filtros de estado e pesquisa dentro do seu detalhe, além de
+voltar à lista. Não mostra uma lista conjunta de reservas na entrada.
+A organização é a mesma no desafio real e no modo de simulação, preservando
+aprovações, recusas, ficheiros e atualização automática.
 Só a primeira linha horizontal por TP dá prémio (a anunciar). O bingo e
 os prémios exigem validação; a ordem usa a hora de envio do último comprovativo
 necessário, preservada na revisão. A meta de 3.000.000 € usa a faturação geral

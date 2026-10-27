@@ -18,7 +18,19 @@ export function PainelBlackFriday() {
   const [ocupado, setOcupado] = useState(false);
   const [filtro, setFiltro] = useState("pendente");
   const [pesquisa, setPesquisa] = useState("");
+  const [pesquisaConsultor, setPesquisaConsultor] = useState("");
+  const [consultorSelecionado, setConsultorSelecionado] = useState<string | null>(null);
+  const tituloReservas = useRef<HTMLHeadingElement>(null);
   const [motivos, setMotivos] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!consultorSelecionado) return;
+    tituloReservas.current?.focus({preventScroll: true});
+    tituloReservas.current?.scrollIntoView({block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth"});
+  }, [consultorSelecionado]);
+  function abrirReservas(email: string) {
+    setConsultorSelecionado(email); setFiltro("todas"); setPesquisa("");
+    if (email === consultorSelecionado) tituloReservas.current?.scrollIntoView({block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth"});
+  }
   async function carregar(silencioso = false, signal?: AbortSignal) {
     if (simulacao === null || aGuardar.current || aLer.current !== null) return;
     const pedido = ++pedidoAtual.current;
@@ -42,7 +54,7 @@ export function PainelBlackFriday() {
   }, [simulacao]);
   function mudarModo(teste: boolean) {
     if (ocupado || simulacao === teste) return;
-    ++pedidoAtual.current; aLer.current = null; setDados(null); setConfig(null); setMotivos({}); setErro(""); setAviso(""); setSimulacao(teste);
+    ++pedidoAtual.current; aLer.current = null; setDados(null); setConfig(null); setMotivos({}); setErro(""); setAviso(""); setSimulacao(teste); setConsultorSelecionado(null); setPesquisaConsultor(""); setPesquisa("");
     const url = new URL(window.location.href); url.searchParams.set("modo", teste ? "simulacao" : "real"); window.history.replaceState(window.history.state, "", url);
   }
   async function guardar(corpo: unknown, mensagem: string) {
@@ -59,10 +71,12 @@ export function PainelBlackFriday() {
   }
   const participantes = dados ? [...new Set(dados.inscricoes.map(i => i.email))].map(email => {
     const inscricoes = dados.inscricoes.filter(i => i.email === email);
-    return {email, nome: inscricoes[0]!.nome, progresso: resumirBF(inscricoes, dados.config), confirmado: resumirBF(inscricoes, dados.config, true)};
+    return {email, nome: inscricoes[0]!.nome, envios: inscricoes.length, pendentes: inscricoes.filter(i => i.estado === "pendente").length, progresso: resumirBF(inscricoes, dados.config), confirmado: resumirBF(inscricoes, dados.config, true)};
   }).sort((a, b) => a.progresso.bingoEm && b.progresso.bingoEm ? a.progresso.bingoEm.localeCompare(b.progresso.bingoEm) || a.email.localeCompare(b.email) : Number(b.progresso.bingo) - Number(a.progresso.bingo) || b.progresso.casas - a.progresso.casas) : [];
   const primeiroConfirmado = participantes.filter(p => p.confirmado.bingoEm).sort((a, b) => a.confirmado.bingoEm!.localeCompare(b.confirmado.bingoEm!))[0];
-  const visiveis = dados?.inscricoes.filter(i => (filtro === "todas" || i.estado === filtro) && `${i.nome} ${i.email} ${i.referencia} ${CASAS_BF[i.casa]}`.toLowerCase().includes(pesquisa.toLowerCase())).sort((a, b) => b.enviadoEm.localeCompare(a.enviadoEm)) ?? [];
+  const listaConsultores = participantes.filter(p => `${p.nome} ${p.email}`.toLocaleLowerCase("pt-PT").includes(pesquisaConsultor.trim().toLocaleLowerCase("pt-PT")));
+  const consultorAtual = participantes.find(p => p.email === consultorSelecionado);
+  const visiveis = dados?.inscricoes.filter(i => i.email === consultorAtual?.email && (filtro === "todas" || i.estado === filtro) && `${i.referencia} ${CASAS_BF[i.casa]}`.toLowerCase().includes(pesquisa.toLowerCase())).sort((a, b) => b.enviadoEm.localeCompare(a.enviadoEm)) ?? [];
   return <main className={css.pagina}>
     <Link href="/admin">← Início</Link>
     <header className={css.topo}><div><span className={css.selo}>DESAFIO DA EQUIPA · 2026</span><h1>BLACKFRIDAY</h1><p>Comprovativos, linhas, bingos e objetivo da equipa.</p></div><button type="button" disabled={ocupado} onClick={() => void carregar()}>Atualizar painel</button></header>
@@ -84,11 +98,15 @@ export function PainelBlackFriday() {
           <button disabled={ocupado} type="submit">Guardar configuração</button>
         </form>
       </details>}
-      <section className={css.bloco}><h2>Participantes e ordem dos bingos</h2><p className={css.nota}>O cartão avança com os envios pendentes. Os prémios exigem validação. A hora do bingo corresponde ao envio do último comprovativo necessário, nunca à aprovação. A ordem pode mudar enquanto houver comprovativos por rever.</p>
+      <section id="bf-lista-consultores" className={css.bloco}><h2>Consultores e ordem dos bingos</h2><p className={css.nota}>Clica no nome de um consultor para abrir apenas as suas reservas e comprovativos.</p><p className={css.nota}>O cartão avança com os envios pendentes. Os prémios exigem validação. A hora do bingo corresponde ao envio do último comprovativo necessário, nunca à aprovação. A ordem pode mudar enquanto houver comprovativos por rever.</p>
         {primeiroConfirmado && <p className={css.aviso}>Primeiro bingo validado até agora: <b>{primeiroConfirmado.nome}</b> · {dataHora(primeiroConfirmado.confirmado.bingoEm!)}. A atribuição final depende da revisão dos restantes cartões.</p>}
-        {!participantes.length ? <p>Ainda não há reservas enviadas.</p> : <div className={css.tabela}><table><thead><tr><th>TP</th><th>Casas</th><th>Primeira linha</th><th>Bingo</th><th>Hora de conclusão</th></tr></thead><tbody>{participantes.map(p => <tr key={p.email}><td><strong>{p.nome}</strong><small>{p.email}</small></td><td>{p.progresso.casas}/25<small>{p.confirmado.casas} confirmadas</small></td><td>{p.confirmado.linhas.length ? "Validada · 1 prémio" : p.progresso.linhas.length ? "Em validação" : "Por completar"}</td><td>{p.confirmado.bingo ? "Validado" : p.progresso.bingo ? "Em validação" : "Por completar"}</td><td>{p.progresso.bingoEm ? dataHora(p.progresso.bingoEm) : "—"}</td></tr>)}</tbody></table></div>}
+        <label className={css.pesquisaConsultor}>Procurar consultor<input type="search" value={pesquisaConsultor} onChange={e => setPesquisaConsultor(e.target.value)} placeholder="Nome ou email do consultor"/></label>
+        {!participantes.length ? <p>Ainda não há reservas enviadas.</p> : !listaConsultores.length ? <p>Não encontrámos consultores com esta pesquisa.</p> : <div className={css.tabela}><table><thead><tr><th>Consultor</th><th>Casas</th><th>Primeira linha</th><th>Bingo</th><th>Hora de conclusão</th></tr></thead><tbody>{listaConsultores.map(p => <tr key={p.email} data-selecionado={p.email === consultorAtual?.email}><td><button type="button" className={css.nomeConsultor} aria-controls="bf-reservas-consultor" aria-expanded={p.email === consultorAtual?.email} onClick={() => abrirReservas(p.email)}>{p.nome || p.email} <span aria-hidden="true">→</span></button><small>{p.email}</small><small>{p.envios} {p.envios === 1 ? "comprovativo" : "comprovativos"} · {p.pendentes} por validar</small></td><td>{p.progresso.casas}/25<small>{p.confirmado.casas} confirmadas</small></td><td>{p.confirmado.linhas.length ? "Validada · 1 prémio" : p.progresso.linhas.length ? "Em validação" : "Por completar"}</td><td>{p.confirmado.bingo ? "Validado" : p.progresso.bingo ? "Em validação" : "Por completar"}</td><td>{p.progresso.bingoEm ? dataHora(p.progresso.bingoEm) : "—"}</td></tr>)}</tbody></table></div>}
       </section>
-      <section className={css.bloco}><h2>Validar comprovativos</h2><div className={css.filtros}><label>Estado<select value={filtro} onChange={e => setFiltro(e.target.value)}><option value="pendente">Em validação</option><option value="aprovada">Aprovadas</option><option value="recusada">Recusadas</option><option value="todas">Todas</option></select></label><label>Pesquisar<input type="search" value={pesquisa} onChange={e => setPesquisa(e.target.value)} placeholder="TP, email, referência ou casa"/></label></div>
+      <section id="bf-reservas-consultor" className={css.bloco}>
+        {consultorAtual ? <>
+        <div className={css.topoConsultor}><div><h2 ref={tituloReservas} tabIndex={-1}>Reservas de {consultorAtual.nome || consultorAtual.email}</h2><p className={css.nota}>{consultorAtual.email} · {consultorAtual.envios} {consultorAtual.envios === 1 ? "comprovativo enviado" : "comprovativos enviados"}</p></div><button type="button" onClick={() => {setConsultorSelecionado(null); document.getElementById("bf-lista-consultores")?.scrollIntoView({block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth"});}}>Voltar aos consultores</button></div>
+        <div className={css.filtros}><label>Estado<select value={filtro} onChange={e => setFiltro(e.target.value)}><option value="pendente">Em validação</option><option value="aprovada">Aprovadas</option><option value="recusada">Recusadas</option><option value="todas">Todas</option></select></label><label>Pesquisar nas reservas deste consultor<input type="search" value={pesquisa} onChange={e => setPesquisa(e.target.value)} placeholder="Referência da reserva ou casa"/></label></div>
         {!visiveis.length && <p>Sem comprovativos nesta seleção.</p>}
         <div className={css.reservas}>{visiveis.map(i => <article className={css.reserva} key={i.id}>
           <div className={css.reservaTopo}><div><span className={css.selo}>CASA {i.casa + 1} · {i.estado.toUpperCase()}</span><h3>{CASAS_BF[i.casa]} {i.curinga && <span className={css.badge}>JOKER 5K</span>}</h3><strong>{i.nome}</strong><small>{i.email}</small></div><strong>{euros(i.valorCentimos / 100)}</strong></div>
@@ -99,6 +117,7 @@ export function PainelBlackFriday() {
           <div className={css.acoes}><button type="button" disabled={ocupado || i.estado === "aprovada"} onClick={() => rever(i, "aprovada")}>Aprovar</button><button type="button" className={css.recusar} disabled={ocupado || i.estado === "recusada"} onClick={() => rever(i, "recusada")}>Recusar</button></div>
           {!!i.revisoes.length && <details className={css.historico}><summary>Histórico de revisões ({i.revisoes.length})</summary>{i.revisoes.map((r, n) => <p key={n}>{dataHora(r.em)} · {r.estado}{r.motivo ? ` · ${r.motivo}` : ""}</p>)}</details>}
         </article>)}</div>
+        </> : <><h2>Reservas por consultor</h2><p className={css.nota}>Seleciona um nome na lista de consultores para veres as reservas enviadas e validares os comprovativos.</p></>}
       </section>
     </>}
   </main>;
