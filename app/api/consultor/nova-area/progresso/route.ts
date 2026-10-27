@@ -8,6 +8,7 @@ async function guardar(request: Request, importar: boolean): Promise<Response> {
   const corpo = await request.json().catch(() => null);
   const email = typeof corpo?.email === "string" ? corpo.email.trim().toLowerCase() : "";
   if (!podeVerNovaArea(email)) return NextResponse.json({ erro: "Esta área ainda está em preparação." }, { status: 403 });
+  if (corpo?.versao !== 2) return NextResponse.json({ erro: "Atualiza a página para usar os novos primeiros passos." }, { status: 400 });
   const passoValido = (n: unknown) => typeof n === "number" && Number.isInteger(n) && n >= 1 && n <= TOTAL_PRIMEIROS_PASSOS;
   if (importar ? !Array.isArray(corpo?.feitos) || corpo.feitos.length > TOTAL_PRIMEIROS_PASSOS || !corpo.feitos.every(passoValido)
     : !passoValido(corpo?.passo) || typeof corpo?.concluido !== "boolean") {

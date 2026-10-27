@@ -70,7 +70,7 @@ título, descrição curta e seta, como na versão atual.
 Por indicação do utilizador, o menu da nova área tem Início, Começa aqui e
 Calendário fora de separadores, seguidos de A minha organização, Reservas
 (Propostas, Travel planner, Criar templates, Calendário criativo), Objetivos e
-Formação e eventos; o onboarding temporário fica no fim.
+Formação e eventos.
 Os grupos do menu começam recolhidos no computador e no telemóvel; clicar
 no nome do separador mostra ou esconde as opções desse grupo.
 Na nova área, os Documentos são organizados em pastas. Os PDFs Be a Leader
@@ -221,8 +221,8 @@ mesmos vídeos, pesquisa e links da nova área e o acesso existente às Formaç�
 Esta autorização abrange apenas os Testemunhos; a restante nova área e o seletor
 continuam exclusivos da conta de teste.
 
-Por indicação do utilizador, a nova área tem um separador temporário
-“onboarding codex”, refeito a partir da checklist do mentor em
+Por indicação do utilizador, “Começa aqui” na nova área substitui os passos
+anteriores pelo onboarding refeito a partir da checklist do mentor em
 `src/lib/mentor-checklist.ts`. Para o novo TP mostra apenas 5 passos curtos,
 com poucos checks: acessos e grupos; primeira reunião para objetivos e primeira
 tarefa; formação; primeiras publicações e conversas; segunda reunião e próximos
@@ -231,12 +231,15 @@ Sessão 1 e Sessão 2 Welcome Aboard (sete checks no total). O discurso indica
 sempre a próxima ação, incluindo marcar e fazer as reuniões com o upline,
 sem partir do princípio de que já estão marcadas ou realizadas.
 O curso continua obrigatório antes de orçamentos ou vendas. Os detalhes ficam
-para o acompanhamento com o upline. Os checks são reversíveis e guardados
-apenas no navegador, numa chave v2; as antigas marcas v1 são preservadas, sem
-concluir automaticamente os novos passos. O antigo check agregado de formação
-da v2 preserva a conclusão do curso e das duas sessões ao separá-los. Não grava dados no servidor, é
-exclusivo da conta de teste, e não altera os primeiros passos atuais nem envia
-comunicações.
+para o acompanhamento com o upline. O separador temporário “onboarding codex”
+foi retirado. Os sete checks são reversíveis e guardados por conta no servidor,
+na chave de primeiros passos v2. Recupera uma vez as marcas da proposta no
+navegador, incluindo o antigo check agregado de formação; do progresso antigo
+importa apenas curso e sessões, com critérios equivalentes. Os registos v1
+mantêm-se intactos e abas antigas não podem escrever na v2. Mantém os acessos
+ao grupo, ao curso, à inscrição Welcome Aboard e às mensagens de reunião que
+o próprio TP pode preparar. Continua exclusivo da nova área da conta de teste;
+a área atual não muda. Não envia comunicações.
 
 Por indicação do utilizador, o calendário criativo da Black Friday (PDF da Sara
 `docs/calendario_criativo_160_conteudos_tropa_de_elite.pdf`, dados em

@@ -3,7 +3,7 @@ import "./_env";
 import assert from "node:assert/strict";
 import { neon } from "@neondatabase/serverless";
 import { db, fecharDb } from "../src/lib/db";
-import { limparPrimeirosPassos } from "../src/lib/primeiros-passos";
+import { limparPrimeirosPassos, importarOnboardingTemporario, migrarPrimeirosPassosAnteriores } from "../src/lib/primeiros-passos";
 import { obterProgressoConsultor, importarProgressoConsultor, atualizarPassoConsultor } from "../src/lib/progresso-consultor";
 import { obterAvisosConsultor } from "../src/lib/avisos-consultor";
 import { precisaResponderTeambuilding } from "../src/lib/teambuilding";
@@ -13,8 +13,11 @@ import { questionariosPendentes } from "../src/lib/questionarios";
 import { PATCH, POST } from "../app/api/consultor/nova-area/progresso/route";
 import { EMAIL_PAINEL_DEMONSTRACAO } from "../src/lib/demo";
 
-assert.deepEqual(limparPrimeirosPassos([5, 3, 3, 0, 6, 2, "1", null]), [2, 3, 5]);
+assert.deepEqual(limparPrimeirosPassos([5, 3, 3, 0, 6, 8, 2, "1", null]), [2, 3, 5, 6]);
 assert.deepEqual(limparPrimeirosPassos(null), []);
+assert.deepEqual(importarOnboardingTemporario(["acessos-equipa", "sessao-1", "segunda-reuniao", "inventada"]), [1, 4, 7]);
+assert.deepEqual(importarOnboardingTemporario(["formacao-inicial"]), [3, 4, 5]);
+assert.deepEqual(migrarPrimeirosPassosAnteriores([1, 2, 3, 4, 5]), [3, 4, 5]);
 const pool = db(), original = pool.query, sql = neon(process.env.DATABASE_URL!);
 const planos: { nome: string; consulta: string; valores: unknown[] }[] = [];
 let nome = "", demo = false;
@@ -24,14 +27,15 @@ pool.query = (async (consulta: string, valores: unknown[] = []) => {
   return { rows: [] };
 }) as typeof pool.query;
 async function capturar(rotulo: string, fn: () => Promise<unknown>) { nome = rotulo; return fn(); }
-function pedido(corpo: unknown) { return new Request("https://exemplo.test/api/consultor/nova-area/progresso", { method: "POST", body: JSON.stringify(corpo) }); }
+function pedido(corpo: Record<string, unknown>) { return new Request("https://exemplo.test/api/consultor/nova-area/progresso", { method: "POST", body: JSON.stringify({ versao: 2, ...corpo }) }); }
 try {
   const antes = planos.length;
   assert.equal((await PATCH(pedido({ email: "outra@example.test", passo: 1, concluido: true }))).status, 403);
-  for (const passo of [0, 6, "2", 1.5, null]) {
+  assert.equal((await PATCH(pedido({ email: EMAIL_PAINEL_DEMONSTRACAO, versao: 1, passo: 5, concluido: true }))).status, 400, "Uma aba antiga não pode gravar nos novos checks");
+  for (const passo of [0, 8, "2", 1.5, null]) {
     assert.equal((await PATCH(pedido({ email: EMAIL_PAINEL_DEMONSTRACAO, passo, concluido: true }))).status, 400);
   }
-  assert.equal((await POST(pedido({ email: EMAIL_PAINEL_DEMONSTRACAO, feitos: [1, 6] }))).status, 400);
+  assert.equal((await POST(pedido({ email: EMAIL_PAINEL_DEMONSTRACAO, feitos: [1, 8] }))).status, 400);
   assert.equal(planos.length, antes, "Rejeita pedidos inválidos antes de consultar ou gravar dados");
   demo = true;
   const avisos = await obterAvisosConsultor(EMAIL_PAINEL_DEMONSTRACAO);
@@ -52,7 +56,10 @@ try {
   await capturar("outro-dispositivo", () => atualizarPassoConsultor(ana, 4, true));
   await capturar("quinto", () => atualizarPassoConsultor(ana, 5, true));
   await capturar("terminar", () => atualizarPassoConsultor(ana, 1, true));
+  await capturar("sexta-tarefa", () => atualizarPassoConsultor(ana, 6, true));
+  await capturar("setima-tarefa", () => atualizarPassoConsultor(ana, 7, true));
   await capturar("concluido-persiste", () => obterProgressoConsultor(ana));
+  await capturar("legado-preservado", () => obterProgressoConsultor("legado@example.test"));
   for (const [email, rotulo] of [[ana, "inscrita"], [bruno, "nao-inscrito"]]) {
     await capturar(`${rotulo}-evento`, () => precisaResponderTeambuilding(email!));
     await capturar(`${rotulo}-trofeus`, () => precisaResponderTrofeus(email!));
@@ -62,6 +69,7 @@ try {
 
   const setup = [
     sql.query(`create temp table dashboard_config (chave text primary key, valor jsonb not null, atualizado_em timestamptz default now()) on commit drop`),
+    sql.query(`insert into dashboard_config (chave, valor) values ('consultor:primeiros-passos:legado@example.test:v1', '[1,2,3,4,5]')`),
     ...["evento_inscricoes", "respostas_teambuilding", "respostas_trofeus", "respostas_hotel"].map(t => sql.query(`create temp table ${t} (email text) on commit drop`)),
     sql.query(`create temp table questionarios_estado (slug text, aberto boolean) on commit drop`),
     sql.query(`create temp table questionario_participacoes (slug text, email text) on commit drop`),
@@ -82,12 +90,15 @@ try {
   assert.deepEqual(valor("idempotente"), [2, 3]);
   assert.equal(porNome.get("outra-conta")!.length, 0);
   assert.deepEqual(valor("outro-dispositivo"), [2, 3, 4]);
-  assert.deepEqual(valor("concluido-persiste"), [1, 2, 3, 4, 5]);
+  assert.deepEqual(valor("concluido-persiste"), [1, 2, 3, 4, 5, 6, 7]);
+  pool.query = (async () => ({ rows: porNome.get("legado-preservado")! })) as unknown as typeof pool.query;
+  assert.deepEqual(await obterProgressoConsultor("legado@example.test"), { feitos: [3, 4, 5], guardado: false });
+  assert.deepEqual(valor("legado-preservado"), [1, 2, 3, 4, 5], "O registo antigo mantém-se intacto");
   assert.equal(porNome.get("inscrita-evento")![0]!.precisa, true);
   assert.equal(porNome.get("inscrita-trofeus")![0]!.precisa, true);
   assert.equal(porNome.get("inscrita-hotel")![0]!.precisa, false);
   for (const tipo of ["evento", "trofeus", "hotel"]) assert.equal(porNome.get(`nao-inscrito-${tipo}`)![0]!.precisa, false);
   assert.equal(porNome.get("inscrita-questionarios")!.length, 0);
   assert.deepEqual(porNome.get("nao-inscrito-questionarios")!.map(q => q.slug), ["equipa-outubro-2026"]);
-  console.log("OK: progresso persistente por conta, importação sem substituir, vários dispositivos, desmarcar, cinco passos, permissões e avisos apenas para quem deve responder. Dados reais intactos; nenhum envio.");
+  console.log("OK: sete checks em cinco cartões, migração da proposta e do progresso compatível, registos antigos preservados, importação sem substituir, vários dispositivos, desmarcar, permissões e avisos. Dados reais intactos; nenhum envio.");
 } finally { pool.query = original; await fecharDb(); }

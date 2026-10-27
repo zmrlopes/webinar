@@ -1,7 +1,5 @@
 .quando { display: block; color: #4b5320; font-size: 12px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
 .nota { margin: 18px 0 0; color: #6b6a63; font-size: 13px; }
-.linkTexto { padding: 0; border: 0; background: none; color: #4b5320; font: inherit; text-decoration: underline; cursor: pointer; }
-.linkTexto:focus-visible { outline: 2px solid #4b5320; outline-offset: 4px; }
 .ligacoes { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 20px; margin-bottom: 14px; }
 .checkbox { flex-shrink: 0; }
 .tarefas { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }

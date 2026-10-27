@@ -1,15 +1,19 @@
 import { db } from "./db";
-import { limparPrimeirosPassos } from "./primeiros-passos";
+import { limparPrimeirosPassos, migrarPrimeirosPassosAnteriores } from "./primeiros-passos";
 
 function chave(email: string): string {
-  return `consultor:primeiros-passos:${email.trim().toLowerCase()}:v1`;
+  return `consultor:primeiros-passos:${email.trim().toLowerCase()}:v2`;
 }
 
 export async function obterProgressoConsultor(email: string) {
-  const { rows } = await db().query<{ valor: unknown }>(
-    `select valor from dashboard_config where chave = $1`, [chave(email)],
+  const atual = chave(email);
+  const { rows } = await db().query<{ chave: string; valor: unknown }>(
+    `select chave, valor from dashboard_config where chave = any($1::text[])`, [
+      [atual, atual.replace(/:v2$/, ":v1")],
+    ],
   );
-  return { feitos: limparPrimeirosPassos(rows[0]?.valor), guardado: rows.length > 0 };
+  const progresso = rows.find(row => row.chave === atual);
+  return { feitos: progresso ? limparPrimeirosPassos(progresso.valor) : migrarPrimeirosPassosAnteriores(rows[0]?.valor), guardado: !!progresso };
 }
 
 /** Importa as marcas do navegador uma vez; nunca substitui o progresso de outra sessão. */

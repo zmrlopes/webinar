@@ -179,10 +179,17 @@ Testes: `node --import tsx scripts/testes-testemunhos.ts`.
 destinados à conta (os três do evento e os questionários da equipa abertos).
 Reutiliza as regras de inscrição e de resposta existentes; a conta de demonstração
 continua a ver os exemplos. Há também um espaço reservado para futuros comunicados.
-**Começa aqui** permanece no menu até as cinco tarefas estarem marcadas.
-Os passos são guardados por conta em `dashboard_config`, com atualização de um
-passo de cada vez para preservar alterações de outros dispositivos. As antigas
-marcas do navegador são importadas uma vez, sem substituir progresso já guardado.
+**Começa aqui** usa agora o onboarding aprovado a partir da checklist do mentor:
+cinco cartões, sete checks, com curso e duas sessões Welcome Aboard separados.
+O texto orienta a ação e manda marcar e realizar as reuniões com o upline.
+O separador temporário “onboarding codex” foi retirado. Começa aqui permanece
+acessível no menu para rever ou desmarcar tarefas; o Início e o resumo acompanham
+o mesmo progresso. Os checks são guardados por conta em `dashboard_config`
+(chave v2), com atualização de uma tarefa de cada vez para preservar alterações
+de outros dispositivos. As marcas da proposta no navegador são importadas uma
+vez, sem substituir progresso já guardado. Do progresso v1 só curso e sessões
+são equivalentes; os registos antigos são preservados. A API exige a versão 2
+para impedir que uma aba antiga grave os números anteriores nos novos checks.
 As alterações continuam limitadas à conta de teste. Testes com dados temporários:
 `node --import tsx scripts/testes-inicio-consultor.ts` (requer `DATABASE_URL`).
 

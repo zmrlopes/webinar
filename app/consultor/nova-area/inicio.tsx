@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { AvisoInicio } from "@/lib/consultor-nova-area";
+import { TOTAL_PRIMEIROS_PASSOS } from "@/lib/primeiros-passos";
 import estilos from "./inicio.module.css";
 import comuns from "./nova-area.module.css";
 import { AvisoRelatorioCore } from "./core-rank";
@@ -60,10 +61,10 @@ export function InicioNovaArea({ avisos, erroAvisos, feitos, aoComecar, acabadoA
       <div><strong>Primeiros passos concluídos!</strong><p>O teu arranque está feito. A partir de agora, encontras aqui as novidades e os avisos da equipa.</p></div>
     </div>}
 
-    {feitos < 5 && <div className={estilos.arranque}>
+    {feitos < TOTAL_PRIMEIROS_PASSOS && <div className={estilos.arranque}>
       <div><span className={comuns.etiqueta}>ESTÁS A COMEÇAR?</span><h2>Vamos dar os primeiros passos.</h2>
         <p>Segue as tarefas do “Começa aqui” e marca cada uma quando a concluíres.</p>
-        <span className={estilos.progresso}>{feitos} de 5 tarefas concluídas</span>
+        <span className={estilos.progresso}>{feitos} de {TOTAL_PRIMEIROS_PASSOS} tarefas concluídas</span>
       </div>
       <button type="button" className={comuns.botao} onClick={aoComecar}>{feitos ? "Continuar os primeiros passos" : "Começar agora"} <span aria-hidden="true">→</span></button>
     </div>}

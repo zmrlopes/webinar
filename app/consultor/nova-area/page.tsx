@@ -26,17 +26,10 @@ import { CoreRankNovaArea } from "./core-rank";
 import { ReservasNovaArea } from "./reservas";
 import { TravelPlannerNovaArea } from "./travel-planner";
 import { PropostaNovaArea } from "./proposta";
-import { OnboardingProposta } from "./onboarding";
-import { limparPrimeirosPassos } from "@/lib/primeiros-passos";
+import { ComecaAqui } from "./onboarding";
+import { limparPrimeirosPassos, importarOnboardingTemporario, migrarPrimeirosPassosAnteriores, RESUMO_PRIMEIROS_PASSOS, TOTAL_PRIMEIROS_PASSOS } from "@/lib/primeiros-passos";
 
-const CHAVE_PROGRESSO = "consultor-nova-area:primeiros-passos:v1";
-const TITULOS = [
-  "Grupo Welcome Aboard",
-  "Primeira videochamada",
-  "Be a Travel Partner",
-  "Sessões Welcome Aboard",
-  "Os teus objetivos",
-];
+const CHAVE_PROGRESSO = "consultor-nova-area:primeiros-passos:v2";
 
 function Seta() {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>;
@@ -51,36 +44,6 @@ function GrupoMenu({ titulo, ativo, children }: { titulo: string; ativo: boolean
   </details>;
 }
 
-function Passo({ numero, titulo, concluido, alternar, children, aGuardar }: {
-  numero: number; titulo: string; concluido: boolean; alternar: () => void; children: ReactNode; aGuardar: boolean;
-}) {
-  return (
-    <article id={`passo-${numero}`} className={`${estilos.passo} ${concluido ? estilos.passoFeito : ""}`} aria-labelledby={`titulo-passo-${numero}`}>
-      <div className={estilos.passoCabecalho}>
-        <span className={estilos.numero} aria-label={`Passo ${numero}`}>{concluido ? "✓" : numero}</span>
-        <h2 id={`titulo-passo-${numero}`}>{titulo}</h2>
-      </div>
-      <div className={estilos.passoConteudo}>
-        {children}
-        <div className={estilos.passoRodape}>
-          <button type="button" className={estilos.concluir} aria-pressed={concluido} disabled={aGuardar} onClick={alternar}>
-            <span className={estilos.checkbox} aria-hidden="true">{concluido && "✓"}</span>
-            {concluido ? "Passo concluído" : "Já fiz este passo"}
-          </button>
-          {concluido && <span className={estilos.desfazer}>Clica para desmarcar</span>}
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function mensagemWhatsApp(nome: string, segunda = false): string {
-  const mensagem = segunda
-    ? `Olá! Sou ${nome}. Já avancei nos primeiros passos e gostava de marcar a nossa segunda videochamada para definirmos os meus objetivos. Quando tens disponibilidade?`
-    : `Olá! Sou ${nome}. Gostava de marcar a nossa primeira videochamada para me orientares no arranque como consultor. Quando tens disponibilidade?`;
-  return `https://api.whatsapp.com/send?text=${encodeURIComponent(mensagem)}`;
-}
-
 export default function NovaAreaConsultor() {
   const [estado, setEstado] = useState<"a-carregar" | "sem-acesso" | "erro" | "pronto">("a-carregar");
   const [email, setEmail] = useState("");
@@ -90,7 +53,7 @@ export default function NovaAreaConsultor() {
   const [aInscrever, setAInscrever] = useState(false);
   const [erroSessao, setErroSessao] = useState("");
   const [inscrito, setInscrito] = useState(false);
-  const [seccao, setSeccao] = useState<"inicio" | "comeca-aqui" | "onboarding" | "calendario" | "calendario-criativo" | "leads" | "tarefas-equipa" | "mentor-checklist" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "testemunhos" | "objecoes" | "assistente" | "documentos" | "eventos-presenciais" | "calculadoras" | "core-rank" | "reservas" | "travel-planner" | "propostas">("inicio");
+  const [seccao, setSeccao] = useState<"inicio" | "comeca-aqui" | "calendario" | "calendario-criativo" | "leads" | "tarefas-equipa" | "mentor-checklist" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "testemunhos" | "objecoes" | "assistente" | "documentos" | "eventos-presenciais" | "calculadoras" | "core-rank" | "reservas" | "travel-planner" | "propostas">("inicio");
   const [assistenteAberto, setAssistenteAberto] = useState(false);
   const [reservasAberto, setReservasAberto] = useState(false);
   const [coreAberto, setCoreAberto] = useState(false);
@@ -158,8 +121,11 @@ export default function NovaAreaConsultor() {
     setEmail(conta);
     let progressoLocal: number[] = [];
     try {
-      const guardados: unknown = JSON.parse(localStorage.getItem(CHAVE_PROGRESSO) ?? "[]");
-      progressoLocal = limparPrimeirosPassos(guardados);
+      const guardados = localStorage.getItem(CHAVE_PROGRESSO);
+      progressoLocal = guardados !== null ? limparPrimeirosPassos(JSON.parse(guardados)) : limparPrimeirosPassos([
+        ...importarOnboardingTemporario(JSON.parse(localStorage.getItem("consultor-nova-area:onboarding-codex:v2") ?? "[]")),
+        ...migrarPrimeirosPassosAnteriores(JSON.parse(localStorage.getItem("consultor-nova-area:primeiros-passos:v1") ?? "[]")),
+      ]);
     } catch { /* O progresso continua a funcionar se o armazenamento estiver indisponível. */ }
     async function carregar() {
       try {
@@ -172,10 +138,10 @@ export default function NovaAreaConsultor() {
         if (resposta.status === 403) { setEstado("sem-acesso"); return; }
         if (!resposta.ok) throw new Error(corpo.erro ?? "Não foi possível carregar a nova área.");
         let feitosGuardados = limparPrimeirosPassos(corpo.primeirosPassos?.feitos);
-        if (!corpo.primeirosPassos?.guardado && progressoLocal.length) {
+        if (!corpo.primeirosPassos?.guardado) {
           const importacao = await fetch("/api/consultor/nova-area/progresso", {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: conta, feitos: progressoLocal }), signal: controller.signal,
+            body: JSON.stringify({ email: conta, versao: 2, feitos: limparPrimeirosPassos([...feitosGuardados, ...progressoLocal]) }), signal: controller.signal,
           });
           const progresso = await importacao.json();
           if (!importacao.ok) throw new Error(progresso.erro ?? "Não foi possível recuperar os teus primeiros passos.");
@@ -203,14 +169,14 @@ export default function NovaAreaConsultor() {
     try {
       const resposta = await fetch("/api/consultor/nova-area/progresso", {
         method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, passo: numero, concluido: !feitos.includes(numero) }),
+        body: JSON.stringify({ email, versao: 2, passo: numero, concluido: !feitos.includes(numero) }),
       });
       const corpo = await resposta.json();
       if (!resposta.ok) throw new Error(corpo.erro ?? "Não foi possível guardar este passo.");
       const atualizados = limparPrimeirosPassos(corpo.feitos);
       setFeitos(atualizados);
       try { localStorage.setItem(CHAVE_PROGRESSO, JSON.stringify(atualizados)); } catch { /* A conta já tem o progresso guardado. */ }
-      if (atualizados.length === 5) {
+      if (atualizados.length === TOTAL_PRIMEIROS_PASSOS) {
         setAcabadoAgora(true);
         setSeccao("inicio");
         setVoltarAoInicio(true);
@@ -289,18 +255,18 @@ export default function NovaAreaConsultor() {
               <div className={estilos.grupoMenu}>
                 <button type="button" className={seccao === "inicio" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("inicio")} aria-current={seccao === "inicio" ? "page" : undefined} aria-controls="conteudo-nova-area">Início <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3V10Z" stroke="currentColor" strokeWidth="1.6" /><path d="M9 20v-7h6v7" stroke="currentColor" strokeWidth="1.6" /></svg></button>
               </div>
-              {totalFeitos < 5 && <div className={estilos.grupoMenu}>
-                <button type="button" className={seccao === "comeca-aqui" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("comeca-aqui")} aria-current={seccao === "comeca-aqui" ? "page" : undefined} aria-controls="conteudo-nova-area">Começa aqui <span>{5 - totalFeitos}</span></button>
+              <div className={estilos.grupoMenu}>
+                <button type="button" className={seccao === "comeca-aqui" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("comeca-aqui")} aria-current={seccao === "comeca-aqui" ? "page" : undefined} aria-controls="conteudo-nova-area">Começa aqui <span>{totalFeitos === TOTAL_PRIMEIROS_PASSOS ? "✓" : TOTAL_PRIMEIROS_PASSOS - totalFeitos}</span></button>
                 {seccao === "comeca-aqui" && <div className={estilos.resumo}>
                   <span className={estilos.etiqueta}>O TEU ARRANQUE</span>
                   <p>Um passo de cada vez.</p>
-                  <div className={estilos.barra} role="progressbar" aria-label="Primeiros passos concluídos" aria-valuemin={0} aria-valuemax={5} aria-valuenow={totalFeitos}><span style={{ width: `${totalFeitos * 20}%` }} /></div>
-                  <span className={estilos.progressoTexto}>{totalFeitos} de 5 passos feitos</span>
+                  <div className={estilos.barra} role="progressbar" aria-label="Primeiros passos concluídos" aria-valuemin={0} aria-valuemax={TOTAL_PRIMEIROS_PASSOS} aria-valuenow={totalFeitos}><span style={{ width: `${totalFeitos / TOTAL_PRIMEIROS_PASSOS * 100}%` }} /></div>
+                  <span className={estilos.progressoTexto}>{totalFeitos} de {TOTAL_PRIMEIROS_PASSOS} tarefas feitas</span>
                   <ol className={estilos.listaPassos}>
-                    {TITULOS.map((titulo, i) => <li key={titulo}><a href={`#passo-${i + 1}`}><span className={feitos.includes(i + 1) ? estilos.miniFeito : estilos.miniNumero}>{feitos.includes(i + 1) ? "✓" : i + 1}</span>{titulo}</a></li>)}
+                    {RESUMO_PRIMEIROS_PASSOS.map(({ titulo, tarefas }, i) => <li key={titulo}><a href={`#passo-${i + 1}`}><span className={tarefas.every(tarefa => feitos.includes(tarefa)) ? estilos.miniFeito : estilos.miniNumero}>{tarefas.every(tarefa => feitos.includes(tarefa)) ? "✓" : i + 1}</span>{titulo}</a></li>)}
                   </ol>
                 </div>}
-              </div>}
+              </div>
               <div className={estilos.grupoMenu}>
                 <button type="button" className={seccao === "calendario" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calendario")} aria-current={seccao === "calendario" ? "page" : undefined} aria-controls="conteudo-nova-area">Calendário <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" strokeWidth="1.6" /><path d="M7 3v4m10-4v4M3 11h18" stroke="currentColor" strokeWidth="1.6" /></svg></button>
               </div>
@@ -329,70 +295,24 @@ export default function NovaAreaConsultor() {
                 <button type="button" className={seccao === "documentos" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("documentos")} aria-current={seccao === "documentos" ? "page" : undefined} aria-controls="conteudo-nova-area">Documentos</button>
                 <button type="button" className={seccao === "eventos-presenciais" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("eventos-presenciais")} aria-current={seccao === "eventos-presenciais" ? "page" : undefined} aria-controls="conteudo-nova-area">Eventos presenciais</button>
               </GrupoMenu>
-              <div className={`${estilos.grupoMenu} ${estilos.menuTemporario}`}>
-                <button type="button" className={seccao === "onboarding" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("onboarding")} aria-current={seccao === "onboarding" ? "page" : undefined} aria-controls="conteudo-nova-area">onboarding codex <span>Temp.</span></button>
-              </div>
             </nav>
             <Link className={estilos.voltar} href="/consultor">Consultar a área atual <Seta /></Link>
           </aside>
 
           <main id="conteudo-nova-area" ref={conteudo} tabIndex={-1} aria-label="Conteúdo da secção" className={estilos.conteudo}>
             {seccao === "inicio" && <InicioNovaArea email={email} aoAbrirCore={() => {setAbrirRelatoriosCore(n => n + 1); abrirSeccao("core-rank");}} avisos={dados.avisos ?? []} erroAvisos={dados.erroAvisos ?? false} feitos={totalFeitos} aoComecar={() => abrirSeccao("comeca-aqui")} acabadoAgora={acabadoAgora} />}
-            {seccao === "comeca-aqui" && <section id="comeca-aqui" aria-label="Começa aqui">
-            <div className={estilos.intro}>
-              <span className={estilos.etiqueta}>BEM-VINDO À EQUIPA</span>
-              <h1>Começa aqui<span>.</span></h1>
-              <p>Os teus primeiros passos, por esta ordem. <strong>{totalFeitos} de 5 feitos.</strong></p>
-              {aGuardarPasso !== null && <p role="status">A guardar o passo {aGuardarPasso}…</p>}
-              {erroProgresso && <p role="alert" className={estilos.erroOrganizacao}>{erroProgresso}</p>}
-            </div>
-            <div className={estilos.passos}>
-              <Passo numero={1} titulo="Entra no grupo de WhatsApp Welcome Aboard" concluido={feitos.includes(1)} alternar={() => void alternarPasso(1)} aGuardar={aGuardarPasso !== null}>
-                <p>O teu ponto de encontro para começares acompanhado. Junta-te ao grupo de acolhimento da equipa.</p>
-                <div className={estilos.grupo}>
-                  <span className={estilos.grupoIcone} aria-hidden="true"><svg width="25" height="25" viewBox="0 0 24 24" fill="none"><path d="M20 11.5a8 8 0 0 1-12 7L4 20l1.5-4A8 8 0 1 1 20 11.5Z" stroke="currentColor" strokeWidth="1.7" /><path d="M8.5 8.5c.8 3.2 2.5 4.8 5.5 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg></span>
-                  <div><h3>Welcome Aboard</h3><p>Primeiros passos, dúvidas e boas-vindas à comunidade.</p></div>
-                  {dados.linkGrupoWelcomeAboard
-                    ? <a className={estilos.botao} href={dados.linkGrupoWelcomeAboard} target="_blank" rel="noopener noreferrer">Entrar no grupo <Seta /></a>
-                    : <div className={estilos.convitePendente}><button className={estilos.botao} type="button" disabled>Entrar no grupo <Seta /></button><small>Convite disponível em breve</small></div>}
-                </div>
-              </Passo>
-
-              <Passo numero={2} titulo="Marca a 1.ª videochamada com o teu upline" concluido={feitos.includes(2)} alternar={() => void alternarPasso(2)} aGuardar={aGuardarPasso !== null}>
-                <p>Uma conversa curta, no máximo 30 minutos, para se conhecerem e para te orientar no arranque.</p>
-                {dados.upline?.nome && <p className={estilos.upline}>O teu upline é <strong>{dados.upline.nome}.</strong></p>}
-                <a className={estilos.botao} href={mensagemWhatsApp(dados.nome)} target="_blank" rel="noopener noreferrer">Preparar mensagem no WhatsApp <Seta /></a>
-                <p className={estilos.nota}>Escolhe o contacto do teu upline e combina a chamada.</p>
-              </Passo>
-
-              <Passo numero={3} titulo="Faz o curso Be a Travel Partner" concluido={feitos.includes(3)} alternar={() => void alternarPasso(3)} aGuardar={aGuardarPasso !== null}>
-                <p>É <strong>obrigatório</strong> e está na academia da iCliGo. Faz-se lá; aqui fica o caminho para chegares ao curso.</p>
-                <a className={estilos.botao} href={LINK_CURSO_TRAVEL_PARTNER} target="_blank" rel="noopener noreferrer">Ir para o curso <Seta /></a>
-                <p className={estilos.nota}>Entra com a tua conta da iCliGo Academy.</p>
-              </Passo>
-
-              <Passo numero={4} titulo="Vai ao Welcome Aboard — a Sessão 1 e a Sessão 2" concluido={feitos.includes(4)} alternar={() => void alternarPasso(4)} aGuardar={aGuardarPasso !== null}>
-                <p><strong>Todas as quartas-feiras, às 21:20</strong>, com os líderes. É uma sala de Zoom que se divide em duas: começas pela Sessão 1 e, na semana seguinte, vais à Sessão 2.</p>
-                <div className={estilos.sessoes}>
-                  <div className={estilos.sessao}><h3><span aria-hidden="true">✈️</span> Sessão 1</h3><p>Foco em começar e fazer as primeiras reservas.</p><span className={dados.welcomeAboard?.sessao1Concluida ? estilos.presencaFeita : estilos.presencaPendente}>{dados.welcomeAboard?.sessao1Concluida ? "✓ Concluída" : "Por fazer"}</span></div>
-                  <div className={estilos.sessao}><h3><span aria-hidden="true">🚀</span> Sessão 2</h3><p>Foco no crescimento e em atingir o patamar de Sénior. Para quem já esteve na Sessão 1.</p><span className={dados.welcomeAboard?.sessao2Concluida ? estilos.presencaFeita : estilos.presencaPendente}>{dados.welcomeAboard?.sessao2Concluida ? "✓ Concluída" : "Depois da Sessão 1"}</span></div>
-                </div>
-                <p className={estilos.valores}>🧭 Acompanhamento <span>·</span> 🎯 Clareza <span>·</span> 🌍 Inspiração</p>
+            {seccao === "comeca-aqui" && <ComecaAqui
+              linkGrupo={dados.linkGrupoWelcomeAboard || null} linkCurso={LINK_CURSO_TRAVEL_PARTNER}
+              abrir={abrirSeccao} nome={dados.nome} nomeUpline={dados.upline?.nome}
+              feitos={feitos} alternar={numero => void alternarPasso(numero)} aGuardar={aGuardarPasso} erro={erroProgresso}
+              sessaoWelcomeAboard={<>
                 {dados.proximaSessao ? <>
-                  <p className={estilos.dataSessao}>Próxima: <strong>{new Date(dados.proximaSessao.comecaEm).toLocaleString("pt-PT", { weekday: "long", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Lisbon" })}.</strong></p>
+                  <p className={estilos.dataSessao}>Próxima sessão Welcome Aboard: <strong>{new Date(dados.proximaSessao.comecaEm).toLocaleString("pt-PT", { weekday: "long", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Lisbon" })}.</strong></p>
                   <button className={estilos.botao} type="button" disabled={aInscrever} onClick={() => void entrarWelcomeAboard()}>{aInscrever ? "A preparar o teu acesso…" : inscrito ? "Entrar na sessão" : "Inscrever-me"} <Seta /></button>
                 </> : <p className={estilos.nota}>A próxima sessão será apresentada aqui assim que estiver agendada.</p>}
                 {erroSessao && <p role="alert" className={estilos.erro}>{erroSessao}</p>}
-              </Passo>
-
-              <Passo numero={5} titulo="Marca a 2.ª videochamada com o teu upline, para definir objetivos" concluido={feitos.includes(5)} alternar={() => void alternarPasso(5)} aGuardar={aGuardarPasso !== null}>
-                <p>Com os primeiros passos feitos, é a conversa para definirem juntos os teus objetivos. Chega a ela com o teu objetivo já pensado.</p>
-                <a className={estilos.botao} href={mensagemWhatsApp(dados.nome, true)} target="_blank" rel="noopener noreferrer">Preparar mensagem no WhatsApp <Seta /></a>
-                <p className={estilos.nota}>Escolhe o contacto do teu upline e combina a segunda chamada.</p>
-              </Passo>
-            </div>
-            </section>}
-            {seccao === "onboarding" && <OnboardingProposta linkGrupo={dados.linkGrupoWelcomeAboard || null} linkCurso={LINK_CURSO_TRAVEL_PARTNER} abrir={abrirSeccao} />}
+              </>}
+            />}
             {seccao === "leads" && <LeadsNovaArea linkPartilha={dados.linkPartilha} />}
             {seccao === "calendario" && <CalendarioConsultor email={email} nome={dados.nome} />}
             {seccao === "calendario-criativo" && <CalendarioCriativo email={email} />}
