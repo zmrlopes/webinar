@@ -1,26 +1,36 @@
 import { db } from "./db";
 import { LINK_GRUPO_WELCOME_ABOARD } from "./consultor-nova-area";
 
-const EMAIL_ANA_CUSTODIA = "apensarnaproxima@gmail.com";
-const EMAIL_MARISA_ARAUJO = "marisa.araujo.icligo@gmail.com";
-const LINK_GRUPO_ANA_CUSTODIA = "https://chat.whatsapp.com/CDFcyL0eYXc0kVl8Fp7XMK";
-const LINK_GRUPO_MARISA_ARAUJO = "https://chat.whatsapp.com/JBWy7ygb6CmJQHr8gpiT5m";
+/** Cada líder (e toda a sua descendência) tem o seu grupo Welcome Aboard. */
+const GRUPOS_POR_LIDER: Record<string, string> = {
+  // Ana Custódia
+  "apensarnaproxima@gmail.com": "https://chat.whatsapp.com/CDFcyL0eYXc0kVl8Fp7XMK",
+  // Marisa Araújo
+  "marisa.araujo.icligo@gmail.com": "https://chat.whatsapp.com/JBWy7ygb6CmJQHr8gpiT5m",
+  // Lara Rodrigues
+  "viajarviversonhar@gmail.com": "https://chat.whatsapp.com/HZ1wZbrQgtv4m5CkuEJEqE?s=cl&p=a&mlu=4&ilr=4&iam=2",
+};
 
-/** Inclui a própria líder e toda a descendência, também após novas importações. */
+/**
+ * Inclui a própria líder e toda a descendência, também após novas importações.
+ * Quando há líderes encadeadas (ex.: Marisa dentro da equipa da Ana), vale a
+ * líder mais próxima na hierarquia.
+ */
 export async function obterLinkGrupoWelcomeAboard(email: string): Promise<string> {
-  const { rows } = await db().query<{ ana: boolean; marisa: boolean }>(
+  const { rows } = await db().query<{ email: string }>(
     `with recursive ascendentes as (
-       select email, upline_email from equipa_afiliados where email = $1
+       select email, upline_email, 0 as nivel from equipa_afiliados where email = $1
        union
-       select ea.email, ea.upline_email from equipa_afiliados ea
+       select ea.email, ea.upline_email, a.nivel + 1 from equipa_afiliados ea
        join ascendentes a on ea.email = a.upline_email
+       where a.nivel < 50
      )
-     select coalesce(bool_or(email = $2), false) as ana,
-            coalesce(bool_or(email = $3), false) as marisa
-     from ascendentes`,
-    [email.trim().toLowerCase(), EMAIL_ANA_CUSTODIA, EMAIL_MARISA_ARAUJO],
+     select email from ascendentes
+     where email = any($2::text[])
+     order by nivel
+     limit 1`,
+    [email.trim().toLowerCase(), Object.keys(GRUPOS_POR_LIDER)],
   );
-  // O ramo da Marisa tem prioridade sobre a equipa da Ana, da qual faz parte.
-  if (rows[0]?.marisa) return LINK_GRUPO_MARISA_ARAUJO;
-  return rows[0]?.ana ? LINK_GRUPO_ANA_CUSTODIA : LINK_GRUPO_WELCOME_ABOARD;
+  const lider = rows[0]?.email;
+  return (lider && GRUPOS_POR_LIDER[lider]) || LINK_GRUPO_WELCOME_ABOARD;
 }

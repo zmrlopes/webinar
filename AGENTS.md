@@ -218,7 +218,10 @@ Por indicação explícita do utilizador, o convite Welcome Aboard da Ana Custó
 (`apensarnaproxima@gmail.com`) e de toda a sua descendência é
 `https://chat.whatsapp.com/CDFcyL0eYXc0kVl8Fp7XMK`, com exceção da Marisa Araújo
 (`marisa.araujo.icligo@gmail.com`) e de toda a sua descendência, cujo convite é
-`https://chat.whatsapp.com/JBWy7ygb6CmJQHr8gpiT5m`. Resolver pela hierarquia atual
+`https://chat.whatsapp.com/JBWy7ygb6CmJQHr8gpiT5m`. A Lara Rodrigues
+(`viajarviversonhar@gmail.com`) e toda a sua descendência usam
+`https://chat.whatsapp.com/HZ1wZbrQgtv4m5CkuEJEqE?s=cl&p=a&mlu=4&ilr=4&iam=2`.
+Com líderes encadeadas, vale a mais próxima na hierarquia. Resolver pela hierarquia atual
 em `src/lib/welcome-aboard-grupo.ts`, incluindo automaticamente novos consultores,
 na área atual e na nova área. As restantes equipas mantêm o convite existente.
 
