@@ -15,7 +15,9 @@ export interface DadosCoreDiretos {
   atualizadoEm: string;
   fonte: string;
   contas: { email: string; nome: string; username: string }[];
-  consultores: (MembroCoreDiretos & { conta: string; novos: MembroCoreDiretos[] })[];
+  consultores: (MembroCoreDiretos & { conta: string; novos: MembroCoreDiretos[];
+    verificacaoCore?: { mes: string; reservas: number; subscricoes: number; metaReservas: number; metaNovos: number; consultadoEm: string };
+  })[];
 }
 
 const chave = (s: string) => s.trim().toLowerCase();
@@ -50,6 +52,12 @@ export function construirCoreDiretos(
 
 export function progressoCoreDireto(c: DadosCoreDiretos["consultores"][number]) {
   const ativos = c.novos.filter(n => n.reservas >= 1000).length;
-  return { novos: c.novos.length, ativos, reservasOk: c.reservas >= 3000,
-    concluido: c.reservas >= 3000 && ativos >= 3 && c.novos.length >= 3 };
+  const reservas = c.verificacaoCore?.reservas ?? c.reservas;
+  const novos = c.verificacaoCore?.subscricoes ?? c.novos.length;
+  const metaReservas = c.verificacaoCore?.metaReservas ?? 3000;
+  const metaNovos = c.verificacaoCore?.metaNovos ?? 3;
+  // O cartão oficial tem dois critérios: reservas e subscrições.
+  // A ativação dos novos TPs é um indicador de acompanhamento separado.
+  return { reservas, novos, ativos, metaReservas, metaNovos, reservasOk: reservas >= metaReservas,
+    concluido: reservas >= metaReservas && novos >= metaNovos };
 }

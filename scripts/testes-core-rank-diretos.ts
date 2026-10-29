@@ -17,6 +17,10 @@ assert.deepEqual(direto.novos.map(n => n.username), ["novo1", "novo2", "novo3"],
 assert.equal(progressoCoreDireto(direto).concluido, true);
 assert.equal(progressoCoreDireto({ ...direto, novos: direto.novos.map(n => ({ ...n, reservas: 999.99, estado: "Ativo" })) }).ativos, 0, "Ativação exige reservas, não só subscrição ativa");
 assert.equal(progressoCoreDireto({ ...direto, reservas: 2999.99 }).concluido, false);
+assert.equal(progressoCoreDireto({ ...direto, novos: direto.novos.map(n => ({ ...n, reservas: 0 })) }).concluido, true, "O cartão oficial usa reservas e subscrições; a ativação acompanha-se separadamente");
+const verificado = { ...direto, reservas: 2431.97, verificacaoCore: { mes: "2026-10", reservas: 2481.97, subscricoes: 0, metaReservas: 3000, metaNovos: 3, consultadoEm: "2026-10-29T19:00:00Z" } };
+assert.equal(progressoCoreDireto(verificado).reservas, 2481.97, "O valor oficial do Core Rank tem prioridade sobre a exportação");
+assert.equal(progressoCoreDireto(verificado).novos, 0, "A conferência mantém a contagem oficial de subscrições");
 assert.throws(() => construirCoreDiretos(membros, ["inexistente@example.com"], "2026-10-01", "2026-10-31", "teste"));
 assert.throws(() => construirCoreDiretos(membros, ["raiz@example.com"], "2026-02-30", "2026-10-31", "teste"));
 assert.throws(() => construirCoreDiretos([...membros, membros[0]!], ["raiz@example.com"], "2026-10-01", "2026-10-31", "teste"));

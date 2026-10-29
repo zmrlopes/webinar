@@ -18,7 +18,7 @@ export function CoreRankDiretosCliente({ dados }: { dados: DadosCoreDiretos | nu
     && (inativos || /^(ativo|active)$/i.test(c.estado))
     && `${c.nome} ${c.email} ${c.username}`.toLowerCase().includes(pesquisa.toLowerCase()))
     .map(c => ({ c, p: progressoCoreDireto(c) }))
-    .sort((a, b) => Number(b.p.concluido) - Number(a.p.concluido) || b.p.ativos - a.p.ativos || b.p.novos - a.p.novos || b.c.reservas - a.c.reservas || a.c.nome.localeCompare(b.c.nome, "pt"));
+    .sort((a, b) => Number(b.p.concluido) - Number(a.p.concluido) || b.p.ativos - a.p.ativos || b.p.novos - a.p.novos || b.p.reservas - a.p.reservas || a.c.nome.localeCompare(b.c.nome, "pt"));
 
   async function importar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setOcupado(true); setMensagem("");
@@ -36,6 +36,8 @@ export function CoreRankDiretosCliente({ dados }: { dados: DadosCoreDiretos | nu
       .crd { margin-bottom: 2rem; }
       .crd h2 { margin: 0 0 .5rem; font-size: 1.3rem; }
       .crd-controls { display:flex; gap:.75rem; flex-wrap:wrap; align-items:center; margin:1rem 0; }
+      .crd-controls > label { display:flex; align-items:center; gap:.5rem; }
+      .crd-controls input[type=checkbox] { width:auto; margin:0; }
       .crd input,.crd select,.crd textarea { padding:.65rem; border:1px solid #cdd0bf; border-radius:8px; max-width:100%; background:white; color:#111; font:inherit; }
       .crd-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr)); gap:1rem; }
       .crd-card { border:1px solid #daddce; border-radius:12px; padding:1.1rem; background:#fff; }
@@ -54,7 +56,7 @@ export function CoreRankDiretosCliente({ dados }: { dados: DadosCoreDiretos | nu
     <h2>Core Rank · Os nossos diretos</h2>
     <p className="dn-nota">Novos Travel Partners, ativos e faturação pessoal desde o início do período. Só entram os TPs imediatamente abaixo das contas selecionadas; as próprias contas ficam excluídas.</p>
     {dados ? <>
-      <p className="dn-nota"><b>{data(dados.desde)} a {data(dados.ate)}</b> · Consultado em {new Date(dados.atualizadoEm).toLocaleString("pt-PT", { timeZone: "Europe/Lisbon" })}. Fonte: exportação do Analisador de Organização do MyOffice.</p>
+      <p className="dn-nota"><b>{data(dados.desde)} a {data(dados.ate)}</b> · Consultado em {new Date(dados.atualizadoEm).toLocaleString("pt-PT", { timeZone: "Europe/Lisbon" })}. Fonte da árvore: exportação do Analisador de Organização do MyOffice. {dados.consultores.every(c => c.verificacaoCore) && "Reservas e subscrições conferidas também nos cartões Core Rank do MyOffice."}</p>
       <div className="crd-controls">
         <label>Conta <select value={conta} onChange={e => setConta(e.target.value)}><option value="">Todas as contas</option>{dados.contas.map(c => <option key={c.email} value={c.email}>{c.nome} · {c.email}</option>)}</select></label>
         <input aria-label="Pesquisar diretos" placeholder="Pesquisar um TP…" value={pesquisa} onChange={e => setPesquisa(e.target.value)} />
@@ -63,18 +65,21 @@ export function CoreRankDiretosCliente({ dados }: { dados: DadosCoreDiretos | nu
       <div className="dn-stats">
         <div className="dn-stat"><div className="dn-stat-v">{linhas.length}</div><div className="dn-stat-l">TPs diretos nesta vista</div></div>
         <div className="dn-stat"><div className="dn-stat-v">{linhas.reduce((s, l) => s + l.p.novos, 0)}</div><div className="dn-stat-l">novos TPs angariados</div></div>
-        <div className="dn-stat"><div className="dn-stat-v">{linhas.filter(l => l.p.concluido).length}</div><div className="dn-stat-l">atingiram os três objetivos</div></div>
+        <div className="dn-stat"><div className="dn-stat-v">{linhas.filter(l => l.p.concluido).length}</div><div className="dn-stat-l">atingiram o Core Rank</div></div>
       </div>
-      <p className="dn-nota">Objetivos: 3 novos TPs diretos, 3 desses TPs com pelo menos {euros(1000)} de reservas pessoais e {euros(3000)} de reservas próprias. «Ativos» refere-se a esse volume de reservas dos novos TPs. Os valores de reservas respeitam o filtro aplicado na exportação.</p>
+      <p className="dn-nota">O cartão Core Rank do MyOffice acompanha reservas próprias e subscrições diretas (metas indicadas em cada cartão). «Ativos» acompanha, separadamente, os novos TPs diretos com pelo menos {euros(1000)} de reservas pessoais na exportação. Os novos TPs dos níveis seguintes pertencem à estrutura, não à contagem direta.</p>
       <div className="crd-list">{linhas.map(({ c, p }) => <article className="crd-card" key={c.email}>
         <h3>{c.nome}</h3><div className="crd-account">@{c.username} · {dados.contas.find(a => a.email === c.conta)?.nome}</div>
         {!/^(ativo|active)$/i.test(c.estado) && <div className="crd-account">{c.estado}</div>}
         <ul>
-          <li className={p.novos >= 3 ? "crd-ok" : undefined}>{p.novos}/3 Travel Partners {p.novos >= 3 ? "✓" : ""}</li>
-          <li className={p.ativos >= 3 ? "crd-ok" : undefined}>{p.ativos}/3 ativos {p.ativos >= 3 ? "✓" : ""}</li>
-          <li className={p.reservasOk ? "crd-ok" : undefined}>{euros(c.reservas)} de faturação {p.reservasOk ? "✓" : ""}</li>
+          <li className={p.novos >= p.metaNovos ? "crd-ok" : undefined}>{p.novos}/{p.metaNovos} Travel Partners {p.novos >= p.metaNovos ? "✓" : ""}</li>
+          <li className={p.ativos >= p.metaNovos ? "crd-ok" : undefined}>{p.ativos}/{p.metaNovos} ativos {p.ativos >= p.metaNovos ? "✓" : ""}</li>
+          <li className={p.reservasOk ? "crd-ok" : undefined}>{euros(p.reservas)} de faturação {p.reservasOk ? "✓" : ""}</li>
         </ul>
         {p.concluido && <p className="crd-ok">Core Rank · objetivos atingidos ✓</p>}
+        {c.verificacaoCore && <p className="dn-nota">Conferido no MyOffice em {new Date(c.verificacaoCore.consultadoEm).toLocaleString("pt-PT", { timeZone: "Europe/Lisbon" })} · meta de reservas: {euros(p.metaReservas)}.</p>}
+        {c.verificacaoCore && Math.abs(c.verificacaoCore.reservas - c.reservas) >= 0.01 && <p className="dn-nota">A exportação indica {euros(c.reservas)} em reservas pessoais. Acima aparece o valor do cartão Core Rank do MyOffice.</p>}
+        {c.verificacaoCore && c.verificacaoCore.subscricoes !== c.novos.length && <p className="dn-nota">O cartão Core Rank indica {c.verificacaoCore.subscricoes} subscrições; a árvore identifica {c.novos.length} novos TPs diretos por data de entrada. Confirmar a diferença.</p>}
         {c.subscricoes !== p.novos && <p className="dn-nota">O MyOffice indica {c.subscricoes} novas subscrições no filtro; a árvore identifica {p.novos} novos TPs por data de entrada. Confirmar esta diferença.</p>}
         {c.novos.length > 0 && <details><summary>Ver os novos TPs ({c.novos.length})</summary>{c.novos.map(n => <div className="crd-new" key={n.email}><b>{n.nome}</b><br />Entrada: {n.entrada && data(n.entrada)}<br />{euros(n.reservas)} em reservas {n.reservas >= 1000 ? "✓ Ativado" : `· faltam ${euros(1000 - n.reservas)}`}</div>)}</details>}
       </article>)}</div>
