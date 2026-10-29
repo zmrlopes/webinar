@@ -3,6 +3,7 @@ import { calcularDashboard } from "@/lib/dashboard-calcular";
 import { gravarConfig, lerConfig } from "@/lib/dashboard-negocio";
 import { CAMPANHA_BF, periodoBF } from "@/lib/blackfriday";
 import { configuracaoBF } from "@/lib/blackfriday-servidor";
+import type { DadosCoreDiretos } from "@/lib/core-rank-diretos";
 import {
   guardarBruto,
   hojeLisboa,
@@ -39,6 +40,8 @@ async function plano(): Promise<{ hoje: string; periodos: Periodo[]; anosReserva
   const reservas = await lerConfig<DadosReservasMedias>("reservas_medias");
   const anosReservas = anosReservasAPedir(reservas, Number(hoje.slice(0, 4)));
   const periodos = periodosAPedir(hoje, primeiroMes);
+  const grupo = await lerConfig<DadosCoreDiretos>("core_rank_grupo");
+  if (grupo?.grupo && grupo.desde <= hoje) periodos.push({ chave: "core-rank-grupo", inicio: grupo.desde, fim: grupo.ate < hoje ? grupo.ate : hoje });
   const bf = periodoBF(await configuracaoBF(), hoje);
   if (bf.fim >= bf.inicio) periodos.push({chave: `blackfriday-${CAMPANHA_BF}`, ...bf});
   return { hoje, periodos, anosReservas };

@@ -3,6 +3,17 @@ import { indexarMembrosCore, type DadosCoreDiretos, type MembroCoreDiretos } fro
 export type GrupoCore = NonNullable<DadosCoreDiretos["grupo"]>;
 const chave = (s: string) => s.trim().toLowerCase();
 
+export function associarMembroCoreEmail(dados: DadosCoreDiretos, membros: MembroCoreDiretos[], indice: number, nome: string, email: string): DadosCoreDiretos {
+  const participante = dados.grupo?.membros[indice];
+  if (!participante || participante.nome !== nome || participante.username) throw new Error("Este membro já foi associado ou a lista mudou. Atualiza a página.");
+  const encontrados = membros.filter(m => chave(m.email) === chave(email));
+  if (encontrados.length !== 1) throw new Error("O email não identifica uma única conta na exportação. Confirma o email ou atualiza o Excel da árvore completa.");
+  const grupo = { ...dados.grupo!, membros: dados.grupo!.membros.map((m, i) => i === indice ? { nome: m.nome, username: encontrados[0]!.username } : m) };
+  const resultado = construirCoreGrupo(membros, grupo, dados.desde, dados.ate, dados.fonte, dados.atualizadoEm);
+  resultado.consultores = resultado.consultores.map(c => ({ ...c, verificacaoCore: dados.consultores.find(a => chave(a.username) === chave(c.username))?.verificacaoCore }));
+  return resultado;
+}
+
 /** A correspondência é confirmada por identidade, nunca inferida por semelhança de nomes. */
 export function construirCoreGrupo(membros: MembroCoreDiretos[], grupo: GrupoCore, desde: string, ate: string, fonte: string, atualizadoEm = new Date().toISOString()): DadosCoreDiretos {
   const porUsername = indexarMembrosCore(membros, desde, ate);

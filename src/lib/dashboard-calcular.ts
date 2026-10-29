@@ -8,6 +8,8 @@ import type { DadosCoreRank } from "../../app/admin/dashboard-negocio/core-rank-
 import type { DadosIncentivos } from "../../app/admin/dashboard-negocio/incentivos-cliente";
 import type { DadosLinhaDireta } from "../../app/admin/dashboard-negocio/linha-direta-cliente";
 import type { DadosMapas } from "../../app/admin/dashboard-negocio/mapas-cliente";
+import type { DadosCoreDiretos } from "./core-rank-diretos";
+import { prepararAtualizacaoCoreGrupo } from "./core-rank-grupo-atualizar";
 
 /**
  * O passo final do botão «Atualizar dashboard»: a partir das respostas do
@@ -305,6 +307,16 @@ export async function calcularDashboard(gravar: boolean): Promise<Resultado> {
     resumo.coreRank = { consultores: `${core.consultores.length} → ${novo.consultores.length}` };
   }
 
+  const grupoCore = await lerConfig<DadosCoreDiretos>("core_rank_grupo");
+  let atualizacaoGrupo = null;
+  if (grupoCore?.grupo) {
+    try {
+      atualizacaoGrupo = prepararAtualizacaoCoreGrupo(bruto, grupoCore);
+      if (atualizacaoGrupo) resumo.coreRankGrupo = { consultores: atualizacaoGrupo.dados.consultores.length, ate: atualizacaoGrupo.dados.ate };
+      else avisos.push("Grupo Core Rank: recolha incompleta; mantêm-se os dados anteriores.");
+    } catch (e) { avisos.push(`Grupo Core Rank: ${e instanceof Error ? e.message : "não foi possível atualizar"}`); }
+  }
+
   // ------------------------------------------------------ Reservas médias
   // Independente da lista da equipa: cada ano que chegou do Analisador de
   // Organização substitui o que estava guardado; os outros mantêm-se.
@@ -357,6 +369,7 @@ export async function calcularDashboard(gravar: boolean): Promise<Resultado> {
       ["linha_direta", linha, novaLinha],
       ["incentivos", incentivos, novosIncentivos],
       ["core_rank", core, novoCore],
+      ["core_rank_grupo", grupoCore, atualizacaoGrupo?.dados],
       ["reservas_medias", reservas, novasReservas],
     ];
     for (const [chave, antes, depois] of gravacoes) {
@@ -365,6 +378,7 @@ export async function calcularDashboard(gravar: boolean): Promise<Resultado> {
       await gravarConfig(chave, depois);
     }
     if (equipaCompleta && linhasEquipa.length) await importarLinhasEquipa(linhasEquipa);
+    if (atualizacaoGrupo) await gravarConfig("core_rank_grupo_arvore", atualizacaoGrupo.membros);
     if (novaFaturacaoBF) await gravarConfig(CHAVE_FATURACAO_BF, novaFaturacaoBF);
   }
 

@@ -33,6 +33,24 @@ export function CoreRankDiretosCliente({ dados }: { dados: DadosCoreDiretos | nu
     finally { setOcupado(false); }
   }
 
+  async function associar(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const valores = new FormData(form);
+    setOcupado(true); setMensagem("");
+    try {
+      const response = await fetch("/api/admin/dashboard-negocio/core-rank-diretos", {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ indice: Number(valores.get("indice")), nome: valores.get("nome"), email: valores.get("email") }),
+      });
+      const resultado = await response.json();
+      if (!response.ok) throw new Error(resultado.erro ?? "Não foi possível associar.");
+      setMensagem(`${valores.get("nome")} associado à conta indicada.${resultado.atualizar ? " Usa a ferramenta Atualizar dados para recolher os seus números." : ""}`);
+      form.reset(); router.refresh();
+    } catch (e) { setMensagem(e instanceof Error ? e.message : "Não foi possível associar."); }
+    finally { setOcupado(false); }
+  }
+
   return <section className="crd">
     <style>{`
       .crd { margin-bottom: 2rem; }
@@ -55,6 +73,7 @@ export function CoreRankDiretosCliente({ dados }: { dados: DadosCoreDiretos | nu
       .crd button { background:#4b5320; color:white; border:0; padding:.75rem 1rem; border-radius:8px; cursor:pointer; }
       .crd button:disabled { opacity:.6; cursor:wait; }
     `}</style>
+    <p role="status" aria-live="polite">{mensagem}</p>
     <h2>{grupo ? `Core Rank · ${grupo.nome}` : "Core Rank · Os nossos diretos"}</h2>
     <p className="dn-nota">{grupo ? "Novos Travel Partners, ativos e faturação pessoal dos membros deste grupo, independentemente da sua posição na árvore. Os novos TPs angariados por cada membro contam mesmo que não estejam no grupo." : "Novos Travel Partners, ativos e faturação pessoal desde o início do período. Só entram os TPs imediatamente abaixo das contas selecionadas; as próprias contas ficam excluídas."}</p>
     {dados ? <>
@@ -71,7 +90,11 @@ export function CoreRankDiretosCliente({ dados }: { dados: DadosCoreDiretos | nu
         <div className="dn-stat"><div className="dn-stat-v">{linhas.reduce((s, l) => s + l.p.novos, 0)}</div><div className="dn-stat-l">novos TPs angariados</div></div>
         <div className="dn-stat"><div className="dn-stat-v">{linhas.filter(l => l.p.concluido).length}</div><div className="dn-stat-l">atingiram o Core Rank</div></div>
       </div>
-      {pendentes.length > 0 && <details className="crd-import" open><summary>Por identificar no MyOffice ({pendentes.length})</summary><p className="dn-nota">Estes membros pertencem ao grupo. Os seus números ficam pendentes até confirmar a conta; não contam como zero.</p><ul>{pendentes.map((m, i) => <li key={i}><b>{m.nome}</b> · {m.motivo ?? "Identidade por confirmar."}</li>)}</ul></details>}
+      {pendentes.length > 0 && <details className="crd-import" open><summary>Por identificar no MyOffice ({pendentes.length})</summary><p className="dn-nota">Indica o email exato da conta MyOffice e clica em Associar. A correspondência fica guardada. Os números são recolhidos pela ferramenta Atualizar dados.</p>{grupo!.membros.map((m, i) => !m.username && <form key={`${i}-${m.nome}`} onSubmit={associar}>
+        <input type="hidden" name="indice" value={i} /><input type="hidden" name="nome" value={m.nome} />
+        <div className="crd-controls"><b>{m.nome}</b><input type="email" name="email" aria-label={`Email de ${m.nome}`} placeholder="Email da conta MyOffice" required disabled={ocupado} /><button disabled={ocupado}>Associar</button></div>
+        <small>{m.motivo ?? "Identidade por confirmar."}</small>
+      </form>)}</details>}
       {grupo && <details className="crd-import"><summary>Ver a lista de membros ({grupo.membros.length})</summary><ul>{grupo.membros.map((m, i) => <li key={i}>{m.nome} · {m.username ? dados.consultores.find(c => c.username.toLowerCase() === m.username!.toLowerCase())?.nome ?? m.username : "Por identificar"}</li>)}</ul><p className="dn-nota">Se dois contactos corresponderem à mesma conta MyOffice, partilham um único cartão para não duplicar os totais.</p></details>}
       <p className="dn-nota">O cartão Core Rank do MyOffice acompanha reservas próprias e subscrições diretas (metas indicadas em cada cartão). «Ativos» acompanha, separadamente, os novos TPs diretos com pelo menos {euros(1000)} de reservas pessoais na exportação. Os novos TPs dos níveis seguintes pertencem à estrutura, não à contagem direta.</p>
       <div className="crd-list">{linhas.map(({ c, p }) => <article className="crd-card" key={c.email}>
@@ -92,7 +115,7 @@ export function CoreRankDiretosCliente({ dados }: { dados: DadosCoreDiretos | nu
       </article>)}</div>
       {linhas.length === 0 && <p>Nenhum TP corresponde aos filtros selecionados.</p>}
     </> : <p className="dn-nota">Ainda não foi carregada a exportação do MyOffice para esta vista.</p>}
-    <details className="crd-import" open={!dados}>
+    {grupo ? <p className="dn-nota"><a href="/admin/dashboard-negocio/atualizar">Atualizar dados →</a> Usa a ferramenta existente para atualizar os números do grupo. Não é necessário importar ficheiros.</p> : <details className="crd-import" open={!dados}>
       <summary>Atualizar dados do MyOffice</summary>
       <form onSubmit={importar}>
         <input type="hidden" name="ambito" value={grupo ? "grupo" : "diretos"} />
@@ -102,8 +125,7 @@ export function CoreRankDiretosCliente({ dados }: { dados: DadosCoreDiretos | nu
         {grupo && <p className="dn-nota">Esta importação atualiza os números das contas já identificadas e mantém a lista do grupo acima.</p>}
         <div className="crd-controls"><label>Desde<input type="date" name="desde" defaultValue={dados?.desde ?? "2026-10-01"} required /></label><label>Até<input type="date" name="ate" defaultValue={dados?.ate ?? "2026-10-31"} required /></label></div>
         <button disabled={ocupado}>{ocupado ? "A atualizar…" : "Importar e atualizar"}</button>
-        <p role="status">{mensagem}</p>
       </form>
-    </details>
+    </details>}
   </section>;
 }
