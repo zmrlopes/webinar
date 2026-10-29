@@ -1,8 +1,9 @@
 import ExcelJS from "exceljs";
 import { construirCoreDiretos, type DadosCoreDiretos, type MembroCoreDiretos } from "./core-rank-diretos";
+import { construirCoreGrupo, type GrupoCore } from "./core-rank-grupo";
 
 /** O Excel do Analisador contém reservas pessoais no período, e não o acumulado vitalício. */
-export async function importarCoreDiretos(bytes: ArrayBuffer, emails: string[], desde: string, ate: string, fonte: string): Promise<DadosCoreDiretos> {
+export async function lerMembrosCoreExcel(bytes: ArrayBuffer): Promise<MembroCoreDiretos[]> {
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(bytes);
   const sheet = workbook.worksheets[0];
@@ -30,5 +31,13 @@ export async function importarCoreDiretos(bytes: ArrayBuffer, emails: string[], 
       upline: text("Upline Username"), estado: text("Estado"), entrada: d?.toISOString().slice(0, 10) ?? null,
       reservas: numero("Reservas exclusivas do Travel Partner"), subscricoes: numero("Novas Subscrições Próprias no filtro") });
   });
-  return construirCoreDiretos(membros, emails, desde, ate, fonte);
+  return membros;
+}
+
+export async function importarCoreDiretos(bytes: ArrayBuffer, emails: string[], desde: string, ate: string, fonte: string): Promise<DadosCoreDiretos> {
+  return construirCoreDiretos(await lerMembrosCoreExcel(bytes), emails, desde, ate, fonte);
+}
+
+export async function importarCoreGrupo(bytes: ArrayBuffer, grupo: GrupoCore, desde: string, ate: string, fonte: string): Promise<DadosCoreDiretos> {
+  return construirCoreGrupo(await lerMembrosCoreExcel(bytes), grupo, desde, ate, fonte);
 }

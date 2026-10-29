@@ -15,29 +15,36 @@ export interface DadosCoreDiretos {
   atualizadoEm: string;
   fonte: string;
   contas: { email: string; nome: string; username: string }[];
+  grupo?: { nome: string; consultadoEm: string; membros: { nome: string; username: string | null; motivo?: string }[] };
   consultores: (MembroCoreDiretos & { conta: string; novos: MembroCoreDiretos[];
+    nomesWhatsapp?: string[];
     verificacaoCore?: { mes: string; reservas: number; subscricoes: number; metaReservas: number; metaNovos: number; consultadoEm: string };
   })[];
 }
 
 const chave = (s: string) => s.trim().toLowerCase();
 
-/** Só relações imediatas. As próprias contas agregadoras não são consultores do relatório. */
-export function construirCoreDiretos(
-  membros: MembroCoreDiretos[], emails: string[], desde: string, ate: string,
-  fonte: string, atualizadoEm = new Date().toISOString(),
-): DadosCoreDiretos {
+export function indexarMembrosCore(membros: MembroCoreDiretos[], desde: string, ate: string): Map<string, MembroCoreDiretos> {
   const dataValida = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s)
     && !Number.isNaN(Date.parse(s)) && new Date(s).toISOString().slice(0, 10) === s;
   if (!dataValida(desde) || !dataValida(ate) || desde > ate) throw new Error("O período não é válido.");
-  // A coluna de reservas da exportação respeita o filtro escolhido no MyOffice.
-  // Não é possível repartir esse volume por datas depois de exportar.
-  const procurados = new Set(emails.map(chave));
   const unicos = new Map<string, MembroCoreDiretos>();
   for (const m of membros) {
     if (unicos.has(chave(m.username))) throw new Error("A exportação contém usernames repetidos.");
     unicos.set(chave(m.username), m);
   }
+  return unicos;
+}
+
+/** Só relações imediatas. As próprias contas agregadoras não são consultores do relatório. */
+export function construirCoreDiretos(
+  membros: MembroCoreDiretos[], emails: string[], desde: string, ate: string,
+  fonte: string, atualizadoEm = new Date().toISOString(),
+): DadosCoreDiretos {
+  indexarMembrosCore(membros, desde, ate);
+  // A coluna de reservas respeita o filtro escolhido no MyOffice.
+  // Não é possível repartir esse volume por datas depois de exportar.
+  const procurados = new Set(emails.map(chave));
   const contas = membros.filter(m => procurados.has(chave(m.email)));
   if (contas.length !== procurados.size || !contas.length) throw new Error("A exportação não contém todas as contas indicadas.");
   const porUsername = new Map(contas.map(c => [chave(c.username), c]));

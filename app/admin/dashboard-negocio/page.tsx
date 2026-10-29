@@ -62,9 +62,9 @@ async function ObjetivosPainel(): Promise<React.JSX.Element> {
 export default async function DashboardNegocio({
   searchParams,
 }: {
-  searchParams: Promise<{ aba?: string }>;
+  searchParams: Promise<{ aba?: string; vista?: string }>;
 }): Promise<React.JSX.Element> {
-  const { aba } = await searchParams;
+  const { aba, vista } = await searchParams;
   const ativa = ABAS.some((a) => a.id === aba) ? aba : "mapas";
 
   return (
@@ -241,7 +241,7 @@ export default async function DashboardNegocio({
       ) : ativa === "medias" ? (
         <MediasPainel />
       ) : ativa === "core-rank" ? (
-        <CoreRankPainel />
+        <CoreRankPainel vista={vista} />
       ) : (
         <MapasPainel />
       )}

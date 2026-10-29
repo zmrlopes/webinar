@@ -9,14 +9,16 @@ const data = (s: string) => s.split("-").reverse().join("/");
 
 export function CoreRankDiretosCliente({ dados }: { dados: DadosCoreDiretos | null }) {
   const router = useRouter();
+  const grupo = dados?.grupo;
+  const pendentes = grupo?.membros.filter(m => !m.username) ?? [];
   const [conta, setConta] = useState("");
   const [pesquisa, setPesquisa] = useState("");
   const [inativos, setInativos] = useState(false);
   const [mensagem, setMensagem] = useState("");
   const [ocupado, setOcupado] = useState(false);
   const linhas = (dados?.consultores ?? []).filter(c => (!conta || c.conta === conta)
-    && (inativos || /^(ativo|active)$/i.test(c.estado))
-    && `${c.nome} ${c.email} ${c.username}`.toLowerCase().includes(pesquisa.toLowerCase()))
+    && (grupo || inativos || /^(ativo|active)$/i.test(c.estado))
+    && `${c.nome} ${c.email} ${c.username} ${c.nomesWhatsapp?.join(" ") ?? ""}`.toLowerCase().includes(pesquisa.toLowerCase()))
     .map(c => ({ c, p: progressoCoreDireto(c) }))
     .sort((a, b) => Number(b.p.concluido) - Number(a.p.concluido) || b.p.ativos - a.p.ativos || b.p.novos - a.p.novos || b.p.reservas - a.p.reservas || a.c.nome.localeCompare(b.c.nome, "pt"));
 
@@ -26,7 +28,7 @@ export function CoreRankDiretosCliente({ dados }: { dados: DadosCoreDiretos | nu
       const response = await fetch("/api/admin/dashboard-negocio/core-rank-diretos", { method: "POST", body: new FormData(event.currentTarget) });
       const resultado = await response.json();
       if (!response.ok) throw new Error(resultado.erro ?? "Não foi possível importar.");
-      setMensagem(`${resultado.consultores} diretos atualizados.`); router.refresh();
+      setMensagem(`${resultado.consultores} consultores atualizados.`); router.refresh();
     } catch (e) { setMensagem(e instanceof Error ? e.message : "Não foi possível importar."); }
     finally { setOcupado(false); }
   }
@@ -53,23 +55,28 @@ export function CoreRankDiretosCliente({ dados }: { dados: DadosCoreDiretos | nu
       .crd button { background:#4b5320; color:white; border:0; padding:.75rem 1rem; border-radius:8px; cursor:pointer; }
       .crd button:disabled { opacity:.6; cursor:wait; }
     `}</style>
-    <h2>Core Rank · Os nossos diretos</h2>
-    <p className="dn-nota">Novos Travel Partners, ativos e faturação pessoal desde o início do período. Só entram os TPs imediatamente abaixo das contas selecionadas; as próprias contas ficam excluídas.</p>
+    <h2>{grupo ? `Core Rank · ${grupo.nome}` : "Core Rank · Os nossos diretos"}</h2>
+    <p className="dn-nota">{grupo ? "Novos Travel Partners, ativos e faturação pessoal dos membros deste grupo, independentemente da sua posição na árvore. Os novos TPs angariados por cada membro contam mesmo que não estejam no grupo." : "Novos Travel Partners, ativos e faturação pessoal desde o início do período. Só entram os TPs imediatamente abaixo das contas selecionadas; as próprias contas ficam excluídas."}</p>
     {dados ? <>
-      <p className="dn-nota"><b>{data(dados.desde)} a {data(dados.ate)}</b> · Consultado em {new Date(dados.atualizadoEm).toLocaleString("pt-PT", { timeZone: "Europe/Lisbon" })}. Fonte da árvore: exportação do Analisador de Organização do MyOffice. {dados.consultores.every(c => c.verificacaoCore) && "Reservas e subscrições conferidas também nos cartões Core Rank do MyOffice."}</p>
+      <p className="dn-nota"><b>{data(dados.desde)} a {data(dados.ate)}</b> · Consultado em {new Date(dados.atualizadoEm).toLocaleString("pt-PT", { timeZone: "Europe/Lisbon" })}. Fonte da árvore: exportação do Analisador de Organização do MyOffice. {dados.consultores.length > 0 && dados.consultores.every(c => c.verificacaoCore) && "Reservas e subscrições conferidas também nos cartões Core Rank do MyOffice."}</p>
+      {grupo && <p className="dn-nota">Lista de {grupo.membros.length} membros conferida no WhatsApp em {new Date(grupo.consultadoEm).toLocaleString("pt-PT", { timeZone: "Europe/Lisbon" })}. Entradas e saídas posteriores exigem nova conferência da lista.</p>}
       <div className="crd-controls">
-        <label>Conta <select value={conta} onChange={e => setConta(e.target.value)}><option value="">Todas as contas</option>{dados.contas.map(c => <option key={c.email} value={c.email}>{c.nome} · {c.email}</option>)}</select></label>
-        <input aria-label="Pesquisar diretos" placeholder="Pesquisar um TP…" value={pesquisa} onChange={e => setPesquisa(e.target.value)} />
-        <label><input type="checkbox" checked={inativos} onChange={e => setInativos(e.target.checked)} /> Mostrar também inativos</label>
+        {!grupo && <label>Conta <select value={conta} onChange={e => setConta(e.target.value)}><option value="">Todas as contas</option>{dados.contas.map(c => <option key={c.email} value={c.email}>{c.nome} · {c.email}</option>)}</select></label>}
+        <input aria-label={grupo ? "Pesquisar membros do grupo" : "Pesquisar diretos"} placeholder="Pesquisar um TP…" value={pesquisa} onChange={e => setPesquisa(e.target.value)} />
+        {!grupo && <label><input type="checkbox" checked={inativos} onChange={e => setInativos(e.target.checked)} /> Mostrar também inativos</label>}
       </div>
       <div className="dn-stats">
-        <div className="dn-stat"><div className="dn-stat-v">{linhas.length}</div><div className="dn-stat-l">TPs diretos nesta vista</div></div>
+        {grupo && <div className="dn-stat"><div className="dn-stat-v">{grupo.membros.length}</div><div className="dn-stat-l">membros no WhatsApp · {pendentes.length} por identificar</div></div>}
+        <div className="dn-stat"><div className="dn-stat-v">{linhas.length}</div><div className="dn-stat-l">{grupo ? "consultores identificados nesta vista" : "TPs diretos nesta vista"}</div></div>
         <div className="dn-stat"><div className="dn-stat-v">{linhas.reduce((s, l) => s + l.p.novos, 0)}</div><div className="dn-stat-l">novos TPs angariados</div></div>
         <div className="dn-stat"><div className="dn-stat-v">{linhas.filter(l => l.p.concluido).length}</div><div className="dn-stat-l">atingiram o Core Rank</div></div>
       </div>
+      {pendentes.length > 0 && <details className="crd-import" open><summary>Por identificar no MyOffice ({pendentes.length})</summary><p className="dn-nota">Estes membros pertencem ao grupo. Os seus números ficam pendentes até confirmar a conta; não contam como zero.</p><ul>{pendentes.map((m, i) => <li key={i}><b>{m.nome}</b> · {m.motivo ?? "Identidade por confirmar."}</li>)}</ul></details>}
+      {grupo && <details className="crd-import"><summary>Ver a lista de membros ({grupo.membros.length})</summary><ul>{grupo.membros.map((m, i) => <li key={i}>{m.nome} · {m.username ? dados.consultores.find(c => c.username.toLowerCase() === m.username!.toLowerCase())?.nome ?? m.username : "Por identificar"}</li>)}</ul><p className="dn-nota">Se dois contactos corresponderem à mesma conta MyOffice, partilham um único cartão para não duplicar os totais.</p></details>}
       <p className="dn-nota">O cartão Core Rank do MyOffice acompanha reservas próprias e subscrições diretas (metas indicadas em cada cartão). «Ativos» acompanha, separadamente, os novos TPs diretos com pelo menos {euros(1000)} de reservas pessoais na exportação. Os novos TPs dos níveis seguintes pertencem à estrutura, não à contagem direta.</p>
       <div className="crd-list">{linhas.map(({ c, p }) => <article className="crd-card" key={c.email}>
-        <h3>{c.nome}</h3><div className="crd-account">@{c.username} · {dados.contas.find(a => a.email === c.conta)?.nome}</div>
+        <h3>{c.nome}</h3><div className="crd-account">@{c.username}{dados.contas.find(a => a.email === c.conta)?.nome && ` · ${dados.contas.find(a => a.email === c.conta)!.nome}`}</div>
+        {grupo && c.nomesWhatsapp && <div className="crd-account">No grupo: {c.nomesWhatsapp.join(" · ")}</div>}
         {!/^(ativo|active)$/i.test(c.estado) && <div className="crd-account">{c.estado}</div>}
         <ul>
           <li className={p.novos >= p.metaNovos ? "crd-ok" : undefined}>{p.novos}/{p.metaNovos} Travel Partners {p.novos >= p.metaNovos ? "✓" : ""}</li>
@@ -88,9 +95,11 @@ export function CoreRankDiretosCliente({ dados }: { dados: DadosCoreDiretos | nu
     <details className="crd-import" open={!dados}>
       <summary>Atualizar dados do MyOffice</summary>
       <form onSubmit={importar}>
+        <input type="hidden" name="ambito" value={grupo ? "grupo" : "diretos"} />
         <p className="dn-nota">No Analisador de Organização, seleciona o período e exporta a árvore completa em Excel. Indica abaixo exatamente o mesmo período: o ficheiro não permite verificar o filtro de datas das reservas.</p>
         <label>Exportação da organização<input type="file" name="ficheiro" accept=".xlsx" required /></label>
-        <label>Emails das contas a agregar<textarea name="contas" rows={3} defaultValue={dados?.contas.map(c => c.email).join("\n")} required /></label>
+        {!grupo && <label>Emails das contas a agregar<textarea name="contas" rows={3} defaultValue={dados?.contas.map(c => c.email).join("\n")} required /></label>}
+        {grupo && <p className="dn-nota">Esta importação atualiza os números das contas já identificadas e mantém a lista do grupo acima.</p>}
         <div className="crd-controls"><label>Desde<input type="date" name="desde" defaultValue={dados?.desde ?? "2026-10-01"} required /></label><label>Até<input type="date" name="ate" defaultValue={dados?.ate ?? "2026-10-31"} required /></label></div>
         <button disabled={ocupado}>{ocupado ? "A atualizar…" : "Importar e atualizar"}</button>
         <p role="status">{mensagem}</p>
