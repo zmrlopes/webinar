@@ -5,8 +5,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 /**
  * Porta o separador Mapas do artefacto "Negócio iCligo" para dentro do site,
  * tal e qual: cartões, gráficos mês a mês, projeções com simulador, mapa de
- * comissões (com as outras contas editáveis, guardadas neste browser) e o
- * próximo patamar. Os números não vivem aqui — chegam no prop `dados`, lido
+ * comissões (com as outras contas editáveis, guardadas neste browser), os
+ * mapas de pontos, consultores e faturação da folha MAPAS e o próximo patamar. Os números não vivem aqui — chegam no prop `dados`, lido
  * da base de dados privada (dashboard_config), porque o repositório é público.
  */
 
@@ -40,6 +40,9 @@ export interface DadosMapas {
   pat_meses_2026: number;
 }
 
+/** Anos antigos (mês a mês, null = ainda não havia) dos mapas da folha MAPAS, por métrica. */
+export type HistoricoMapas = Partial<Record<string, { a: number; m: (number | null)[] }[]>>;
+
 const ORDEM = ["faturacao", "comissoes", "pontos", "consultores"];
 const ICONS: Record<string, string> = {
   faturacao: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline>',
@@ -68,7 +71,7 @@ function fmtFull(v: number | null, unit: Unidade, decimals: number): string {
 }
 const r2 = (v: number): number => Math.round(v * 100) / 100;
 
-export function MapasCliente({ dados }: { dados: DadosMapas }): React.JSX.Element {
+export function MapasCliente({ dados, historico }: { dados: DadosMapas; historico: HistoricoMapas }): React.JSX.Element {
   const LS = "icligo.comissoes.outras.v2";
   const [comMan, setComMan] = useState<Record<string, number>>({});
   const [tooltip, setTooltip] = useState<{ x: number; y: number; html: string } | null>(null);
@@ -239,7 +242,7 @@ export function MapasCliente({ dados }: { dados: DadosMapas }): React.JSX.Elemen
       </div>
       <div className="section-note">
         Por omissão o fator é a <b>média do crescimento das 4 métricas em 2026</b> (vs o mesmo período de 2025). Muda o
-        número para simular outro cenário — os gráficos e o mapa de comissões acompanham.
+        número para simular outro cenário — os gráficos e os mapas acompanham.
       </div>
       <div className="proj-section">
         <div className="proj-sim">
@@ -307,6 +310,15 @@ export function MapasCliente({ dados }: { dados: DadosMapas }): React.JSX.Elemen
         Comissões das outras contas
       </div>
       <OutrasContas dados={dados} comValor={comValor} comMan={comMan} setComMan={setComMan} />
+
+      {(["pontos", "consultores", "faturacao"] as const).map((chave) => (
+        <React.Fragment key={chave}>
+          <div className="section-label" style={{ marginTop: 26 }}>
+            Mapa de {metricas[chave]!.label.toLowerCase()}
+          </div>
+          <MapaMetrica dados={dados} m={metricas[chave]!} hist={historico[chave] ?? []} fator={fator} />
+        </React.Fragment>
+      ))}
     </div>
   );
 }
@@ -732,7 +744,7 @@ function MapaComissoes({
           Comissões, mês a mês e ano a ano <span style={{ fontSize: "11.5px", fontWeight: 500, color: "var(--text-muted)" }}>desliza para o lado para ver todos os anos</span>
         </h3>
         <div style={{ overflowX: "auto" }}>
-          <table className="events-table" id="comTabela">
+          <table className="events-table cm-tabela" id="comTabela">
             <thead>
               <tr>
                 <th className="cm-y">Mês</th>
@@ -811,6 +823,212 @@ function MapaComissoes({
             </tbody>
           </table>
         </div>
+      </div>
+    </>
+  );
+}
+
+/**
+ * Mapa de uma métrica como na folha MAPAS: mês a mês e ano a ano, com o
+ * crescimento face ao ano anterior, totais, acumulado e projeção. Os anos
+ * recentes vêm vivos do dashboard; os antigos do histórico da folha. Os anos
+ * projetados repartem o total projetado pelos meses com o peso do último ano
+ * completo, tal como o mapa de comissões.
+ */
+function MapaMetrica({
+  dados,
+  m,
+  hist,
+  fator,
+}: {
+  dados: DadosMapas;
+  m: Metrica;
+  hist: { a: number; m: (number | null)[] }[];
+  fator: number;
+}): React.JSX.Element {
+  const meses = dados.months;
+  const anoAtual = dados.years_recent[dados.years_recent.length - 1]!;
+  const casas = m.unit === "eur" ? 2 : m.decimals;
+  const nf = (v: number | null) =>
+    v === null || !isFinite(v)
+      ? "—"
+      : v.toLocaleString("pt-PT", { minimumFractionDigits: casas, maximumFractionDigits: casas }) + (m.unit === "eur" ? " €" : "");
+  const nx = (v: number | null) => (v === null || !isFinite(v) ? "—" : v.toLocaleString("pt-PT", { minimumFractionDigits: 1, maximumFractionDigits: 1 }));
+  const pct = (v: number | null) => (v === null || !isFinite(v) ? "—" : Math.round(v * 100) + "%");
+
+  type Ano = { a: number; m: (number | null)[]; curso?: boolean; proj?: boolean };
+  const vivos = dados.years_recent.filter((y) => m.monthly_recent[y]);
+  const reais: Ano[] = [
+    ...hist.filter((h) => !vivos.includes(h.a)).map((h) => ({ a: h.a, m: h.m })),
+    ...vivos.map((y) => ({
+      a: y,
+      m: (m.monthly_recent[y] ?? []).map((v, i) => (y === anoAtual && i > dados.ytd_through_idx ? null : v)),
+      curso: y === anoAtual,
+    })),
+  ].sort((x, y) => x.a - y.a);
+
+  const ultimoCompleto = reais.filter((a) => !a.curso).at(-1);
+  const pesoBase = meses.map((_, i) => ultimoCompleto?.m[i] ?? 0);
+  const totBase = pesoBase.reduce((a, b) => a + b, 0);
+  const peso = pesoBase.map((v) => (totBase ? v / totBase : 1 / 12));
+  const base = m.projection_values[0] ?? 0;
+  const futuros: Ano[] = dados.projection_years.slice(1).map((ano, k) => {
+    const totalAno = base * Math.pow(fator, k + 1);
+    return { a: ano, m: peso.map((w) => r2(totalAno * w)), proj: true };
+  });
+  const anos: Ano[] = reais.concat(futuros);
+
+  const total = (a: Ano) => a.m.reduce<number>((s, v) => s + (v || 0), 0);
+  const cheios = (a: Ano) => a.m.filter((v) => v !== null).length;
+  const media = (a: Ano) => (cheios(a) ? total(a) / cheios(a) : 0);
+  const completos = reais.filter((a) => !a.curso && cheios(a) === 12);
+  const mediaMes = meses.map((_, i) => completos.reduce<number>((s, a) => s + (a.m[i] || 0), 0) / (completos.length || 1));
+  const mediaAnual = completos.reduce((s, a) => s + total(a), 0) / (completos.length || 1);
+  const cres = (a: Ano, i: number): number | null => {
+    const k = anos.indexOf(a);
+    if (k <= 0 || a.m[i] === null) return null;
+    const ant = anos[k - 1]!.m[i];
+    return ant ? (a.m[i] || 0) / ant : null;
+  };
+  const cresTot = (a: Ano): number | null => {
+    const k = anos.indexOf(a);
+    if (k <= 0) return null;
+    const ant = total(anos[k - 1]!);
+    return ant ? (total(a) - ant) / ant : null;
+  };
+  let soma = 0;
+  const acumulado = anos.map((a) => (soma += total(a)));
+  const anoPassado = reais.find((a) => a.a === anoAtual - 1);
+
+  const linhaTot = (nome: string, fn: (a: Ano, k: number) => number | null, forte?: boolean) => (
+    <tr key={nome} className={forte ? "cm-forte" : undefined}>
+      <td className="cm-y">{nome}</td>
+      <td />
+      {anos.map((a, k) => (
+        <React.Fragment key={k}>
+          <td className={`ev-num ${a.proj ? "cm-proj" : ""}`}>{nf(fn(a, k))}</td>
+          <td className="cm-c" />
+        </React.Fragment>
+      ))}
+    </tr>
+  );
+
+  return (
+    <>
+      <div className="events-summary">
+        <div className="es-stat">
+          <div className="es-value">{nf(m.ytd_2026)}</div>
+          <div className="es-label">
+            em {anoAtual}, até {dados.ytd_partial_day} de {MES_LONGO[dados.ytd_through_idx]}
+          </div>
+        </div>
+        {m.delta_pct !== null && (
+          <div className="es-stat">
+            <div className="es-value" style={{ color: m.delta_pct >= 0 ? "var(--good)" : "var(--bad)" }}>
+              {m.delta_pct >= 0 ? "+" : ""}
+              {Math.round(m.delta_pct)}%
+            </div>
+            <div className="es-label">
+              face aos mesmos dias de {anoAtual - 1} ({nf(m.ytd_2025)})
+            </div>
+          </div>
+        )}
+        {anoPassado && (
+          <div className="es-stat">
+            <div className="es-value">{nf(total(anoPassado))}</div>
+            <div className="es-label">foi o ano de {anoPassado.a} inteiro</div>
+          </div>
+        )}
+      </div>
+      <div className="events-card">
+        <h3>
+          {m.label}, mês a mês e ano a ano{" "}
+          <span style={{ fontSize: "11.5px", fontWeight: 500, color: "var(--text-muted)" }}>desliza para o lado para ver todos os anos</span>
+        </h3>
+        <div style={{ overflowX: "auto" }}>
+          <table className="events-table cm-tabela">
+            <thead>
+              <tr>
+                <th className="cm-y">Mês</th>
+                <th className="cm-y">Média mensal</th>
+                {anos.map((a, k) => (
+                  <React.Fragment key={k}>
+                    <th style={{ textAlign: "right" }} className={a.proj ? "cm-proj" : ""}>
+                      {a.a}
+                      {a.curso && <span className="cm-tag">a decorrer</span>}
+                      {a.proj && <div className="cm-ep">projeção</div>}
+                    </th>
+                    <th className="cm-c">cres</th>
+                  </React.Fragment>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {meses.map((mes, i) => (
+                <tr key={mes}>
+                  <td className="cm-y">
+                    <b>{mes}</b>
+                  </td>
+                  <td className="ev-num" style={{ fontWeight: 500, color: "var(--text-muted)" }}>
+                    {nf(mediaMes[i] ?? 0)}
+                  </td>
+                  {anos.map((a, k) => {
+                    const v = a.m[i];
+                    const c = cres(a, i);
+                    return (
+                      <React.Fragment key={k}>
+                        <td className={`ev-num ${a.proj ? "cm-proj" : ""}`}>{v == null ? "—" : nf(v)}</td>
+                        <td className="cm-c">{c === null ? "" : nx(c)}</td>
+                      </React.Fragment>
+                    );
+                  })}
+                </tr>
+              ))}
+              <tr className="cm-sep">
+                <td className="cm-y">
+                  <b>Anual</b>
+                </td>
+                <td className="ev-num" style={{ fontWeight: 700 }}>
+                  {nf(mediaAnual)}
+                </td>
+                {anos.map((_, k) => (
+                  <React.Fragment key={k}>
+                    <td />
+                    <td className="cm-c" />
+                  </React.Fragment>
+                ))}
+              </tr>
+              {linhaTot("Total anual", total, true)}
+              {linhaTot("Total acumulado", (_, k) => acumulado[k] ?? null)}
+              {linhaTot("Média mensal", media)}
+              <tr>
+                <td className="cm-y">% cres. anual</td>
+                <td />
+                {anos.map((a, k) => {
+                  const c = cresTot(a);
+                  return (
+                    <React.Fragment key={k}>
+                      <td
+                        className={`ev-num ${a.proj ? "cm-proj" : ""}`}
+                        style={{ color: c === null ? "inherit" : c >= 0 ? "var(--good)" : "var(--bad)" }}
+                      >
+                        {pct(c)}
+                      </td>
+                      <td className="cm-c" />
+                    </React.Fragment>
+                  );
+                })}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p style={{ fontSize: "11px", color: "var(--text-muted)", margin: "10px 0 0" }}>
+          {hist.length === 0
+            ? "Ainda não há histórico dos anos antigos carregado — só aparecem os anos que o dashboard já recolhe. "
+            : "Os anos antigos vêm da folha MAPAS; os recentes atualizam com o dashboard. "}
+          A média mensal usa os anos completos. Os anos projetados seguem o fator do simulador, repartidos pelos meses como
+          em {ultimoCompleto?.a ?? "—"}.
+        </p>
       </div>
     </>
   );
@@ -1023,15 +1241,15 @@ function MapasEstilos(): React.JSX.Element {
       table.events-table .ev-name { font-weight:600; color:var(--text-primary); }
       table.events-table .ev-user { font-size:11px; color:var(--text-muted); margin-left:4px; }
       table.events-table td.ev-num { text-align:right; font-weight:700; font-variant-numeric:tabular-nums; }
-      #comTabela th, #comTabela td { padding:6px 8px; font-size:12px; white-space:nowrap; }
-      #comTabela th.cm-y, #comTabela td.cm-y { position:sticky; left:0; z-index:1; background:var(--surface-1); box-shadow:1px 0 0 var(--grid); text-align:left; }
-      #comTabela tbody tr:hover td.cm-y { background:var(--brand-tint-bg); }
-      #comTabela th.cm-c, #comTabela td.cm-c { text-align:right; font-size:10px; color:var(--text-muted); font-weight:500; padding-left:2px; padding-right:6px; background:var(--surface-2); }
-      #comTabela .cm-proj { color:var(--text-muted); font-weight:500; }
-      #comTabela .cm-ep { font-size:9.5px; font-weight:500; color:var(--text-muted); text-transform:none; letter-spacing:0; }
-      #comTabela .cm-tag { font-size:9px; font-weight:700; color:var(--brand-700); margin-left:5px; }
-      #comTabela tr.cm-sep td { border-top:2px solid var(--border); }
-      #comTabela tr.cm-forte td { font-weight:700; }
+      .cm-tabela th, .cm-tabela td { padding:6px 8px; font-size:12px; white-space:nowrap; }
+      .cm-tabela th.cm-y, .cm-tabela td.cm-y { position:sticky; left:0; z-index:1; background:var(--surface-1); box-shadow:1px 0 0 var(--grid); text-align:left; }
+      .cm-tabela tbody tr:hover td.cm-y { background:var(--brand-tint-bg); }
+      .cm-tabela th.cm-c, .cm-tabela td.cm-c { text-align:right; font-size:10px; color:var(--text-muted); font-weight:500; padding-left:2px; padding-right:6px; background:var(--surface-2); }
+      .cm-tabela .cm-proj { color:var(--text-muted); font-weight:500; }
+      .cm-tabela .cm-ep { font-size:9.5px; font-weight:500; color:var(--text-muted); text-transform:none; letter-spacing:0; }
+      .cm-tabela .cm-tag { font-size:9px; font-weight:700; color:var(--brand-700); margin-left:5px; }
+      .cm-tabela tr.cm-sep td { border-top:2px solid var(--border); }
+      .cm-tabela tr.cm-forte td { font-weight:700; }
       #comOutras input.com-in { width:86px; font-family:inherit; font-size:12.5px; text-align:right; padding:4px 7px; border:1px solid var(--border); border-radius:7px; background:var(--surface-1); color:var(--text-primary); font-variant-numeric:tabular-nums; }
       #comOutras input.com-in:focus { outline:2px solid var(--brand-700); outline-offset:1px; }
       #comOutras td { padding-top:5px; padding-bottom:5px; }

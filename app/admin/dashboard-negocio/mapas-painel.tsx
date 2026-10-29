@@ -1,14 +1,19 @@
 import { lerConfig } from "@/lib/dashboard-negocio";
-import { type DadosMapas, MapasCliente } from "./mapas-cliente";
+import { type DadosMapas, type HistoricoMapas, MapasCliente } from "./mapas-cliente";
 
 /**
  * Servidor: lê o snapshot dos Mapas de dashboard_config (os totais próprios do
  * Zé, carregados por /api/admin/dashboard-negocio/config) e entrega-o ao
- * componente de cliente, que replica o separador Mapas do artefacto. Nada de
- * números no código — chegam da base de dados privada.
+ * componente de cliente, que replica o separador Mapas do artefacto. Os anos
+ * antigos dos mapas de pontos, consultores e faturação (folha MAPAS) vivem à
+ * parte, em mapas_historico, para a atualização do dashboard não lhes tocar.
+ * Nada de números no código — chegam da base de dados privada.
  */
 export async function MapasPainel(): Promise<React.JSX.Element> {
-  const dados = await lerConfig<DadosMapas>("mapas");
+  const [dados, historico] = await Promise.all([
+    lerConfig<DadosMapas>("mapas"),
+    lerConfig<HistoricoMapas>("mapas_historico"),
+  ]);
 
   if (!dados) {
     return (
@@ -29,5 +34,5 @@ export async function MapasPainel(): Promise<React.JSX.Element> {
     );
   }
 
-  return <MapasCliente dados={dados} />;
+  return <MapasCliente dados={dados} historico={historico ?? {}} />;
 }
