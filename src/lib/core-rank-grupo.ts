@@ -4,14 +4,28 @@ export type GrupoCore = NonNullable<DadosCoreDiretos["grupo"]>;
 const chave = (s: string) => s.trim().toLowerCase();
 
 export function associarMembroCoreEmail(dados: DadosCoreDiretos, membros: MembroCoreDiretos[], indice: number, nome: string, email: string): DadosCoreDiretos {
-  const participante = dados.grupo?.membros[indice];
-  if (!participante || participante.nome !== nome || participante.username) throw new Error("Este membro já foi associado ou a lista mudou. Atualiza a página.");
+  indexarMembrosCore(membros, dados.desde, dados.ate);
   const encontrados = membros.filter(m => chave(m.email) === chave(email));
-  if (encontrados.length !== 1) throw new Error("O email não identifica uma única conta na exportação. Confirma o email ou atualiza o Excel da árvore completa.");
-  const grupo = { ...dados.grupo!, membros: dados.grupo!.membros.map((m, i) => i === indice ? { nome: m.nome, username: encontrados[0]!.username } : m) };
-  const resultado = construirCoreGrupo(membros, grupo, dados.desde, dados.ate, dados.fonte, dados.atualizadoEm);
-  resultado.consultores = resultado.consultores.map(c => ({ ...c, verificacaoCore: dados.consultores.find(a => chave(a.username) === chave(c.username))?.verificacaoCore }));
-  return resultado;
+  if (encontrados.length !== 1) throw new Error("O email não identifica uma única conta nos dados guardados. Confirma o email ou usa Atualizar dados.");
+  const membro = encontrados[0]!;
+  const resultado = associarIdentidadeCoreGrupo(dados, indice, nome, membro.username);
+  if (resultado.consultores.some(c => chave(c.username) === chave(membro.username))) return resultado;
+  // Associar uma conta não recalcula os cartões nem as verificações dos outros membros.
+  const nomes = resultado.grupo!.membros.filter(m => m.username && chave(m.username) === chave(membro.username));
+  const novo = construirCoreGrupo(membros, { ...resultado.grupo!, membros: nomes }, dados.desde, dados.ate, dados.fonte, dados.atualizadoEm);
+  return { ...resultado, consultores: [...resultado.consultores, ...novo.consultores],
+    contas: [...resultado.contas, ...novo.contas.filter(c => !resultado.contas.some(a => chave(a.username) === chave(c.username)))] };
+}
+
+/** Também permite repetir o mesmo envio depois de uma falha de rede. */
+export function associarIdentidadeCoreGrupo(dados: DadosCoreDiretos, indice: number, nome: string, username: string): DadosCoreDiretos {
+  const participante = dados.grupo?.membros[indice];
+  if (!participante || participante.nome !== nome || (participante.username && chave(participante.username) !== chave(username))) {
+    throw new Error("Este membro já foi associado ou a lista mudou. Atualiza a página.");
+  }
+  const grupo = { ...dados.grupo!, membros: dados.grupo!.membros.map((m, i) => i === indice ? { nome: m.nome, username } : m) };
+  return { ...dados, grupo, consultores: dados.consultores.map(c => chave(c.username) === chave(username)
+    ? { ...c, nomesWhatsapp: grupo.membros.filter(m => m.username && chave(m.username) === chave(username)).map(m => m.nome) } : c) };
 }
 
 /** A correspondência é confirmada por identidade, nunca inferida por semelhança de nomes. */

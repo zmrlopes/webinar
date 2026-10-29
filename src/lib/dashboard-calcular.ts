@@ -10,6 +10,7 @@ import type { DadosLinhaDireta } from "../../app/admin/dashboard-negocio/linha-d
 import type { DadosMapas } from "../../app/admin/dashboard-negocio/mapas-cliente";
 import type { DadosCoreDiretos } from "./core-rank-diretos";
 import { prepararAtualizacaoCoreGrupo } from "./core-rank-grupo-atualizar";
+import { guardarAtualizacaoCoreGrupo } from "./core-rank-grupo-servidor";
 
 /**
  * O passo final do botão «Atualizar dashboard»: a partir das respostas do
@@ -369,7 +370,6 @@ export async function calcularDashboard(gravar: boolean): Promise<Resultado> {
       ["linha_direta", linha, novaLinha],
       ["incentivos", incentivos, novosIncentivos],
       ["core_rank", core, novoCore],
-      ["core_rank_grupo", grupoCore, atualizacaoGrupo?.dados],
       ["reservas_medias", reservas, novasReservas],
     ];
     for (const [chave, antes, depois] of gravacoes) {
@@ -378,7 +378,10 @@ export async function calcularDashboard(gravar: boolean): Promise<Resultado> {
       await gravarConfig(chave, depois);
     }
     if (equipaCompleta && linhasEquipa.length) await importarLinhasEquipa(linhasEquipa);
-    if (atualizacaoGrupo) await gravarConfig("core_rank_grupo_arvore", atualizacaoGrupo.membros);
+    if (atualizacaoGrupo && grupoCore && !await guardarAtualizacaoCoreGrupo(grupoCore, atualizacaoGrupo.dados, atualizacaoGrupo.membros)) {
+      avisos.push("Grupo Core Rank: a lista mudou durante a atualização. As associações foram preservadas; volta a atualizar os dados.");
+      delete resumo.coreRankGrupo;
+    }
     if (novaFaturacaoBF) await gravarConfig(CHAVE_FATURACAO_BF, novaFaturacaoBF);
   }
 
