@@ -369,3 +369,13 @@ no detalhe do TP. Atualiza a cada dez segundos enquanto visível e ao regressar 
 janela. Só lê os TPs diretos da hierarquia atual, sem prazo de expiração.
 Continua exclusivo da nova área e API da conta de teste; não abre o acesso dos
 restantes consultores nem altera os seus checks ou as presenças Welcome Aboard.
+
+Por indicação do utilizador, Reservas → “Onde posso vender?” (primeira opção do
+grupo) tem um motor de pesquisa por destino, país, ilha, tema (Fim de Ano, Páscoa…)
+ou código IATA que indica em que operadores turísticos o TP pode vender esse destino,
+segundo as FAQs do Centro de Ajuda iCliGo (help.icligo.com, protegido por login).
+Os dados estão transcritos em `src/lib/operadores-destinos.ts` (destinos autorizados,
+motor/manual, sinal, regras e data de cada FAQ) e só são lidos no servidor pela API
+`/api/consultor/nova-area/operadores`, com o mesmo acesso de Reservas (`acessoReservas`).
+Ao rever as FAQs, atualizar as linhas, as datas `atualizado` e `REVISTO_EM`, e correr
+`npm run test:operadores`. Continua exclusivo da nova área da conta de teste.
