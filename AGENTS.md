@@ -14,12 +14,12 @@ privado por TP. Está em preparação apenas na conta de teste definida em
 `src/lib/demo.ts`, incluindo a API. O desafio começa a 13/11/2026 e termina
 a 13/12/2026, inclusive, no horário de Lisboa; as datas podem ser ajustadas
 no admin antes da primeira participação. Por indicação mais recente, o
-avião central começa vazio e exige uma reserva de pelo menos 5.000 € com
+avião central começa vazio e exige uma reserva de pelo menos 7.500 € com
 comprovativo. Como as outras casas, exige envio e revisão. Não oferece
 uma marca automática, incluindo em configurações antigas e na simulação.
 A linha central e o bingo exigem também essa reserva. Cada reserva preenche
 uma única casa escolhida pelo TP, com referência, data, valor e comprovativo.
-Uma única reserva de pelo menos 5.000 € pode preencher qualquer casa como
+Uma única reserva de pelo menos 7.500 € pode preencher qualquer casa como
 joker e não pode voltar a ser usada noutra casa. O envio conta imediatamente
 como pendente; a recusa retira-o do progresso e permite novo envio. O admin
 revê os comprovativos em `/admin/blackfriday`, com motivo e histórico.
@@ -68,7 +68,7 @@ vivas variadas (verde, azul, violeta, rosa, laranja e turquesa), estáveis por
 posição, na simulação e no cartão real. As pendentes têm contorno tracejado;
 as aprovadas mantêm o visto. É uma exceção às cores da marca limitada ao bingo.
 A interface de consultor e admin, as regras e os erros usam a palavra “joker”
-para a reserva de pelo menos 5.000 €. Os registos existentes mantêm-se.
+para a reserva de pelo menos 7.500 €. Os registos existentes mantêm-se.
 
 Por indicação do utilizador, as seis cores das casas do BLACKFRIDAY mantêm
 um acabamento sofisticado, com cores claras, vivas e alegres, reflexos suaves,

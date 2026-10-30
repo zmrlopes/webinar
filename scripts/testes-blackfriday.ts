@@ -10,15 +10,17 @@ assert.equal(CASAS_BF.length, 25);
 assert.equal(hojeBF(new Date("2026-11-12T23:59:59Z")), "2026-11-12");
 assert.throws(() => validarReservaBF(reserva, config, "2026-11-12"), /início e o fim/);
 assert.equal(validarReservaBF(reserva, config, "2026-11-13").valorCentimos, 250050);
-assert.equal(validarReservaBF({...reserva, valor: "5000", curinga: "true"}, config, "2026-12-13").curinga, true);
+assert.equal(validarReservaBF({...reserva, valor: "7500", curinga: "true"}, config, "2026-12-13").curinga, true);
 assert.throws(() => validarReservaBF(reserva, config, "2026-12-14"), /início e o fim/);
 assert.throws(() => validarReservaBF({...reserva, dataReserva: "2026-11-12"}, config, "2026-11-13"), /data da reserva/);
 assert.throws(() => validarReservaBF({...reserva, dataReserva: "2026-11-14"}, config, "2026-11-13"), /data da reserva/);
-assert.throws(() => validarReservaBF({...reserva, curinga: true, valor: "4999.99"}, config, "2026-11-13"), /5.000/);
+assert.throws(() => validarReservaBF({...reserva, curinga: true, valor: "7499.99"}, config, "2026-11-13"), /7.500/);
 assert.equal(config.centro, "reserva5k");
-assert.equal(validarReservaBF({...reserva, casa: "12", valor: "5000"}, config, "2026-11-13").curinga, true);
-assert.throws(() => validarReservaBF({...reserva, casa: "12", valor: "4999"}, config, "2026-11-13"), /5.000/);
-assert.equal(validarReservaBF({...reserva, casa: "12", valor: "5000"}, {...config, centro: "reserva5k"}, "2026-11-13").curinga, true);
+assert.throws(() => validarReservaBF({...reserva, curinga: true, valor: "5000"}, config, "2026-11-13"), /7.500/);
+assert.throws(() => validarReservaBF({...reserva, casa: "12", valor: "5000"}, config, "2026-11-13"), /7.500/);
+assert.equal(validarReservaBF({...reserva, casa: "12", valor: "7500"}, config, "2026-11-13").curinga, true);
+assert.throws(() => validarReservaBF({...reserva, casa: "12", valor: "7499.99"}, config, "2026-11-13"), /7.500/);
+assert.equal(validarReservaBF({...reserva, casa: "12", valor: "7500"}, {...config, centro: "reserva5k"}, "2026-11-13").curinga, true);
 assert.equal(referenciaBF(" ab-12.3 _ "), "AB123");
 const claim = (casa: number, estado: InscricaoBF["estado"] = "pendente"): InscricaoBF => ({
   id: String(casa), casa, estado, email: "tp@example.com", nome: "TP", referencia: String(casa), valorCentimos: 10000,
@@ -43,7 +45,7 @@ assert.equal(resumirBF(completo.map(i => i.casa === 12 ? {...i, estado: "recusad
 assert.deepEqual(periodoBF(config, "2026-11-20"), {inicio: "2026-11-13", fim: "2026-11-20"});
 assert.deepEqual(periodoBF(config, "2026-12-14"), {inicio: "2026-11-13", fim: "2026-12-13"});
 assert.deepEqual(periodoBF({...config, periodoFaturacao: "anual"}, "2026-11-20"), {inicio: "2026-01-01", fim: "2026-11-20"});
-console.log("OK: datas de Lisboa, início/fim inclusivos, avião configurável, joker de reserva única ≥5K, referências normalizadas, linhas só horizontais, progresso pendente, recusa, bingo e ordem pelo envio.");
+console.log("OK: datas de Lisboa, início/fim inclusivos, avião configurável, joker de reserva única ≥7,5K, referências normalizadas, linhas só horizontais, progresso pendente, recusa, bingo e ordem pelo envio.");
 
 assert.equal(dataSimulacaoBF(config, "2026-10-27"), config.inicio);
 assert.equal(dataSimulacaoBF(config, "2026-11-20"), "2026-11-20");
@@ -106,7 +108,7 @@ if (process.argv.includes("--db")) {
       const imagemSim = await sharp({create: {width: 20, height: 20, channels: 3, background: "red"}}).png().toBuffer();
       const enviarSim = (simulacao = "true") => {
         const form = new FormData();
-        for (const [k,v] of Object.entries({email: EMAIL_PAINEL_DEMONSTRACAO, acao: "enviar", simulacao, casa: "0", referencia: "TESTE-ADMIN-001", valor: "5000", dataReserva: dataSimulacaoBF(CONFIG_BF, hoje), curinga: "true"})) form.set(k, v);
+        for (const [k,v] of Object.entries({email: EMAIL_PAINEL_DEMONSTRACAO, acao: "enviar", simulacao, casa: "0", referencia: "TESTE-ADMIN-001", valor: "7500", dataReserva: dataSimulacaoBF(CONFIG_BF, hoje), curinga: "true"})) form.set(k, v);
         form.set("ficheiro", new File([new Uint8Array(imagemSim)], "print-teste.png", {type: "image/png"}));
         return consultor.POST(new Request("http://localhost/api/consultor/nova-area/blackfriday", {method: "POST", body: form}));
       };
@@ -152,7 +154,7 @@ if (process.argv.includes("--db")) {
       await api.guardarConfigBF({...CONFIG_BF, inicio: hoje, fim: "2026-12-31"});
       const imagem = (cor: string) => sharp({create: {width: 20, height: 20, channels: 3, background: cor}}).png().toBuffer();
       const ficheiro = async (cor: string) => new File([new Uint8Array(await imagem(cor))], "reserva.png", {type: "image/png"});
-      const corpo = {...reserva, dataReserva: hoje, valor: "5000", curinga: true};
+      const corpo = {...reserva, dataReserva: hoje, valor: "7500", curinga: true};
       const email = "tp@example.com";
       const primeira = await api.enviarReservaBF(email, "TP", corpo, await ficheiro("red"));
       const reaisAntes = await api.listarReservasBF();

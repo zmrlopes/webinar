@@ -70,6 +70,6 @@ export function validarReservaBF(corpo: Record<string, unknown>, config: Configu
   const dataReserva = corpo.dataReserva;
   if (!dataValidaBF(dataReserva) || dataReserva < config.inicio || dataReserva > config.fim || dataReserva > hoje) throw new Error("A data da reserva tem de estar dentro do desafio e não pode ser futura.");
   const curinga = corpo.curinga === true || corpo.curinga === "true" || casa === 12;
-  if (curinga && valorCentimos < 500_000) throw new Error("O joker exige uma única reserva de pelo menos 5.000 €.");
+  if (curinga && valorCentimos < 750_000) throw new Error("O joker exige uma única reserva de pelo menos 7.500 €.");
   return {casa, referencia, valorCentimos, dataReserva, curinga};
 }
