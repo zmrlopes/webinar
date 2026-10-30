@@ -39,6 +39,12 @@ o admin permite escolher o acumulado anual. Se a meta for atingida, todos os
 TPs com bingo válido recebem os bilhetes de todos os eventos anuais; caso
 contrário, apenas o primeiro bingo válido. Não envia comunicações.
 
+Por confirmação do utilizador, o cartão “O grande bingo” explicita os bilhetes
+pagos para Be a Rock, Be a Pro, Convenção Nacional, Be a Leader, Mindset Elite
+e Evento Natal Tropa de Elite. O prémio inclui apenas as entradas nesses eventos.
+Mantém-se a regra dos 3.000.000 €: se a equipa atingir a meta, todos os TPs com
+bingo validado recebem o prémio; caso contrário, apenas o primeiro bingo válido.
+
 Por indicação do utilizador, o BLACKFRIDAY inclui uma simulação interativa
 exclusiva da conta de teste. Permite anexar um print/PDF, ver a casa pendente,
 simular aprovação ou recusa com motivo e visualizar a casa validada. Funciona

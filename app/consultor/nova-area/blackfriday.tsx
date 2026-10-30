@@ -182,7 +182,15 @@ export function BlackFriday({email}: {email: string}) {
         </div>
         <aside className={css.premios}>
           <div className={css.premio}><span className={css.selo}>01 / A PRIMEIRA LINHA</span><h3>Cinco casas.<br/>Uma conquista.</h3><p>Completa a tua primeira linha horizontal.</p><strong>{dados.config.premioLinha}</strong><small>Um prémio de linha por TP.</small></div>
-          <div className={`${css.premio} ${css.premioPrincipal}`}><span className={css.selo}>02 / O GRANDE BINGO</span><h3>Um ano de<br/>eventos contigo.</h3><strong>{dados.config.premioBingo}</strong><p>Se a equipa atingir <b>3 milhões de euros</b>, todos os TPs com bingo validado recebem o prémio.</p><p>Se a meta não for atingida, recebe apenas o primeiro TP a completar um bingo válido.</p></div>
+          <div className={`${css.premio} ${css.premioPrincipal}`}>
+            <span className={css.selo}>02 / O GRANDE BINGO</span><h3>Um ano de<br/>eventos contigo.</h3>
+            <strong>{dados.config.premioBingo}</strong>
+            <p>O prémio inclui os bilhetes pagos para:</p>
+            <ul className={css.eventosPremio}><li>Be a Rock</li><li>Be a Pro</li><li>Convenção Nacional</li><li>Be a Leader</li><li>Mindset Elite</li><li>Evento Natal Tropa de Elite</li></ul>
+            <small>Apenas as entradas nestes eventos.</small>
+            <p>Se a equipa atingir <b>3 milhões de euros</b>, <b>todos os TPs com bingo validado</b> recebem o prémio.</p>
+            <p>Se a meta não for atingida, recebe o prémio <b>apenas o primeiro TP a completar um bingo válido</b>.</p>
+          </div>
           <div className={css.premio}><span className={css.selo}>O TEU JOKER</span><h3>Uma reserva de 5K.<br/>A casa que quiseres.</h3><p>Uma única reserva de pelo menos 5.000 € pode preencher qualquer casa à tua escolha.</p><small>A reserva e o comprovativo só podem ser usados numa casa.</small></div>
         </aside>
       </div>
