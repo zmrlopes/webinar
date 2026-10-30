@@ -196,8 +196,12 @@ export async function listarInscritosComFaturacao(): Promise<InscritoFaturacao[]
             (select rt.quero from respostas_trofeus rt where rt.email = ei.email) as trofeus_quero,
             (select rt.ja_tenho from respostas_trofeus rt where rt.email = ei.email) as trofeus_ja_tenho
      from evento_inscricoes ei
-     left join equipa_afiliados ea on ea.email = ei.email
+     left join equipa_afiliados ea on lower(trim(ea.email)) =
+       case lower(trim(ei.email)) when $1 then $2 else lower(trim(ei.email)) end
      group by ei.email`,
+    // Associação confirmada pelo utilizador: a Patrícia usou outro email no evento.
+    // Mantém a inscrição original e lê a data/patamar do registo da equipa.
+    ["patricia.alxandra.mendonca@gmail.com", "wanderlustbypatricia@gmail.com"],
   );
   return rows.map((r) => ({
     nome: r.nome,
