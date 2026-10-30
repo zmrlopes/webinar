@@ -14,6 +14,7 @@ import { BotaoEstadoInscricoes } from "../botao-estado";
 import { DocumentosEvento } from "../documentos-evento";
 import { TabelaInscricoesEvento } from "../tabela-inscricoes-evento";
 import { RelatorioRespostas } from "./relatorio-respostas";
+import { SeparadoresEvento } from "./separadores-evento";
 
 export const dynamic = "force-dynamic";
 
@@ -259,6 +260,11 @@ export default async function AdminEventos() {
           </strong>
         </p>
 
+        <SeparadoresEvento inscritos={inscritosFaturacao.map(i => ({
+          nome: i.nome,
+          email: i.email,
+          dataRegisto: i.dataRegisto ? new Date(i.dataRegisto).toISOString().slice(0, 10) : null,
+        }))}>
         <div className="ad-grid">
           <div className="ad-cartao">
             <div className="ad-numero">{totalAdultos}</div>
@@ -306,6 +312,7 @@ export default async function AdminEventos() {
         ) : (
           <TabelaInscricoesEvento inscricoes={inscricoes} />
         )}
+        </SeparadoresEvento>
       </div>
     </main>
   );
