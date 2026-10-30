@@ -94,7 +94,7 @@ function incluido(d: DadosProposta, t: Tema, img: Image | null, plano: TravelPla
 
 function opcoes(d: DadosProposta, t: Tema, img: Image | null, plano: TravelPlanner, n: number) {
   const {p} = d, {canvas, ctx} = novaPagina(t);
-  let y = cabecalho(ctx, t, "Escolham a vossa", p.opcoes.length > 1 ? "As opções de alojamento" : "O alojamento");
+  let y = cabecalho(ctx, t, "Escolham a vossa", p.opcoes.some(o => o.tipo === "circuito") ? "A vossa viagem" : p.opcoes.length > 1 ? "As opções de alojamento" : "O alojamento");
   const livre = ALTURA - 130 - y, gap = 30, h = Math.min(520, (livre - gap * (p.opcoes.length - 1)) / p.opcoes.length), w = LARGURA - 2 * M, fotoW = Math.round(w * 0.44);
   p.opcoes.forEach((o, i) => {
     const escolhida = p.recomendada === i;

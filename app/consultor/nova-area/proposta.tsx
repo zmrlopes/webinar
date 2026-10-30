@@ -229,7 +229,7 @@ export function PropostaNovaArea({email, abrirPlanner}: {email: string; abrirPla
         <h3>PDFs da iCliGo</h3>
         <div className={css.origem}>
           <label className={css.ficheiro}>Escolher até 3 PDFs<input type="file" accept="application/pdf" multiple onChange={importar} /></label>
-          <span>Um PDF por hotel, da mesma viagem. Também podes preencher tudo à mão.</span>
+          <span>Um PDF por hotel ou circuito, da mesma viagem. As etapas de um circuito ficam numa única opção. Também podes preencher tudo à mão.</span>
         </div>
         {avisosPDF.map(a => <p key={a} className={css.ajuda}>⚠️ {a}</p>)}
 
@@ -254,7 +254,7 @@ export function PropostaNovaArea({email, abrirPlanner}: {email: string; abrirPla
             <button type="button" className={css.remover} onClick={() => setP({...p, opcoes: p.opcoes.filter((_, j) => j !== i), recomendada: p.recomendada === i ? null : p.recomendada !== null && p.recomendada > i ? p.recomendada - 1 : p.recomendada})}>Remover</button>
           </div>
           <div className={css.grelha}>
-            <Campo titulo="Hotel" valor={o.hotel} alterar={v => alterarOpcao(i, {hotel: v, lat: null, lng: null})} />
+            <Campo titulo={o.tipo === "circuito" ? "Circuito / programa" : "Hotel"} valor={o.hotel} alterar={v => alterarOpcao(i, {hotel: v, lat: null, lng: null})} />
             <Campo titulo="Quarto" valor={o.quarto} alterar={v => alterarOpcao(i, {quarto: v})} />
             <Campo titulo="Regime" valor={o.regime} alterar={v => alterarOpcao(i, {regime: v})} />
             <Campo titulo="Preço total (€)" valor={o.total === null ? "" : String(o.total)} alterar={v => alterarOpcao(i, {total: numeroOuNulo(v)})} />

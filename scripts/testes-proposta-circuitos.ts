@@ -1,0 +1,21 @@
+import assert from "node:assert/strict";
+import { juntarLeituras, validarLeitura, validarProposta, propostaVazia } from "../src/lib/proposta";
+
+const hotel = (nome: string, total: number | null) => ({nome, quarto: "Duplo", regime: "PA", total, precoPessoa: null});
+const dados = {viagem: {destino: "Marrocos", viajantes: 2}, hoteis: [hotel("Hotel Marrakech", 400), hotel("Hotel Fez", 300)]};
+const circuito = validarLeitura({...dados, circuito: hotel("Circuito - Cidades imperiais", 1800)}, "circuito.pdf");
+const j = juntarLeituras([circuito]);
+assert.ok(j.opcoes[0]);
+assert.equal(j.opcoes.length, 1, "As estadias sucessivas pertencem ao mesmo programa");
+assert.equal(j.opcoes[0].tipo, "circuito");
+assert.equal(j.opcoes[0].total, 1800);
+assert.equal(j.opcoes[0].precoPessoa, 900);
+const semPreco = juntarLeituras([validarLeitura({...dados, circuito: hotel("Circuito", null)}, "sem-preco.pdf")]);
+assert.ok(semPreco.opcoes[0]);
+assert.equal(semPreco.opcoes[0].total, null, "Nunca soma nem reutiliza os preços das etapas");
+assert.equal(juntarLeituras([validarLeitura(dados, "alternativas.pdf")]).opcoes.length, 2, "Preserva alternativas de hotéis");
+const p = validarProposta({...propostaVazia("00000000-0000-4000-8000-000000000001"), opcoes: j.opcoes});
+assert.ok(p.opcoes[0]);
+assert.equal(p.opcoes[0].tipo, "circuito", "Preserva a classificação ao guardar/reabrir");
+assert.equal(juntarLeituras([circuito, {...circuito, ficheiro: "outro.pdf"}]).opcoes.length, 2);
+console.log("Circuitos: etapas agrupadas, preço global, ausência de preço e alternativas verificados.");

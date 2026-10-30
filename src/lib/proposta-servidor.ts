@@ -66,8 +66,12 @@ export async function guardarPerfil(email: string, valor: unknown): Promise<{tel
 // ---------- leitura dos PDFs ----------
 
 const esquemaLeitura = {
-  type: "object", additionalProperties: false, required: ["viagem", "hoteis", "incluido", "naoIncluido", "condicoes", "validade"],
+  type: "object", additionalProperties: false, required: ["circuito", "viagem", "hoteis", "incluido", "naoIncluido", "condicoes", "validade"],
   properties: {
+    circuito: {anyOf: [{type: "null"}, {type: "object", additionalProperties: false,
+      required: ["nome", "quarto", "regime", "total", "precoPessoa"], properties: {
+        nome: {type: "string"}, quarto: {type: "string"}, regime: {type: "string"},
+        total: {type: ["number", "null"]}, precoPessoa: {type: ["number", "null"]}}}]},
     viagem: {type: "object", additionalProperties: false, required: ["destino", "partida", "ida", "regresso", "viajantes", "voo", "bagagem", "transfer", "transferIncluido"],
       properties: {destino: {type: "string"}, partida: {type: "string"}, ida: {type: "string"}, regresso: {type: "string"}, viajantes: {type: ["integer", "null"]},
         voo: {type: "string"}, bagagem: {type: "string"}, transfer: {type: "string"}, transferIncluido: {type: ["boolean", "null"]}}},
@@ -86,8 +90,12 @@ export async function lerPDFProposta(email: string, ficheiro: File): Promise<Lei
   const r = await chamarIAReservas(email, `Extrai exclusivamente dados comprovados neste PDF de uma proposta de viagem da iCliGo (MyOffice), incluindo os que estão em imagens. Não inventes nem adivinhes.
 Não devolvas dados pessoais de clientes, referências de reserva, dados de pagamento nem comissões.
 - viagem: destino (cidade/região e país), partida (cidade), ida e regresso (YYYY-MM-DD), viajantes (número de pessoas), voo (companhia, números e horários, ida e volta), bagagem, transfer (descrição curta), transferIncluido (true se o preço inclui transfers, false se o PDF diz que não inclui ou não há transfer, null se o PDF não diz nada).
+- Distingue alternativas de alojamento de etapas consecutivas de um circuito, tour ou viagem combinada. Vários hotéis/cidades/noites na mesma viagem NÃO são alternativas. Só são opções distintas quando o documento oferece uma escolha explícita ao cliente.
+- REGRA PRIORITÁRIA: um itinerário numerado com estadias em cidades diferentes e datas consecutivas é SEMPRE uma única viagem combinada (circuito não nulo), mesmo sem a palavra "circuito" no PDF. Exemplo: 7 noites em Phuket num hotel, seguidas de 4 noites em Bangkok noutro hotel, com voo interno, são UMA opção, nunca duas. destino deve identificar todas as etapas principais; regresso é a chegada final à cidade de origem, mesmo que seja no dia seguinte ao voo de volta.
+- circuito: null para alternativas de hotéis. Para um circuito/viagem combinada, devolve um objeto com nome do programa (prefixo "Circuito - "), quarto, regime, total e precoPessoa DO PROGRAMA COMPLETO. Nunca somes preços de etapas nem uses o preço de uma estadia como preço do circuito; sem preço global comprovado usa null. hoteis descreve então as estadias sucessivas, sem as converter em alternativas. Se houver categorias explicitamente alternativas num circuito, usa hoteis para cada programa completo alternativo (nome do circuito + categoria e preço global), e circuito null.
+- Nos circuitos, incluido preserva também as etapas/cidades/noites e alojamentos previstos, refeições e visitas comprovadas, em entradas curtas. Não inventes hotéis quando o programa diz "ou similar".
 - hoteis: cada alojamento proposto com nome, tipo de quarto, regime, preço total e preço por pessoa (números em euros, sem símbolo).
-- incluido: lista curta do que o preço inclui (ex.: "Voos Lisboa–Funchal", "Taxas de aeroporto", "Transfer", "Seguro de viagem"), SEM o alojamento, o número de noites no hotel nem o regime (esses aparecem em cada opção de alojamento). naoIncluido: o que o PDF diz não estar incluído.
+- incluido: lista curta do que o preço inclui (ex.: "Voos Lisboa–Funchal", "Taxas de aeroporto", "Transfer", "Seguro de viagem"). Apenas nas propostas de hotéis alternativos, omite alojamento, noites e regime; nos circuitos inclui esses dados por etapa. naoIncluido: o que o PDF diz não estar incluído.
 - condicoes: condições importantes (cancelamento, pagamento) num parágrafo curto. validade: data limite da proposta em YYYY-MM-DD, se existir.`,
     [{type: "input_file", filename: "proposta.pdf", file_data: `data:application/pdf;base64,${bytes.toString("base64")}`},
       {type: "input_text", text: "Analisa todas as páginas, incluindo os dados em imagens."}], 5000, esquemaLeitura);
@@ -220,7 +228,8 @@ export async function gerarConteudoProposta(email: string, valor: unknown): Prom
   const contexto = [
     `Destino: ${p.viagem.destino}`, `Partida de: ${p.viagem.partida || "não indicado"}`, `Datas: ${p.viagem.ida || "?"} a ${p.viagem.regresso || "?"}`,
     `Voos (texto da proposta): ${p.viagem.voo || "não indicado"}`, `Viajantes: ${p.viagem.viajantes ?? "não indicado"}`,
-    `Alojamentos, por ordem: ${p.opcoes.map((o, i) => `${i + 1}. ${o.hotel}${o.regime ? ` (${o.regime})` : ""}`).join("; ")}`,
+    "As opções com tipo circuito são programas completos: não atribuas estrelas, coordenadas ou site de um hotel ao circuito; usa zona descritiva, estrelas/lat/lng null e site vazio.",
+    `Alojamentos, por ordem: ${p.opcoes.map((o, i) => `${i + 1}. [${o.tipo ?? "hotel"}] ${o.hotel}${o.regime ? ` (${o.regime})` : ""}`).join("; ")}`,
   ].join("\n");
   const r = await chamarIAReservas(email, `Preparas o conteúdo de uma proposta de viagem da iCliGo para um cliente português (português de Portugal, tom caloroso e vendedor sem exageros, tratando o cliente por "vocês").
 - hoteis: um elemento por alojamento, pela mesma ordem: estrelas (1 a 5, se souberes), zona (bairro ou praia onde fica), lat/lng do hotel, site (domínio oficial do hotel, ex.: "www.hotelexemplo.com"; vazio se não tiveres a certeza — nunca inventes).
@@ -235,6 +244,7 @@ export async function gerarConteudoProposta(email: string, valor: unknown): Prom
   const destinoCurto = p.viagem.destino.split(",")[0]!.trim();
   const usadas = new Set<string>();
   const opcoes = await Promise.all(p.opcoes.map(async (o, i) => {
+    if (o.tipo === "circuito") return {...o, estrelas: null, lat: null, lng: null, _site: ""};
     const h = hoteisIA[i] ?? {};
     const zona = o.zona || (typeof h.zona === "string" ? h.zona.slice(0, 120) : "");
     // A localização do OpenStreetMap é mais fiável do que a da IA; a da IA só serve de recurso.
@@ -243,7 +253,7 @@ export async function gerarConteudoProposta(email: string, valor: unknown): Prom
     const lng = o.lng ?? local?.lng ?? (typeof h.lng === "number" ? h.lng : null);
     return {...o, zona, lat, lng, estrelas: o.estrelas ?? (typeof h.estrelas === "number" && h.estrelas >= 1 && h.estrelas <= 5 ? h.estrelas : null), _site: typeof h.site === "string" ? h.site : ""};
   }));
-  for (const o of opcoes) o.foto ??= await fotoDoHotel(o.hotel, o._site, o.zona, destinoCurto, usadas);
+  for (const o of opcoes) o.foto ??= o.tipo === "circuito" ? (await procurarFotos(destinoCurto, 4).catch(() => []))[0] ?? null : await fotoDoHotel(o.hotel, o._site, o.zona, destinoCurto, usadas);
 
   const doDestino = await procurarFotos(destinoCurto, 12).catch(() => []);
   const foto = p.foto ?? (doDestino[0] ? {url: doDestino[0].url, credito: doDestino[0].credito} : null);

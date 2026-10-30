@@ -21,10 +21,12 @@ export interface ViagemProposta {
 export interface HotelLido { nome: string; quarto: string; regime: string; total: number | null; precoPessoa: number | null }
 export interface LeituraPDF {
   ficheiro: string; viagem: ViagemProposta; hoteis: HotelLido[];
+  circuito?: HotelLido | null;
   incluido: string[]; naoIncluido: string[]; condicoes: string; validade: string;
 }
 
 export interface OpcaoProposta {
+  tipo?: "hotel" | "circuito";
   hotel: string; estrelas: number | null; zona: string; quarto: string; regime: string;
   total: number | null; precoPessoa: number | null;
   lat: number | null; lng: number | null;
@@ -82,7 +84,7 @@ export function validarViagemProposta(v: unknown): ViagemProposta {
 
 export function validarOpcao(v: unknown): OpcaoProposta {
   const o = objeto(v);
-  return {hotel: texto(o.hotel, 160), estrelas: numero(o.estrelas, 1, 5), zona: texto(o.zona, 120), quarto: texto(o.quarto, 200), regime: texto(o.regime, 120),
+  return {tipo: o.tipo === "circuito" ? "circuito" : "hotel", hotel: texto(o.hotel, 160), estrelas: numero(o.estrelas, 1, 5), zona: texto(o.zona, 120), quarto: texto(o.quarto, 200), regime: texto(o.regime, 120),
     total: numero(o.total, 0, 10_000_000), precoPessoa: numero(o.precoPessoa, 0, 10_000_000),
     lat: numero(o.lat, -90, 90), lng: numero(o.lng, -180, 180), foto: validarFoto(o.foto), diferencas: texto(o.diferencas, 600), ficheiro: texto(o.ficheiro, 160)};
 }
@@ -93,7 +95,10 @@ export function validarLeitura(v: unknown, ficheiro: string): LeituraPDF {
     const o = objeto(h);
     return {nome: texto(o.nome, 160), quarto: texto(o.quarto, 200), regime: texto(o.regime, 120), total: numero(o.total, 0, 10_000_000), precoPessoa: numero(o.precoPessoa, 0, 10_000_000)};
   }).filter(h => h.nome) : [];
-  return {ficheiro: texto(ficheiro, 160), viagem: validarViagemProposta(d.viagem), hoteis, incluido: lista(d.incluido, 16), naoIncluido: lista(d.naoIncluido, 12),
+  const c = objeto(d.circuito);
+  const circuito = texto(c.nome, 160) ? {nome: texto(c.nome, 160), quarto: texto(c.quarto, 200), regime: texto(c.regime, 120),
+    total: numero(c.total, 0, 10_000_000), precoPessoa: numero(c.precoPessoa, 0, 10_000_000)} : null;
+  return {circuito, ficheiro: texto(ficheiro, 160), viagem: validarViagemProposta(d.viagem), hoteis, incluido: lista(d.incluido, 16), naoIncluido: lista(d.naoIncluido, 12),
     condicoes: texto(d.condicoes, 800), validade: data(d.validade)};
 }
 
@@ -146,7 +151,8 @@ export function juntarLeituras(leituras: LeituraPDF[]): {viagem: ViagemProposta;
       diferencas.push(l.viagem.transferIncluido ? "Transfers incluídos" : "Transfers não incluídos");
     }
     if (diferencas.length && l !== leituras[0]) avisos.push(`${l.ficheiro}: ${diferencas.map(d => d.split(":")[0]).join(", ")} diferente(s) da primeira proposta.`);
-    for (const h of l.hoteis) opcoes.push({...opcaoVazia(), hotel: h.nome, quarto: h.quarto, regime: h.regime,
+    if (l.circuito) avisos.push(`${l.ficheiro}: circuito identificado; os hotéis das etapas pertencem à mesma opção. Confirma o preço global e os serviços incluídos.`);
+    for (const h of l.circuito ? [l.circuito] : l.hoteis) opcoes.push({...opcaoVazia(), tipo: l.circuito ? "circuito" : "hotel", hotel: h.nome, quarto: h.quarto, regime: h.regime,
       total: precosDaOpcao(h, l.viagem.viajantes ?? base.viajantes).total, precoPessoa: precosDaOpcao(h, l.viagem.viajantes ?? base.viajantes).porPessoa,
       diferencas: l === leituras[0] ? "" : diferencas.join("\n"), ficheiro: l.ficheiro});
   }
