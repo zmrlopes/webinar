@@ -11,7 +11,7 @@ import { dataPlanner, diasDaViagem, type MarcaPlanner, type TravelPlanner } from
 export interface DadosProposta {
   p: Proposta; marca: MarcaPlanner; escala?: number;
   consultor: {nome: string; email: string; telemovel: string} | null;
-  imagens: {capa: FotoDesenho | null; hoteis: (FotoDesenho | null)[]; destaques: (FotoDesenho | null)[]};
+  imagens: {capa: FotoDesenho | null; hoteis: (FotoDesenho | null)[]; destaques: (FotoDesenho | null)[]; circuitos?: (FotoDesenho | null)[][]};
 }
 
 const LETRAS = ["A", "B", "C"];
@@ -134,6 +134,53 @@ function opcoes(d: DadosProposta, t: Tema, img: Image | null, plano: TravelPlann
   });
   rodape(ctx, plano, n, img);
   return canvas;
+}
+
+function paginasCircuito(d: DadosProposta, indice: number, t: Tema, img: Image | null, plano: TravelPlanner, n: number) {
+  const o = d.p.opcoes[indice]!;
+  const hoteis = o.hoteisCircuito ?? [];
+  const paginas = [];
+  for (let inicio = 0; inicio < hoteis.length; inicio += 2) {
+    const {canvas, ctx} = novaPagina(t);
+    let y = cabecalho(ctx, t, `Opção ${LETRAS[indice]} · etapas do circuito`, "A vossa viagem");
+    const w = LARGURA - 2 * M, fotoW = Math.round(w * 0.40);
+    const h = Math.min(430, (ALTURA - 130 - y - 190 - 48) / 2);
+    for (let k = inicio; k < Math.min(inicio + 2, hoteis.length); k++) {
+      const hotel = hoteis[k]!;
+      retangulo(ctx, M, y, w, h, 24, "#ffffff", LINHA);
+      const foto = d.imagens.circuitos?.[indice]?.[k];
+      if (foto) cobrir(ctx, foto, M, y, fotoW, h, 24);
+      else semFoto(ctx, t, M, y, fotoW, h, 24, hotel.nome);
+      const tx = M + fotoW + 30, tw = w - fotoW - 60;
+      let ty = y + 26;
+      ctx.fillStyle = t.c.principalTexto; ctx.font = "18px PoppinsBold"; ctx.textBaseline = "top";
+      ctx.fillText(`ESTADIA ${k + 1}`, tx, ty); ty += 32;
+      ctx.fillStyle = TINTA; ctx.font = t.titulo(30);
+      ty += paragrafo(ctx, hotel.nome, tx, ty, tw, 38, 3) + 16;
+      ctx.font = "19px Poppins";
+      for (const texto of [hotel.periodo, hotel.quarto, hotel.regime]) {
+        if (!texto) continue;
+        ty += paragrafo(ctx, texto, tx, ty, tw, 27, 2) + 12;
+      }
+      if (hotel.foto?.credito) {
+        ctx.font = "12px Poppins"; ctx.fillStyle = "#ffffff"; ctx.textBaseline = "alphabetic";
+        ctx.fillText(hotel.foto.credito.slice(0, 70), M + 14, y + h - 16, fotoW - 28);
+      }
+      y += h + 24;
+    }
+    if (inicio + 2 >= hoteis.length) {
+      retangulo(ctx, M, y, w, 166, 24, t.c.escura);
+      const precos = precosDaOpcao(o, d.p.viagem.viajantes);
+      ctx.fillStyle = t.c.sobreEscura; ctx.textBaseline = "top"; ctx.font = "20px PoppinsBold";
+      ctx.fillText("PREÇO GLOBAL DO CIRCUITO", M + 30, y + 24);
+      ctx.font = "46px PoppinsBold"; ctx.fillText(euros(precos.porPessoa ?? precos.total), M + 30, y + 58);
+      ctx.font = "20px Poppins";
+      ctx.fillText(precos.porPessoa !== null ? `por pessoa${precos.total !== null ? ` · ${euros(precos.total)} no total` : ""}` : "total da viagem", M + 30, y + 118);
+    }
+    rodape(ctx, plano, n + paginas.length, img);
+    paginas.push(canvas);
+  }
+  return paginas;
 }
 
 async function comparacao(d: DadosProposta, t: Tema, img: Image | null, plano: TravelPlanner, n: number) {
@@ -280,7 +327,18 @@ export async function desenharProposta(d: DadosProposta): Promise<Buffer[]> {
   const paginas = [capa(d, t, img, await logoBranco())];
   if (plano.voos.length || d.p.viagem.voo) paginas.push(await viagem({p: plano, marca: d.marca, consultor: d.consultor, imagens: {capa: null, hotel: null, dias: []}}, t, img, paginas.length + 1));
   paginas.push(incluido(d, t, img, plano, paginas.length + 1));
-  if (d.p.opcoes.length) paginas.push(opcoes(d, t, img, plano, paginas.length + 1));
+  if (d.p.opcoes.length) {
+    if (d.p.opcoes.some(o => o.tipo !== "circuito" || !o.hoteisCircuito?.length)) {
+      // Mantém a composição habitual para hotéis e circuitos antigos sem etapas guardadas.
+      const indices = d.p.opcoes.map((o, i) => !o.hoteisCircuito?.length || o.tipo !== "circuito" ? i : -1).filter(i => i >= 0);
+      const normal = {...d, p: {...d.p, opcoes: indices.map(i => d.p.opcoes[i]!), recomendada: d.p.recomendada === null ? null : indices.indexOf(d.p.recomendada)},
+        imagens: {...d.imagens, hoteis: indices.map(i => d.imagens.hoteis[i] ?? null)}};
+      paginas.push(opcoes(normal, t, img, plano, paginas.length + 1));
+    }
+    d.p.opcoes.forEach((o, i) => {
+      if (o.tipo === "circuito" && o.hoteisCircuito?.length) paginas.push(...paginasCircuito(d, i, t, img, plano, paginas.length + 1));
+    });
+  }
   if (d.p.opcoes.length > 1) paginas.push(await comparacao(d, t, img, plano, paginas.length + 1));
   if (d.p.destaques.length) paginas.push(destaques(d, t, img, plano, paginas.length + 1));
   if (d.p.dicas.some(x => x.texto) || d.p.extras.clima.length) {

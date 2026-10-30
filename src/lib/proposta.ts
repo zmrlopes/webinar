@@ -18,7 +18,8 @@ export interface ViagemProposta {
   /** Se os transfers estão incluídos no preço: sim, não, ou null quando o PDF não diz. */
   transferIncluido: boolean | null;
 }
-export interface HotelLido { nome: string; quarto: string; regime: string; total: number | null; precoPessoa: number | null }
+export interface HotelLido { nome: string; quarto: string; regime: string; periodo?: string; total: number | null; precoPessoa: number | null }
+export interface HotelCircuito { nome: string; quarto: string; regime: string; periodo: string; foto: FotoPlanner | null }
 export interface LeituraPDF {
   ficheiro: string; viagem: ViagemProposta; hoteis: HotelLido[];
   circuito?: HotelLido | null;
@@ -27,6 +28,7 @@ export interface LeituraPDF {
 
 export interface OpcaoProposta {
   tipo?: "hotel" | "circuito";
+  hoteisCircuito?: HotelCircuito[];
   hotel: string; estrelas: number | null; zona: string; quarto: string; regime: string;
   total: number | null; precoPessoa: number | null;
   lat: number | null; lng: number | null;
@@ -84,16 +86,23 @@ export function validarViagemProposta(v: unknown): ViagemProposta {
 
 export function validarOpcao(v: unknown): OpcaoProposta {
   const o = objeto(v);
-  return {tipo: o.tipo === "circuito" ? "circuito" : "hotel", hotel: texto(o.hotel, 160), estrelas: numero(o.estrelas, 1, 5), zona: texto(o.zona, 120), quarto: texto(o.quarto, 200), regime: texto(o.regime, 120),
+  return {tipo: o.tipo === "circuito" ? "circuito" : "hotel", hoteisCircuito: validarHoteisCircuito(o.hoteisCircuito), hotel: texto(o.hotel, 160), estrelas: numero(o.estrelas, 1, 5), zona: texto(o.zona, 120), quarto: texto(o.quarto, 200), regime: texto(o.regime, 120),
     total: numero(o.total, 0, 10_000_000), precoPessoa: numero(o.precoPessoa, 0, 10_000_000),
     lat: numero(o.lat, -90, 90), lng: numero(o.lng, -180, 180), foto: validarFoto(o.foto), diferencas: texto(o.diferencas, 600), ficheiro: texto(o.ficheiro, 160)};
 }
 
+function validarHoteisCircuito(v: unknown): HotelCircuito[] {
+  return Array.isArray(v) ? v.slice(0, 20).map(x => {
+    const h = objeto(x);
+    return {nome: texto(h.nome, 160), quarto: texto(h.quarto, 200), regime: texto(h.regime, 120), periodo: texto(h.periodo, 160), foto: validarFoto(h.foto)};
+  }).filter(h => h.nome) : [];
+}
+
 export function validarLeitura(v: unknown, ficheiro: string): LeituraPDF {
   const d = objeto(v);
-  const hoteis = Array.isArray(d.hoteis) ? d.hoteis.slice(0, 6).map(h => {
+  const hoteis = Array.isArray(d.hoteis) ? d.hoteis.slice(0, 20).map(h => {
     const o = objeto(h);
-    return {nome: texto(o.nome, 160), quarto: texto(o.quarto, 200), regime: texto(o.regime, 120), total: numero(o.total, 0, 10_000_000), precoPessoa: numero(o.precoPessoa, 0, 10_000_000)};
+    return {nome: texto(o.nome, 160), quarto: texto(o.quarto, 200), regime: texto(o.regime, 120), periodo: texto(o.periodo, 160), total: numero(o.total, 0, 10_000_000), precoPessoa: numero(o.precoPessoa, 0, 10_000_000)};
   }).filter(h => h.nome) : [];
   const c = objeto(d.circuito);
   const circuito = texto(c.nome, 160) ? {nome: texto(c.nome, 160), quarto: texto(c.quarto, 200), regime: texto(c.regime, 120),
@@ -153,6 +162,7 @@ export function juntarLeituras(leituras: LeituraPDF[]): {viagem: ViagemProposta;
     if (diferencas.length && l !== leituras[0]) avisos.push(`${l.ficheiro}: ${diferencas.map(d => d.split(":")[0]).join(", ")} diferente(s) da primeira proposta.`);
     if (l.circuito) avisos.push(`${l.ficheiro}: circuito identificado; os hotéis das etapas pertencem à mesma opção. Confirma o preço global e os serviços incluídos.`);
     for (const h of l.circuito ? [l.circuito] : l.hoteis) opcoes.push({...opcaoVazia(), tipo: l.circuito ? "circuito" : "hotel", hotel: h.nome, quarto: h.quarto, regime: h.regime,
+      hoteisCircuito: l.circuito ? validarHoteisCircuito(l.hoteis) : [],
       total: precosDaOpcao(h, l.viagem.viajantes ?? base.viajantes).total, precoPessoa: precosDaOpcao(h, l.viagem.viajantes ?? base.viajantes).porPessoa,
       diferencas: l === leituras[0] ? "" : diferencas.join("\n"), ficheiro: l.ficheiro});
   }

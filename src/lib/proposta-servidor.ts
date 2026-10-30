@@ -75,8 +75,8 @@ const esquemaLeitura = {
     viagem: {type: "object", additionalProperties: false, required: ["destino", "partida", "ida", "regresso", "viajantes", "voo", "bagagem", "transfer", "transferIncluido"],
       properties: {destino: {type: "string"}, partida: {type: "string"}, ida: {type: "string"}, regresso: {type: "string"}, viajantes: {type: ["integer", "null"]},
         voo: {type: "string"}, bagagem: {type: "string"}, transfer: {type: "string"}, transferIncluido: {type: ["boolean", "null"]}}},
-    hoteis: {type: "array", items: {type: "object", additionalProperties: false, required: ["nome", "quarto", "regime", "total", "precoPessoa"],
-      properties: {nome: {type: "string"}, quarto: {type: "string"}, regime: {type: "string"}, total: {type: ["number", "null"]}, precoPessoa: {type: ["number", "null"]}}}},
+    hoteis: {type: "array", items: {type: "object", additionalProperties: false, required: ["nome", "quarto", "regime", "periodo", "total", "precoPessoa"],
+      properties: {nome: {type: "string"}, quarto: {type: "string"}, regime: {type: "string"}, periodo: {type: "string"}, total: {type: ["number", "null"]}, precoPessoa: {type: ["number", "null"]}}}},
     incluido: {type: "array", items: {type: "string"}}, naoIncluido: {type: "array", items: {type: "string"}},
     condicoes: {type: "string"}, validade: {type: "string"},
   },
@@ -95,6 +95,7 @@ Não devolvas dados pessoais de clientes, referências de reserva, dados de paga
 - circuito: null para alternativas de hotéis. Para um circuito/viagem combinada, devolve um objeto com nome do programa (prefixo "Circuito - "), quarto, regime, total e precoPessoa DO PROGRAMA COMPLETO. Nunca somes preços de etapas nem uses o preço de uma estadia como preço do circuito; sem preço global comprovado usa null. hoteis descreve então as estadias sucessivas, sem as converter em alternativas. Se houver categorias explicitamente alternativas num circuito, usa hoteis para cada programa completo alternativo (nome do circuito + categoria e preço global), e circuito null.
 - Nos circuitos, incluido preserva também as etapas/cidades/noites e alojamentos previstos, refeições e visitas comprovadas, em entradas curtas. Não inventes hotéis quando o programa diz "ou similar".
 - hoteis: cada alojamento proposto com nome, tipo de quarto, regime, preço total e preço por pessoa (números em euros, sem símbolo).
+- Em cada hotel, periodo identifica cidade, datas de entrada/saída e número de noites quando comprovados. Nos circuitos mantém todos os hotéis pela ordem do itinerário, com quarto e regime próprios; não junta os seus nomes num único hotel.
 - incluido: lista curta do que o preço inclui (ex.: "Voos Lisboa–Funchal", "Taxas de aeroporto", "Transfer", "Seguro de viagem"). Apenas nas propostas de hotéis alternativos, omite alojamento, noites e regime; nos circuitos inclui esses dados por etapa. naoIncluido: o que o PDF diz não estar incluído.
 - condicoes: condições importantes (cancelamento, pagamento) num parágrafo curto. validade: data limite da proposta em YYYY-MM-DD, se existir.`,
     [{type: "input_file", filename: "proposta.pdf", file_data: `data:application/pdf;base64,${bytes.toString("base64")}`},
@@ -254,6 +255,9 @@ export async function gerarConteudoProposta(email: string, valor: unknown): Prom
     return {...o, zona, lat, lng, estrelas: o.estrelas ?? (typeof h.estrelas === "number" && h.estrelas >= 1 && h.estrelas <= 5 ? h.estrelas : null), _site: typeof h.site === "string" ? h.site : ""};
   }));
   for (const o of opcoes) o.foto ??= o.tipo === "circuito" ? (await procurarFotos(destinoCurto, 4).catch(() => []))[0] ?? null : await fotoDoHotel(o.hotel, o._site, o.zona, destinoCurto, usadas);
+  for (const o of opcoes) for (const h of o.hoteisCircuito ?? []) {
+    h.foto ??= await fotoDoHotel(h.nome, "", h.periodo, destinoCurto, usadas);
+  }
 
   const doDestino = await procurarFotos(destinoCurto, 12).catch(() => []);
   const foto = p.foto ?? (doDestino[0] ? {url: doDestino[0].url, credito: doDestino[0].credito} : null);
@@ -291,8 +295,9 @@ async function paginasProposta(email: string, p: Proposta, escala: number): Prom
   const [membro, marca, perfil] = await Promise.all([buscarMembroEquipa(email), obterMarca(email), obterPerfil(email)]);
   // O QR do WhatsApp e o email aparecem mesmo que o nome não esteja na equipa.
   const [capa, ...resto] = await Promise.all([imagemDe(p.foto), ...p.opcoes.map(o => imagemDe(o.foto)), ...p.destaques.map(d => imagemDe(d.foto))]);
+  const circuitos = await Promise.all(p.opcoes.map(o => Promise.all((o.hoteisCircuito ?? []).map(h => imagemDe(h.foto)))));
   return desenharProposta({p, marca, escala, consultor: {nome: membro?.nome ?? "", email, telemovel: perfil.telemovel},
-    imagens: {capa, hoteis: resto.slice(0, p.opcoes.length), destaques: resto.slice(p.opcoes.length)}});
+    imagens: {capa, circuitos, hoteis: resto.slice(0, p.opcoes.length), destaques: resto.slice(p.opcoes.length)}});
 }
 
 export async function previsualizarProposta(email: string, valor: unknown): Promise<string[]> {

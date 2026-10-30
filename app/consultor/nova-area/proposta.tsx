@@ -260,6 +260,19 @@ export function PropostaNovaArea({email, abrirPlanner}: {email: string; abrirPla
             <Campo titulo="Preço total (€)" valor={o.total === null ? "" : String(o.total)} alterar={v => alterarOpcao(i, {total: numeroOuNulo(v)})} />
             <Campo titulo={o.precoPessoa === null && precosDaOpcao(o, p.viagem.viajantes).porPessoa !== null ? `Preço por pessoa (€) · calculado: ${euros(precosDaOpcao(o, p.viagem.viajantes).porPessoa)}` : "Preço por pessoa (€)"} valor={o.precoPessoa === null ? "" : String(o.precoPessoa)} alterar={v => alterarOpcao(i, {precoPessoa: numeroOuNulo(v)})} />
           </div>
+          {o.tipo === "circuito" && <div>
+            <h4>Hotéis do circuito, pela ordem da viagem</h4>
+            {(o.hoteisCircuito ?? []).map((h, k) => <div key={k} className={css.voo}>
+              <strong>Estadia {k + 1}</strong>
+              <div className={css.grelha}>
+                {([['nome', 'Hotel'], ['periodo', 'Cidade, datas e noites'], ['quarto', 'Quarto'], ['regime', 'Regime']] as const).map(([campo, titulo]) =>
+                  <Campo key={campo} titulo={titulo} valor={h[campo]} alterar={v => alterarOpcao(i, {hoteisCircuito: o.hoteisCircuito!.map((etapa, j) => j === k ? {...etapa, [campo]: v, ...(campo === 'nome' ? {foto: null} : {})} : etapa)})} />)}
+              </div>
+              <button type="button" className={css.remover} onClick={() => alterarOpcao(i, {hoteisCircuito: o.hoteisCircuito!.filter((_, j) => j !== k)})}>Remover estadia</button>
+            </div>)}
+            {(o.hoteisCircuito?.length ?? 0) < 20 && <button type="button" onClick={() => alterarOpcao(i, {hoteisCircuito: [...(o.hoteisCircuito ?? []), {nome: "", periodo: "", quarto: "", regime: "", foto: null}]})}>+ Acrescentar hotel ao circuito</button>}
+            <p className={css.ajuda}>O preço acima é o global do circuito e aparece depois do último hotel no PDF. Preparar o conteúdo procura as fotografias dos hotéis.</p>
+          </div>}
           <Campo titulo="O que muda nesta opção (além do hotel)" grande valor={o.diferencas} alterar={v => alterarOpcao(i, {diferencas: v})} />
         </article>)}
         {p.opcoes.length < MAX_OPCOES_PROPOSTA && <button type="button" onClick={() => setP({...p, opcoes: [...p.opcoes, opcaoVazia()]})}>+ Acrescentar opção à mão</button>}
