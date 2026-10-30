@@ -35,3 +35,6 @@
 .casa:has(.iconeDestino){gap:6px;min-height:130px}
 .casa svg.iconeDestino{color:inherit;width:30px;height:30px}
 @media(max-width:600px){.casa:has(.iconeDestino){min-height:138px;gap:5px}.iconeDestino{font-size:23px}.casa svg.iconeDestino{width:23px;height:23px}}
+
+.iconeReferencia{width:42px;height:38px;max-width:65%;background-color:currentColor;mask-size:contain;mask-position:center;mask-repeat:no-repeat;-webkit-mask-size:contain;-webkit-mask-position:center;-webkit-mask-repeat:no-repeat}
+@media(max-width:600px){.iconeReferencia{width:34px;height:32px}}

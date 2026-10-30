@@ -20,40 +20,13 @@ export function BarraBlackFriday({dados}: {dados: DadosBF}) {
 }
 function Aviao() {return <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4L22 2Z" strokeLinejoin="round"/><path d="m11 13 6-6" strokeLinecap="round"/></svg>;}
 // Decorativos: cada casa mantém o nome acessível e o estado da reserva.
-const globo = "M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM3 12h18M12 3c-5 5-5 13 0 18 5-5 5-13 0-18Z";
-const ilha = "M3 20c4-2 14-2 18 0M12 18c2-4 3-8 2-12M14 7c-3-4-6-3-8-1 3-1 5 0 8 1Zm0 0c3-4 6-3 7 0-3-1-5-1-7 0Zm0 0c-4 0-6 2-6 5 2-3 4-4 6-5Z";
-const ondas = "M3 16q3-2 6 0t6 0 6 0M3 20q3-2 6 0t6 0 6 0";
-const sol = "M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM12 1v1M5 3l1 1M18 4l1-1M4 8H3M21 8h-1";
-const ICONES_CASAS_BF = [
-  globo + "M5 6l3 2-1 3 3 1 1 4",
-  globo + "m13 5 4 3-3 3 2 4",
-  globo + "m8 5 2 3-2 3 4 2 1 5",
-  "M3 21V10l3-4 3 4v3h6v-3l3-4 3 4v11H3ZM9 13V6l3-4 3 4v7M10 21v-5h4v5M6 6V2l3 1-3 1M18 6V2l3 1-3 1",
-  globo + "m12 7 4 2-1 4-3 4-2-5-3-2 2-3Z",
-  "M3 15h18l-3 5H7l-4-5ZM6 15V9h12v6M9 9V5h6v4M9 12h1m4 0h1M2 22q2-2 5 0t5 0 5 0 5 0",
-  ilha,
-  "M3 20h18M5 10q7-10 14 0H5Zm7-5v14m0-9-3-1m3 1 3-1",
-  "M2 19 9 6l6 13H2Zm10-5 4-8 6 13h-7M7 10l2 2 2-2M19 3h2",
-  "M4 9h13v5a6 6 0 0 1-12 0V9ZM17 10h2a3 3 0 0 1 0 6h-2M3 21h17M8 6c-2-2 2-2 0-4m5 4c-2-2 2-2 0-4",
-  ilha + "M3 16h3M19 15h2",
-  ilha + "M2 17 6 11l4 6",
-  "",
-  "M8 15c2-5 6-5 8 0 4 5 0 7-4 5-4 2-8 0-4-5ZM7 8a2 3 0 1 1-4 0 2 3 0 0 1 4 0Zm6-3a2 3 0 1 1-4 0 2 3 0 0 1 4 0Zm6 1a2 3 0 1 1-4 0 2 3 0 0 1 4 0Zm4 5a2 3 0 1 1-4 0 2 3 0 0 1 4 0Z",
-  sol + ondas,
-  "M7 12a5 5 0 0 1 10 0M3 12h18" + ondas,
-  "M18 3a8 8 0 1 0 3 12A8 8 0 0 1 18 3ZM4 3h2M5 2v2M17 19h4m-2-2v4",
-  "M5 22V8h14v14M3 22h18M10 22v-4h4v4M8 11h1m6 0h1M8 14h1m6 0h1M12 1l1 2 2 .3-1.5 1.5.4 2.2L12 6l-1.9 1 .4-2.2L9 3.3l2-.3Z",
-  "M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-6-3-2 5-4 1 2-5 4-1ZM12 3v2m9 7h-2m-7 9v-2m-9-7h2",
-  ilha + "M3 3h2M4 2v2",
-  "M3 17c3-2 15-2 18 0l-3 3H6l-3-3ZM6 3l12 18M4 4l4-2M16 22l4-2",
-  "M2 21 10 5l9 16H2Zm8-16 2 16m4-6 3-9 4 15h-4M2 23h21",
-  ilha + "M3 6h2M4 5v2",
-  "M3 21 9 9h6l6 12H3ZM9 9l3 3 3-3M11 6c-3-3 3-3 0-6m4 6c-2-2 3-3 1-5",
-  globo + "M1 20 23 4m-5 0h5v5",
-] as const;
+// Os restantes desenhos foram vetorizados diretamente da referencia bingo.jpeg.
 function IconeCasa({casa}: {casa: number}) {
-  return <svg className={css.iconeDestino} width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={ICONES_CASAS_BF[casa]}/></svg>;
+  if (casa === 21) return <svg className={css.iconeDestino} width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2 21 10 5l9 16H2Zm8-16 2 16m4-6 3-9 4 15h-4M2 23h21"/></svg>;
+  if (casa === 13) return <svg className={css.iconeDestino} width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 15c2-5 6-5 8 0 4 5 0 7-4 5-4 2-8 0-4-5ZM7 8a2 3 0 1 1-4 0 2 3 0 0 1 4 0Zm6-3a2 3 0 1 1-4 0 2 3 0 0 1 4 0Zm6 1a2 3 0 1 1-4 0 2 3 0 0 1 4 0Zm4 5a2 3 0 1 1-4 0 2 3 0 0 1 4 0Z"/></svg>;
+  return <span className={`${css.iconeDestino} ${css.iconeReferencia}`} style={{maskImage: `url(/blackfriday/icones/casa-${casa}.svg)`, WebkitMaskImage: `url(/blackfriday/icones/casa-${casa}.svg)`}} aria-hidden="true"/>;
 }
+
 type CelebracaoBF = {id: number; linhas: number[]; emValidacao: boolean; previsualizacao?: boolean};
 function ParabensLinha({conquista}: {conquista: CelebracaoBF}) {
   return <div className={css.celebracao} role="status" aria-live="polite" aria-atomic="true">
