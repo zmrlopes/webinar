@@ -19,6 +19,18 @@ export function BarraBlackFriday({dados}: {dados: DadosBF}) {
   </div>;
 }
 function Aviao() {return <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4L22 2Z" strokeLinejoin="round"/><path d="m11 13 6-6" strokeLinecap="round"/></svg>;}
+// Decorativos: cada casa mantém o nome acessível e o estado da reserva.
+const ICONES_CASAS_BF = [
+  "🌍", "🌏", "🌎", "🏰", "🦒",
+  "🚢", "🏝️", "🏖️", "⛰️", "☕",
+  "🌴", "🏝️", "", "🐾", "🌅",
+  "🌊", "🌙", "🏨", "🧭", "🏝️",
+  "🛶", "", "🌴", "🌋", "🌐",
+] as const;
+function IconeCasa({casa}: {casa: number}) {
+  if (casa === 21) return <svg className={css.iconeDestino} width="30" height="30" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true"><path d="M2 26 13 7l11 19H2Zm11-19 3 19M20 19l5-9 6 16h-7M1 29h30"/><circle cx="24" cy="5" r="2"/></svg>;
+  return <span className={css.iconeDestino} aria-hidden="true">{ICONES_CASAS_BF[casa]}</span>;
+}
 type CelebracaoBF = {id: number; linhas: number[]; emValidacao: boolean; previsualizacao?: boolean};
 function ParabensLinha({conquista}: {conquista: CelebracaoBF}) {
   return <div className={css.celebracao} role="status" aria-live="polite" aria-atomic="true">
@@ -162,7 +174,7 @@ export function BlackFriday({email}: {email: string}) {
               const e = i?.estado ?? "vazia";
               return <button key={n} type="button" className={css.casa} data-estado={e} data-cor={n % 6} data-linha={resumo.linhas.includes(Math.floor(n / 5))} data-celebrar={celebracao?.linhas.includes(Math.floor(n / 5)) ?? false} aria-label={`${titulo}: ${e === "vazia" ? "por preencher" : e}. Ver detalhes.`} onClick={ev => abrir(n, ev.currentTarget)}>
                 {e === "aprovada" && <span className={css.check} aria-hidden="true">✓</span>}
-                {n === 12 ? <Aviao/> : <span className={css.destino}>{titulo}</span>}
+                {n === 12 ? <Aviao/> : <><IconeCasa casa={n}/><span className={css.destino}>{titulo}</span></>}
                 <small>{e === "pendente" ? "◷ Em validação" : e === "aprovada" ? "Validada" : e === "recusada" ? "Rever envio" : n === 12 ? "Reserva ≥ 5.000 €" : "+ Reserva"}</small>
                 {i?.curinga && e !== "recusada" && <span className={css.joker}>5K</span>}
               </button>;

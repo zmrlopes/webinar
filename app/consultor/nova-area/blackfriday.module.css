@@ -30,3 +30,8 @@
 @keyframes bfConfete{0%{opacity:0;transform:rotate(var(--bf-angulo)) translateY(20px) rotate(0)}15%{opacity:.9}100%{opacity:0;transform:rotate(var(--bf-angulo)) translateY(var(--bf-distancia)) rotate(120deg)}}
 @media(max-width:600px){.acoesSimulacao{width:100%;align-items:stretch}.simulacao .acoesSimulacao button{align-self:stretch}.conquista{width:min(250px,calc(100% - 26px));padding:22px 18px}.conquista h3{font-size:26px}.medalha{width:54px;height:54px;margin-bottom:15px}}
 @media(prefers-reduced-motion:reduce){.casa[data-celebrar=true],.celebracao,.conquista{animation:none}.confetes{display:none}.casa{transition:none}}
+
+.iconeDestino{display:block;flex-shrink:0;font-size:clamp(20px,2.4vw,30px);line-height:1;position:relative;z-index:1}
+.casa:has(.iconeDestino){gap:6px;min-height:130px}
+.casa svg.iconeDestino{color:inherit;width:30px;height:30px}
+@media(max-width:600px){.casa:has(.iconeDestino){min-height:138px;gap:5px}.iconeDestino{font-size:23px}.casa svg.iconeDestino{width:23px;height:23px}}

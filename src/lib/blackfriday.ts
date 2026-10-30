@@ -1,11 +1,11 @@
 export const CAMPANHA_BF = "2026";
 export const META_BF = 3_000_000;
 export const CASAS_BF = [
-  "Circuito", "Disneyland", "Baleares", "Continente americano", "Cabo Verde",
-  "Menorca", "Europa", "Egito", "África", "Cruzeiro",
-  "Safari", "Maiorca", "Avião", "Grécia", "Riviera Maya",
-  "Cuba", "Ilha portuguesa", "Ibiza", "Caraíbas", "Marrocos",
-  "Tunísia", "Ásia", "República Dominicana", "Canárias", "Estadia com pequeno-almoço",
+  "Europa", "Ásia", "América", "Parques temáticos", "África",
+  "Cruzeiro", "Ilhas portuguesas", "Ilhas espanholas", "Ilhas do Mediterrâneo", "Estadia com pequeno-almoço",
+  "Caraíbas", "Ilhas africanas", "Avião", "Safari", "Ilhas do Índico",
+  "Mediterrâneo", "Viagem com mais de 7 noites", "Hotel de 5 estrelas", "Circuito", "Ilhas do Atlântico",
+  "Sudeste Asiático", "Norte de África", "Ilhas tropicais", "Ilhas vulcânicas", "Viagem intercontinental",
 ] as const;
 export interface ConfiguracaoBF {
   inicio: string; fim: string; centro: "livre" | "reserva5k";
