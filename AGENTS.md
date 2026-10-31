@@ -12,7 +12,7 @@ Por indicação do utilizador, o separador BLACKFRIDAY da nova área apresenta
 um bingo 5×5 inspirado em `docs/bingo.jpeg`, com gradiente escuro e progresso
 privado por TP. Está em preparação apenas na conta de teste definida em
 `src/lib/demo.ts`, incluindo a API. O desafio começa a 13/11/2026 e termina
-a 13/12/2026, inclusive, no horário de Lisboa; as datas podem ser ajustadas
+a 07/12/2026, inclusive, no horário de Lisboa; as datas podem ser ajustadas
 no admin antes da primeira participação. Por indicação mais recente, o
 avião central começa vazio e exige uma reserva de pelo menos 7.500 € com
 comprovativo. Como as outras casas, exige envio e revisão. Não oferece
@@ -30,7 +30,11 @@ consultor, com filtros de estado e pesquisa dentro do seu detalhe, além de
 voltar à lista. Não mostra uma lista conjunta de reservas na entrada.
 A organização é a mesma no desafio real e no modo de simulação, preservando
 aprovações, recusas, ficheiros e atualização automática.
-Só a primeira linha horizontal por TP dá prémio (a anunciar). O bingo e
+Todos os TPs que completem a sua primeira linha horizontal validada recebem
+a entrada no evento Mindset Elite, uma vez por TP, apenas a entrada no evento.
+Depois de submeter uma casa, o TP não pode trocar a reserva para outra casa.
+Uma reserva de pelo menos 7.500 € só preenche uma casa e não pode ser dividida:
+por exemplo, uma reserva de 15.000 € não pode preencher duas casas. O bingo e
 os prémios exigem validação; a ordem usa a hora de envio do último comprovativo
 necessário, preservada na revisão. A meta de 3.000.000 € usa a faturação geral
 da equipa, recolhida no período escolhido ao atualizar os dados do dashboard,
