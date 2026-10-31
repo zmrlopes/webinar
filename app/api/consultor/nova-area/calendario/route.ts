@@ -6,6 +6,7 @@ import { TITULO_WEBINAR_PUBLICO, TITULO_WELCOME_ABOARD } from "@/lib/webinars";
 import { EVENTO_TITULO, EVENTO_LOCAL, estaoInscricoesAbertas } from "@/lib/eventos";
 import { obterCalendarioForum } from "@/lib/forum-icligo";
 import { juntarFormacoesIcligo, linguaDaFormacao, tituloSemBandeira } from "@/lib/formacoes-forum-icligo";
+import { eventosEquipa2027 } from "@/lib/eventos-equipa-2027";
 
 export async function POST(request: Request): Promise<Response> {
   const corpo = await request.json().catch(() => null);
@@ -57,10 +58,7 @@ export async function POST(request: Request): Promise<Response> {
       id: "teambuilding-2026", titulo: EVENTO_TITULO, categoria: "evento", comecaEm: "2026-11-14",
       terminaEm: null, diaInteiro: true, local: EVENTO_LOCAL, url: null, inscricoesAbertas: await estaoInscricoesAbertas(),
     });
-    if (mes === "2027-03") acontecimentos.push({
-      id: "convencao-2027", titulo: "Convenção Nacional iCliGo", categoria: "evento", comecaEm: "2027-03-13",
-      terminaEm: null, diaInteiro: true, local: null, url: "/bilhetes-convencao",
-    });
+    acontecimentos.push(...eventosEquipa2027(mes));
     acontecimentos.sort((a, b) => a.comecaEm.localeCompare(b.comecaEm) || a.titulo.localeCompare(b.titulo));
     return NextResponse.json({ mes, acontecimentos, forum: { atualizadoEm: forum.atualizadoEm, aviso: forum.aviso } }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (erro) {
