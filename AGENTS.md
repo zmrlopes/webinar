@@ -86,6 +86,11 @@ ou na aprovação da mesma linha durante a visita. Distingue a conquista do
 prémio sujeito a validação. A simulação permite pré-visualizar a animação
 sem preencher ou gravar casas. Mantém-se exclusivo da conta de teste.
 
+Por indicação do utilizador, o bingo apresenta também um prémio extra:
+entrada no evento Mindset Elite de fevereiro para JUNIOR com faturação de
+15.000 €, SENIOR com 25.000 € e MASTER com 35.000 € durante o desafio.
+Este destaque continua exclusivo da nova área da conta de teste.
+
 ## Alterações na área de consultor
 
 Por indicação do utilizador, a nova área inclui “Assistente da equipa” em

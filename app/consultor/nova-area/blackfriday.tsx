@@ -191,6 +191,18 @@ export function BlackFriday({email}: {email: string}) {
             <p>Se a equipa atingir <b>3 milhões de euros</b>, <b>todos os TPs com bingo validado</b> recebem o prémio.</p>
             <p>Se a meta não for atingida, recebe o prémio <b>apenas o primeiro TP a completar um bingo válido</b>.</p>
           </div>
+          <div className={`${css.premio} ${css.premioPrincipal}`}>
+            <span className={css.selo}>03 / PRÉMIO EXTRA</span>
+            <h3>Mindset Elite.<br/>Em fevereiro, contigo.</h3>
+            <strong>Entrada no evento Mindset Elite de fevereiro</strong>
+            <p>Atinge a faturação do teu patamar durante o desafio e recebe este prémio extra.</p>
+            <dl className={css.patamares}>
+              <div><dt>JUNIOR</dt><dd>15.000 €</dd></div>
+              <div><dt>SENIOR</dt><dd>25.000 €</dd></div>
+              <div><dt>MASTER</dt><dd>35.000 €</dd></div>
+            </dl>
+            <small>Faturação por TP · Prémio sujeito a validação.</small>
+          </div>
           <div className={css.premio}><span className={css.selo}>O TEU JOKER</span><h3>Uma reserva de 7,5K.<br/>A casa que quiseres.</h3><p>Uma única reserva de pelo menos 7.500 € pode preencher qualquer casa à tua escolha.</p><small>A reserva e o comprovativo só podem ser usados numa casa.</small></div>
         </aside>
       </div>
