@@ -3,7 +3,7 @@ import { db } from "./db";
 import { EMAIL_PAINEL_DEMONSTRACAO } from "./demo";
 import type { EmailSender } from "./email";
 import { notificarPush } from "./push";
-import { TROFEUS_JA_TENHO, TROFEUS_QUERO } from "./trofeus-lista";
+import { TROFEUS_JA_TENHO, TROFEUS_QUERO, trofeusFaturacaoEmFalta } from "./trofeus-lista";
 
 export { chaveDoPatamar, TROFEUS_JA_TENHO, TROFEUS_QUERO } from "./trofeus-lista";
 export type { Trofeu } from "./trofeus-lista";
@@ -77,6 +77,8 @@ export interface RespostaTrofeusAdmin {
   nivel: string | null;
   /** Pontos de qualificação, vindos do CSV da equipa — para ver quem está perto do patamar que pediu. */
   pontos: number | null;
+  /** Faturação própria, vinda do CSV da equipa — diz quem já alcançou os troféus de 100K e 250K. */
+  vendas: number | null;
   criadoEm: Date;
 }
 
@@ -97,12 +99,14 @@ export async function listarRespostasTrofeus(): Promise<RespostaTrofeusAdmin[]> 
     ja_tenho: string[];
     nivel: string | null;
     pontos: string | null;
+    vendas: string | null;
     criado_em: Date;
   }>(
     `select rt.email, rt.quero, rt.ja_tenho, rt.criado_em,
             (select max(ei.nome) from evento_inscricoes ei where ei.email = rt.email) as nome,
             (select ea.nivel from equipa_afiliados ea where ea.email = rt.email) as nivel,
-            (select ea.pontos from equipa_afiliados ea where ea.email = rt.email) as pontos
+            (select ea.pontos from equipa_afiliados ea where ea.email = rt.email) as pontos,
+            (select ea.vendas from equipa_afiliados ea where ea.email = rt.email) as vendas
      from respostas_trofeus rt
      order by rt.criado_em desc`,
   );
@@ -113,6 +117,7 @@ export async function listarRespostasTrofeus(): Promise<RespostaTrofeusAdmin[]> 
     jaTenho: r.ja_tenho,
     nivel: r.nivel,
     pontos: r.pontos === null ? null : Number(r.pontos),
+    vendas: r.vendas === null ? null : Number(r.vendas),
     criadoEm: r.criado_em,
   }));
 }
@@ -134,6 +139,13 @@ export interface ContagemTrofeu {
   rotulo: string;
   pedidos: number;
   jaTem: number;
+  /**
+   * Os troféus de faturação não se pedem no questionário: `pedidos` conta,
+   * em vez disso, quem já atingiu o volume (faturação própria do CSV da
+   * equipa) e não o declarou como recebido — a mesma regra do "!" em
+   * /admin/teambuilding-faturacao.
+   */
+  pelaFaturacao: boolean;
 }
 
 /**
@@ -143,12 +155,18 @@ export interface ContagemTrofeu {
  * encomendar.
  */
 export function contarTrofeus(respostas: RespostaTrofeusAdmin[]): ContagemTrofeu[] {
-  return TROFEUS_JA_TENHO.map((t) => ({
-    chave: t.chave,
-    rotulo: t.rotulo,
-    pedidos: respostas.filter((r) => r.quero.includes(t.chave)).length,
-    jaTem: respostas.filter((r) => r.jaTenho.includes(t.chave)).length,
-  }));
+  return TROFEUS_JA_TENHO.map((t) => {
+    const pelaFaturacao = t.chave.startsWith("faturacao-");
+    return {
+      chave: t.chave,
+      rotulo: t.rotulo,
+      pedidos: pelaFaturacao
+        ? respostas.filter((r) => trofeusFaturacaoEmFalta(r.vendas, r.jaTenho)?.includes(t.chave)).length
+        : respostas.filter((r) => r.quero.includes(t.chave)).length,
+      jaTem: respostas.filter((r) => r.jaTenho.includes(t.chave)).length,
+      pelaFaturacao,
+    };
+  });
 }
 
 export interface InscritoSemRespostaTrofeus {

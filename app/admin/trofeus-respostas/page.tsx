@@ -124,7 +124,7 @@ export default async function TrofeusRespostasPagina() {
         </Link>
         <h1>Troféus — o que pedir</h1>
         <p className="ad-subtitulo">
-          {respostas.length} resposta(s) · {totalPedidos} troféu(s) pedido(s) ao todo ·{" "}
+          {respostas.length} resposta(s) · {totalPedidos} troféu(s) a mandar fazer ao todo ·{" "}
           {semResposta.length} inscrito(s) ainda por responder.
         </p>
 
@@ -143,13 +143,17 @@ export default async function TrofeusRespostasPagina() {
                 <div className="ad-barra" style={{ width: `${(c.pedidos / maxPedidos) * 100}%` }} />
               </div>
               <span className="ad-pedidos">{c.pedidos}</span>
-              <span className="ad-jatem">{c.jaTem} já o têm</span>
+              <span className="ad-jatem">
+                {c.jaTem} já o têm
+                {c.pelaFaturacao && <><br />pela faturação</>}
+              </span>
             </div>
           ))}
           <p className="ad-legenda" style={{ marginTop: "1rem" }}>
             O número a negrito é quantos pedem cada troféu — é esse que interessa para encomendar. Os
-            troféus de faturação aparecem só com &quot;já o têm&quot;: não se pedem no formulário, de
-            propósito.
+            troféus de faturação de 100K e 250K não se pedem no formulário: o número é quantos já
+            atingiram esse volume de faturação própria (CSV da equipa) e ainda não o declararam como
+            recebido.
           </p>
         </div>
 
