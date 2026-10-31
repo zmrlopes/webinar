@@ -170,7 +170,7 @@ export function BlackFriday({email}: {email: string}) {
               const e = i?.estado ?? "vazia";
               return <button key={n} type="button" className={css.casa} data-estado={e} data-cor={n % 6} data-linha={resumo.linhas.includes(Math.floor(n / 5))} data-celebrar={celebracao?.linhas.includes(Math.floor(n / 5)) ?? false} aria-label={`${titulo}: ${e === "vazia" ? "por preencher" : e}. Ver detalhes.`} onClick={ev => abrir(n, ev.currentTarget)}>
                 {e === "aprovada" && <span className={css.check} aria-hidden="true">✓</span>}
-                {n === 12 ? <Aviao/> : <><IconeCasa casa={n}/><span className={css.destino}>{titulo}</span></>}
+                {n === 12 ? <><Aviao/><span className={`${css.destino} ${css.nomeCentro}`}>{titulo}</span></> : <><IconeCasa casa={n}/><span className={css.destino}>{titulo}</span></>}
                 <small>{e === "pendente" ? "◷ Em validação" : e === "aprovada" ? "Validada" : e === "recusada" ? "Rever envio" : n === 12 ? "Reserva ≥ 7.500 €" : "+ Reserva"}</small>
                 {i?.curinga && e !== "recusada" && <span className={css.joker}>7,5K</span>}
               </button>;

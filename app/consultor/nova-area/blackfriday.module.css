@@ -40,3 +40,13 @@
 .eventosPremio{padding-left:18px;margin:10px 0;color:#e3eacb;font-size:12px;line-height:1.8}
 .iconeReferencia{width:42px;height:38px;max-width:65%;background-color:currentColor;mask-size:contain;mask-position:center;mask-repeat:no-repeat;-webkit-mask-size:contain;-webkit-mask-position:center;-webkit-mask-repeat:no-repeat}
 @media(max-width:600px){.iconeReferencia{width:34px;height:32px}}
+.nomeCentro{display:none}
+@media(max-width:600px){
+  .cartao,.premios{min-width:0}
+  .grelha{grid-auto-rows:1fr}
+  .casa,.casa:has(.iconeDestino){box-sizing:border-box;aspect-ratio:auto;min-height:110px;padding:22px 3px 10px;gap:6px}
+  .casa .iconeDestino,.casa>svg{display:none}
+  .casa .nomeCentro{display:block}
+  .destino{width:100%;font-size:clamp(9px,2.3vw,12px);line-height:1.3;text-align:center}
+  .casa small{font-size:8px;overflow-wrap:anywhere}
+}
