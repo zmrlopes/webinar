@@ -89,6 +89,10 @@ sem preencher ou gravar casas. Mantém-se exclusivo da conta de teste.
 Por indicação do utilizador, o bingo apresenta também um prémio extra:
 entrada no evento Mindset Elite de fevereiro para JUNIOR com faturação de
 15.000 €, SENIOR com 25.000 € e MASTER com 35.000 € durante o desafio.
+Se o TP conquistar o prémio de faturação do seu patamar e a primeira linha
+horizontal validada, em qualquer ordem, recebe uma entrada no Mindset Elite
+de fevereiro pelo primeiro prémio e uma entrada no evento Black Friday de
+outubro pelo segundo prémio. Ambas as conquistas exigem validação.
 Este destaque continua exclusivo da nova área da conta de teste.
 
 ## Alterações na área de consultor

@@ -202,11 +202,24 @@ export function BlackFriday({email}: {email: string}) {
               <div><dt>MASTER</dt><dd>35.000 €</dd></div>
             </dl>
             <small>Faturação por TP · Prémio sujeito a validação.</small>
+            <p>Se também completares uma linha horizontal validada, recebes uma entrada no Mindset Elite de fevereiro e uma entrada no evento Black Friday de outubro, independentemente da ordem das conquistas.</p>
           </div>
           <div className={css.premio}><span className={css.selo}>O TEU JOKER</span><h3>Uma reserva de 7,5K.<br/>A casa que quiseres.</h3><p>Uma única reserva de pelo menos 7.500 € pode preencher qualquer casa à tua escolha.</p><small>A reserva e o comprovativo só podem ser usados numa casa.</small></div>
         </aside>
       </div>
-      <details className={css.regras}><summary>Como funciona o desafio</summary><ol><li>Faz uma reserva durante o desafio e escolhe a casa correspondente.</li><li>Anexa o comprovativo com a referência, a data e o valor da reserva. A casa começa logo a contar, pendente de revisão.</li><li>Depois de submeteres uma casa, a escolha fica fixa: não podes trocar a reserva para outra casa.</li><li>Cada reserva preenche uma única casa, mesmo quando corresponde a vários destinos ou categorias.</li><li>Uma reserva de pelo menos 7.500 € pode ser usada como joker numa única casa.</li><li>O valor de uma reserva não pode ser dividido por várias casas. Por exemplo, uma reserva de 15.000 € preenche apenas uma casa, nunca duas de 7.500 €.</li><li>Só as linhas horizontais contam. Todos os TPs que completem a sua primeira linha horizontal validada recebem uma entrada no evento Mindset Elite. Cada TP recebe este prémio apenas uma vez.</li><li>Os prémios dependem da validação dos comprovativos. Uma recusa retira a casa do progresso e permite um novo envio.</li><li>A ordem dos bingos é determinada pela hora de envio do último comprovativo necessário, desde que todos sejam aprovados.</li><li>O desafio decorre de {data(dados.config.inicio)} até às 23h59 de {data(dados.config.fim)}, no horário de Lisboa. A data da viagem pode ser posterior.</li></ol></details>
+      <details className={css.regras}><summary>Como funciona o desafio</summary><ol>
+        <li>Faz uma reserva durante o desafio e escolhe a casa correspondente.</li>
+        <li>Anexa o comprovativo com a referência, a data e o valor da reserva. A casa começa logo a contar, pendente de revisão.</li>
+        <li>Depois de submeteres uma casa, a escolha fica fixa: não podes trocar a reserva para outra casa.</li>
+        <li>Cada reserva preenche uma única casa, mesmo quando corresponde a vários destinos ou categorias.</li>
+        <li>Uma reserva de pelo menos 7.500 € pode ser usada como joker numa única casa.</li>
+        <li>O valor de uma reserva não pode ser dividido por várias casas. Por exemplo, uma reserva de 15.000 € preenche apenas uma casa, nunca duas de 7.500 €.</li>
+        <li>Só as linhas horizontais contam. Todos os TPs que completem a sua primeira linha horizontal validada recebem uma entrada no evento Mindset Elite. Cada TP recebe este prémio apenas uma vez.</li>
+        <li>Acumulação dos prémios de faturação e de linha: se fores JUNIOR e atingires 15.000 €, SENIOR e atingires 25.000 € ou MASTER e atingires 35.000 € de faturação durante o desafio, e também completares a tua primeira linha horizontal validada, recebes uma entrada no Mindset Elite de fevereiro pelo primeiro prémio e uma entrada no evento Black Friday de outubro pelo segundo prémio. A regra é igual nas duas ordens: atingir primeiro a faturação e depois completar a linha, ou completar primeiro a linha e depois atingir a faturação. Ambas as conquistas estão sujeitas a validação; recebes uma entrada para cada evento.</li>
+        <li>Os prémios dependem da validação dos comprovativos. Uma recusa retira a casa do progresso e permite um novo envio.</li>
+        <li>A ordem dos bingos é determinada pela hora de envio do último comprovativo necessário, desde que todos sejam aprovados.</li>
+        <li>O desafio decorre de {data(dados.config.inicio)} até às 23h59 de {data(dados.config.fim)}, no horário de Lisboa. A data da viagem pode ser posterior.</li>
+      </ol></details>
     </>}
     <dialog ref={dialogo} className={css.dialogo} aria-labelledby="bf-casa-titulo" onCancel={e => {e.preventDefault(); fechar();}} onClose={() => {setCasa(null); botaoCasa.current?.focus();}}>
       {casa !== null && dados && <div><button type="button" className={css.fechar} aria-label="Fechar" disabled={aGuardar} onClick={fechar}>×</button><span className={css.selo}>{simulacao && "SIMULAÇÃO · "}CASA {casa + 1} / 25</span><h2 id="bf-casa-titulo">{CASAS_BF[casa]}</h2>
