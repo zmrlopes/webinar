@@ -95,11 +95,11 @@ de fevereiro pelo primeiro prémio e uma entrada no evento Black Friday de
 outubro pelo segundo prémio. Ambas as conquistas exigem validação.
 Este destaque continua exclusivo da nova área da conta de teste.
 
-Por indicação do utilizador, no telemóvel (até 600 px) o bingo oculta os ícones
-decorativos, incluindo o avião central, que apresenta o nome em texto.
-As 25 casas mantêm alturas iguais, nomes e estados legíveis, vistos e cores;
-no computador os ícones mantêm-se. Aplica-se ao cartão real e à simulação,
-apenas na nova área da conta de teste.
+Por indicação mais recente do utilizador, no telemóvel (até 600 px) o bingo
+volta a mostrar os ícones decorativos, incluindo o avião central, em tamanho
+compacto. Mantém as larguras da grelha e das casas da correção anterior,
+as 25 casas com alturas iguais, nomes e estados legíveis, vistos e cores.
+Aplica-se ao cartão real e à simulação, apenas na nova área da conta de teste.
 
 ## Alterações na área de consultor
 
