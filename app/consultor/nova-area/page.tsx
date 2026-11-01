@@ -28,6 +28,7 @@ import { TravelPlannerNovaArea } from "./travel-planner";
 import { PropostaNovaArea } from "./proposta";
 import { OperadoresNovaArea } from "./operadores";
 import { ComecaAqui } from "./onboarding";
+import { NegocioNovaArea } from "./negocio";
 import { limparPrimeirosPassos, importarOnboardingTemporario, migrarPrimeirosPassosAnteriores, RESUMO_PRIMEIROS_PASSOS, TOTAL_PRIMEIROS_PASSOS } from "@/lib/primeiros-passos";
 
 const CHAVE_PROGRESSO = "consultor-nova-area:primeiros-passos:v2";
@@ -54,7 +55,7 @@ export default function NovaAreaConsultor() {
   const [aInscrever, setAInscrever] = useState(false);
   const [erroSessao, setErroSessao] = useState("");
   const [inscrito, setInscrito] = useState(false);
-  const [seccao, setSeccao] = useState<"inicio" | "comeca-aqui" | "calendario" | "blackfriday" | "calendario-criativo" | "leads" | "mentor-checklist" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "testemunhos" | "assistente" | "documentos" | "eventos-presenciais" | "calculadoras" | "core-rank" | "reservas" | "travel-planner" | "propostas" | "operadores">("inicio");
+  const [seccao, setSeccao] = useState<"inicio" | "comeca-aqui" | "calendario" | "blackfriday" | "calendario-criativo" | "leads" | "mentor-checklist" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "testemunhos" | "assistente" | "documentos" | "eventos-presenciais" | "calculadoras" | "core-rank" | "reservas" | "travel-planner" | "propostas" | "operadores" | "negocio">("inicio");
   const [assistenteAberto, setAssistenteAberto] = useState(false);
   const [reservasAberto, setReservasAberto] = useState(false);
   const [coreAberto, setCoreAberto] = useState(false);
@@ -118,6 +119,7 @@ export default function NovaAreaConsultor() {
   useEffect(() => {
     const conta = lerEmailGuardado()?.trim().toLowerCase() ?? "";
     if (!podeVerNovaArea(conta)) { setEstado("sem-acesso"); return; }
+    if (new URLSearchParams(window.location.search).get("seccao") === "negocio") setSeccao("negocio");
     const controller = new AbortController();
     setEmail(conta);
     let progressoLocal: number[] = [];
@@ -288,7 +290,8 @@ export default function NovaAreaConsultor() {
                 <button type="button" className={seccao === "reservas" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("reservas")} aria-current={seccao === "reservas" ? "page" : undefined} aria-controls="conteudo-nova-area">Criar templates</button>
                 <button type="button" className={seccao === "calendario-criativo" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calendario-criativo")} aria-current={seccao === "calendario-criativo" ? "page" : undefined} aria-controls="conteudo-nova-area">Calendário criativo</button>
               </GrupoMenu>
-              <GrupoMenu titulo="Objetivos" ativo={seccao === "core-rank" || seccao === "calculadoras"}>
+              <GrupoMenu titulo="Objetivos" ativo={seccao === "core-rank" || seccao === "calculadoras" || seccao === "negocio"}>
+                <button type="button" className={seccao === "negocio" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("negocio")} aria-current={seccao === "negocio" ? "page" : undefined} aria-controls="conteudo-nova-area">O meu negócio</button>
                 <button type="button" className={seccao === "core-rank" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("core-rank")} aria-current={seccao === "core-rank" ? "page" : undefined} aria-controls="conteudo-nova-area">Core Rank</button>
                 <button type="button" className={seccao === "calculadoras" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calculadoras")} aria-current={seccao === "calculadoras" ? "page" : undefined} aria-controls="conteudo-nova-area">Calculadoras</button>
               </GrupoMenu>
@@ -321,6 +324,7 @@ export default function NovaAreaConsultor() {
             {seccao === "calendario-criativo" && <CalendarioCriativo email={email} />}
             {seccao === "blackfriday" && <BlackFriday email={email} />}
             {seccao === "calculadoras" && <CalculadorasNovaArea />}
+            {seccao === "negocio" && <NegocioNovaArea email={email} />}
             {reservasAberto && <div hidden={seccao !== "reservas"}><ReservasNovaArea email={email} /></div>}
             {seccao === "travel-planner" && <TravelPlannerNovaArea email={email} />}
             {seccao === "operadores" && <OperadoresNovaArea email={email} />}

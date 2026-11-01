@@ -8,6 +8,19 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+Por indicação do utilizador, “O meu negócio” está em Objetivos na nova área,
+apenas para a conta de teste definida em `src/lib/demo.ts`, incluindo a API
+`/api/consultor/nova-area/negocio`. Nesta fase inclui apenas Mapas e Projeções:
+faturação e pontos da organização, comissões próprias confirmadas positivas e
+adesões do período, com histórico mensal do ano atual/anterior e comparação
+pelos mesmos dias. As projeções usam o acumulado parcial e um fator ajustável,
+como cenários matemáticos. O novo favorito “Atualizar o meu negócio” corre no
+MyOffice, confirma o email da sessão e recolhe os dados sem enviar tokens ou
+palavras-passe à plataforma. Os dados e a recolha são privados por conta, em
+chaves `consultor:negocio:`, separados do admin. Só uma recolha completa substitui
+o dashboard; falhas mantêm os dados anteriores. Não importa a equipa nem altera
+ranking, campanhas ou os snapshots do admin. Correr `npm run test:negocio`.
+
 Por indicação do utilizador, o separador BLACKFRIDAY da nova área apresenta
 um bingo 5×5 inspirado em `docs/bingo.jpeg`, com gradiente escuro e progresso
 privado por TP. Está em preparação apenas na conta de teste definida em
