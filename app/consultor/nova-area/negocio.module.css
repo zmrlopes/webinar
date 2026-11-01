@@ -36,8 +36,9 @@ a.botao[draggable] { cursor: grab; }
 .legenda i { width: 11px; height: 11px; background: #c7c9b7; border-radius: 3px; }
 .legenda i.atual { background: #4b5320; }
 .graficoScroll { overflow-x: auto; max-width: 100%; }
-.grafico { display: block; width: 100%; min-width: 640px; }
+.grafico { display: block; width: 100%; min-width: 940px; }
 .grafico text, .projecaoGrafico text { font-family: inherit; font-size: 10px; fill: #626557; }
+.grafico .valorBarra { font-size: 6.6px; font-weight: 700; }
 .nota { color: #6b6e60; font-size: 12px; line-height: 1.65; }
 .tabelaScroll { max-width: 100%; overflow-x: auto; margin: 20px 0; border: 1px solid #e3e4d9; border-radius: 13px; }
 .tabelaScroll table { width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap; }

@@ -16,6 +16,9 @@ adesões do período. Por indicação mais recente, o histórico mensal começa 
 ano de entrada registado em `equipa_afiliados.data_registo`, nunca antes de
 2019; sem essa data, procura desde 2019. Inclui todos esses anos na tabela e
 um seletor de ano para o gráfico, com comparação pelos mesmos dias nos cartões.
+Por indicação mais recente, os gráficos mensais mostram os três anos terminados
+no ano escolhido (apenas os existentes), com as três cores oliva do admin e
+o resultado por cima de cada barra, em formato compacto como no painel admin.
 As comissões somam os `totalCommissions` de `stats/activeIncome` e
 `stats/passiveIncome` para cada período, sem somar novamente movimentos ou
 outros totais. A nova versão do favorito é necessária para essas duas fontes;

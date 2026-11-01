@@ -11,22 +11,41 @@ function formatar(valor: number, k: MetricaNegocio, compacto = false) {
   return valor.toLocaleString("pt-PT", {maximumFractionDigits: k === "consultores" ? 0 : 2, ...(compacto ? {notation: "compact" as const} : {}), ...(euros(k) ? {style: "currency", currency: "EUR"} : {})});
 }
 const dataCurta = (iso: string) => iso.split("-").reverse().join("/");
+const CORES_ANOS_MAPA = ["#bfc7a0", "#8e9963", "#4b5320"];
+const corAnoMapa = (indice: number, total: number) => CORES_ANOS_MAPA[3 - total + indice];
+function formatarBarra(valor: number, k: MetricaNegocio) {
+  if (!euros(k)) return formatar(valor, k);
+  if (Math.abs(valor) >= 1_000_000) return `${(valor / 1_000_000).toLocaleString("pt-PT", {maximumFractionDigits: 1})} M€`;
+  if (Math.abs(valor) >= 1_000) return `${(valor / 1_000).toLocaleString("pt-PT", {maximumFractionDigits: 0})} k€`;
+  return `${valor.toLocaleString("pt-PT", {maximumFractionDigits: 0})} €`;
+}
 
-function GraficoMensal({dados, metrica, ano}: {dados: DadosNegocio; metrica: MetricaNegocio; ano: number}) {
-  const anos = anosNegocio(dados).includes(ano - 1) ? [ano - 1, ano] : [ano];
+function GraficoMensal({dados, metrica, anos}: {dados: DadosNegocio; metrica: MetricaNegocio; anos: number[]}) {
   const valores = anos.flatMap(a => MESES_NEGOCIO.map((_, i) => dados.meses[`${a}-${String(i + 1).padStart(2, "0")}`]?.[metrica] ?? 0));
-  const minimo = Math.min(0, ...valores), maximo = Math.max(1, ...valores);
-  const y = (v: number) => 190 - (v - minimo) / (maximo - minimo) * 160;
+  const minimo = Math.min(0, ...valores) * 1.18, maximo = Math.max(1, ...valores) * 1.18;
+  const largura = 940, altura = 250, esquerda = 56, direita = 12, topo = 26, fundo = 30;
+  const larguraGrupo = (largura - esquerda - direita) / 12, intervalo = 3;
+  const larguraBarra = (larguraGrupo - intervalo * (anos.length + 1)) / Math.max(1, anos.length);
+  const y = (v: number) => altura - fundo - (v - minimo) / (maximo - minimo) * (altura - topo - fundo);
   return <div className={estilos.graficoScroll}>
-    <svg className={estilos.grafico} viewBox="0 0 760 230" role="img" aria-label={`${ROTULOS_NEGOCIO[metrica]} por mês, ${anos.join(" e ")}. Valores exatos na tabela abaixo.`}>
-      {[0, .5, 1].map(t => <g key={t}><line x1="65" x2="750" y1={30 + t * 160} y2={30 + t * 160} stroke="#e8e8de" /><text x="57" y={34 + t * 160} textAnchor="end">{formatar(maximo - t * (maximo - minimo), metrica, true)}</text></g>)}
-      <line x1="65" x2="750" y1={y(0)} y2={y(0)} stroke="#999b87" />
+    <svg className={estilos.grafico} viewBox={`0 0 ${largura} ${altura}`} role="img" aria-label={`${ROTULOS_NEGOCIO[metrica]} por mês, ${anos.join(" / ")}. Valores por cima das barras e valores exatos na tabela abaixo.`}>
+      {[0, .25, .5, .75, 1].map(t => {
+        const valor = minimo + t * (maximo - minimo);
+        return <g key={t}><line x1={esquerda} x2={largura - direita} y1={y(valor)} y2={y(valor)} stroke="#e8e8de" /><text x={esquerda - 7} y={y(valor) + 4} textAnchor="end">{formatarBarra(valor, metrica)}</text></g>;
+      })}
+      <line x1={esquerda} x2={largura - direita} y1={y(0)} y2={y(0)} stroke="#999b87" />
       {MESES_NEGOCIO.map((mes, i) => <g key={mes}>
-        {anos.map(a => {
+        {anos.map((a, j) => {
           const valor = dados.meses[`${a}-${String(i + 1).padStart(2, "0")}`]?.[metrica];
-          return valor === undefined ? null : <rect key={a} x={75 + i * 56 + (a === ano ? 20 : 0)} y={Math.min(y(valor), y(0))} width="17" height={Math.max(valor === 0 ? 0 : 1, Math.abs(y(0) - y(valor)))} rx="2" fill={a === ano ? "#4b5320" : "#c7c9b7"}><title>{mes} {a}: {formatar(valor, metrica)}</title></rect>;
+          if (valor === undefined) return null;
+          const x = esquerda + i * larguraGrupo + intervalo + j * (larguraBarra + intervalo);
+          const topoBarra = Math.min(y(valor), y(0));
+          return <g key={a}>
+            <rect data-mapa-ano={a} x={x} y={topoBarra} width={larguraBarra} height={Math.max(1.5, Math.abs(y(0) - y(valor)))} rx="2" fill={corAnoMapa(j, anos.length)} stroke="rgba(75,83,32,.3)" strokeWidth="1" opacity={valor === 0 ? .3 : 1}><title>{mes} {a}: {formatar(valor, metrica)}</title></rect>
+            <text data-valor-barra={valor} className={estilos.valorBarra} x={x + larguraBarra / 2} y={topoBarra - 4} textAnchor="middle">{formatarBarra(valor, metrica)}</text>
+          </g>;
         })}
-        <text x={93 + i * 56} y="218" textAnchor="middle">{mes}</text>
+        <text x={esquerda + (i + .5) * larguraGrupo} y={altura - 8} textAnchor="middle">{mes}</text>
       </g>)}
     </svg>
   </div>;
@@ -97,6 +116,7 @@ export function NegocioNovaArea({email}: {email: string}) {
   const mes = dados ? Number(dados.ate.slice(5, 7)) : 0;
   const anos = dados ? anosNegocio(dados) : [];
   const anoMapa = anoSelecionado !== null && anos.includes(anoSelecionado) ? anoSelecionado : ano;
+  const anosGrafico = [anoMapa - 2, anoMapa - 1, anoMapa].filter(a => anos.includes(a));
   const rotulo = (k: MetricaNegocio) => k === "comissoes" && dados?.versao !== 2 ? "Comissões (por atualizar)" : ROTULOS_NEGOCIO[k];
 
   return <section className={estilos.raiz} aria-label="O meu negócio">
@@ -122,9 +142,9 @@ export function NegocioNovaArea({email}: {email: string}) {
           return <article className={estilos.cartao} key={k}><span>{rotulo(k)}</span><strong>{formatar(r.atual, k)}</strong><small>1 de janeiro a {dataCurta(dados.ate)}</small><p>{r.variacao === null ? "Sem base de comparação no ano anterior" : `${r.variacao > 0 ? "+" : ""}${r.variacao}% face aos mesmos dias de ${ano - 1}`}</p></article>;
         })}</div>
         <article className={estilos.painel}>
-          <div className={estilos.cabecalho}><h2>Evolução mensal</h2><div className={estilos.filtros}><label htmlFor="negocio-indicador">Indicador <select id="negocio-indicador" value={metrica} onChange={e => setMetrica(e.target.value as MetricaNegocio)}>{METRICAS_NEGOCIO.map(k => <option key={k} value={k}>{rotulo(k)}</option>)}</select></label><label htmlFor="negocio-ano">Ano <select id="negocio-ano" value={anoMapa} onChange={e => setAnoSelecionado(Number(e.target.value))}>{anos.map(a => <option key={a} value={a}>{a}</option>)}</select></label></div></div>
-          <div className={estilos.legenda}>{anos.includes(anoMapa - 1) && <span><i />{anoMapa - 1}</span>}<span><i className={estilos.atual} />{anoMapa}</span></div>
-          <GraficoMensal dados={dados} metrica={metrica} ano={anoMapa} />
+          <div className={estilos.cabecalho}><h2>Evolução mensal</h2><div className={estilos.filtros}><label htmlFor="negocio-indicador">Indicador <select id="negocio-indicador" value={metrica} onChange={e => setMetrica(e.target.value as MetricaNegocio)}>{METRICAS_NEGOCIO.map(k => <option key={k} value={k}>{rotulo(k)}</option>)}</select></label><label htmlFor="negocio-ano">Ano final <select id="negocio-ano" value={anoMapa} onChange={e => setAnoSelecionado(Number(e.target.value))}>{anos.map(a => <option key={a} value={a}>{a}</option>)}</select></label></div></div>
+          <div className={estilos.legenda}>{anosGrafico.map((a, i) => <span key={a}><i style={{background: corAnoMapa(i, anosGrafico.length)}} />{a}</span>)}</div>
+          <GraficoMensal dados={dados} metrica={metrica} anos={anosGrafico} />
           <p className={estilos.nota}>O mês de {MESES_NEGOCIO[mes - 1]} de {ano} inclui apenas os dados até {dataCurta(dados.ate)}. Os cartões comparam os mesmos dias nos dois anos.</p>
         </article>
         <div className={estilos.tabelaScroll}><table><caption>Mapa mensal · {rotulo(metrica)} · histórico {anos[0]}–{ano}</caption><thead><tr><th scope="col">Ano</th>{MESES_NEGOCIO.map(m => <th key={m} scope="col">{m}</th>)}<th scope="col">Total recolhido</th></tr></thead><tbody>{anos.map(a => <tr key={a}><th scope="row">{a}</th>{MESES_NEGOCIO.map((m, i) => {const v = dados.meses[`${a}-${String(i + 1).padStart(2, "0")}`]?.[metrica]; return <td key={m}>{v === undefined ? "—" : formatar(v, metrica)}</td>;})}<td><strong>{formatar(Object.entries(dados.meses).filter(([k]) => k.startsWith(`${a}-`)).reduce((s, [, v]) => s + v[metrica], 0), metrica)}</strong></td></tr>)}</tbody></table></div>
