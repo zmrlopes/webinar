@@ -49,18 +49,24 @@ export default function AtualizarNegocioConsultor() {
     async function correr() {
       try {
         setEstado("A confirmar a conta do MyOffice…");
-        const identidade = await pedir("identidade") as {email?: string};
+        const identidade = await pedir("identidade") as {email?: string; versao?: number};
         if (!identidade.email) throw new Error("Não foi possível confirmar o email da sessão do MyOffice. Entra novamente no MyOffice e repete o favorito.");
+        if (identidade.versao !== 2) throw new Error("Substitui o favorito «Atualizar o meu negócio» pela versão disponível na nova área e volta a clicar nele no MyOffice. A nova versão inclui comissões próprias e passivas.");
         const {plano} = await enviar({acao: "iniciar", origemEmail: identidade.email}) as {plano: PlanoNegocio};
         setProgresso({feitos: 0, total: plano.periodos.length});
-        for (let i = 0; i < plano.periodos.length; i++) {
-          if (!ativo) return;
-          const periodo = plano.periodos[i]!;
-          setEstado(`A recolher ${periodo.chave === "homologo" ? "o período homólogo" : periodo.chave}…`);
-          const totais = await recolherPeriodoNegocio(periodo, pedir);
-          await enviar({acao: "periodo", id: plano.id, periodo: periodo.chave, totais});
-          if (ativo) setProgresso({feitos: i + 1, total: plano.periodos.length});
-        }
+        let seguinte = 0, feitos = 0, falhou = false;
+        await Promise.all(Array.from({length: 3}, async () => {
+          while (ativo && !falhou && seguinte < plano.periodos.length) {
+            const periodo = plano.periodos[seguinte++]!;
+            setEstado(`A recolher o histórico desde ${plano.periodos[0]!.inicio.slice(0, 4)} · ${periodo.chave === "homologo" ? "período homólogo" : periodo.chave}…`);
+            try {
+              const totais = await recolherPeriodoNegocio(periodo, pedir);
+              await enviar({acao: "periodo", id: plano.id, periodo: periodo.chave, totais});
+              if (ativo) setProgresso({feitos: ++feitos, total: plano.periodos.length});
+            } catch (falha) {falhou = true; throw falha;}
+          }
+        }));
+        if (!ativo) return;
         setEstado("A guardar os Mapas e as Projeções…");
         await enviar({acao: "concluir", id: plano.id});
         if (ativo) {setFeito(true); setEstado("O teu dashboard está atualizado.");}
@@ -83,7 +89,7 @@ export default function AtualizarNegocioConsultor() {
       <p role="status">{estado}</p>
       <progress aria-label="Períodos recolhidos" max={progresso.total} value={progresso.feitos} />
       <p>{progresso.feitos} de {progresso.total} períodos</p>
-      {!feito && <p>Mantém esta janela e o MyOffice abertos. A primeira recolha inclui o ano anterior e pode demorar alguns minutos.</p>}
+      {!feito && <p>Mantém esta janela e o MyOffice abertos. A recolha inclui o histórico desde o ano de entrada, nunca anterior a 2019, e pode demorar alguns minutos.</p>}
     </>}
     <Link className={estilos.botao} href="/consultor/nova-area?seccao=negocio">{feito ? "Ver Mapas e Projeções →" : "Voltar à nova área"}</Link>
   </main>;

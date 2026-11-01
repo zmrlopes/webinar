@@ -11,9 +11,16 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 Por indicação do utilizador, “O meu negócio” está em Objetivos na nova área,
 apenas para a conta de teste definida em `src/lib/demo.ts`, incluindo a API
 `/api/consultor/nova-area/negocio`. Nesta fase inclui apenas Mapas e Projeções:
-faturação e pontos da organização, comissões próprias confirmadas positivas e
-adesões do período, com histórico mensal do ano atual/anterior e comparação
-pelos mesmos dias. As projeções usam o acumulado parcial e um fator ajustável,
+faturação e pontos da organização, comissões totais (próprias + passivas) e
+adesões do período. Por indicação mais recente, o histórico mensal começa no
+ano de entrada registado em `equipa_afiliados.data_registo`, nunca antes de
+2019; sem essa data, procura desde 2019. Inclui todos esses anos na tabela e
+um seletor de ano para o gráfico, com comparação pelos mesmos dias nos cartões.
+As comissões somam os `totalCommissions` de `stats/activeIncome` e
+`stats/passiveIncome` para cada período, sem somar novamente movimentos ou
+outros totais. A nova versão do favorito é necessária para essas duas fontes;
+recolhas antigas não podem publicar dados como se fossem da versão nova.
+As projeções usam o acumulado parcial e um fator ajustável,
 como cenários matemáticos. O novo favorito “Atualizar o meu negócio” corre no
 MyOffice, confirma o email da sessão e recolhe os dados sem enviar tokens ou
 palavras-passe à plataforma. Os dados e a recolha são privados por conta, em

@@ -3,30 +3,40 @@ export const METRICAS_NEGOCIO = ["faturacao", "comissoes", "pontos", "consultore
 export type MetricaNegocio = typeof METRICAS_NEGOCIO[number];
 export type TotaisNegocio = Record<MetricaNegocio, number>;
 export const ROTULOS_NEGOCIO: Record<MetricaNegocio, string> = {
-  faturacao: "Faturação da equipa", comissoes: "Comissões próprias", pontos: "Pontos da equipa", consultores: "Novos consultores",
+  faturacao: "Faturação da equipa", comissoes: "Comissões totais", pontos: "Pontos da equipa", consultores: "Novos consultores",
 };
 export const MESES_NEGOCIO = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 export interface PeriodoNegocio { chave: string; inicio: string; fim: string }
 export interface PlanoNegocio { id: string; hoje: string; periodos: PeriodoNegocio[] }
 export interface DadosNegocio {
   ate: string; atualizadoEm: string; origemEmail: string;
+  versao?: 2; inicioHistorico?: string;
   meses: Record<string, TotaisNegocio>;
   homologo: TotaisNegocio;
 }
 const dois = (n: number) => String(n).padStart(2, "0");
 const ultimoDia = (ano: number, mes: number) => new Date(Date.UTC(ano, mes, 0)).getUTCDate();
-export function periodosNegocio(hoje: string): PeriodoNegocio[] {
+export const ANO_INICIO_NEGOCIO = 2019;
+export function periodosNegocio(hoje: string, dataRegisto?: string | null): PeriodoNegocio[] {
   const [ano, mes, dia] = hoje.split("-").map(Number) as [number, number, number];
+  const registo = dataRegisto && /^\d{4}-\d{2}-\d{2}$/.test(dataRegisto) ? Number(dataRegisto.slice(0, 4)) : NaN;
+  const primeiroAno = Number.isInteger(registo) && registo <= ano ? Math.max(ANO_INICIO_NEGOCIO, registo) : ANO_INICIO_NEGOCIO;
   const periodos: PeriodoNegocio[] = [];
-  for (const a of [ano - 1, ano]) {
+  for (let a = primeiroAno; a <= ano; a++) {
     for (let m = 1; m <= (a === ano ? mes : 12); m++) {
       const chave = `${a}-${dois(m)}`;
       periodos.push({chave, inicio: `${chave}-01`, fim: a === ano && m === mes ? hoje : `${chave}-${dois(ultimoDia(a, m))}`});
     }
   }
-  const chave = `${ano - 1}-${dois(mes)}`;
-  periodos.push({chave: "homologo", inicio: `${chave}-01`, fim: `${chave}-${dois(Math.min(dia, ultimoDia(ano - 1, mes)))}`});
+  if (ano - 1 >= primeiroAno) {
+    const chave = `${ano - 1}-${dois(mes)}`;
+    periodos.push({chave: "homologo", inicio: `${chave}-01`, fim: `${chave}-${dois(Math.min(dia, ultimoDia(ano - 1, mes)))}`});
+  }
   return periodos;
+}
+export function anosNegocio(dados: DadosNegocio): number[] {
+  return [...new Set(Object.keys(dados.meses).filter(k => /^\d{4}-\d{2}$/.test(k)).map(k => Number(k.slice(0, 4))))]
+    .filter(a => a >= ANO_INICIO_NEGOCIO && a <= Number(dados.ate.slice(0, 4))).sort((a, b) => a - b);
 }
 export const arredondarNegocio = (v: number) => Math.round(v * 100) / 100;
 export function validarTotaisNegocio(valor: unknown): TotaisNegocio {

@@ -32,9 +32,9 @@ export function favoritoNegocio(site: string): string {
       const {id,url}=e.data;
       const responder=d=>w.postMessage({canal:C,id,...d},S);
       const {token,email}=await contexto;
-      if(url==='identidade'){responder({corpo:JSON.stringify({email}),status:200});return}
+      if(url==='identidade'){responder({corpo:JSON.stringify({email,versao:2}),status:200});return}
       let u;try{u=new URL(url)}catch{return}
-      if(u.origin!=='https://api.icligo.com'||!['/legacy-system/v1/team/affiliates','/legacy-system/v1/account/movements'].includes(u.pathname)){responder({erro:'Endereço não permitido.'});return}
+      if(u.origin!=='https://api.icligo.com'||!['/legacy-system/v1/team/affiliates','/legacy-system/v1/stats/activeIncome','/legacy-system/v1/stats/passiveIncome'].includes(u.pathname)){responder({erro:'Endereço não permitido.'});return}
       try{const r=await fetch(u.href,{credentials:'include',headers:token?{Authorization:'Bearer '+token}:{},signal:AbortSignal.timeout(180000)});responder({status:r.status,corpo:await r.text()})}catch{responder({erro:'O MyOffice não respondeu. Repete a atualização.'})}
     };
     window.addEventListener('message',window.__ponteNegocio);
@@ -42,7 +42,7 @@ export function favoritoNegocio(site: string): string {
 }
 
 type PedirMyOffice = (url: string) => Promise<unknown>;
-/** Totais da organização e comissões confirmadas positivas, como no dashboard admin. */
+/** As duas fontes de rendimento são disjuntas: não somar também movimentos ou o gráfico total. */
 export async function recolherPeriodoNegocio(periodo: PeriodoNegocio, pedir: PedirMyOffice): Promise<TotaisNegocio> {
   const query = `startDate=${periodo.inicio}&endDate=${periodo.fim}`;
   const equipa = await pedir(`${API}/team/affiliates?${query}&page=0&size=1`) as {stats?: {sales?: unknown; points?: unknown; subscriptions?: unknown}} | null;
@@ -50,27 +50,15 @@ export async function recolherPeriodoNegocio(periodo: PeriodoNegocio, pedir: Ped
   if (!stats || [stats.sales, stats.points, stats.subscriptions].some(n => typeof n !== "number" || !Number.isFinite(n))) {
     throw new Error("O MyOffice não devolveu os totais da equipa. Não foram usados zeros em falta.");
   }
-  let comissoes = 0, recebidos = 0;
-  const vistos = new Set<string>();
-  for (let pagina = 0; pagina < 100; pagina++) {
-    const corpo = await pedir(`${API}/account/movements?${query}&page=${pagina}&size=1000`) as {
-      content?: {state?: unknown; commissions?: unknown}[]; totalPages?: unknown; totalElements?: unknown;
-    } | null;
-    if (!corpo || !Array.isArray(corpo.content)) throw new Error("O MyOffice não devolveu os movimentos no formato esperado.");
-    const assinatura = JSON.stringify(corpo.content);
-    if (corpo.content.length && vistos.has(assinatura)) throw new Error("O MyOffice repetiu uma página de movimentos. Repete a atualização.");
-    vistos.add(assinatura);
-    for (const m of corpo.content) {
-      if (typeof m.commissions !== "number" || !Number.isFinite(m.commissions) || typeof m.state !== "string") throw new Error("Há movimentos incompletos no MyOffice.");
-      if (m.state === "confirmed" && m.commissions > 0) comissoes += m.commissions;
+  const rendimento = async (tipo: "activeIncome" | "passiveIncome") => {
+    const corpo = await pedir(`${API}/stats/${tipo}?${query}`) as {totalCommissions?: unknown; currency?: unknown} | null;
+    if (!corpo || typeof corpo.totalCommissions !== "number" || !Number.isFinite(corpo.totalCommissions)
+      || (corpo.currency !== undefined && corpo.currency !== "EUR")) {
+      throw new Error(`O MyOffice não devolveu as comissões ${tipo === "activeIncome" ? "próprias" : "passivas"} em euros. Os dados anteriores mantêm-se.`);
     }
-    recebidos += corpo.content.length;
-    const paginas = typeof corpo.totalPages === "number" ? corpo.totalPages : null;
-    if (paginas !== null && (!Number.isInteger(paginas) || paginas < 0 || paginas > 100)) throw new Error("A lista de movimentos é demasiado grande ou está incompleta.");
-    if (paginas !== null ? pagina + 1 >= paginas : corpo.content.length < 1000) {
-      if (typeof corpo.totalElements === "number" && recebidos !== corpo.totalElements) throw new Error("Faltam movimentos do MyOffice. Repete a atualização.");
-      return {faturacao: stats.sales as number, pontos: stats.points as number, consultores: stats.subscriptions as number, comissoes: arredondarNegocio(comissoes)};
-    }
-  }
-  throw new Error("Não foi possível recolher todos os movimentos. Os dados anteriores mantêm-se.");
+    return corpo.totalCommissions;
+  };
+  const proprias = await rendimento("activeIncome"), passivas = await rendimento("passiveIncome");
+  return {faturacao: stats.sales as number, pontos: stats.points as number, consultores: stats.subscriptions as number,
+    comissoes: arredondarNegocio(proprias + passivas)};
 }

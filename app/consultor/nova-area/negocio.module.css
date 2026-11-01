@@ -28,6 +28,8 @@ a.botao[draggable] { cursor: grab; }
 .painel > p { font-size: 14px; color: #55584d; }
 .cabecalho { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px; }
 .cabecalho label { font-size: 12px; color: #656853; }
+.filtros { display: flex; flex-wrap: wrap; gap: 12px; }
+.aviso { border: 1px solid #dfe1d2; background: #f7f8f2; padding: 16px; border-radius: 12px; color: #4b5320; font-size: 14px; }
 .cabecalho select { display: block; max-width: 100%; margin-top: 4px; border: 1px solid #d6d8c9; border-radius: 8px; background: white; color: #23251d; padding: 9px; font: inherit; font-size: 13px; }
 .legenda { display: flex; gap: 18px; font-size: 12px; color: #64675a; margin: 10px 0; }
 .legenda span { display: flex; align-items: center; gap: 6px; }
