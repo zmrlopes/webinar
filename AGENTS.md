@@ -21,7 +21,10 @@ As comissões somam os `totalCommissions` de `stats/activeIncome` e
 outros totais. A nova versão do favorito é necessária para essas duas fontes;
 recolhas antigas não podem publicar dados como se fossem da versão nova.
 As projeções usam o acumulado parcial e um fator ajustável,
-como cenários matemáticos. O novo favorito “Atualizar o meu negócio” corre no
+como cenários matemáticos. Por indicação do utilizador, cada ponto das projeções
+mostra imediatamente o ano e o valor exato ao passar o rato, focar pelo teclado
+ou tocar, acompanhando os ajustes do fator de crescimento.
+O novo favorito “Atualizar o meu negócio” corre no
 MyOffice, confirma o email da sessão e recolhe os dados sem enviar tokens ou
 palavras-passe à plataforma. Os dados e a recolha são privados por conta, em
 chaves `consultor:negocio:`, separados do admin. Só uma recolha completa substitui

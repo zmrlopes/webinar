@@ -49,7 +49,13 @@ a.botao[draggable] { cursor: grab; }
 .simulador label { font-size: 13px; font-weight: 650; }
 .simulador input { display: block; width: 130px; padding: 10px; border: 1px solid #b7bba0; border-radius: 9px; color: #111; background: #fff; margin-top: 6px; font: inherit; }
 .projecoes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
-.projecaoGrafico { display: block; width: 100%; margin: 15px 0; }
+.projecaoInterativa { position: relative; margin: 15px 0; }
+.projecaoGrafico { display: block; width: 100%; }
+.pontoProjecao { cursor: pointer; }
+.pontoProjecao:focus-visible { outline: none; stroke: #4b5320; stroke-width: 1.5; stroke-dasharray: 3 2; }
+.projecaoTooltip { position: absolute; z-index: 2; transform: translate(-50%, -100%); margin-top: -12px; max-width: calc(100% - 12px); width: max-content; padding: 9px 12px; border: 1px solid #d4d8c3; border-radius: 10px; background: #fff; box-shadow: 0 4px 16px #00000014; color: #151612; pointer-events: none; text-align: center; overflow-wrap: anywhere; }
+.projecaoTooltip span { display: block; font-size: 11px; color: #656853; }
+.projecaoTooltip strong { display: block; margin-top: 2px; font-size: 14px; }
 .erro { color: #9f251d; font-size: 14px; }
 .vazio { border: 1px dashed #c9ceb5; border-radius: 16px; padding: 32px 24px; background: #fcfcf9; }
 .vazio p { color: #686b5b; max-width: 620px; }

@@ -1,6 +1,6 @@
 "use client";
 
-import {useCallback, useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useId, useRef, useState} from "react";
 import {anosNegocio, fatorMedioNegocio, MESES_NEGOCIO, METRICAS_NEGOCIO, projecoesNegocio, resumoNegocio, ROTULOS_NEGOCIO, type DadosNegocio, type MetricaNegocio} from "@/lib/consultor-negocio";
 import {favoritoNegocio, MYOFFICE_NEGOCIO} from "@/lib/consultor-negocio-ponte";
 import gerais from "./nova-area.module.css";
@@ -33,14 +33,31 @@ function GraficoMensal({dados, metrica, ano}: {dados: DadosNegocio; metrica: Met
 }
 
 function GraficoProjecao({valores, metrica, ano}: {valores: number[]; metrica: MetricaNegocio; ano: number}) {
+  const [ativo, setAtivo] = useState<number | null>(null);
+  const tooltipId = useId();
   const min = Math.min(0, ...valores), max = Math.max(1, ...valores);
   const y = (v: number) => 110 - (v - min) / (max - min) * 85;
   const pontos = valores.map((v, i) => `${30 + i * 55},${y(v)}`).join(" ");
-  return <svg className={estilos.projecaoGrafico} viewBox="0 0 340 145" role="img" aria-label={`Cenário de ${ROTULOS_NEGOCIO[metrica]} entre ${ano} e ${ano + 5}. Valores na tabela de projeções.`}>
+  return <div className={estilos.projecaoInterativa} onPointerLeave={() => setAtivo(null)}>
+    <svg className={estilos.projecaoGrafico} viewBox="0 0 340 145" role="group" aria-label={`Cenário de ${ROTULOS_NEGOCIO[metrica]} entre ${ano} e ${ano + 5}. Passa pelo ponto de cada ano para ver o valor.`}>
     <line x1="24" x2="315" y1={y(0)} y2={y(0)} stroke="#e3e4d7" />
     <polyline points={pontos} fill="none" stroke="#4b5320" strokeWidth="2.5" strokeDasharray="5 4" />
-    {valores.map((v, i) => <g key={i}><circle cx={30 + i * 55} cy={y(v)} r="3.5" fill="#4b5320"><title>{ano + i}: {formatar(v, metrica)}</title></circle><text x={30 + i * 55} y="137" textAnchor="middle">{ano + i}</text></g>)}
-  </svg>;
+    {valores.map((v, i) => <g key={i}>
+      <circle cx={30 + i * 55} cy={y(v)} r={ativo === i ? 5 : 3.5} fill="#4b5320" aria-hidden="true" />
+      <circle className={estilos.pontoProjecao} cx={30 + i * 55} cy={y(v)} r="13" fill="transparent" role="button" tabIndex={0}
+        data-projecao-ano={ano + i} aria-label={`${ano + i}: ${formatar(v, metrica)}`}
+        aria-describedby={ativo === i ? tooltipId : undefined}
+        onPointerEnter={() => setAtivo(i)} onPointerLeave={() => setAtivo(null)}
+        onFocus={() => setAtivo(i)} onBlur={() => setAtivo(null)} onClick={() => setAtivo(i)}
+        onKeyDown={e => {if (e.key === "Escape") setAtivo(null); else if (e.key === "Enter" || e.key === " ") {e.preventDefault(); setAtivo(i);}}} />
+      <text x={30 + i * 55} y="137" textAnchor="middle">{ano + i}</text>
+    </g>)}
+    </svg>
+    {ativo !== null && valores[ativo] !== undefined && <div id={tooltipId} role="tooltip" className={estilos.projecaoTooltip}
+      style={{left: `${Math.max(25, Math.min(75, (30 + ativo * 55) / 340 * 100))}%`, top: `${y(valores[ativo]!) / 145 * 100}%`}}>
+      <span>{ano + ativo} · {ativo === 0 ? "real, parcial" : "projeção"}</span><strong>{formatar(valores[ativo]!, metrica)}</strong>
+    </div>}
+  </div>;
 }
 
 export function NegocioNovaArea({email}: {email: string}) {
