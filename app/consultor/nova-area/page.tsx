@@ -232,7 +232,7 @@ export default function NovaAreaConsultor() {
   const questionariosPendentes = dados.erroAvisos ? 0 : (dados.avisos?.length ?? 0);
   const avisoQuestionarios = `${questionariosPendentes} ${questionariosPendentes === 1 ? "questionário" : "questionários"} por responder`;
   return (
-    <div className={estilos.pagina}>
+    <div className={`${estilos.pagina} ${seccao === "negocio" ? estilos.paginaNegocio : ""}`}>
       <div className={estilos.contentor}>
         <AlternarArea ativa="nova" />
         <header className={estilos.topo}>

@@ -10,6 +10,10 @@
   line-height: 1.6;
 }
 .contentor { width: 100%; min-width: 0; margin: 0 auto; }
+@media (min-width: 761px) {
+  .pagina.paginaNegocio { padding-inline: 20px; }
+  .paginaNegocio .layout { grid-template-columns: 240px minmax(0, 1fr); gap: 20px; }
+}
 .topo { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 8px 0 32px; margin-bottom: 30px; border-bottom: 1px solid #eae7de; }
 .marca { display: flex; align-items: center; gap: 14px; }
 .simbolo { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 15px; background: #000; overflow: hidden; }
