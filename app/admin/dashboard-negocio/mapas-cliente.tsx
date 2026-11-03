@@ -71,6 +71,12 @@ function fmtFull(v: number | null, unit: Unidade, decimals: number): string {
 }
 const r2 = (v: number): number => Math.round(v * 100) / 100;
 
+/** Meses decorridos no snapshot, incluindo a fração do mês em curso. */
+function mesesDecorridos(dados: DadosMapas): number {
+  const diasMes = new Date(2026, dados.ytd_through_idx + 1, 0).getDate();
+  return dados.ytd_through_idx + (dados.ytd_partial_day ? Math.min(dados.ytd_partial_day, diasMes) / diasMes : 1);
+}
+
 export function MapasCliente({ dados, historico }: { dados: DadosMapas; historico: HistoricoMapas }): React.JSX.Element {
   const LS = "icligo.comissoes.outras.v2";
   const [comMan, setComMan] = useState<Record<string, number>>({});
@@ -219,6 +225,10 @@ export function MapasCliente({ dados, historico }: { dados: DadosMapas; historic
             <div className="metric-head">
               <div>
                 <h2>{m.label}</h2>
+                <div className="metric-sub">
+                  Média mensal desde 1 de janeiro: <b>{fmtFull(m.ytd_2026 / mesesDecorridos(dados), m.unit, Math.max(2, m.decimals))}</b>
+                  {" "}· até {dados.ytd_partial_day || new Date(2026, through + 1, 0).getDate()}/{through + 1}/2026 (última atualização)
+                </div>
                 <div className="metric-sub">
                   Acumulado {periodoLongo}: {fmtFull(m.ytd_2026, m.unit, m.decimals)} · exatamente o mesmo período em 2025:{" "}
                   {fmtFull(m.ytd_2025, m.unit, m.decimals)}
@@ -672,7 +682,7 @@ function MapaComissoes({
 
   const total = (a: Ano) => a.m.reduce<number>((s, v) => s + (v || 0), 0);
   const cheios = (a: Ano) => a.m.filter((v) => v !== null).length;
-  const media = (a: Ano) => (cheios(a) ? total(a) / cheios(a) : 0);
+  const media = (a: Ano) => a.a === 2026 ? total(a) / mesesDecorridos(dados) : (cheios(a) ? total(a) / cheios(a) : 0);
   const liq = (v: number) => v * (1 - IRS);
   const ref = anos.filter((a) => a.a >= 2020 && a.a <= 2025);
   const mediaMes = meses.map((_, i) => ref.reduce<number>((s, a) => s + (a.m[i] || 0), 0) / (ref.length || 1));
@@ -880,7 +890,7 @@ function MapaMetrica({
 
   const total = (a: Ano) => a.m.reduce<number>((s, v) => s + (v || 0), 0);
   const cheios = (a: Ano) => a.m.filter((v) => v !== null).length;
-  const media = (a: Ano) => (cheios(a) ? total(a) / cheios(a) : 0);
+  const media = (a: Ano) => a.a === 2026 ? total(a) / mesesDecorridos(dados) : (cheios(a) ? total(a) / cheios(a) : 0);
   const completos = reais.filter((a) => !a.curso && cheios(a) === 12);
   const mediaMes = meses.map((_, i) => completos.reduce<number>((s, a) => s + (a.m[i] || 0), 0) / (completos.length || 1));
   const mediaAnual = completos.reduce((s, a) => s + total(a), 0) / (completos.length || 1);
