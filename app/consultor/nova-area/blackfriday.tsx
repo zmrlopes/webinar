@@ -171,8 +171,8 @@ export function BlackFriday({email}: {email: string}) {
               return <button key={n} type="button" className={css.casa} data-estado={e} data-cor={n % 6} data-linha={resumo.linhas.includes(Math.floor(n / 5))} data-celebrar={celebracao?.linhas.includes(Math.floor(n / 5)) ?? false} aria-label={`${titulo}: ${e === "vazia" ? "por preencher" : e}. Ver detalhes.`} onClick={ev => abrir(n, ev.currentTarget)}>
                 {e === "aprovada" && <span className={css.check} aria-hidden="true">✓</span>}
                 {n === 12 ? <><Aviao/><span className={`${css.destino} ${css.nomeCentro}`}>{titulo}</span></> : <><IconeCasa casa={n}/><span className={css.destino}>{titulo}</span></>}
-                <small>{e === "pendente" ? "◷ Em validação" : e === "aprovada" ? "Validada" : e === "recusada" ? "Rever envio" : n === 12 ? "Reserva ≥ 7.500 €" : "+ Reserva"}</small>
-                {i?.curinga && e !== "recusada" && <span className={css.joker}>7,5K</span>}
+                <small>{e === "pendente" ? "◷ Em validação" : e === "aprovada" ? "Validada" : e === "recusada" ? "Rever envio" : n === 12 ? "Reserva ≥ 5.000 €" : "+ Reserva"}</small>
+                {i?.curinga && e !== "recusada" && <span className={css.joker}>5K</span>}
               </button>;
             })}
           </div>
@@ -204,7 +204,7 @@ export function BlackFriday({email}: {email: string}) {
             <small>Faturação por TP · Prémio sujeito a validação.</small>
             <p>Se também completares uma linha horizontal validada, recebes uma entrada no Mindset Elite de fevereiro e uma entrada no evento Black Friday de outubro, independentemente da ordem das conquistas.</p>
           </div>
-          <div className={css.premio}><span className={css.selo}>O TEU JOKER</span><h3>Uma reserva de 7,5K.<br/>A casa que quiseres.</h3><p>Uma única reserva de pelo menos 7.500 € pode preencher qualquer casa à tua escolha.</p><small>A reserva e o comprovativo só podem ser usados numa casa.</small></div>
+          <div className={css.premio}><span className={css.selo}>O TEU JOKER</span><h3>Uma reserva de 5K.<br/>A casa que quiseres.</h3><p>Uma única reserva de pelo menos 5.000 € pode preencher qualquer casa à tua escolha.</p><small>A reserva e o comprovativo só podem ser usados numa casa.</small></div>
         </aside>
       </div>
       <details className={css.regras}><summary>Como funciona o desafio</summary><ol>
@@ -212,8 +212,8 @@ export function BlackFriday({email}: {email: string}) {
         <li>Anexa o comprovativo com a referência, a data e o valor da reserva. A casa começa logo a contar, pendente de revisão.</li>
         <li>Depois de submeteres uma casa, a escolha fica fixa: não podes trocar a reserva para outra casa.</li>
         <li>Cada reserva preenche uma única casa, mesmo quando corresponde a vários destinos ou categorias.</li>
-        <li>Uma reserva de pelo menos 7.500 € pode ser usada como joker numa única casa.</li>
-        <li>O valor de uma reserva não pode ser dividido por várias casas. Por exemplo, uma reserva de 15.000 € preenche apenas uma casa, nunca duas de 7.500 €.</li>
+        <li>Uma reserva de pelo menos 5.000 € pode ser usada como joker numa única casa.</li>
+        <li>O valor de uma reserva não pode ser dividido por várias casas. Por exemplo, uma reserva de 15.000 € preenche apenas uma casa, nunca duas de 5.000 €.</li>
         <li>Só as linhas horizontais contam. Todos os TPs que completem a sua primeira linha horizontal validada recebem uma entrada no evento Mindset Elite. Cada TP recebe este prémio apenas uma vez.</li>
         <li>Acumulação dos prémios de faturação e de linha: se fores JUNIOR e atingires 15.000 €, SENIOR e atingires 25.000 € ou MASTER e atingires 35.000 € de faturação durante o desafio, e também completares a tua primeira linha horizontal validada, recebes uma entrada no Mindset Elite de fevereiro pelo primeiro prémio e uma entrada no evento Black Friday de outubro pelo segundo prémio. A regra é igual nas duas ordens: atingir primeiro a faturação e depois completar a linha, ou completar primeiro a linha e depois atingir a faturação. Ambas as conquistas estão sujeitas a validação; recebes uma entrada para cada evento.</li>
         <li>Os prémios dependem da validação dos comprovativos. Uma recusa retira a casa do progresso e permite um novo envio.</li>
@@ -224,7 +224,7 @@ export function BlackFriday({email}: {email: string}) {
     <dialog ref={dialogo} className={css.dialogo} aria-labelledby="bf-casa-titulo" onCancel={e => {e.preventDefault(); fechar();}} onClose={() => {setCasa(null); botaoCasa.current?.focus();}}>
       {casa !== null && dados && <div><button type="button" className={css.fechar} aria-label="Fechar" disabled={aGuardar} onClick={fechar}>×</button><span className={css.selo}>{simulacao && "SIMULAÇÃO · "}CASA {casa + 1} / 25</span><h2 id="bf-casa-titulo">{CASAS_BF[casa]}</h2>
         <>
-          {reserva && <div className={css.detalhe}><strong>{reserva.estado === "pendente" ? "Em validação · já conta no cartão" : reserva.estado === "aprovada" ? "Reserva validada" : "Comprovativo recusado"}</strong><p>{reserva.referencia} · {euros(reserva.valorCentimos / 100)} · {data(reserva.dataReserva)}{reserva.curinga && " · Joker 7,5K"}</p>{reserva.motivo && <p>Motivo: {reserva.motivo}</p>}<button type="button" onClick={() => void verComprovativo(reserva)}>Ver comprovativo</button></div>}
+          {reserva && <div className={css.detalhe}><strong>{reserva.estado === "pendente" ? "Em validação · já conta no cartão" : reserva.estado === "aprovada" ? "Reserva validada" : "Comprovativo recusado"}</strong><p>{reserva.referencia} · {euros(reserva.valorCentimos / 100)} · {data(reserva.dataReserva)}{reserva.curinga && " · Joker 5K"}</p>{reserva.motivo && <p>Motivo: {reserva.motivo}</p>}<button type="button" onClick={() => void verComprovativo(reserva)}>Ver comprovativo</button></div>}
           {simulacao && reserva && <div className={css.revisaoSimulada}>
             <strong>Revisão no painel admin</strong><p>Abre o comprovativo no admin, aprova ou recusa e regressa a esta janela para veres o resultado.</p>
             <a href="/admin/blackfriday?modo=simulacao" target="_blank" rel="noreferrer">Rever comprovativo no admin ↗</a>
@@ -232,8 +232,8 @@ export function BlackFriday({email}: {email: string}) {
           {(!reserva || reserva.estado === "recusada") && (aberto ? <form key={casa} onSubmit={enviar} className={css.formulario}>
             <p>Confirma a casa antes de enviar: depois da submissão, não podes trocar a reserva para outra casa. Cada reserva preenche apenas uma casa, sem dividir o valor, mesmo que seja de 15.000 € ou mais.</p>
             <label>Referência da reserva<input name="referencia" required minLength={3} maxLength={80} autoComplete="off" defaultValue={simulacao ? `TESTE-${casa + 1}` : undefined}/></label>
-            <div className={css.campos}><label>Valor total (€)<input name="valor" required type="number" min={joker ? "7500" : "0.01"} max="99999999" step="0.01" inputMode="decimal" defaultValue={simulacao ? "7500" : undefined}/></label><label>Data da reserva<input name="dataReserva" type="date" required min={dados.config.inicio} max={dados.hoje < dados.config.fim ? dados.hoje : dados.config.fim} defaultValue={simulacao ? dados.hoje : undefined}/></label></div>
-            <label className={css.opcao}><input type="checkbox" checked={joker} disabled={casa === 12} onChange={e => setJoker(e.target.checked)}/> Usar como joker de 7.500 €</label>
+            <div className={css.campos}><label>Valor total (€)<input name="valor" required type="number" min={joker ? "5000" : "0.01"} max="99999999" step="0.01" inputMode="decimal" defaultValue={simulacao ? "5000" : undefined}/></label><label>Data da reserva<input name="dataReserva" type="date" required min={dados.config.inicio} max={dados.hoje < dados.config.fim ? dados.hoje : dados.config.fim} defaultValue={simulacao ? dados.hoje : undefined}/></label></div>
+            <label className={css.opcao}><input type="checkbox" checked={joker} disabled={casa === 12} onChange={e => setJoker(e.target.checked)}/> Usar como joker de 5.000 €</label>
             <label>Print ou comprovativo<input name="ficheiro" type="file" required accept="image/png,image/jpeg,image/webp,application/pdf" onChange={e => {if (e.target.files?.[0] && e.target.files[0].size > 3 * 1024 * 1024) e.target.setCustomValidity("Escolhe um ficheiro até 3 MB."); else e.target.setCustomValidity("");}}/><small>PNG, JPG, WebP ou PDF · Até 3 MB</small></label>
             <button type="submit" className={css.botao} disabled={aGuardar}>{aGuardar ? "A preparar…" : simulacao ? "Simular envio e assinalar casa" : "Enviar e assinalar casa"}</button>
           </form> : <p>O envio está disponível de {data(dados.config.inicio)} a {data(dados.config.fim)}.</p>)}
