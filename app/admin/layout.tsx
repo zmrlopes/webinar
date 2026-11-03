@@ -107,6 +107,7 @@ async function terminarSessao(): Promise<void> {
 }
 
 const LINKS = [
+  { href: "/admin/emails", label: "Emails", icon: IconObjecoes },
   { href: "/admin", label: "Início", icon: IconInicio },
   { href: "/admin/sessoes", label: "Sessões", icon: IconSessoes },
   { href: "/admin/consultores", label: "Consultores", icon: IconConsultores },

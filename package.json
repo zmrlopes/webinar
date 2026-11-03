@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test:emails": "tsx scripts/testes-campanhas-email.ts",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
