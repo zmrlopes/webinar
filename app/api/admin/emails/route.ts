@@ -1,8 +1,17 @@
 import { agendarCampanha, destinatariosEmail, historicoCampanhas, listasEmail } from '@/lib/campanhas-email';
 import { db } from '@/lib/db';
+import { lerAnexoCampanha } from '@/lib/campanhas-email-anexo';
 
 export async function GET(request:Request) {
  const url=new URL(request.url);
+ if(url.searchParams.has('anexo')) {
+  const id=url.searchParams.get('anexo');
+  if(!id || !/^[0-9a-f-]{36}$/i.test(id)) return Response.json({erro:'Campanha inválida.'},{status:400});
+  const {rows}=await db().query<{anexo:Buffer|null;anexo_nome:string;anexo_tipo:string}>(`select anexo,anexo_nome,anexo_tipo from campanhas_email where id=$1`,[id]);
+  const a=rows[0];
+  if(!a?.anexo) return Response.json({erro:'Anexo não encontrado.'},{status:404});
+  return new Response(new Uint8Array(a.anexo),{headers:{'Content-Type':a.anexo_tipo,'Content-Disposition':`attachment; filename*=UTF-8''${encodeURIComponent(a.anexo_nome)}`,'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});
+ }
  if(url.searchParams.get('id')) {
   const id=url.searchParams.get('id');
   if(!/^[0-9a-f-]{36}$/i.test(id!)) return Response.json({erro:'Campanha inválida.'},{status:400});
@@ -13,6 +22,20 @@ export async function GET(request:Request) {
 }
 
 export async function POST(request:Request) {
+ if(request.headers.get('content-type')?.startsWith('multipart/form-data')) {
+  try {
+   const form=await request.formData();
+   if(form.get('acao')!=='agendar') throw new Error('Ação inválida.');
+   const ficheiros=form.getAll('anexo');
+   if(ficheiros.length>1 || (ficheiros[0] && !(ficheiros[0] instanceof File))) throw new Error('Escolhe apenas um anexo.');
+   const anexo=await lerAnexoCampanha(ficheiros[0] instanceof File?ficheiros[0]:null);
+   const valor={assunto:form.get('assunto'),corpo:form.get('corpo'),data:form.get('data'),listas:JSON.parse(String(form.get('listas')))};
+   return Response.json(await agendarCampanha(valor,anexo));
+  } catch(e) {
+   console.error('[campanhas-email-anexo]',e);
+   return Response.json({erro:e instanceof Error && !('code' in e)?e.message:'Não foi possível guardar o email e o anexo.'},{status:400});
+  }
+ }
  const v=await request.json().catch(()=>null);
  if(!v || typeof v!=='object') return Response.json({erro:'Pedido inválido.'},{status:400});
  try {

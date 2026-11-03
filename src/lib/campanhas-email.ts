@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { db } from './db';
 import { BrevoEmailSender } from './email';
 import { deduplicarDestinatarios, validarCampanha } from './campanhas-email-validacao';
+import type { AnexoCampanha } from './campanhas-email-anexo';
 
 export async function listasEmail() {
  const {rows} = await db().query<{email:string;nome:string}>(`select email,nome from equipa_afiliados order by nome,email`);
@@ -30,7 +31,7 @@ export async function destinatariosEmail(listas: string[]) {
  return deduplicarDestinatarios(rows);
 }
 
-export async function agendarCampanha(valor:unknown) {
+export async function agendarCampanha(valor:unknown, anexo:AnexoCampanha|null=null) {
  const v=validarCampanha(valor);
  if (!process.env.BREVO_API_KEY) throw new Error('O envio de campanhas requer BREVO_API_KEY configurada.');
  const emails=await destinatariosEmail(v.listas);
@@ -45,7 +46,7 @@ export async function agendarCampanha(valor:unknown) {
   const volta=await client.query<{local:string}>(`select to_char($1::timestamptz at time zone 'Europe/Lisbon','YYYY-MM-DD"T"HH24:MI') as local`,[rows[0].data]);
   if(volta.rows[0]?.local!==v.local) throw new Error('Esta hora não existe em Lisboa. Escolhe outra hora.');
   const id=randomUUID();
-  await client.query(`insert into campanhas_email(id,assunto,corpo,listas,agendado_em) values($1,$2,$3,$4,$5)`,[id,v.assunto,v.corpo,v.listas,rows[0].data]);
+  await client.query(`insert into campanhas_email(id,assunto,corpo,listas,agendado_em,anexo_nome,anexo_tipo,anexo) values($1,$2,$3,$4,$5,$6,$7,$8)`,[id,v.assunto,v.corpo,v.listas,rows[0].data,anexo?.nome??null,anexo?.tipo??null,anexo?.bytes??null]);
   await client.query(`insert into campanhas_email_destinatarios(campanha_id,email) select $1,unnest($2::text[])`,[id,emails]);
   await client.query('commit');
   return {id,total:emails.length};
@@ -53,7 +54,8 @@ export async function agendarCampanha(valor:unknown) {
 }
 
 export async function historicoCampanhas() {
- const {rows}=await db().query(`select c.*,count(d.email)::int as total,
+ const {rows}=await db().query(`select c.id,c.assunto,c.corpo,c.listas,c.agendado_em,c.criado_em,c.cancelado_em,
+ c.anexo_nome,octet_length(c.anexo) as anexo_tamanho,count(d.email)::int as total,
  count(*) filter(where d.estado='enviado')::int as enviados,
  count(*) filter(where d.estado='pendente')::int as pendentes,
  count(*) filter(where d.estado='incerto' or (d.estado='a_enviar' and d.iniciado_em < now()-interval '10 minutes'))::int as incertos
@@ -69,17 +71,18 @@ export async function processarCampanhas() {
  let enviados=0;
  const fim=Date.now()+45000;
  while(Date.now()<fim && enviados<30) {
-  const {rows}=await db().query<{campanha_id:string;email:string;assunto:string;corpo:string}>(`with proximo as (
+  const {rows}=await db().query<{campanha_id:string;email:string;assunto:string;corpo:string;anexo_nome:string|null;anexo:Buffer|null}>(`with proximo as (
    select d.campanha_id,d.email from campanhas_email_destinatarios d join campanhas_email c on c.id=d.campanha_id
    where d.estado='pendente' and c.cancelado_em is null and c.agendado_em<=now()
    order by c.agendado_em,d.email for update of c,d skip locked limit 1
   ), marcado as (
    update campanhas_email_destinatarios d set estado='a_enviar',iniciado_em=now() from proximo p
    where d.campanha_id=p.campanha_id and d.email=p.email returning d.*
-  ) select m.campanha_id,m.email,c.assunto,c.corpo from marcado m join campanhas_email c on c.id=m.campanha_id`);
+  ) select m.campanha_id,m.email,c.assunto,c.corpo,c.anexo_nome,c.anexo from marcado m join campanhas_email c on c.id=m.campanha_id`);
   const d=rows[0]; if(!d) break;
   try {
-   await sender.enviar({destinatario:d.email,assunto:d.assunto,corpoTexto:d.corpo});
+   await sender.enviar({destinatario:d.email,assunto:d.assunto,corpoTexto:d.corpo,
+    ...(d.anexo && d.anexo_nome ? {anexos:[{nome:d.anexo_nome,conteudoBase64:d.anexo.toString('base64')}]} : {})});
   } catch {
    await db().query(`update campanhas_email_destinatarios set estado='incerto',erro='O fornecedor não confirmou o envio. Verificar na Brevo antes de reenviar.' where campanha_id=$1 and email=$2`,[d.campanha_id,d.email]);
    break;
