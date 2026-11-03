@@ -6,6 +6,8 @@ export const FORMATOS_DOCUMENTOS: Record<string, string> = {
   doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   xls: 'application/vnd.ms-excel', xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   txt: 'text/plain', csv: 'text/csv',
+  png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg',
+  webp: 'image/webp', gif: 'image/gif',
 };
 export function tipoDocumento(nome: string): string | null {
   return FORMATOS_DOCUMENTOS[nome.split('.').pop()?.toLowerCase() ?? ''] ?? null;
