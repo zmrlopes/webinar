@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { InscricaoEvento } from "@/lib/eventos";
 import { EditarEmailInscricao } from "./editar-email";
+import { BotaoWhatsApp } from "../botao-whatsapp";
 
 function formatarData(data: Date): string {
   return new Date(data).toLocaleString("pt-PT", {
@@ -51,6 +52,7 @@ export function TabelaInscricoesEvento({ inscricoes }: { inscricoes: InscricaoEv
               <th>Nome</th>
               <th>Telemóvel</th>
               <th>Email</th>
+              <th>Contacto</th>
               <th>Adultos</th>
               <th>Crianças +10</th>
               <th>Crianças -10</th>
@@ -67,6 +69,14 @@ export function TabelaInscricoesEvento({ inscricoes }: { inscricoes: InscricaoEv
                 <td>{i.nome}</td>
                 <td>{i.telemovel}</td>
                 <td><EditarEmailInscricao id={i.id} email={i.email} /></td>
+                <td>
+                  <BotaoWhatsApp
+                    telemovel={i.telemovel}
+                    mensagem={i.adultos > 1
+                      ? `Olá, ${i.nome}! Na tua inscrição para o Teambuilding de dia 14 de novembro constam ${i.adultos} adultos. Podes enviar-me o nome completo ${i.adultos === 2 ? "do outro adulto" : "dos restantes adultos"}, por favor? Obrigado!`
+                      : `Olá, ${i.nome}! Estou a entrar em contacto sobre a tua inscrição para o Teambuilding de dia 14 de novembro.`}
+                  />
+                </td>
                 <td>{i.adultos}</td>
                 <td>{i.criancasMais10}</td>
                 <td>{i.criancasMenos10}</td>
