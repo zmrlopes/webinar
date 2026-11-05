@@ -422,6 +422,8 @@ export async function gerarExcelParticipantesEvento(participantes: ParticipanteE
   livro.created = new Date();
 
   const folha = livro.addWorksheet("Participantes", { views: [{ state: "frozen", ySplit: 1 }] });
+  const maxAdultos = Math.max(2, ...participantes.map((p) => p.adultos));
+  const maxCriancas = Math.max(1, ...participantes.map((p) => p.criancasAte5 + p.criancas6a12 + p.criancas13Mais));
 
   const colunas: { nome: string; largura: number; totalsRowFunction?: "sum"; totalsRowLabel?: string }[] = [
     { nome: "Nome", largura: 28, totalsRowLabel: "Total" },
@@ -438,6 +440,8 @@ export async function gerarExcelParticipantesEvento(participantes: ParticipanteE
     { nome: "Noite 14-15", largura: 12 },
     { nome: "Total de noites", largura: 14, totalsRowFunction: "sum" },
     { nome: "Nota", largura: 34 },
+    ...Array.from({ length: maxAdultos }, (_, n) => ({ nome: `Adulto ${n + 1} — nome completo`, largura: 30 })),
+    ...Array.from({ length: maxCriancas }, (_, n) => ({ nome: `Criança ${n + 1} — nome completo`, largura: 30 })),
   ];
   folha.columns = colunas.map((c) => ({ width: c.largura }));
 
@@ -464,6 +468,8 @@ export async function gerarExcelParticipantesEvento(participantes: ParticipanteE
     p.noiteSeguinte ? "Sim" : "Não",
     (p.noiteAnterior ? 1 : 0) + (p.noiteSeguinte ? 1 : 0),
     p.nota,
+    ...Array.from({ length: maxAdultos }, (_, n) => n === 0 && p.adultos > 0 ? p.nome : ""),
+    ...Array.from({ length: maxCriancas }, () => ""),
   ]);
 
   folha.addTable({
@@ -480,6 +486,33 @@ export async function gerarExcelParticipantesEvento(participantes: ParticipanteE
     })),
     rows: linhas,
   });
+
+  const primeiraColunaNomes = colunas.length - maxAdultos - maxCriancas + 1;
+  participantes.forEach((p, indice) => {
+    const linha = folha.getRow(indice + 2);
+    const totalCriancas = p.criancasAte5 + p.criancas6a12 + p.criancas13Mais;
+    for (let n = 0; n < maxAdultos + maxCriancas; n++) {
+      const celula = linha.getCell(primeiraColunaNomes + n);
+      const aplicavel = n < maxAdultos ? n < p.adultos : n - maxAdultos < totalCriancas;
+      celula.fill = { type: "pattern", pattern: "solid", fgColor: { argb: aplicavel ? "FFFFF2CC" : "FFE7E6E6" } };
+      if (aplicavel) {
+        celula.note = n === 0
+          ? "Nome de quem fez a inscrição. Confirme o nome completo para o hotel."
+          : "Preencha o nome completo desta pessoa para o hotel.";
+      }
+    }
+  });
+  const instrucoes = livro.addWorksheet("Como preencher");
+  instrucoes.getColumn(1).width = 110;
+  instrucoes.addRows([
+    ["Nomes dos participantes para o hotel"],
+    ["Na folha Participantes, preencha as colunas de nomes a amarelo: uma pessoa por coluna."],
+    ["Adulto 1 vem preenchido com o nome da inscrição: confirme o nome completo."],
+    ["Preencha os restantes adultos e todas as crianças. As células cinzentas não se aplicam àquela inscrição."],
+    ["As inscrições com o mesmo email estão agrupadas: inclua os nomes de todas as pessoas desse grupo."],
+    ["Guarde o Excel preenchido antes de o enviar ao hotel. As alterações no ficheiro não são guardadas na plataforma."],
+  ]);
+  instrucoes.getCell("A1").font = { bold: true, size: 14 };
 
   const arrayBuffer = await livro.xlsx.writeBuffer();
   return Buffer.from(arrayBuffer);
