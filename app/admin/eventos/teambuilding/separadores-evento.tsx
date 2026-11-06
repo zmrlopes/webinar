@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 
 type Inscrito = { nome: string; email: string; dataRegisto: string | null };
 
-export function SeparadoresEvento({ inscritos, children }: { inscritos: Inscrito[]; children: ReactNode }) {
+export function SeparadoresEvento({ inscritos, children, trofeus }: { inscritos: Inscrito[]; children: ReactNode; trofeus: ReactNode }) {
   const [aba, setAba] = useState("geral");
   const [pesquisa, setPesquisa] = useState("");
   const [ano, setAno] = useState("");
@@ -18,7 +18,7 @@ export function SeparadoresEvento({ inscritos, children }: { inscritos: Inscrito
 
   return <>
     <div role="tablist" aria-label="Informação do evento" style={{ display: "flex", gap: 8, flexWrap: "wrap", borderBottom: "1px solid #ddd", paddingBottom: 12, marginBottom: 20 }}>
-      {[{ id: "geral", titulo: "Geral" }, { id: "registos", titulo: "Inscritos por ano de registo" }].map(tab =>
+      {[{ id: "geral", titulo: "Geral" }, { id: "registos", titulo: "Inscritos por ano de registo" }, { id: "trofeus", titulo: "Troféus por grupo" }].map(tab =>
         <button key={tab.id} id={`tab-${tab.id}`} type="button" role="tab" aria-selected={aba === tab.id}
           aria-controls={`painel-${tab.id}`} onClick={() => setAba(tab.id)}
           style={{ padding: "10px 16px", borderRadius: 8, border: "1px solid #4b5320", background: aba === tab.id ? "#4b5320" : "#fff", color: aba === tab.id ? "#fff" : "#4b5320", cursor: "pointer", fontWeight: 700 }}>
@@ -26,6 +26,7 @@ export function SeparadoresEvento({ inscritos, children }: { inscritos: Inscrito
         </button>)}
     </div>
     <div id="painel-geral" role="tabpanel" aria-labelledby="tab-geral" hidden={aba !== "geral"}>{children}</div>
+    <div id="painel-trofeus" role="tabpanel" aria-labelledby="tab-trofeus" hidden={aba !== "trofeus"}>{trofeus}</div>
     <div id="painel-registos" role="tabpanel" aria-labelledby="tab-registos" hidden={aba !== "registos"}>
       <h2>Inscritos por ano de registo</h2>
       <p className="ad-legenda">Lista nominal agrupada pelo ano de entrada como consultor, não pela data de inscrição no evento. Cada email aparece uma vez; os acompanhantes não são identificados individualmente.</p>

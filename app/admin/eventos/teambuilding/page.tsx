@@ -15,6 +15,7 @@ import { DocumentosEvento } from "../documentos-evento";
 import { TabelaInscricoesEvento } from "../tabela-inscricoes-evento";
 import { RelatorioRespostas } from "./relatorio-respostas";
 import { SeparadoresEvento } from "./separadores-evento";
+import { TrofeusInscritos } from "./trofeus-inscritos";
 
 export const dynamic = "force-dynamic";
 
@@ -260,7 +261,7 @@ export default async function AdminEventos() {
           </strong>
         </p>
 
-        <SeparadoresEvento inscritos={inscritosFaturacao.map(i => ({
+        <SeparadoresEvento trofeus={<TrofeusInscritos inscritos={inscritosFaturacao} />} inscritos={inscritosFaturacao.map(i => ({
           nome: i.nome,
           email: i.email,
           dataRegisto: i.dataRegisto ? new Date(i.dataRegisto).toISOString().slice(0, 10) : null,
