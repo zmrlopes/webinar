@@ -22,6 +22,15 @@ assert.ok(p.opcoes[0]);
 assert.equal(p.opcoes[0].tipo, "circuito", "Preserva a classificação ao guardar/reabrir");
 assert.deepEqual(p.opcoes[0].hoteisCircuito?.map(h => h.nome), ["Hotel Marrakech", "Hotel Fez"], "Preserva cada hotel pela ordem da viagem");
 assert.equal(p.opcoes[0].hoteisCircuito?.[1]?.regime, "PA");
+const fotosEtapas = [
+  {url: "data:image/jpeg;base64,YQ==", credito: "Hotel Marrakech", foco: {x: 0.25, y: 0.75}},
+  {url: "data:image/jpeg;base64,Yg==", credito: "Hotel Fez"},
+];
+const comFotos = validarProposta({...p, opcoes: [{...p.opcoes[0], hoteisCircuito: p.opcoes[0].hoteisCircuito!.map((h, i) => ({...h, foto: fotosEtapas[i]}))}]});
+assert.deepEqual(comFotos.opcoes[0]!.hoteisCircuito?.map(h => h.foto?.url), fotosEtapas.map(f => f.url), "Guardar preserva a fotografia independente de cada hotel do circuito");
+const semPrimeiraFoto = validarProposta({...comFotos, opcoes: [{...comFotos.opcoes[0], hoteisCircuito: comFotos.opcoes[0]!.hoteisCircuito!.map((h, i) => i === 0 ? {...h, foto: null} : h)}]});
+assert.equal(semPrimeiraFoto.opcoes[0]!.hoteisCircuito?.[0]?.foto, null);
+assert.equal(semPrimeiraFoto.opcoes[0]!.hoteisCircuito?.[1]?.foto?.url, fotosEtapas[1]!.url, "Retirar uma fotografia preserva a dos restantes hotéis");
 assert.equal(juntarLeituras([circuito, {...circuito, ficheiro: "outro.pdf"}]).opcoes.length, 2);
 const desenhar = (hoteis: NonNullable<typeof p.opcoes[0]>["hoteisCircuito"]) => desenharProposta({
   p: {...p, viagem: {...j.viagem}, opcoes: [{...p.opcoes[0]!, hoteisCircuito: hoteis}]}, marca: MARCA_PADRAO, escala: 0.75, consultor: null,

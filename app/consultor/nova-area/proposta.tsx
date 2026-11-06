@@ -14,7 +14,7 @@ type Passo = "pdfs" | "conteudo" | "entregar";
 const PASSOS: [Passo, string][] = [["pdfs", "1. PDFs e opções"], ["conteudo", "2. Conteúdo"], ["entregar", "3. Entregar"]];
 const LETRAS = ["A", "B", "C"];
 /** Onde vai a fotografia: capa, hotel de uma opção ou um destaque. */
-type AlvoFoto = "capa" | `hotel-${number}` | `destaque-${number}`;
+type AlvoFoto = "capa" | `hotel-${number}` | `circuito-${number}-${number}` | `destaque-${number}`;
 interface Foto { titulo: string; url: string; credito: string }
 
 const hoje = () => new Date().toISOString().slice(0, 10);
@@ -114,31 +114,36 @@ export function PropostaNovaArea({email, abrirPlanner}: {email: string; abrirPla
   const fotoDe = (alvo: AlvoFoto): FotoPlanner | null => {
     if (!p) return null;
     if (alvo === "capa") return p.foto;
-    const [tipo, n] = alvo.split("-") as [string, string];
+    const [tipo, n, etapa] = alvo.split("-");
+    if (tipo === "circuito") return p.opcoes[Number(n)]?.hoteisCircuito?.[Number(etapa)]?.foto ?? null;
     return tipo === "hotel" ? p.opcoes[Number(n)]?.foto ?? null : p.destaques[Number(n)]?.foto ?? null;
   };
   const definirFoto = (alvo: AlvoFoto, foto: FotoPlanner | null) => setP(a => {
     if (!a) return a;
     if (alvo === "capa") return {...a, foto};
-    const [tipo, n] = alvo.split("-") as [string, string];
+    const [tipo, n, etapa] = alvo.split("-");
+    if (tipo === "circuito") return {...a, opcoes: a.opcoes.map((o, j) => j === Number(n)
+      ? {...o, hoteisCircuito: o.hoteisCircuito?.map((h, k) => k === Number(etapa) ? {...h, foto} : h)} : o)};
     return tipo === "hotel" ? {...a, opcoes: a.opcoes.map((o, j) => j === Number(n) ? {...o, foto} : o)} : {...a, destaques: a.destaques.map((d, j) => j === Number(n) ? {...d, foto} : d)};
   });
   function procurar(alvo: AlvoFoto) {
     if (!p) return;
-    const [tipo, n] = alvo.split("-") as [string, string];
-    const termo = alvo === "capa" ? p.viagem.destino.split(",")[0]! : tipo === "hotel" ? p.opcoes[Number(n)]!.hotel : p.destaques[Number(n)]!.pesquisa || p.destaques[Number(n)]!.titulo;
+    const [tipo, n, etapa] = alvo.split("-");
+    const termo = alvo === "capa" ? p.viagem.destino.split(",")[0]! : tipo === "circuito" ? p.opcoes[Number(n)]!.hoteisCircuito![Number(etapa)]!.nome
+      : tipo === "hotel" ? p.opcoes[Number(n)]!.hotel : p.destaques[Number(n)]!.pesquisa || p.destaques[Number(n)]!.titulo;
     void executar("A procurar fotografias…", async () => {
       const c = await pedir<{fotografias: Foto[]}>("fotografias", {termo});
       setFotos({alvo, lista: c.fotografias});
       if (!c.fotografias.length) setAviso("Não encontrámos fotografias livres. Podes carregar uma tua.");
     });
   }
-  function siteOficial(i: number) {
+  function siteOficial(i: number, etapa?: number) {
     if (!p) return;
     const o = p.opcoes[i]!;
+    const h = etapa === undefined ? null : o.hoteisCircuito?.[etapa];
     void executar("A procurar a fotografia do hotel…", async () => {
-      const c = await pedir<{foto: FotoPlanner | null}>("foto-hotel", {hotel: o.hotel, zona: o.zona, destino: p.viagem.destino.split(",")[0]});
-      if (c.foto) definirFoto(`hotel-${i}`, c.foto); else setAviso("Não encontrámos uma fotografia deste hotel. Carrega uma tua ou procura nas livres.");
+      const c = await pedir<{foto: FotoPlanner | null}>("foto-hotel", {hotel: h?.nome ?? o.hotel, zona: h?.periodo ?? o.zona, destino: p.viagem.destino.split(",")[0]});
+      if (c.foto) definirFoto(etapa === undefined ? `hotel-${i}` : `circuito-${i}-${etapa}`, c.foto); else setAviso("Não encontrámos uma fotografia deste hotel. Carrega uma tua ou procura nas livres.");
     });
   }
   function carregar(alvo: AlvoFoto, e: ChangeEvent<HTMLInputElement>) {
@@ -398,7 +403,10 @@ export function PropostaNovaArea({email, abrirPlanner}: {email: string; abrirPla
 
         <h3>Fotografias</h3>
         {linhaFoto("capa", "Capa")}
-        {p.opcoes.map((o, i) => linhaFoto(`hotel-${i}`, `Opção ${LETRAS[i]} · ${o.hotel || "hotel"}`, <button type="button" onClick={() => siteOficial(i)}>Site oficial</button>))}
+        {p.opcoes.map((o, i) => o.tipo === "circuito" && o.hoteisCircuito?.length
+          ? o.hoteisCircuito.map((h, k) => linhaFoto(`circuito-${i}-${k}`, `Opção ${LETRAS[i]} · Hotel ${k + 1} · ${h.nome || "hotel"}${h.periodo ? ` · ${h.periodo}` : ""}`,
+            <button type="button" onClick={() => siteOficial(i, k)}>Site oficial</button>))
+          : linhaFoto(`hotel-${i}`, `Opção ${LETRAS[i]} · ${o.hotel || "hotel"}`, <button type="button" onClick={() => siteOficial(i)}>Site oficial</button>))}
         {p.destaques.map((d, i) => linhaFoto(`destaque-${i}`, `Destaque · ${d.titulo}`))}
 
         <h3>Hotéis no mapa</h3>
