@@ -6,7 +6,7 @@ export function TrofeusInscritos({ inscritos }: { inscritos: InscritoFaturacao[]
     .map(i => [i.email.trim().toLowerCase(), i])).values()];
   const entrouEsteAno = (i: InscritoFaturacao) => i.dataRegisto !== null &&
     new Date(i.dataRegisto).getUTCFullYear() === 2026;
-  const novoJunior = (i: InscritoFaturacao) => entrouEsteAno(i) && chaveDoPatamar(i.nivel) === "patamar-junior";
+  const novoJunior = (i: InscritoFaturacao) => entrouEsteAno(i);
   const novoSenior = (i: InscritoFaturacao) => entrouEsteAno(i) && chaveDoPatamar(i.nivel) === "patamar-senior";
   const grupos = [
     { titulo: "Juniores que iniciaram em 2026", chave: "patamar-junior", filtro: novoJunior },
@@ -19,7 +19,7 @@ export function TrofeusInscritos({ inscritos }: { inscritos: InscritoFaturacao[]
   ];
   return <>
     <h2>Troféus pedidos pelos inscritos</h2>
-    <p className="ad-legenda">{respondentes.length} inscritos responderam ao inquérito. As listas incluem apenas os troféus pedidos; quem pediu vários aparece nos respetivos grupos. O patamar e a data de entrada são os do registo da equipa.</p>
+    <p className="ad-legenda">{respondentes.length} inscritos responderam ao inquérito. As listas incluem apenas os troféus pedidos; quem pediu vários aparece nos respetivos grupos. Os pedidos de Júnior de quem entrou em 2026 ficam no primeiro grupo, mesmo que já tenha subido de patamar. O patamar e a data de entrada são os do registo da equipa.</p>
     {grupos.map(g => {
       const pessoas = respondentes.filter(i => i.trofeusQuero?.includes(g.chave) && g.filtro(i))
         .sort((a, b) => a.nome.localeCompare(b.nome, "pt-PT"));
