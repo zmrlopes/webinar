@@ -53,11 +53,13 @@ new Function("window","location","alert","fetch","DOMParser","setInterval","clea
 );
 assert.ok(aviso.textContent.includes("Favorito FAQs ativo"), "Mostra que o favorito arrancou");
 assert.ok(listener);
-const evento: Evento = {origin:"https://evil.example",source:destino,data:{tipo:"faq-recolher",nonce:"teste",urls:paginas.map(p=>p.url)}};
+const evento: Evento = {origin:"https://evil.example",source:destino,data:{tipo:"faq-recolher-v2",nonce:"teste",urls:paginas.map(p=>p.url)}};
 await listener(evento);
 assert.equal(pedidos.length,0,"Ignora mensagens de outros sites");
 await listener({...evento,origin:"https://webinar.viajareviver.net",source:{}});
 assert.equal(pedidos.length,0,"Ignora outras janelas");
+await listener({...evento,origin:"https://webinar.viajareviver.net",data:{...evento.data,tipo:"faq-recolher"}});
+assert.equal(pedidos.length,0,"Não mistura pedidos da versão antiga com a nova");
 await listener({...evento,origin:"https://webinar.viajareviver.net"});
 assert.equal(pedidos.length,12);
 assert.ok(pedidos.every(p=>p.credentials==="include" && p.url.startsWith("https://help.icligo.com/")));

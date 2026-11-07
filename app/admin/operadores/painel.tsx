@@ -56,7 +56,7 @@ export default function PainelFAQs() {
     if (!window.opener) {setErro("Abre esta página através do favorito no Centro de Ajuda para recolher as FAQs."); return;}
     setOcupado(true); aRecolher.current = true; nonce.current = crypto.randomUUID();
     setMensagem("A contactar o Centro de Ajuda…");
-    window.opener.postMessage({tipo: "faq-recolher", nonce: nonce.current, urls: ["https://help.icligo.com/suporte-operacional/operadores-turisticos", ...estado.catalogo.operadores.map(o => o.faq)]}, "https://help.icligo.com");
+    window.opener.postMessage({tipo: "faq-recolher-v2", nonce: nonce.current, urls: ["https://help.icligo.com/suporte-operacional/operadores-turisticos", ...estado.catalogo.operadores.map(o => o.faq)]}, "https://help.icligo.com");
     timeout.current = setTimeout(() => {nonce.current=""; aRecolher.current=false; setOcupado(false); setErro("A recolha não respondeu a tempo. Volta ao Centro de Ajuda e clica novamente no favorito.");}, 600000);
   }
   async function abrir(id: string) {setConfirmado(false); setRevisao(await pedir<Revisao>({acao:"rever",id}));}
