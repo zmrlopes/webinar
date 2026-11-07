@@ -37,12 +37,17 @@ let listener: ((e: Evento)=>Promise<void>) | undefined;
 const mensagens: {tipo: string; paginas?: unknown[]}[] = [], pedidos: {url: string; credentials: string}[] = [];
 const destino = {postMessage(m: {tipo: string}, origin: string) {assert.equal(origin,"https://webinar.viajareviver.net"); mensagens.push(m);}, focus(){}, closed: false};
 const main = {textContent: paginas[0]!.texto, querySelectorAll() {return [];}};
-class ParserSimulado {parseFromString() {return {querySelector(s: string) {return s.includes("password") ? null : main;}, querySelectorAll() {return [];}};}}
+const indice = "https://help.icligo.com/suporte-operacional/operadores-turisticos";
+class ParserSimulado {parseFromString(source: string) {return {body: main, querySelector() {return null;}, querySelectorAll() {
+  // Layout sem main/article e ligações a anexos, subpastas, outros sites e outra FAQ.
+  const links = source === indice ? [indice+"/tabela.pdf", indice+"/anexos/tabela", indice+"/regras-gerais", "https://evil.example/faq", indice+"/login?token=privado"] : [indice+"/ligacao-dentro-de-artigo"];
+  return links.map(href=>({getAttribute(){return href;}}));
+}};}}
 const aviso = {id:"",style:{cssText:""},textContent:"",remove(){}};
 new Function("window","location","alert","fetch","DOMParser","setInterval","clearInterval","document",favorito.slice(11))(
   {open:()=>destino, addEventListener(_: string, fn: typeof listener) {listener=fn;}, removeEventListener(){}},
   {origin:"https://help.icligo.com"}, ()=>assert.fail("Alerta inesperado"),
-  async (url: string, op: {credentials: string})=>{pedidos.push({url,credentials:op.credentials}); return {ok:true,url,text:async()=>"FAQ"};},
+  async (url: string, op: {credentials: string})=>{pedidos.push({url,credentials:op.credentials}); return {ok:true,url,text:async()=>url};},
   ParserSimulado, ()=>0, ()=>{},
   {getElementById(){return null;},createElement(){return aviso;},body:{append(){}}},
 );
@@ -57,4 +62,7 @@ await listener({...evento,origin:"https://webinar.viajareviver.net"});
 assert.equal(pedidos.length,12);
 assert.ok(pedidos.every(p=>p.credentials==="include" && p.url.startsWith("https://help.icligo.com/")));
 assert.equal(mensagens.at(-1)?.tipo,"faq-paginas");
+await listener({...evento,origin:"https://webinar.viajareviver.net",data:{...evento.data,urls:[indice,...evento.data.urls]}});
+assert.equal(pedidos.length,26,"Recolhe apenas índice, operadores e a FAQ adicional, sem percorrer anexos ou links dos artigos");
+assert.equal(mensagens.at(-1)?.paginas?.length,14,"Aceita o conteúdo num body sem main/article");
 console.log("Atualização FAQs: validação, recolha completa, diferenças, pesquisa isolada e sintaxe do favorito OK.");
