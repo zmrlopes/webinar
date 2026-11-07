@@ -201,6 +201,9 @@ export default async function AdminEventos() {
             >
               Troféus a entregar
             </Link>
+            <Link href="/admin/eventos/teambuilding/trofeus-faturacao" style={{display: "inline-block", background: "#4b5320", color: "#ffffff", borderRadius: 8, padding: "0.5rem 1rem", fontSize: "0.85rem", fontWeight: 700, textDecoration: "none"}}>
+              Troféus 100K e 250K
+            </Link>
             <Link href="/admin/eventos/teambuilding/ana-custodia" style={{display: "inline-block", background: "#4b5320", color: "#ffffff", borderRadius: 8, padding: "0.5rem 1rem", fontSize: "0.85rem", fontWeight: 700, textDecoration: "none"}}>
               Reconhecimento · Ana Custódia
             </Link>

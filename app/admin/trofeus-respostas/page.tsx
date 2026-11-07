@@ -124,6 +124,7 @@ export default async function TrofeusRespostasPagina() {
           ← Teambuilding
         </Link>
         <h1>Troféus — o que pedir</h1>
+        <p><Link href="/admin/eventos/teambuilding/trofeus-faturacao" style={{color: "#4b5320"}}>Ver listas de troféus 100K e 250K a entregar →</Link></p>
         <p className="ad-subtitulo">
           {respostas.length} resposta(s) · {totalPedidos} troféu(s) a mandar fazer ao todo ·{" "}
           {semResposta.length} inscrito(s) ainda por responder.
