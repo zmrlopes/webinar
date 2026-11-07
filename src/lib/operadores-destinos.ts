@@ -3,7 +3,8 @@
  * das FAQs do Centro de Ajuda iCliGo (help.icligo.com → Suporte operacional →
  * Operadores turísticos → "Que destinos posso reservar com…").
  *
- * As FAQs estão protegidas por login, por isso os dados são mantidos aqui à mão.
+ * Base inicial das FAQs protegidas por login. Atualizações aprovadas no admin
+ * ficam no servidor, sem alterar esta base de recuperação.
  * Ao atualizar, rever a data `atualizado` de cada operador e `REVISTO_EM`.
  * Só é importado pelo servidor (API da nova área), para não ir no bundle do cliente.
  */
@@ -661,8 +662,6 @@ export function normalizar(texto: string): string {
   return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
-const POR_ID = new Map(DESTINOS.map(d => [d.id, d]));
-
 /** Direta: o termo começa pela pesquisa (ou uma palavra dele). Contida: a frase pesquisada inclui o termo. */
 function correspondeTermo(consulta: string, termo: string, modo: "direta" | "contida" = "direta"): boolean {
   const t = normalizar(termo);
@@ -673,8 +672,11 @@ function correspondeTermo(consulta: string, termo: string, modo: "direta" | "con
   return t.startsWith(consulta) || t.includes(` ${consulta}`);
 }
 
-function destinosPorGrupo(grupo: string): Destino[] {
-  return DESTINOS.filter(d => d.grupos.includes(grupo));
+export interface CatalogoOperadores { destinos: Destino[]; operadores: Operador[]; regras: string[]; revistoEm: string }
+export const CATALOGO_BASE: CatalogoOperadores = {destinos: DESTINOS, operadores: OPERADORES, regras: REGRAS_GERAIS, revistoEm: REVISTO_EM};
+
+function destinosPorGrupo(grupo: string, destinos: Destino[]): Destino[] {
+  return destinos.filter(d => d.grupos.includes(grupo));
 }
 
 export interface ResultadoLinha extends Omit<Linha, "destino" | "temas"> { destino: string; nomeDestino: string }
@@ -692,7 +694,8 @@ export interface ResultadoPesquisa {
 }
 
 /** Destinos que correspondem à pesquisa, já expandidos (país → cidades, tema → linhas do tema). */
-export function procurarDestinos(consulta: string): Destino[] {
+export function procurarDestinos(consulta: string, catalogo = CATALOGO_BASE): Destino[] {
+  const DESTINOS = catalogo.destinos;
   const q = normalizar(consulta);
   if (q.length < 2) return [];
   // Primeiro a correspondência direta; só se não houver nenhuma, procura destinos dentro da frase (ex.: "pacote punta cana").
@@ -701,14 +704,16 @@ export function procurarDestinos(consulta: string): Destino[] {
     for (const d of DESTINOS) {
       if ([d.nome, d.pais, ...(d.termos ?? [])].some(t => correspondeTermo(q, t, modo))) encontrados.set(d.id, d);
     }
-    for (const g of new Set(DESTINOS.flatMap(d => d.grupos))) if (correspondeTermo(q, g, modo)) for (const d of destinosPorGrupo(g)) encontrados.set(d.id, d);
+    for (const g of new Set(DESTINOS.flatMap(d => d.grupos))) if (correspondeTermo(q, g, modo)) for (const d of destinosPorGrupo(g, DESTINOS)) encontrados.set(d.id, d);
     if (encontrados.size) return [...encontrados.values()];
   }
   return [];
 }
 
-export function pesquisarOperadores(consulta: string, filtroDestino?: string): ResultadoPesquisa {
-  let destinos = procurarDestinos(consulta);
+export function pesquisarOperadores(consulta: string, filtroDestino?: string, catalogo = CATALOGO_BASE): ResultadoPesquisa {
+  const DESTINOS = catalogo.destinos, OPERADORES = catalogo.operadores;
+  const POR_ID = new Map(DESTINOS.map(d => [d.id, d]));
+  let destinos = procurarDestinos(consulta, catalogo);
   if (filtroDestino) destinos = destinos.filter(d => d.id === filtroDestino);
   const ids = new Set(destinos.map(d => d.id));
   // Um destino puxa as linhas do "guarda-chuva" do seu país/arquipélago (ex.: Salvador → Brasil).
@@ -732,10 +737,10 @@ export function pesquisarOperadores(consulta: string, filtroDestino?: string): R
 }
 
 /** Sugestões para o campo de pesquisa (nomes de destinos e grupos). */
-export function sugestoesDestinos(): string[] {
-  return [...new Set([...DESTINOS.map(d => d.nome), ...DESTINOS.flatMap(d => d.grupos)])].sort((a, b) => a.localeCompare(b, "pt"));
+export function sugestoesDestinos(catalogo = CATALOGO_BASE): string[] {
+  return [...new Set([...catalogo.destinos.map(d => d.nome), ...catalogo.destinos.flatMap(d => d.grupos)])].sort((a, b) => a.localeCompare(b, "pt"));
 }
 
-export function resumoOperadores() {
-  return OPERADORES.map(o => ({ id: o.id, nome: o.nome, motor: o.motor, sinal: o.sinal, atualizado: o.atualizado, faq: o.faq, resumo: o.resumo }));
+export function resumoOperadores(catalogo = CATALOGO_BASE) {
+  return catalogo.operadores.map(o => ({ id: o.id, nome: o.nome, motor: o.motor, sinal: o.sinal, atualizado: o.atualizado, faq: o.faq, resumo: o.resumo }));
 }

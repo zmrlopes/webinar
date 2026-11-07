@@ -34,6 +34,7 @@ export default function AtualizarDashboard() {
         <h1>Atualizar dashboard</h1>
         <p className="at-subtitulo">Vai buscar os números ao MyOffice e atualiza o dashboard, sem precisares do Claude.</p>
         <AtualizarCliente />
+        <p className="at-nota">Para atualizar destinos e regras de “Onde posso vender?”, usa <Link href="/admin/operadores">Atualizar FAQs →</Link>.</p>
       </div>
     </main>
   );

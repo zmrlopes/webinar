@@ -430,3 +430,15 @@ motor/manual, sinal, regras e data de cada FAQ) e só são lidos no servidor pel
 `/api/consultor/nova-area/operadores`, com o mesmo acesso de Reservas (`acessoReservas`).
 Ao rever as FAQs, atualizar as linhas, as datas `atualizado` e `REVISTO_EM`, e correr
 `npm run test:operadores`. Continua exclusivo da nova área da conta de teste.
+
+Por indicação do utilizador, o admin inclui “Atualizar FAQs” em `/admin/operadores`,
+independente de Atualizar dados do MyOffice. Um favorito corre no Centro de Ajuda
+autenticado e recolhe os textos e imagens das FAQs sem transmitir credenciais.
+A recolha completa fica privada no servidor em `operadores-faq:v1:`, com análise
+retomável por operador, comparação, fontes e confirmação explícita antes de publicar.
+Só uma versão completa e validada substitui o catálogo da pesquisa; falhas preservam
+a versão publicada. O histórico mantém as fontes e os dados anteriores de cada recolha.
+Publicações concorrentes ou base entretanto alterada são recusadas. A base inicial
+em `src/lib/operadores-destinos.ts` mantém-se; as atualizações aprovadas são lidas
+pela API no servidor. O acesso de consultor continua exclusivo da conta de teste.
+Correr `npm run test:operadores` e `npm run typecheck`.

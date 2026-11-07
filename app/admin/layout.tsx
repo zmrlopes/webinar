@@ -113,6 +113,7 @@ const LINKS = [
   { href: "/admin/consultores", label: "Consultores", icon: IconConsultores },
   { href: "/admin/eventos", label: "Eventos", icon: IconEventos },
   { href: "/admin/documentos", label: "Documentos", icon: IconQuestionarios },
+  { href: "/admin/operadores", label: "Atualizar FAQs", icon: IconQuestionarios },
   { href: "/admin/formacoes-gravadas", label: "Formações gravadas", icon: IconSessoes },
   { href: "/admin/objecoes/conhecimento", label: "Objeções", icon: IconObjecoes },
   { href: "/admin/dashboard-negocio", label: "Dashboard Negócio", icon: IconDashboardNegocio },
