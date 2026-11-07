@@ -8,20 +8,19 @@ export function TrofeusInscritos({ inscritos }: { inscritos: InscritoFaturacao[]
   const entrouEsteAno = (i: InscritoFaturacao) => i.dataRegisto !== null &&
     new Date(i.dataRegisto).getUTCFullYear() === 2026;
   const novoJunior = (i: InscritoFaturacao) => entrouEsteAno(i);
-  const novoSenior = (i: InscritoFaturacao) => entrouEsteAno(i) && chaveDoPatamar(i.nivel) === "patamar-senior";
+  const noPatamar = (chave: string) => (i: InscritoFaturacao) => chaveDoPatamar(i.nivel) === chave;
   const grupos = [
     { titulo: "Juniores que iniciaram em 2026", chave: "patamar-junior", filtro: novoJunior },
     { titulo: "Restantes pedidos de Júnior", chave: "patamar-junior", filtro: (i: InscritoFaturacao) => !novoJunior(i) },
-    { titulo: "Seniores que iniciaram em 2026 e já são Sénior", chave: "patamar-senior", filtro: novoSenior },
-    { titulo: "Restantes pedidos de Sénior", chave: "patamar-senior", filtro: (i: InscritoFaturacao) => !novoSenior(i) },
-    { titulo: "Master", chave: "patamar-master", filtro: () => true },
-    { titulo: "Coordenador", chave: "patamar-coordenador", filtro: () => true },
-    { titulo: "Diretor", chave: "patamar-diretor", filtro: () => true },
+    { titulo: "Sénior", chave: "patamar-senior", filtro: noPatamar("patamar-senior") },
+    { titulo: "Master", chave: "patamar-master", filtro: noPatamar("patamar-master") },
+    { titulo: "Coordenador", chave: "patamar-coordenador", filtro: noPatamar("patamar-coordenador") },
+    { titulo: "Diretor", chave: "patamar-diretor", filtro: noPatamar("patamar-diretor") },
   ];
   return <>
     <PatamaresInscritos inscritos={inscritos} />
     <h2>Troféus pedidos pelos inscritos</h2>
-    <p className="ad-legenda">{respondentes.length} inscritos responderam ao inquérito. As listas incluem apenas os troféus pedidos; quem pediu vários aparece nos respetivos grupos. Os pedidos de Júnior de quem entrou em 2026 ficam no primeiro grupo, mesmo que já tenha subido de patamar. O patamar e a data de entrada são os do registo da equipa.</p>
+    <p className="ad-legenda">{respondentes.length} inscritos responderam ao inquérito. A partir de Sénior, cada tabela inclui apenas quem pediu esse troféu e está atualmente nesse mesmo patamar. Os pedidos de Júnior mantêm a divisão por ano de entrada, mesmo que a pessoa já tenha subido de patamar. O patamar e a data de entrada são os do registo da equipa.</p>
     {grupos.map(g => {
       const pessoas = respondentes.filter(i => i.trofeusQuero?.includes(g.chave) && g.filtro(i))
         .sort((a, b) => a.nome.localeCompare(b.nome, "pt-PT"));
