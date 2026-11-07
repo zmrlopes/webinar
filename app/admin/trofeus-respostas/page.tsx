@@ -6,11 +6,9 @@ import {
   listarRespostasTrofeus,
   questionarioTrofeusPublicado,
 } from "@/lib/trofeus";
-import { BotaoWhatsApp } from "../botao-whatsapp";
 import { BotoesAvisar } from "./botoes-avisar";
-import { LinhaResposta } from "./linha";
 import { listarInscritosComFaturacao } from "@/lib/teambuilding";
-import { PatamaresInscritos } from "../eventos/teambuilding/patamares-inscritos";
+import { ListasTrofeus } from "./listas";
 
 export const dynamic = "force-dynamic";
 
@@ -160,60 +158,7 @@ export default async function TrofeusRespostasPagina() {
           </p>
         </div>
 
-        <PatamaresInscritos inscritos={inscritos} />
-        <h2>Respostas</h2>
-        {respostas.length === 0 ? (
-          <p className="ad-legenda">Ainda ninguém respondeu.</p>
-        ) : (
-          <div className="ad-tabela-wrap">
-            <table className="ad-tabela">
-              <thead>
-                <tr>
-                  <th>Consultor</th>
-                  <th>Patamar</th>
-                  <th>Quer receber</th>
-                  <th>Já tem</th>
-                  <th>Quando</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {respostas.map((r) => (
-                  <LinhaResposta resposta={r} key={r.email} />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        <h2>Ainda por responder</h2>
-        {semResposta.length === 0 ? (
-          <p className="ad-legenda">Respondeu toda a gente que está inscrita.</p>
-        ) : (
-          <div className="ad-cartao">
-            {semResposta.map((i) => (
-              <div
-                key={i.email}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.6rem",
-                  flexWrap: "wrap",
-                  fontSize: "0.9rem",
-                  padding: "0.3rem 0",
-                }}
-              >
-                <span>
-                  {i.nome} <span className="ad-legenda">— {i.email}</span>
-                </span>
-                <BotaoWhatsApp
-                  telemovel={i.telemovel}
-                  mensagem={`Olá ${i.nome}, ainda não respondeste ao questionário dos troféus do Teambuilding. Entra na tua área de consultor para responderes: ${base}/consultor`}
-                />
-              </div>
-            ))}
-          </div>
-        )}
+        <ListasTrofeus inscritos={inscritos} respostas={respostas} semResposta={semResposta} base={base} />
       </div>
     </main>
   );

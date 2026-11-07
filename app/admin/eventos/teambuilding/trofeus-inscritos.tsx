@@ -1,9 +1,14 @@
+"use client";
+import { useState } from "react";
 import type { InscritoFaturacao } from "@/lib/teambuilding";
+import { PesquisaTPs, correspondePesquisaTP } from "../../pesquisa-tps";
 import { chaveDoPatamar } from "@/lib/trofeus-lista";
 import { PatamaresInscritos } from "./patamares-inscritos";
 
 export function TrofeusInscritos({ inscritos }: { inscritos: InscritoFaturacao[] }) {
-  const respondentes = [...new Map(inscritos.filter(i => i.trofeusQuero !== null)
+  const [pesquisa, setPesquisa] = useState("");
+  const visiveis = inscritos.filter(i => correspondePesquisaTP(i, pesquisa));
+  const respondentes = [...new Map(visiveis.filter(i => i.trofeusQuero !== null)
     .map(i => [i.email.trim().toLowerCase(), i])).values()];
   const entrouEsteAno = (i: InscritoFaturacao) => i.dataRegisto !== null &&
     new Date(i.dataRegisto).getUTCFullYear() === 2026;
@@ -18,7 +23,9 @@ export function TrofeusInscritos({ inscritos }: { inscritos: InscritoFaturacao[]
     { titulo: "Diretor", chave: "patamar-diretor", filtro: noPatamar("patamar-diretor") },
   ];
   return <>
-    <PatamaresInscritos inscritos={inscritos} />
+    <PesquisaTPs valor={pesquisa} alterar={setPesquisa} />
+    {pesquisa && <p className="ad-legenda" role="status">{visiveis.length} TP(s) encontrado(s).{visiveis.length === 0 && " Não há TPs para esta pesquisa."}</p>}
+    <PatamaresInscritos inscritos={visiveis} />
     <h2>Troféus pedidos pelos inscritos</h2>
     <p className="ad-legenda">{respondentes.length} inscritos responderam ao inquérito. A partir de Sénior, cada tabela inclui apenas quem pediu esse troféu e está atualmente nesse mesmo patamar. Os pedidos de Júnior mantêm a divisão por ano de entrada, mesmo que a pessoa já tenha subido de patamar. O patamar e a data de entrada são os do registo da equipa.</p>
     {grupos.map(g => {
