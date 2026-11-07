@@ -9,13 +9,16 @@ import {
 import { BotaoWhatsApp } from "../botao-whatsapp";
 import { BotoesAvisar } from "./botoes-avisar";
 import { LinhaResposta } from "./linha";
+import { listarInscritosComFaturacao } from "@/lib/teambuilding";
+import { PatamaresInscritos } from "../eventos/teambuilding/patamares-inscritos";
 
 export const dynamic = "force-dynamic";
 
 export default async function TrofeusRespostasPagina() {
-  const [respostas, semResposta] = await Promise.all([
+  const [respostas, semResposta, inscritos] = await Promise.all([
     listarRespostasTrofeus(),
     listarInscritosSemRespostaTrofeus(),
+    listarInscritosComFaturacao(),
   ]);
   const contagens = contarTrofeus(respostas);
   const totalPedidos = contagens.reduce((soma, c) => soma + c.pedidos, 0);
@@ -157,6 +160,7 @@ export default async function TrofeusRespostasPagina() {
           </p>
         </div>
 
+        <PatamaresInscritos inscritos={inscritos} />
         <h2>Respostas</h2>
         {respostas.length === 0 ? (
           <p className="ad-legenda">Ainda ninguém respondeu.</p>

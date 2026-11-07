@@ -1,5 +1,6 @@
 import type { InscritoFaturacao } from "@/lib/teambuilding";
 import { chaveDoPatamar } from "@/lib/trofeus-lista";
+import { PatamaresInscritos } from "./patamares-inscritos";
 
 export function TrofeusInscritos({ inscritos }: { inscritos: InscritoFaturacao[] }) {
   const respondentes = [...new Map(inscritos.filter(i => i.trofeusQuero !== null)
@@ -18,6 +19,7 @@ export function TrofeusInscritos({ inscritos }: { inscritos: InscritoFaturacao[]
     { titulo: "Diretor", chave: "patamar-diretor", filtro: () => true },
   ];
   return <>
+    <PatamaresInscritos inscritos={inscritos} />
     <h2>Troféus pedidos pelos inscritos</h2>
     <p className="ad-legenda">{respondentes.length} inscritos responderam ao inquérito. As listas incluem apenas os troféus pedidos; quem pediu vários aparece nos respetivos grupos. Os pedidos de Júnior de quem entrou em 2026 ficam no primeiro grupo, mesmo que já tenha subido de patamar. O patamar e a data de entrada são os do registo da equipa.</p>
     {grupos.map(g => {
