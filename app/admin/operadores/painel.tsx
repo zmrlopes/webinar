@@ -15,10 +15,13 @@ const data = (v: string) => new Date(v).toLocaleString("pt-PT", {timeZone: "Euro
 export default function PainelFAQs() {
   const [estado, setEstado] = useState<Estado>(), [revisao, setRevisao] = useState<Revisao>(), [ocupado, setOcupado] = useState(false);
   const [mensagem, setMensagem] = useState(""), [erro, setErro] = useState(""), [confirmado, setConfirmado] = useState(false);
+  const [codigoFavorito, setCodigoFavorito] = useState("");
   const favorito = useRef<HTMLAnchorElement>(null), nonce = useRef(""), aRecolher = useRef(false), timeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   async function carregar() {setEstado(await pedir<Estado>());}
   useEffect(() => {
-    favorito.current?.setAttribute("href", favoritoFAQs(window.location.origin));
+    const codigo = favoritoFAQs(window.location.origin);
+    favorito.current?.setAttribute("href", codigo);
+    setCodigoFavorito(codigo);
     void carregar().catch(e => setErro(e.message));
     return () => clearTimeout(timeout.current);
   }, []);
@@ -58,13 +61,24 @@ export default function PainelFAQs() {
   }
   async function abrir(id: string) {setConfirmado(false); setRevisao(await pedir<Revisao>({acao:"rever",id}));}
   async function acao(fn: () => Promise<void>) {setOcupado(true); setErro(""); try {await fn();} catch(e) {setErro((e as Error).message);} finally {setOcupado(false);}}
+  async function copiarFavorito() {
+    try {await navigator.clipboard.writeText(codigoFavorito); setMensagem("Endereço copiado. Edita o favorito e cola-o no campo URL/endereço, substituindo tudo o que lá estiver.");}
+    catch {setErro("Seleciona e copia o endereço na caixa abaixo. Depois cola-o no campo URL/endereço do favorito.");}
+  }
   return <main className={s.pagina}>
     <h1>Atualizar FAQs · Onde posso vender?</h1>
     <p>Última revisão publicada: <strong>{estado?.catalogo.revistoEm ?? "A carregar…"}</strong>. A atualização é independente dos números do MyOffice.</p>
     <section><h2>1. Recolher no Centro de Ajuda</h2>
-      <ol><li>Arrasta <a ref={favorito} className={s.favorito} href="#" onClick={e=>e.preventDefault()}>Atualizar FAQs</a> para a barra de favoritos.</li>
+      <ol><li>Arrasta este botão para a barra de favoritos: <a ref={favorito} className={s.favorito} href="#" draggable onDragStart={e=>{e.dataTransfer.setData("text/uri-list",codigoFavorito);e.dataTransfer.setData("text/plain",codigoFavorito);}} onClick={e=>{e.preventDefault();setMensagem("Arrasta este botão para a barra de favoritos ou usa a instalação manual abaixo. Depois executa o favorito no Centro de Ajuda.");}}>Instalar favorito FAQs</a>. Usa este botão dentro das instruções.</li>
       <li>Abre o <a href="https://help.icligo.com/suporte-operacional/operadores-turisticos" target="_blank" rel="noreferrer">Centro de Ajuda iCliGo</a> e entra na tua conta.</li>
       <li>Clica no favorito. Nesta janela, inicia a recolha e aguarda a análise.</li></ol>
+      <details open><summary>Instalar ou corrigir o favorito manualmente</summary>
+        <ol><li>Cria um favorito qualquer e escolhe “Editar”.</li><li>No nome escreve “Atualizar FAQs”.</li><li>Copia o endereço abaixo e cola-o no campo URL/endereço do favorito, substituindo todo o conteúdo. Deve começar por <code>javascript:</code>.</li><li>Guarda, abre o Centro de Ajuda com a sessão iniciada e clica no favorito guardado. Deve aparecer o aviso “Favorito FAQs ativo” e abrir a janela de atualização.</li></ol>
+        <button disabled={!codigoFavorito} onClick={()=>void copiarFavorito()}>Copiar endereço do favorito</button>
+        <label htmlFor="faq-favorito">Endereço completo do favorito</label>
+        <textarea id="faq-favorito" className={s.codigo} readOnly value={codigoFavorito} rows={3} spellCheck={false} onFocus={e=>e.currentTarget.select()} />
+        <p>Se guardaste o link do menu ou usaste a estrela do navegador, o favorito pode conter apenas o endereço desta página. Nesse caso, substitui-o pelo código acima.</p>
+      </details>
       <p>A sessão permanece no Centro de Ajuda. São recolhidos apenas os textos e imagens das FAQs dos operadores. A análise usa o serviço de IA já configurado na plataforma.</p>
       <button disabled={ocupado || !estado} onClick={recolher}>Recolher e comparar FAQs</button>
     </section>

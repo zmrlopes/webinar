@@ -35,15 +35,18 @@ assert.ok(favorito.includes("e.source!==w") && favorito.includes("e.origin!==S")
 type Evento = {origin: string; source: object; data: {tipo: string; nonce: string; urls: string[]}};
 let listener: ((e: Evento)=>Promise<void>) | undefined;
 const mensagens: {tipo: string; paginas?: unknown[]}[] = [], pedidos: {url: string; credentials: string}[] = [];
-const destino = {postMessage(m: {tipo: string}, origin: string) {assert.equal(origin,"https://webinar.viajareviver.net"); mensagens.push(m);}, closed: false};
+const destino = {postMessage(m: {tipo: string}, origin: string) {assert.equal(origin,"https://webinar.viajareviver.net"); mensagens.push(m);}, focus(){}, closed: false};
 const main = {textContent: paginas[0]!.texto, querySelectorAll() {return [];}};
 class ParserSimulado {parseFromString() {return {querySelector(s: string) {return s.includes("password") ? null : main;}, querySelectorAll() {return [];}};}}
-new Function("window","location","alert","fetch","DOMParser","setInterval","clearInterval",favorito.slice(11))(
+const aviso = {id:"",style:{cssText:""},textContent:"",remove(){}};
+new Function("window","location","alert","fetch","DOMParser","setInterval","clearInterval","document",favorito.slice(11))(
   {open:()=>destino, addEventListener(_: string, fn: typeof listener) {listener=fn;}, removeEventListener(){}},
   {origin:"https://help.icligo.com"}, ()=>assert.fail("Alerta inesperado"),
   async (url: string, op: {credentials: string})=>{pedidos.push({url,credentials:op.credentials}); return {ok:true,url,text:async()=>"FAQ"};},
   ParserSimulado, ()=>0, ()=>{},
+  {getElementById(){return null;},createElement(){return aviso;},body:{append(){}}},
 );
+assert.ok(aviso.textContent.includes("Favorito FAQs ativo"), "Mostra que o favorito arrancou");
 assert.ok(listener);
 const evento: Evento = {origin:"https://evil.example",source:destino,data:{tipo:"faq-recolher",nonce:"teste",urls:paginas.map(p=>p.url)}};
 await listener(evento);
