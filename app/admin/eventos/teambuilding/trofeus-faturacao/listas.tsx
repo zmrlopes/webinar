@@ -17,10 +17,20 @@ function Tabela({pessoas, vazia}: {pessoas: InscritoFaturacao[]; vazia: string})
 export function ListasFaturacao({inscritos}: {inscritos: InscritoFaturacao[]}) {
   const [pesquisa, setPesquisa] = useState("");
   const grupos = listasTrofeusFaturacao(inscritos);
+  const todos100 = grupos.find(g => g.chave === "faturacao-100k")?.entregar ?? [];
+  const palco100 = todos100.filter(i => i.vendas !== null && i.vendas < 250000);
+  const palco100Visiveis = palco100.filter(i => correspondePesquisaTP(i, pesquisa));
+  const levantarDepois = todos100.length - palco100.length;
   return <>
     <div className={s.resumo}>{grupos.map(g => <div key={g.chave}><span>Troféus {g.titulo} a entregar</span><strong>{g.entregar.length}</strong><small>{g.confirmar.length} TP(s) com receção por confirmar</small></div>)}</div>
     <PesquisaTPs valor={pesquisa} alterar={setPesquisa} />
     {pesquisa && <p role="status">{new Set(grupos.flatMap(g => [...g.entregar,...g.confirmar]).filter(i => correspondePesquisaTP(i,pesquisa)).map(i=>i.email)).size} TP(s) encontrado(s).</p>}
+    <section className={s.grupo} aria-labelledby="titulo-100k-palco">
+      <h2 id="titulo-100k-palco">100K — chamada a palco · {pesquisa ? `${palco100Visiveis.length} de ` : ""}{palco100.length} TP(s)</h2>
+      <p>Apenas quem tem o troféu de 100K por receber e faturação própria acumulada entre 100.000 € e menos de 250.000 €.</p>
+      <Tabela pessoas={palco100Visiveis} vazia={pesquisa ? "Não há TPs para esta pesquisa na chamada de 100K." : "Não há TPs para chamar a palco pelo troféu de 100K."} />
+      <p className={s.nota}>{levantarDepois} TP(s) da lista completa de 100K já atingiram 250.000 € ou mais: não são chamados a palco pelo troféu de 100K e levantam-no depois. Mantêm-se na lista completa de entrega abaixo, mesmo que já tenham recebido o de 250K.</p>
+    </section>
     {grupos.map(g => {
       const entregar = g.entregar.filter(i => correspondePesquisaTP(i, pesquisa));
       const confirmar = g.confirmar.filter(i => correspondePesquisaTP(i, pesquisa));
