@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { InscricaoEvento } from "@/lib/eventos";
 import { EditarEmailInscricao } from "./editar-email";
 import { BotaoWhatsApp } from "../botao-whatsapp";
@@ -15,6 +16,44 @@ function formatarData(data: Date): string {
 
 export function TabelaInscricoesEvento({ inscricoes }: { inscricoes: InscricaoEvento[] }) {
   const [pesquisa, setPesquisa] = useState("");
+  const router = useRouter();
+  const bloqueado = useRef(false);
+  const [aEnviar, setAEnviar] = useState(false);
+  const [mensagem, setMensagem] = useState("");
+  const [resultados, setResultados] = useState<Record<string, string>>({});
+
+  async function enviar(lista: InscricaoEvento[]) {
+    if (bloqueado.current) return;
+    bloqueado.current = true;
+    setAEnviar(true);
+    let enviados = 0;
+    let falhas = 0;
+    try {
+      for (const [indice, inscricao] of lista.entries()) {
+        setMensagem(`A enviar ${indice + 1} de ${lista.length} — ${inscricao.nome}. Mantém esta página aberta.`);
+        setResultados((anteriores) => ({ ...anteriores, [inscricao.id]: "A enviar…" }));
+        try {
+          const resposta = await fetch("/api/admin/eventos/enviar-qr", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: inscricao.id }),
+          });
+          const corpo = await resposta.json().catch(() => null);
+          if (!resposta.ok) throw new Error(corpo?.erro ?? "Falha no envio.");
+          enviados++;
+          setResultados((anteriores) => ({ ...anteriores, [inscricao.id]: "Email enviado." }));
+        } catch (erro) {
+          falhas++;
+          setResultados((anteriores) => ({ ...anteriores, [inscricao.id]: erro instanceof Error ? erro.message : "Falha de ligação. Verifica o estado antes de repetir." }));
+        }
+      }
+      setMensagem(`Envio concluído: ${enviados} enviados, ${falhas} com falha.`);
+    } finally {
+      bloqueado.current = false;
+      setAEnviar(false);
+      router.refresh();
+    }
+  }
 
   const inscricoesFiltradas = useMemo(() => {
     const termo = pesquisa.trim().toLowerCase();
@@ -24,6 +63,13 @@ export function TabelaInscricoesEvento({ inscricoes }: { inscricoes: InscricaoEv
 
   return (
     <div>
+      <div style={{ marginBottom: "1rem" }}>
+        <button type="button" className="ad-download" disabled={aEnviar || !inscricoes.length} onClick={() => void enviar(inscricoes)}>
+          {aEnviar ? "A enviar QR codes…" : `Enviar QR codes a todos (${inscricoes.length})`}
+        </button>
+        <p className="ad-legenda">Envia para todas as inscrições, incluindo as que já receberam o email, mesmo com pesquisa ativa.</p>
+        <p role="status" aria-live="polite">{mensagem}</p>
+      </div>
       <input
         type="text"
         value={pesquisa}
@@ -100,6 +146,10 @@ export function TabelaInscricoesEvento({ inscricoes }: { inscricoes: InscricaoEv
                   </a>
                 </td>
                 <td>
+                  <button type="button" className="ad-download" disabled={aEnviar} onClick={() => void enviar([i])} aria-label={`Enviar QR codes a ${i.nome}`}>
+                    Enviar QR codes
+                  </button>
+                  {resultados[i.id] && <p style={{ fontSize: "0.8rem" }}>{resultados[i.id]}</p>}
                   {i.emailEnviado === null ? (
                     <span style={{ color: "#6b6a63" }}>desconhecido</span>
                   ) : i.emailEnviado ? (

@@ -116,8 +116,20 @@ export async function inscreverNoEventoEEnviarEmail(
   const { id, bilhetes } = await registarInscricaoEvento(dados);
   const total = calcularTotalEvento(dados.adultos, dados.criancasMais10);
 
+  const emailEnviado = await enviarEmailBilhetesEvento(sender, baseUrl, { id, nome: dados.nome, email: dados.email, bilhetes });
+  return { id, total, emailEnviado };
+}
+
+/** Reutiliza os bilhetes existentes, sem criar inscrições nem alterar presenças. */
+export async function enviarEmailBilhetesEvento(
+  sender: EmailSender,
+  baseUrl: string,
+  dados: { id: string; nome: string; email: string; bilhetes: BilheteNovo[] },
+): Promise<boolean> {
+  const { id, bilhetes } = dados;
   let emailEnviado = true;
   try {
+    if (!bilhetes.length) throw new Error("Inscrição sem bilhetes");
     const anexos: AnexoMensagem[] = await Promise.all(
       bilhetes.map(async (bilhete) => {
         const linkCheckin = `${baseUrl}/api/eventos/checkin/${bilhete.id}`;
@@ -144,7 +156,7 @@ export async function inscreverNoEventoEEnviarEmail(
 
   await db().query(`update evento_inscricoes set email_enviado = $1 where id = $2`, [emailEnviado, id]);
 
-  return { id, total, emailEnviado };
+  return emailEnviado;
 }
 
 export interface DocumentoEvento {
