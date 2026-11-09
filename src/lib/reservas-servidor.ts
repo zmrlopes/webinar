@@ -197,21 +197,36 @@ export async function analisarReferenciaReserva(email: string, referencia: unkno
   return validarMaterialReserva({...valor, formato, referencia: imagem, dados: {...dadosReservaVazios(), condicoes: "", hoteis: Array.from({length: Math.min(6, Math.max(1, maxHoteis))}, () => ({nome: "", quarto: "", regime: "", total: null, precoPessoa: null}))}, elementos: [...elementos, ...elementos.some(e => e.tipo === "marca") ? [] : [marcaReserva()]]});
 }
 
-export async function importarPDFReserva(email: string, ficheiro: File) {
-  if (!ficheiro.size || ficheiro.size > 4_000_000 || !ficheiro.name.toLowerCase().endsWith(".pdf")) throw new ErroReserva("Escolhe um PDF com menos de 4 MB.");
+export async function importarOrcamentoReserva(email: string, ficheiro: File) {
+  if (!ficheiro.size || ficheiro.size > 4_000_000) throw new ErroReserva("Escolhe um PDF, JPG/JPEG ou PNG até 4 MB.");
   const bytes = new Uint8Array(await ficheiro.arrayBuffer());
-  if (Buffer.from(bytes.subarray(0, 5)).toString() !== "%PDF-") throw new ErroReserva("O ficheiro não é um PDF válido.");
-  const {getDocumentProxy} = await import("unpdf");
-  try {
-    const pdf = await getDocumentProxy(bytes.slice());
-    try {if (pdf.numPages > 30) throw new ErroReserva("Importa uma proposta com até 30 páginas.");} finally {await pdf.cleanup();}
-  } catch (erro) {if (erro instanceof ErroReserva) throw erro; throw new ErroReserva("Não foi possível ler o PDF. Confirma que não está protegido por palavra-passe.", 422);}
-  // Os PDFs MyOffice misturam cabeçalhos em texto com a proposta em imagens.
-  // Mesmo com texto extraível, envia o documento completo para ler todas as páginas.
-  const conteudo: EntradaIA[] = [{type: "input_file", filename: "proposta.pdf", file_data: `data:application/pdf;base64,${Buffer.from(bytes).toString("base64")}`}];
-  conteudo.push({type: "input_text", text: "Analisa todas as páginas deste orçamento MyOffice, incluindo os dados em imagens. O texto selecionável pode conter apenas a capa, contactos e rodapé. Extrai as opções da proposta e assinala o que necessita de confirmação."});
-  const valor = await chamarIAReservas(email, `Extrai exclusivamente dados comprovados neste PDF de um orçamento de viagem. Sem adivinhar nem inventar serviços incluídos. Não devolvas dados pessoais de clientes, referências de reserva, dados de pagamento ou comissões. JSON {"propostas":[{"destino":"","frase":"","partida":"","ida":"YYYY-MM-DD ou vazio","regresso":"","voo":"","viajantes":null,"bagagem":"","transfer":"","condicoes":"","hoteis":[{"nome":"","quarto":"","regime":"","total":null,"precoPessoa":null}]}],"avisos":["Dados que precisam de confirmação"]}. Número de viajantes e valores numéricos ou null se ausentes. Um objeto por destino/datas/voos diferentes. Várias alternativas de hotel para a MESMA viagem ficam em hoteis, até 6 por proposta. Total é o total daquela opção; precoPessoa só quando EXPLICITAMENTE indicado. Nunca atribuas a todas as opções o preço de apenas uma. Não dividas já os valores: a aplicação calcula após confirmação. Frase fica vazia. Não inventes destino com base apenas no nome do hotel. Máximo 12 propostas. Se não for um orçamento utilizável, responde propostas=[] e um aviso.`, conteudo, 5000);
-  if (!Array.isArray(valor.propostas) || !valor.propostas.length || valor.propostas.length > 12) throw new ErroReserva("Não encontrámos propostas neste PDF. Podes introduzir os dados manualmente.", 422);
+  const conteudo: EntradaIA[] = [];
+  if (Buffer.from(bytes.subarray(0, 5)).toString() === "%PDF-" || ficheiro.name.toLowerCase().endsWith(".pdf")) {
+    if (Buffer.from(bytes.subarray(0, 5)).toString() !== "%PDF-") throw new ErroReserva("O ficheiro não é um PDF válido.");
+    const {getDocumentProxy} = await import("unpdf");
+    try {
+      const pdf = await getDocumentProxy(bytes.slice());
+      try {if (pdf.numPages > 30) throw new ErroReserva("Importa uma proposta com até 30 páginas.");} finally {await pdf.cleanup();}
+    } catch (erro) {if (erro instanceof ErroReserva) throw erro; throw new ErroReserva("Não foi possível ler o PDF. Confirma que não está protegido por palavra-passe.", 422);}
+    // Os PDFs MyOffice misturam cabeçalhos em texto com a proposta em imagens.
+    // Mesmo com texto extraível, envia o documento completo para ler todas as páginas.
+    conteudo.push({type: "input_file", filename: "proposta.pdf", file_data: `data:application/pdf;base64,${Buffer.from(bytes).toString("base64")}`});
+  } else {
+    try {
+      const imagem = sharp(bytes, {limitInputPixels: 30_000_000});
+      const meta = await imagem.metadata();
+      if (meta.format !== "jpeg" && meta.format !== "png") throw new ErroReserva("Escolhe um PDF, JPG/JPEG ou PNG válido.");
+      if ((meta.pages ?? 1) > 1) throw new ErroReserva("Escolhe uma imagem estática do orçamento.");
+      const normalizada = await imagem.rotate().png().toBuffer();
+      conteudo.push({type: "input_image", image_url: `data:image/png;base64,${normalizada.toString("base64")}`, detail: "high"});
+    } catch (erro) {
+      if (erro instanceof ErroReserva) throw erro;
+      throw new ErroReserva("Não foi possível ler a imagem. Escolhe um JPG/JPEG ou PNG válido com até 30 megapíxeis.", 422);
+    }
+  }
+  conteudo.push({type: "input_text", text: "Analisa este orçamento, seja um PDF ou um print/imagem, incluindo os dados visuais e todas as páginas disponíveis. O texto selecionável pode conter apenas a capa, contactos e rodapé. Extrai as opções da proposta e assinala o que necessita de confirmação."});
+  const valor = await chamarIAReservas(email, `Extrai exclusivamente dados comprovados neste documento ou imagem de um orçamento de viagem. Se for um print, ignora a interface à volta. Dados cortados, ilegíveis ou ausentes ficam vazios ou null e são assinalados nos avisos. Sem adivinhar nem inventar serviços incluídos. Não devolvas dados pessoais de clientes, referências de reserva, dados de pagamento ou comissões. JSON {"propostas":[{"destino":"","frase":"","partida":"","ida":"YYYY-MM-DD ou vazio","regresso":"","voo":"","viajantes":null,"bagagem":"","transfer":"","condicoes":"","hoteis":[{"nome":"","quarto":"","regime":"","total":null,"precoPessoa":null}]}],"avisos":["Dados que precisam de confirmação"]}. Número de viajantes e valores numéricos ou null se ausentes. Um objeto por destino/datas/voos diferentes. Várias alternativas de hotel para a MESMA viagem ficam em hoteis, até 6 por proposta. Total é o total daquela opção; precoPessoa só quando EXPLICITAMENTE indicado. Nunca atribuas a todas as opções o preço de apenas uma. Não dividas já os valores: a aplicação calcula após confirmação. Frase fica vazia. Não inventes destino com base apenas no nome do hotel. Máximo 12 propostas. Se não for um orçamento utilizável, responde propostas=[] e um aviso.`, conteudo, 5000);
+  if (!Array.isArray(valor.propostas) || !valor.propostas.length || valor.propostas.length > 12) throw new ErroReserva("Não encontrámos propostas neste ficheiro. Podes introduzir os dados manualmente.", 422);
   return {propostas: valor.propostas.map(p => validarDadosReserva({...dadosReservaVazios(), ...(p as object)})), avisos: Array.isArray(valor.avisos) ? valor.avisos.filter((a): a is string => typeof a === "string").slice(0, 12).map(a => a.slice(0, 500)) : []};
 }
 export async function sugerirFraseReserva(email: string, destino: unknown) {

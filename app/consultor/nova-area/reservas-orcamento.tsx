@@ -24,7 +24,7 @@ export function CriarReservaOrcamento({email,ia,ocupado,onOcupado,onGerar,modelo
   useEffect(()=>{if(modeloParaUsar){setModeloGuardado(structuredClone(modeloParaUsar));setFormato(modeloParaUsar.material.formato);setDesenho("guardado");setPasso(p=>p===3?2:p);}},[modeloParaUsar]);
   const [referencia,setReferencia] = useState<{imagem:string;nome:string}|null>(null);
   const [analise,setAnalise] = useState<{imagem:string;formato:FormatoReserva;material:MaterialReserva}|null>(null);
-  const pdfInput = useRef<HTMLInputElement>(null), fotoInput = useRef<HTMLInputElement>(null), referenciaInput = useRef<HTMLInputElement>(null);
+  const orcamentoInput = useRef<HTMLInputElement>(null), fotoInput = useRef<HTMLInputElement>(null), referenciaInput = useRef<HTMLInputElement>(null);
   const preco = dados.hoteis[hotel] ? precoPessoaReserva(dados,dados.hoteis[hotel]!) : null;
   async function pedir<T>(acao:string,extra:Record<string,unknown>):Promise<T> {
     const r = await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,acao,...extra})});
@@ -45,15 +45,15 @@ export function CriarReservaOrcamento({email,ia,ocupado,onOcupado,onGerar,modelo
   async function importar(e:ChangeEvent<HTMLInputElement>) {
     const fs=Array.from(e.target.files??[]);e.target.value="";if(!fs.length)return;
     await fazer("A ler o orçamento…",async()=>{
-      if(fs.length>6)throw new Error("Carrega até seis PDFs de cada vez.");
+      if(fs.length>6)throw new Error("Carrega até seis ficheiros de cada vez.");
       const ps:DadosReserva[]=[],as:string[]=[],nomes:string[]=[];
       for(const f of fs) {
-        if(f.size>4_000_000){as.push(`${f.name}: o PDF deve ter até 4 MB.`);continue;}
+        if(f.size>4_000_000){as.push(`${f.name}: o ficheiro deve ter até 4 MB.`);continue;}
         const form=new FormData();form.set("email",email);form.set("ficheiro",f);
         try {const r=await fetch(API,{method:"POST",body:form}),c=await r.json();if(!r.ok)throw new Error(c.erro);const novas=(c.propostas as unknown[]).map(validarDadosReserva);ps.push(...novas);as.push(...(Array.isArray(c.avisos)?c.avisos.filter((v:unknown)=>typeof v==="string"):[]));if(novas.length)nomes.push(f.name);}
         catch(ex){as.push(`${f.name}: ${ex instanceof Error?ex.message:"Não foi possível ler."}`);}
       }
-      setAvisos(as);if(!ps.length)throw new Error(as.join(" ")||"Não foram encontradas propostas neste PDF.");
+      setAvisos(as);if(!ps.length)throw new Error(as.join(" ")||"Não foram encontradas propostas neste ficheiro.");
       setPropostas(ps);setProposta(0);setHotel(0);setDados(structuredClone(ps[0]!));setFicheiros(nomes);setConfirmado(false);setFoto(null);setPasso(1);
     });
   }
@@ -117,12 +117,12 @@ export function CriarReservaOrcamento({email,ia,ocupado,onOcupado,onGerar,modelo
     {!onConfirmarDados&&<ol className={css.passos} aria-label="Criar template a partir de orçamento">{["Orçamento","Formato e referência","Texto e gerar"].map((nome,i)=><li key={nome} aria-current={passo===i+1?"step":undefined} data-completo={passo>i+1}><span>{i+1}</span><strong>{nome}</strong></li>)}</ol>}
     {erro&&<p role="alert" className={css.erro}>{erro}</p>}
     <fieldset disabled={!!ocupado} className={css.editorCompleto}>
-      <input ref={pdfInput} className={css.inputOculto} type="file" accept="application/pdf,.pdf" multiple onChange={e=>void importar(e)} aria-label="Orçamentos PDF para gerar template" />
+      <input ref={orcamentoInput} className={css.inputOculto} type="file" accept="application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png" multiple onChange={e=>void importar(e)} aria-label="Orçamentos em PDF, JPG/JPEG ou PNG para gerar template" />
       <input ref={fotoInput} className={css.inputOculto} type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>void carregarFoto(e)} aria-label="Fotografia do novo template" />
       <input ref={referenciaInput} className={css.inputOculto} type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>void carregarReferencia(e)} aria-label="Referência para o desenho do novo template" />
       {passo===1&&<div className={css.cartao}>
         <h2>Qual é a viagem que queres divulgar?</h2><p className={css.nota}>Carrega o orçamento do MyOffice ou de outro fornecedor. Os dados da viagem preenchem o template.</p>
-        <div className={css.uploadOrcamento}><span className={css.documentoIcone} aria-hidden="true">↥</span><div><strong>Começa pelo orçamento</strong><p>PDF até 4 MB · podes carregar várias propostas</p></div><button type="button" className={css.primario} disabled={!ia} onClick={()=>pdfInput.current?.click()}>{ficheiros.length?"Carregar outro orçamento":"Carregar orçamento PDF"}</button></div>
+        <div className={css.uploadOrcamento}><span className={css.documentoIcone} aria-hidden="true">↥</span><div><strong>Começa pelo orçamento</strong><p>PDF, print em JPG/JPEG ou PNG · até 4 MB por ficheiro</p></div><button type="button" className={css.primario} disabled={!ia} onClick={()=>orcamentoInput.current?.click()}>{ficheiros.length?"Carregar outro orçamento":"Carregar orçamento"}</button></div>
         {!ia&&<p className={css.nota}>A leitura automática ainda não está configurada. Podes preencher os dados manualmente.</p>}
         {ficheiros.length>0&&<p className={css.ficheiroImportado}>✓ {ficheiros.join(" · ")}</p>}
         {avisos.length>0&&<ul className={css.avisos}>{avisos.map((a,i)=><li key={i}>{a}</li>)}</ul>}

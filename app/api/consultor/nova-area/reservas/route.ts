@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ErroReserva } from "@/lib/reservas";
-import { acessoReservas, abrirReserva, analisarReferenciaReserva, apagarReserva, descarregarFotoReserva, fotografiasReserva, guardarReserva, importarPDFReserva, lerBytesReserva, listarReservas, sugerirFraseReserva } from "@/lib/reservas-servidor";
+import { acessoReservas, abrirReserva, analisarReferenciaReserva, apagarReserva, descarregarFotoReserva, fotografiasReserva, guardarReserva, importarOrcamentoReserva, lerBytesReserva, listarReservas, sugerirFraseReserva } from "@/lib/reservas-servidor";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
@@ -12,8 +12,8 @@ export async function POST(request: Request): Promise<Response> {
       const form = await new Response(new Uint8Array(bytes).buffer, {headers: {"Content-Type": request.headers.get("Content-Type")!}}).formData();
       const email = await acessoReservas(form.get("email"));
       const ficheiro = form.get("ficheiro");
-      if (!(ficheiro instanceof File)) throw new ErroReserva("Escolhe o PDF da proposta.");
-      return resposta(await importarPDFReserva(email, ficheiro));
+      if (!(ficheiro instanceof File)) throw new ErroReserva("Escolhe o PDF ou a imagem (JPG/JPEG ou PNG) da proposta.");
+      return resposta(await importarOrcamentoReserva(email, ficheiro));
     }
     let corpo: Record<string, unknown>;
     try {corpo = JSON.parse(new TextDecoder().decode(bytes)); if (!corpo || typeof corpo !== "object" || Array.isArray(corpo)) throw new Error();} catch {throw new ErroReserva("Pedido inválido.");}
