@@ -119,6 +119,7 @@ const LINKS = [
   { href: "/admin/dashboard-negocio", label: "Dashboard Negócio", icon: IconDashboardNegocio },
   { href: "/admin/core-rank", label: "Core Rank · Top 10", icon: IconDashboardNegocio },
   { href: "/admin/blackfriday", label: "BLACKFRIDAY", icon: IconEventos },
+  { href: "/admin/calendario-criativo", label: "Calendário criativo", icon: IconQuestionarios },
   { href: "/admin/questionarios", label: "Questionários", icon: IconQuestionarios },
 ];
 
