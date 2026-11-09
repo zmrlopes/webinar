@@ -44,6 +44,34 @@ const atualizado = prepararAtualizacaoCoreGrupo(bruto, dados)!;
 assert.equal(atualizado.dados.consultores[0]!.reservas, 3500);
 assert.equal(atualizado.dados.consultores[0]!.novos.length, 1);
 assert.equal(atualizado.dados.grupo!.membros.filter(m => !m.username).length, 2);
+const comRaiz = construirCoreGrupo(membros, {...dados.grupo!, membros: [...dados.grupo!.membros,
+  {nome: "Conta principal", username: "raiz"}]}, dados.desde, dados.ate, "exportação confirmada");
+const raiz = comRaiz.consultores.find(c => c.username === "raiz")!;
+raiz.reservas = 3511.45;
+raiz.verificacaoCore = {mes: "2026-10", reservas: 3511.45, subscricoes: 0, metaReservas: 3000,
+  metaNovos: 3, consultadoEm: "2026-10-29T19:47:03Z"};
+const semRaiz = structuredClone(bruto);
+semRaiz["equipa-core-rank-grupo:p0"].corpo.list.content = paginaSemRaiz();
+semRaiz["equipa-core-rank-grupo:p0"].corpo.list.totalElements = membros.length - 1;
+function paginaSemRaiz() {return bruto["equipa-core-rank-grupo:p0"].corpo.list.content.filter(m => m.user.username !== "raiz");}
+const corrigido = prepararAtualizacaoCoreGrupo(semRaiz, comRaiz)!;
+assert.equal(corrigido.dados.consultores.find(c => c.username === "neto")!.reservas, 3500);
+assert.equal(corrigido.dados.consultores.find(c => c.username === "raiz")!.reservas, 3511.45,
+  "A conta omitida mantém apenas o valor confirmado do mesmo intervalo");
+assert.deepEqual(corrigido.dados.consultores.find(c => c.username === "raiz")!.verificacaoCore, raiz.verificacaoCore);
+assert.deepEqual(corrigido.dados.grupo, comRaiz.grupo, "Preservar todos os contactos e associações");
+assert.equal(corrigido.membros.filter(m => m.username === "raiz").length, 1);
+assert.equal(semRaiz["equipa-core-rank-grupo:p0"].corpo.list.content.length, membros.length - 1, "Não alterar a recolha original");
+const outroIntervalo = structuredClone(semRaiz);
+outroIntervalo.plano.corpo.periodos[0]!.fim = "2026-10-30";
+assert.throws(() => prepararAtualizacaoCoreGrupo(outroIntervalo, comRaiz), /conta confirmada/, "Nunca transportar valores para outro período");
+const incompleta = structuredClone(semRaiz);
+incompleta["equipa-core-rank-grupo:p0"].corpo.list.totalElements++;
+assert.equal(prepararAtualizacaoCoreGrupo(incompleta, comRaiz), null, "Não contornar a validação das páginas");
+const semOutro = structuredClone(semRaiz);
+semOutro["equipa-core-rank-grupo:p0"].corpo.list.content = paginaSemRaiz().filter(m => m.user.username !== "neto");
+semOutro["equipa-core-rank-grupo:p0"].corpo.list.totalElements = membros.length - 2;
+assert.throws(() => prepararAtualizacaoCoreGrupo(semOutro, comRaiz), /conta confirmada.*neto/, "Outras contas ausentes continuam protegidas");
 const pagina = bruto["equipa-core-rank-grupo:p0"].corpo.list;
 const alternativas = {
   plano: {corpo: {periodos: [{chave: "mes-2026-10", inicio: dados.desde, fim: dados.ate}]}},

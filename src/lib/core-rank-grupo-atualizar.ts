@@ -67,7 +67,23 @@ export function prepararAtualizacaoCoreGrupo(bruto: Bruto, anterior: DadosCoreDi
   if (!periodo || periodo.inicio !== anterior.desde) return null;
   const lista = lerMembrosPeriodo(bruto, periodo);
   if (!lista) return null;
+  // /team/affiliates omite a própria conta. Recupera apenas a raiz já
+  // confirmada para exatamente o mesmo intervalo, nunca outros ausentes
+  // nem valores antigos quando o período mudou.
+  const principais = anterior.consultores.filter(c => !c.upline.trim()
+    && !lista.some(m => m.username.trim().toLowerCase() === c.username.trim().toLowerCase())
+    && lista.some(m => m.upline.trim().toLowerCase() === c.username.trim().toLowerCase()));
+  if (periodo.inicio === anterior.desde && periodo.fim === anterior.ate && principais.length === 1) {
+    const {username, nome, email, upline, estado, entrada, reservas, subscricoes} = principais[0]!;
+    if (Number.isFinite(reservas) && reservas >= 0) lista.push({username, nome, email, upline, estado, entrada, reservas, subscricoes});
+  }
   const dados = construirCoreGrupo(lista, anterior.grupo!, periodo.inicio, periodo.fim, "Atualizar dados · MyOffice");
+  // Mantém a origem/data da verificação manual da raiz; os restantes
+  // cartões usam os novos valores do MyOffice.
+  for (const c of dados.consultores) {
+    const principal = principais.find(p => p.username.trim().toLowerCase() === c.username.trim().toLowerCase());
+    if (principal?.verificacaoCore) c.verificacaoCore = {...principal.verificacaoCore};
+  }
   // A contagem vem das relações diretas e datas recolhidas, sem manter cartões antigos.
   dados.consultores.forEach(c => { c.subscricoes = c.novos.length; });
   return { membros: lista, dados };
