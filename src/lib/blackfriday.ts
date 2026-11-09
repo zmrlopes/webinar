@@ -13,7 +13,7 @@ export interface ConfiguracaoBF {
   premioLinha: string; premioBingo: string;
 }
 export const CONFIG_BF: ConfiguracaoBF = {
-  inicio: "2026-11-13", fim: "2026-12-07", centro: "reserva5k", periodoFaturacao: "desafio",
+  inicio: "2026-11-09", fim: "2026-12-07", centro: "reserva5k", periodoFaturacao: "desafio",
   premioLinha: "Entrada no evento Mindset Elite", premioBingo: "Bilhetes pagos para todos os eventos anuais",
 };
 export interface InscricaoBF {

@@ -37,7 +37,7 @@ ranking, campanhas ou os snapshots do admin. Correr `npm run test:negocio`.
 Por indicação do utilizador, o separador BLACKFRIDAY da nova área apresenta
 um bingo 5×5 inspirado em `docs/bingo.jpeg`, com gradiente escuro e progresso
 privado por TP. Está em preparação apenas na conta de teste definida em
-`src/lib/demo.ts`, incluindo a API. O desafio começa a 13/11/2026 e termina
+`src/lib/demo.ts`, incluindo a API. Por indicação mais recente, o desafio começa a 09/11/2026 e termina
 a 07/12/2026, inclusive, no horário de Lisboa; as datas podem ser ajustadas
 no admin antes da primeira participação. Por indicação mais recente, o
 avião central começa vazio e exige uma reserva de pelo menos 5.000 € com
@@ -64,8 +64,10 @@ por exemplo, uma reserva de 15.000 € não pode preencher duas casas. O bingo e
 os prémios exigem validação; a ordem usa a hora de envio do último comprovativo
 necessário, preservada na revisão. A meta de 3.000.000 € usa a faturação geral
 da equipa, recolhida no período escolhido ao atualizar os dados do dashboard,
-sem somar os comprovativos do bingo. Até confirmação, o período é o do desafio;
-o admin permite escolher o acumulado anual. Se a meta for atingida, todos os
+sem somar os comprovativos do bingo. O período confirmado é o do desafio;
+por indicação mais recente, cada atualização do dashboard conta a faturação geral
+da equipa desde 09/11/2026 para a meta dos 3.000.000 €. O admin permite escolher
+o acumulado anual. Se a meta for atingida, todos os
 TPs com bingo válido recebem os bilhetes de todos os eventos anuais; caso
 contrário, apenas o primeiro bingo válido. Não envia comunicações.
 
