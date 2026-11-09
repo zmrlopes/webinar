@@ -287,7 +287,7 @@ export default function NovaAreaConsultor() {
                   <button type="button" className={seccao === "testemunhos" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("testemunhos")} aria-current={seccao === "testemunhos" ? "page" : undefined} aria-controls="conteudo-nova-area">Testemunhos</button>
                 </GrupoMenu>
                 <GrupoMenu titulo="Gestão do negócio" ativo={seccao === "core-rank" || seccao === "calculadoras" || seccao === "negocio"}>
-                  <button type="button" className={seccao === "negocio" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("negocio")} aria-current={seccao === "negocio" ? "page" : undefined} aria-controls="conteudo-nova-area">O meu negócio</button>
+                  <button type="button" className={seccao === "negocio" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("negocio")} aria-current={seccao === "negocio" ? "page" : undefined} aria-controls="conteudo-nova-area">Estatísticas e projeções</button>
                   <button type="button" className={seccao === "core-rank" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("core-rank")} aria-current={seccao === "core-rank" ? "page" : undefined} aria-controls="conteudo-nova-area">Core Rank</button>
                   <button type="button" className={seccao === "calculadoras" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calculadoras")} aria-current={seccao === "calculadoras" ? "page" : undefined} aria-controls="conteudo-nova-area">Calculadoras</button>
                 </GrupoMenu>

@@ -8,7 +8,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-Por indicação do utilizador, “O meu negócio” está em Gestão do negócio na nova área,
+Por indicação do utilizador, “Estatísticas e projeções” (antes “O meu negócio”) está em Gestão do negócio na nova área,
 apenas para a conta de teste definida em `src/lib/demo.ts`, incluindo a API
 `/api/consultor/nova-area/negocio`. Nesta fase inclui apenas Mapas e Projeções:
 faturação e pontos da organização, comissões totais (próprias + passivas) e
@@ -193,7 +193,7 @@ Calendário fora de separadores, seguidos de O meu negócio, Reservas
 (Propostas, Travel planner, Criar templates, Calendário criativo) e Formação e
 eventos. Por indicação mais recente, o separador O meu negócio contém dois
 subseparadores: A minha organização (as opções que já tinha) e Gestão do negócio
-(as opções do antigo Objetivos: O meu negócio, Core Rank e Calculadoras).
+(as opções do antigo Objetivos: Estatísticas e projeções, Core Rank e Calculadoras).
 Os grupos do menu começam recolhidos no computador e no telemóvel; clicar
 no nome do separador mostra ou esconde as opções desse grupo.
 Na nova área, os Documentos são organizados em pastas. Os PDFs Be a Leader

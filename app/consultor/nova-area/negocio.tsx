@@ -119,8 +119,8 @@ export function NegocioNovaArea({email}: {email: string}) {
   const anosGrafico = [anoMapa - 2, anoMapa - 1, anoMapa].filter(a => anos.includes(a));
   const rotulo = (k: MetricaNegocio) => k === "comissoes" && dados?.versao !== 2 ? "Comissões (por atualizar)" : ROTULOS_NEGOCIO[k];
 
-  return <section className={estilos.raiz} aria-label="O meu negócio">
-    <div className={gerais.intro}><span className={gerais.etiqueta}>O MEU NEGÓCIO</span><h1>Mapas e Projeções<span>.</span></h1><p>A evolução do teu negócio, com os números recolhidos da tua conta MyOffice.</p></div>
+  return <section className={estilos.raiz} aria-label="Estatísticas e projeções">
+    <div className={gerais.intro}><span className={gerais.etiqueta}>ESTATÍSTICAS E PROJEÇÕES</span><h1>Mapas e Projeções<span>.</span></h1><p>A evolução do teu negócio, com os números recolhidos da tua conta MyOffice.</p></div>
     <details className={estilos.instrucoes} open={!carregando && !dados ? true : undefined}>
       <summary>Atualizar os dados pelo MyOffice</summary>
       <div className={estilos.instrucoesCorpo}>
