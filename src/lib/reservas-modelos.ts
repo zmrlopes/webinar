@@ -91,7 +91,7 @@ export function comporModeloReserva(dados: DadosReserva, formato: FormatoReserva
 
 export function legendaMaterialReserva(m: MaterialReserva): string {
   const d=m.dados;
-  const opcoes=d.hoteis.flatMap(h=>{const preco=precoPessoaReserva(d,h);return [h.nome,h.regime,preco===null?"":`Desde ${new Intl.NumberFormat("pt-PT",{maximumFractionDigits:2}).format(preco)} € por pessoa`];});
+  const opcoes=d.hoteis.flatMap(h=>{const preco=precoPessoaReserva(d,h);return [h.nome,h.regime,preco===null?"":`Desde ${new Intl.NumberFormat("pt-PT",{maximumFractionDigits:0}).format(preco)} € por pessoa`];});
   const creditos=m.baseFixa?[...new Set(m.elementos.filter(e=>e.credito).map(e=>`Fotografia: ${e.credito}${e.origem?` · ${e.origem}`:""}`))]:[];
   return [d.destino,d.frase,[d.ida,d.regresso].filter(Boolean).map(v=>v.split("-").reverse().join("/")).join(" — "),...opcoes,d.partida?`Partida: ${d.partida}`:"",d.bagagem,d.transfer,d.condicoes,"Pede o teu orçamento personalizado.",...creditos].filter(Boolean).join("\n");
 }

@@ -32,7 +32,10 @@ async function main() {
     assert.equal((await POST(new Request("http://localhost/api",{method:"POST",body:"{"}))).status,400);
     assert.equal((await POST(new Request("http://localhost/api",{method:"POST",body:"x".repeat(1_350_001)}))).status,413);
     const dados = {...dadosReservaVazios(),destino:"Gran Canaria",partida:"Lisboa",ida:"2026-11-17",regresso:"2026-11-22",viajantes:3,condicoes:"",hoteis:[{...hotelVazio(),nome:"Lopesan Baobab Resort",regime:"Pensão Completa",total:4405}]};
-    assert.equal(textosPublicacaoReserva(dados).preco,"1468,33 € / PESSOA");
+    assert.equal(textosPublicacaoReserva(dados).preco,"1468 € / PESSOA");
+    const comCentimos = {...dados,hoteis:[{...dados.hoteis[0]!,precoPessoa:1468.75}]};
+    assert.equal(textosPublicacaoReserva(comCentimos).preco,"1469 € / PESSOA");
+    assert.equal(dadosPublicacaoReserva(comCentimos).hoteis[0]!.precoPessoa,1468.75,"O arredondamento visual preserva o orçamento confirmado");
     assert.equal(textosPublicacaoReserva(dados).basePreco,"Preço médio por pessoa para 3 viajantes");
     assert.throws(()=>dadosPublicacaoReserva({...dados,viajantes:null}));
     assert.throws(()=>dadosPublicacaoReserva({...dados,ida:""}));
@@ -75,7 +78,7 @@ async function main() {
     assert.equal(textoArte(promptPublicacaoReserva(ref,{...dados,frase:"Uma pausa à beira-mar"},"story","",false)).tituloPromocional,"Uma pausa à beira-mar");
     assert.equal(textoArte(promptPublicacaoReserva(ref,{...dados,frase:"   "},"story","",true)).tituloPromocional,"");
     assert(prompt.includes("Do not calculate a duration from the dates"));
-    assert(prompt.includes("1468,33 € / PESSOA"));assert(prompt.includes("Pensão Completa"));assert(prompt.includes("17/11/2026"));
+    assert(prompt.includes("1468 € / PESSOA"));assert(prompt.includes("Pensão Completa"));assert(prompt.includes("17/11/2026"));
     assert(!prompt.includes("input_file"));assert(prompt.includes("first image is the original design reference"));
     const bytes=Buffer.from(r.imagem!.split(",")[1]!,"base64"),meta=await sharp(bytes).metadata();
     assert.equal(meta.width,1080);assert.equal(meta.height,1920);

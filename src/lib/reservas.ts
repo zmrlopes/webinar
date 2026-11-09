@@ -173,7 +173,7 @@ export function textoElementoReserva(e: ElementoReserva, dados: DadosReserva, ex
   const preco = h ? precoPessoaReserva(dados, h) : null;
   const formatarData = (d: string) => d.split("-").reverse().join("/");
   const datas = [dados.ida, dados.regresso].filter(Boolean).map(formatarData).join(" — ");
-  const euros = (n: number) => `${new Intl.NumberFormat("pt-PT", {maximumFractionDigits: 2}).format(n)} €`;
+  const euros = (n: number) => `${new Intl.NumberFormat("pt-PT", {maximumFractionDigits: 0}).format(n)} €`;
   const noites = dados.ida && dados.regresso ? Math.round((Date.parse(dados.regresso) - Date.parse(dados.ida)) / 86_400_000) : null;
   const valores: Record<CampoReserva, string> = {livre: e.texto, destino: dados.destino, frase: dados.frase, partida: dados.partida, datas, ida: formatarData(dados.ida), regresso: formatarData(dados.regresso), noites: noites === null ? "" : `${noites} noites`, viajantes: dados.viajantes === null ? "" : `${dados.viajantes} viajantes`, voo: dados.voo, preco: preco === null ? "" : euros(preco), total: h?.total == null ? "" : euros(h.total), hotel: h?.nome ?? "", quarto: h?.quarto ?? "", regime: h?.regime ?? "", bagagem: dados.bagagem, transfer: dados.transfer, condicoes: dados.condicoes};
   // Os exemplos da referência servem apenas para rever a composição. Nunca
