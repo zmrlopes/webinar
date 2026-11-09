@@ -147,7 +147,7 @@ async function main(){
       const pedido=JSON.parse(String(init?.body)),propriedades=pedido.text.format.schema.properties;
       if(propriedades.textos){
         leiturasTexto++;assert.equal(propriedades.formas,undefined);assert.equal(propriedades.graficos,undefined);assert.equal(propriedades.sombreados,undefined);
-        return Response.json({output:[{content:[{type:"output_text",text:JSON.stringify({textos:[{...textos[0],...ref.marca,nome:"Marca protegida",texto:"iCliGo travel partners"},...textos],decoracoes:[]})}]}]});
+        return Response.json({output:[{content:[{type:"output_text",text:JSON.stringify({textos:[{...textos[0],...ref.marca,nome:"Marca protegida",texto:"iCliGo travel partners"},{...textos[0],nome:"Ícone sem letras",texto:"",x:90,y:76,w:14,h:2},{...textos[0],texto:" \n ",w:0,h:0},...textos],decoracoes:[]})}]}]});
       }
       leiturasCamadas++;assert.equal(propriedades.textos,undefined);
       if(interromper)return Response.json({status:"incomplete",incomplete_details:{reason:"max_output_tokens"}});
@@ -156,6 +156,8 @@ async function main(){
     const preparados=await prepararTextosPublicacao(email,nova.id);
     assert(preparados.textos.length>0);assert.equal(preparados.camadasPreparadas,undefined);
     assert(preparados.textos.every(t=>!t.texto.includes("iCliGo")),"A transcrição da marca é excluída sem bloquear o editor");
+    assert(preparados.textos.every(t=>t.texto.trim()),"Blocos vazios não impedem a preparação nem viram textos editáveis");
+    assert(preparados.textos.some(t=>t.w>10),"A caixa vazia fora da imagem não converte percentagens em píxeis");
     await assert.rejects(()=>prepararCamadasEditorPublicacao(email,nova.id),/complexa/);
     assert.deepEqual(await prepararTextosPublicacao(email,nova.id),JSON.parse(JSON.stringify(preparados)));
     await assert.rejects(()=>guardarEdicaoPublicacao(email,{id:nova.id,ajustes:preparados.ajustes}),/Prepara o editor/);
