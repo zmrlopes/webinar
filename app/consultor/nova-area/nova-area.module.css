@@ -40,6 +40,8 @@
 .tituloMenu svg { flex: none; }
 .grupoMenu[open] > .tituloMenu svg { transform: rotate(180deg); }
 .itensMenu { display: grid; gap: 6px; margin: 10px 0 4px 6px; padding-left: 10px; border-left: 2px solid #dfe1cd; }
+.itensMenu > .grupoMenu + .grupoMenu { margin-top: 0; }
+.itensMenu .tituloMenu { min-height: 42px; padding: 9px 13px; font-size: 13px; }
 .navAtivo, .navItem { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 10px; border: none; border-radius: 12px; padding: 13px 15px; text-decoration: none; font-size: 14px; font-weight: 650; text-align: left; line-height: 1.5; }
 .navAtivo { background: #4b5320; color: #fff; }
 .navItem { background: #eeeee5; color: #4b5320; }

@@ -110,8 +110,10 @@ export default function NovaAreaConsultor() {
 
   function voltarAoMenu() {
     const ativo = menu.current?.querySelector<HTMLButtonElement>("button[aria-current='page']");
-    const grupo = ativo?.closest("details");
-    const destino = grupo && !grupo.open ? grupo.querySelector<HTMLElement>("summary") : ativo;
+    // Com grupos dentro de grupos, foca o título do grupo fechado mais exterior.
+    let grupo = ativo?.closest("details") ?? null, fechado: HTMLDetailsElement | null = null;
+    while (grupo) { if (!grupo.open) fechado = grupo; grupo = grupo.parentElement?.closest("details") ?? null; }
+    const destino = fechado ? fechado.querySelector<HTMLElement>("summary") : ativo;
     destino?.focus({ preventScroll: true });
     menu.current?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
   }
@@ -276,12 +278,19 @@ export default function NovaAreaConsultor() {
               <div className={estilos.grupoMenu}>
                 <button type="button" className={estilos.navBlackFriday} onClick={() => abrirSeccao("blackfriday")} aria-current={seccao === "blackfriday" ? "page" : undefined} aria-controls="conteudo-nova-area">BLACKFRIDAY <span aria-hidden="true">✦</span></button>
               </div>
-              <GrupoMenu titulo="A minha organização" ativo={seccao === "assistente" || seccao === "leads" || seccao === "proximo-webinar" || seccao === "testemunhos" || seccao === "mentor-checklist"}>
-                <button type="button" className={seccao === "mentor-checklist" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("mentor-checklist")} aria-current={seccao === "mentor-checklist" ? "page" : undefined} aria-controls="conteudo-nova-area">Tenho um novo TP, e agora?</button>
-                <button type="button" className={seccao === "assistente" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("assistente")} aria-current={seccao === "assistente" ? "page" : undefined} aria-controls="conteudo-nova-area">Assistente da equipa <span>IA</span></button>
-                <button type="button" className={seccao === "leads" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("leads")} aria-current={seccao === "leads" ? "page" : undefined} aria-controls="conteudo-nova-area">Leads</button>
-                <button type="button" className={seccao === "proximo-webinar" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("proximo-webinar")} aria-current={seccao === "proximo-webinar" ? "page" : undefined} aria-controls="conteudo-nova-area">Próximo webinar</button>
-                <button type="button" className={seccao === "testemunhos" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("testemunhos")} aria-current={seccao === "testemunhos" ? "page" : undefined} aria-controls="conteudo-nova-area">Testemunhos</button>
+              <GrupoMenu titulo="O meu negócio" ativo={seccao === "assistente" || seccao === "leads" || seccao === "proximo-webinar" || seccao === "testemunhos" || seccao === "mentor-checklist" || seccao === "core-rank" || seccao === "calculadoras" || seccao === "negocio"}>
+                <GrupoMenu titulo="A minha organização" ativo={seccao === "assistente" || seccao === "leads" || seccao === "proximo-webinar" || seccao === "testemunhos" || seccao === "mentor-checklist"}>
+                  <button type="button" className={seccao === "mentor-checklist" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("mentor-checklist")} aria-current={seccao === "mentor-checklist" ? "page" : undefined} aria-controls="conteudo-nova-area">Tenho um novo TP, e agora?</button>
+                  <button type="button" className={seccao === "assistente" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("assistente")} aria-current={seccao === "assistente" ? "page" : undefined} aria-controls="conteudo-nova-area">Assistente da equipa <span>IA</span></button>
+                  <button type="button" className={seccao === "leads" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("leads")} aria-current={seccao === "leads" ? "page" : undefined} aria-controls="conteudo-nova-area">Leads</button>
+                  <button type="button" className={seccao === "proximo-webinar" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("proximo-webinar")} aria-current={seccao === "proximo-webinar" ? "page" : undefined} aria-controls="conteudo-nova-area">Próximo webinar</button>
+                  <button type="button" className={seccao === "testemunhos" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("testemunhos")} aria-current={seccao === "testemunhos" ? "page" : undefined} aria-controls="conteudo-nova-area">Testemunhos</button>
+                </GrupoMenu>
+                <GrupoMenu titulo="Gestão do negócio" ativo={seccao === "core-rank" || seccao === "calculadoras" || seccao === "negocio"}>
+                  <button type="button" className={seccao === "negocio" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("negocio")} aria-current={seccao === "negocio" ? "page" : undefined} aria-controls="conteudo-nova-area">O meu negócio</button>
+                  <button type="button" className={seccao === "core-rank" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("core-rank")} aria-current={seccao === "core-rank" ? "page" : undefined} aria-controls="conteudo-nova-area">Core Rank</button>
+                  <button type="button" className={seccao === "calculadoras" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calculadoras")} aria-current={seccao === "calculadoras" ? "page" : undefined} aria-controls="conteudo-nova-area">Calculadoras</button>
+                </GrupoMenu>
               </GrupoMenu>
               <GrupoMenu titulo="Reservas" ativo={seccao === "operadores" || seccao === "propostas" || seccao === "travel-planner" || seccao === "reservas" || seccao === "calendario-criativo"}>
                 <button type="button" className={seccao === "operadores" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("operadores")} aria-current={seccao === "operadores" ? "page" : undefined} aria-controls="conteudo-nova-area">Onde posso vender?</button>
@@ -289,11 +298,6 @@ export default function NovaAreaConsultor() {
                 <button type="button" className={seccao === "travel-planner" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("travel-planner")} aria-current={seccao === "travel-planner" ? "page" : undefined} aria-controls="conteudo-nova-area">Travel planner</button>
                 <button type="button" className={seccao === "reservas" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("reservas")} aria-current={seccao === "reservas" ? "page" : undefined} aria-controls="conteudo-nova-area">Criar templates</button>
                 <button type="button" className={seccao === "calendario-criativo" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calendario-criativo")} aria-current={seccao === "calendario-criativo" ? "page" : undefined} aria-controls="conteudo-nova-area">Calendário criativo</button>
-              </GrupoMenu>
-              <GrupoMenu titulo="Objetivos" ativo={seccao === "core-rank" || seccao === "calculadoras" || seccao === "negocio"}>
-                <button type="button" className={seccao === "negocio" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("negocio")} aria-current={seccao === "negocio" ? "page" : undefined} aria-controls="conteudo-nova-area">O meu negócio</button>
-                <button type="button" className={seccao === "core-rank" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("core-rank")} aria-current={seccao === "core-rank" ? "page" : undefined} aria-controls="conteudo-nova-area">Core Rank</button>
-                <button type="button" className={seccao === "calculadoras" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calculadoras")} aria-current={seccao === "calculadoras" ? "page" : undefined} aria-controls="conteudo-nova-area">Calculadoras</button>
               </GrupoMenu>
               <GrupoMenu titulo="Formação e eventos" ativo={seccao === "proximas-formacoes" || seccao === "formacoes-gravadas" || seccao === "documentos" || seccao === "eventos-presenciais"}>
                 <button type="button" className={seccao === "proximas-formacoes" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("proximas-formacoes")} aria-current={seccao === "proximas-formacoes" ? "page" : undefined} aria-controls="conteudo-nova-area">Próximas formações</button>
