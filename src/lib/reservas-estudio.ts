@@ -10,7 +10,34 @@ export interface ElementoEstudio {
   figura:'retangulo'|'elipse'|'poligono';raio:number;pontos:{x:number;y:number}[];
   recurso:string;recorte:string;ajuste:'cover'|'contain';sombra?:SombreadoPublicacao;
 }
-export interface ProjetoEstudio {versao:1;formato:FormatoReserva;fundo:string;corFundo:string;elementos:ElementoEstudio[];recursos:Record<string,string>}
+interface PreservacaoEstudio {
+  imagem:string;formato:FormatoReserva;fundo:string;corFundo:string;
+  elementos:ElementoEstudio[];recursos:Record<string,string>;
+}
+export interface ProjetoEstudio {versao:1;formato:FormatoReserva;fundo:string;corFundo:string;elementos:ElementoEstudio[];recursos:Record<string,string>;preservacao?:PreservacaoEstudio}
+
+// As assinaturas servem apenas para detetar alterações visuais nos recursos.
+function assinaturaRecurso(src:string){let hash=2166136261;for(let i=0;i<src.length;i++)hash=Math.imul(hash^src.charCodeAt(i),16777619);return `${src.length}:${hash>>>0}`;}
+export function preservarPublicacaoEstudio(p:ProjetoEstudio,imagem:string):ProjetoEstudio {
+  return {...p,preservacao:{imagem,formato:p.formato,fundo:p.fundo,corFundo:p.corFundo,elementos:structuredClone(p.elementos),recursos:Object.fromEntries(Object.entries(p.recursos).map(([id,src])=>[id,assinaturaRecurso(src)]))}};
+}
+function assinaturaElemento(e:ElementoEstudio){
+  // Selecionar, renomear e bloquear não redesenham a publicação.
+  return JSON.stringify([e.tipo,e.x,e.y,e.w,e.h,e.rotacao,e.opacidade,e.oculto,e.texto,e.fonte,e.tamanho,e.cor,e.negrito,e.italico,e.sombraTexto===true,e.alinhar,e.figura,e.raio,e.pontos.map(p=>[p.x,p.y]),e.recurso,e.recorte,e.ajuste,e.sombra?[e.sombra.cor,e.sombra.direcao,e.sombra.paragens.map(p=>[p.posicao,p.opacidade])]:null]);
+}
+export function zonasAlteradasEstudio(p:ProjetoEstudio):ElementoEstudio[]|null {
+  const base=p.preservacao;if(!base||base.formato!==p.formato||base.fundo!==p.fundo||base.corFundo!==p.corFundo||p.fundo&&base.recursos[p.fundo]!==assinaturaRecurso(p.recursos[p.fundo]??''))return null;
+  const anteriores=new Map(base.elementos.map(e=>[e.id,e])),atuais=new Map(p.elementos.map(e=>[e.id,e])),alterados=new Set<string>();
+  for(const [id,a] of anteriores){const b=atuais.get(id);if(!b||assinaturaElemento(a)!==assinaturaElemento(b)||[b.recurso,b.recorte].some(k=>k&&base.recursos[k]!==assinaturaRecurso(p.recursos[k]??'')))alterados.add(id);}
+  for(const e of p.elementos)if(!anteriores.has(e.id))alterados.add(e.id);
+  // Só as inversões de ordem contam; acrescentar um elemento não altera os restantes.
+  const posicoes=new Map(p.elementos.map((e,i)=>[e.id,i]));
+  for(let i=0;i<base.elementos.length;i++)for(let j=i+1;j<base.elementos.length;j++){
+    const a=base.elementos[i]!,b=base.elementos[j]!,ai=posicoes.get(a.id),bi=posicoes.get(b.id);
+    if(ai!==undefined&&bi!==undefined&&ai>bi){alterados.add(a.id);alterados.add(b.id);}
+  }
+  return [...base.elementos,...p.elementos].filter(e=>alterados.has(e.id)&&!e.oculto);
+}
 export function elementoEstudio(tipo:ElementoEstudio['tipo'],id:string):ElementoEstudio {
   return {id,tipo,nome:tipo==='texto'?'Novo texto':tipo==='imagem'?'Imagem':'Forma',x:25,y:35,w:50,h:15,rotacao:0,opacidade:1,bloqueado:false,oculto:false,texto:'Escreve aqui',fonte:'poppins',tamanho:48,cor:'#4b5320',negrito:false,italico:false,alinhar:'left',figura:'retangulo',raio:0,pontos:[],recurso:'',recorte:'',ajuste:'contain'};
 }
@@ -55,7 +82,7 @@ export function validarProjetoEstudio(valor:unknown,original:ProjetoEstudio):Pro
   });
   if(marcas!==1)throw new ErroReserva('Mantém uma única marca iCliGo na publicação.');
   const usados=new Set([v.fundo,'marca',...elementos.flatMap(e=>[e.recurso,e.recorte])]);
-  const projeto:ProjetoEstudio={versao:1,formato:v.formato,fundo:v.fundo,corFundo:v.corFundo,elementos,recursos:Object.fromEntries(Object.entries(recursos).filter(([id])=>usados.has(id)))};
+  const projeto:ProjetoEstudio={versao:1,formato:v.formato,fundo:v.fundo,corFundo:v.corFundo,elementos,recursos:Object.fromEntries(Object.entries(recursos).filter(([id])=>usados.has(id))),...(original.preservacao?{preservacao:original.preservacao}:{})};
   if(JSON.stringify(projeto).length>3_900_000)throw new ErroReserva('O projeto tem demasiadas imagens. Remove as que não precisas.');
   return projeto;
 }
@@ -64,6 +91,24 @@ function desenharImagem(ctx:CanvasRenderingContext2D,img:CanvasImageSource,w:num
   ctx.save();ctx.beginPath();ctx.rect(0,0,w,h);ctx.clip();ctx.drawImage(img,(w-iw*s)/2,(h-ih*s)/2,iw*s,ih*s);ctx.restore();
 }
 export function desenharEstudio(ctx:CanvasRenderingContext2D,p:ProjetoEstudio,imagens:Map<string,CanvasImageSource>){
+  const zonas=zonasAlteradasEstudio(p),{largura,altura}=dimensoesReserva(p.formato);
+  if(zonas!==null){
+    const original=imagens.get('@original');if(!original)throw new ErroReserva('Não foi possível carregar a publicação original. Volta a abrir o editor.');
+    ctx.clearRect(0,0,largura,altura);ctx.drawImage(original,0,0,largura,altura);
+    if(!zonas.length)return;
+    ctx.save();ctx.beginPath();
+    for(const e of zonas){
+      const rad=e.rotacao*Math.PI/180,w=e.w/100*largura,h=e.h/100*altura;
+      const rw=Math.abs(w*Math.cos(rad))+Math.abs(h*Math.sin(rad)),rh=Math.abs(w*Math.sin(rad))+Math.abs(h*Math.cos(rad));
+      const margem=e.tipo==='texto'&&e.sombraTexto?Math.ceil(Math.max(2,e.tamanho*.08)*3+2):2;
+      const x=(e.x+e.w/2)/100*largura-rw/2-margem,y=(e.y+e.h/2)/100*altura-rh/2-margem;
+      ctx.rect(Math.floor(x),Math.floor(y),Math.ceil(rw+2*margem+1),Math.ceil(rh+2*margem+1));
+    }
+    ctx.clip();desenharCamadasEstudio(ctx,p,imagens);ctx.restore();return;
+  }
+  desenharCamadasEstudio(ctx,p,imagens);
+}
+function desenharCamadasEstudio(ctx:CanvasRenderingContext2D,p:ProjetoEstudio,imagens:Map<string,CanvasImageSource>){
   const {largura:W,altura:H}=dimensoesReserva(p.formato);ctx.clearRect(0,0,W,H);ctx.fillStyle=p.corFundo;ctx.fillRect(0,0,W,H);
   const fundo=imagens.get(p.fundo);if(fundo)desenharImagem(ctx,fundo,W,H,'cover');
   for(const e of p.elementos){if(e.oculto)continue;const w=e.w/100*W,h=e.h/100*H;ctx.save();ctx.translate((e.x+e.w/2)/100*W,(e.y+e.h/2)/100*H);ctx.rotate(e.rotacao*Math.PI/180);ctx.translate(-w/2,-h/2);ctx.globalAlpha=e.opacidade;

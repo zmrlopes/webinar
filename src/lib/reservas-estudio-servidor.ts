@@ -8,7 +8,7 @@ import {limitarIA} from './reservas-servidor';
 import {abrirImagemReserva,logotipoBrancoReserva} from './reservas-imagem-servidor';
 import {prepararEditorPublicacao} from './reservas-imagem-editor-servidor';
 import {FONTES_EDITOR_PUBLICACAO} from './reservas-imagem-editor';
-import {projetoDoEditor,validarProjetoEstudio,desenharEstudio,type ProjetoEstudio} from './reservas-estudio';
+import {projetoDoEditor,validarProjetoEstudio,desenharEstudio,preservarPublicacaoEstudio,zonasAlteradasEstudio,type ProjetoEstudio} from './reservas-estudio';
 import type {PublicacaoImagemReserva} from './reservas-imagem';
 
 const chave=(email:string,id:string)=>`reservas:estudio:v1:${email}:${id}`;
@@ -16,9 +16,10 @@ const bytes=(src:string)=>Buffer.from(src.split(',')[1]!,'base64');
 const url=(b:Buffer)=>`data:image/webp;base64,${b.toString('base64')}`;
 async function ler(email:string,id:string){const r=await db().query<{valor:ProjetoEstudio}>('select valor from dashboard_config where chave = $1',[chave(email,id)]);return r.rows[0]?.valor;}
 async function publicacao(email:string,id:unknown){const r=await abrirImagemReserva(email,id);if(r.tipo!=='publicacao'||r.estado!=='pronta'||!r.imagem)throw new ErroReserva('Abre uma publicação concluída.');return r;}
-export async function abrirEstudio(email:string,id:unknown){const r=await publicacao(email,id);return {projeto:await ler(email,r.id)??null};}
+function preservar(p:ProjetoEstudio,r:PublicacaoImagemReserva){return p.preservacao?p:preservarPublicacaoEstudio(p,r.imagem!);}
+export async function abrirEstudio(email:string,id:unknown){const r=await publicacao(email,id),p=await ler(email,r.id);return {projeto:p?preservar(p,r):null};}
 export async function prepararEstudio(email:string,id:unknown):Promise<ProjetoEstudio>{
-  const r=await publicacao(email,id),existente=await ler(email,r.id);if(existente)return existente;
+  const r=await publicacao(email,id),existente=await ler(email,r.id);if(existente)return preservar(existente,r);
   const editor=await prepararEditorPublicacao(email,r.id);
   if(!editor.camadasPreparadas||editor.camadasVersao!==2||editor.sombreados===undefined||!editor.logoBranco)throw new ErroReserva('Conclui a preparação dos textos e das camadas primeiro.');
   // Um fundo já escolhido pelo consultor não contém as camadas da publicação.
@@ -37,14 +38,14 @@ export async function prepararEstudio(email:string,id:unknown):Promise<ProjetoEs
   fundo=url(await img.resize(largura,altura).webp({quality:88}).toBuffer());
   }
   const projeto=projetoDoEditor(editor,r.formato,fundo);
-  const validado=validarProjetoEstudio(projeto,projeto);
+  const validado=preservarPublicacaoEstudio(validarProjetoEstudio(projeto,projeto),r.imagem!);
   // Uma preparação concorrente nunca substitui um projeto já guardado.
   await db().query('insert into dashboard_config (chave,valor) values ($1,$2::jsonb) on conflict (chave) do nothing',[chave(email,r.id),JSON.stringify(validado)]);
-  return (await ler(email,r.id))!;
+  return preservar((await ler(email,r.id))!,r);
 }
 export async function guardarEstudio(email:string,id:unknown,valor:unknown):Promise<PublicacaoImagemReserva>{
   const r=await publicacao(email,id),original=await ler(email,r.id);if(!original)throw new ErroReserva('Prepara o editor antes de guardar.');
-  const projeto=validarProjetoEstudio(valor,original);
+  let projeto=validarProjetoEstudio(valor,preservar(original,r));
   for(const [id,src] of Object.entries(projeto.recursos)){
     if(id==='marca')continue;if(original.recursos[id]===src)continue;
     try{const img=sharp(bytes(src),{limitInputPixels:25_000_000,animated:false}),meta=await img.metadata();if(!['png','jpeg','webp'].includes(meta.format??'')||(meta.pages??1)>1)throw new Error();projeto.recursos[id]=url(await img.rotate().resize({width:1500,height:1800,fit:'inside',withoutEnlargement:true}).webp({quality:90}).toBuffer());}catch{throw new ErroReserva('Uma das imagens não é válida. Usa JPG, PNG ou WebP.');}
@@ -53,9 +54,12 @@ export async function guardarEstudio(email:string,id:unknown,valor:unknown):Prom
   validarProjetoEstudio(projeto,projeto);
   for(const f of FONTES_EDITOR_PUBLICACAO)for(const file of f.ficheiros)GlobalFonts.registerFromPath(path.join(process.cwd(),'public/fonts',file.url),f.familia);
   const imagens=new Map<string,CanvasImageSource>();await Promise.all(Object.entries(projeto.recursos).map(async([id,src])=>imagens.set(id,await loadImage(bytes(src)) as unknown as CanvasImageSource)));
+  if(projeto.preservacao)imagens.set('@original',await loadImage(bytes(projeto.preservacao.imagem)) as unknown as CanvasImageSource);
   const {largura,altura}=dimensoesReserva(projeto.formato),canvas=createCanvas(largura,altura);
   desenharEstudio(canvas.getContext('2d') as unknown as CanvasRenderingContext2D,projeto,imagens);
-  const png=canvas.toBuffer('image/png'),imagem=url(await sharp(png).webp({quality:94}).toBuffer()),novoId=randomUUID();
+  const png=canvas.toBuffer('image/png'),imagem=zonasAlteradasEstudio(projeto)?.length===0?projeto.preservacao!.imagem:url(await sharp(png).webp({quality:94}).toBuffer()),novoId=randomUUID();
+  projeto=preservarPublicacaoEstudio(projeto,imagem);
+  validarProjetoEstudio(projeto,projeto);
   const novo:PublicacaoImagemReserva={...r,id:novoId,formato:projeto.formato,anteriorId:r.id,criadaEm:new Date().toISOString(),notas:'Editado no estúdio de templates',imagem,miniatura:url(await sharp(png).resize({width:200,height:300,fit:'inside'}).webp({quality:70}).toBuffer()),verificacao:undefined,avisos:['Confere os textos, preços e datas antes de publicar.']};
   // Projeto e publicação entram juntos; reabrir usa as mesmas camadas, sem IA.
   await db().query('insert into dashboard_config (chave,valor) values ($1,$2::jsonb),($3,$4::jsonb)',[chave(email,novoId),JSON.stringify(projeto),`reservas:imagem:v1:${email}:${novoId}`,JSON.stringify(novo)]);

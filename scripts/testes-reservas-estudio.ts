@@ -7,7 +7,7 @@ import {EMAIL_PAINEL_DEMONSTRACAO} from '../src/lib/demo';
 import {dadosReservaVazios} from '../src/lib/reservas';
 import {ajustesIniciaisPublicacao, type EditorPublicacaoReserva} from '../src/lib/reservas-imagem-editor';
 import {abrirImagemReserva, apagarImagemReserva, logotipoBrancoReserva, VERSAO_LOGOTIPO_BRANCO_RESERVA} from '../src/lib/reservas-imagem-servidor';
-import {elementoEstudio, projetoDoEditor, validarProjetoEstudio, desenharEstudio, type ProjetoEstudio} from '../src/lib/reservas-estudio';
+import {elementoEstudio, projetoDoEditor, validarProjetoEstudio, desenharEstudio, preservarPublicacaoEstudio, zonasAlteradasEstudio, type ProjetoEstudio} from '../src/lib/reservas-estudio';
 import {abrirEstudio, prepararEstudio, guardarEstudio} from '../src/lib/reservas-estudio-servidor';
 import type {PublicacaoImagemReserva} from '../src/lib/reservas-imagem';
 import {POST} from '../app/api/consultor/nova-area/reservas/estudio/route';
@@ -102,7 +102,51 @@ async function main() {
     assert.deepEqual([...ctx.getImageData(300,550,1,1).data],[255,255,255,255]);
     const imgs=new Map<string,CanvasImageSource>();
     for(const [id,src] of Object.entries(projeto.recursos)) imgs.set(id,await loadImage(Buffer.from(src.split(',')[1]!,'base64')) as unknown as CanvasImageSource);
+    imgs.set('@original',await loadImage(base) as unknown as CanvasImageSource);
     desenharEstudio(ctx as unknown as CanvasRenderingContext2D,projeto,imgs);
+
+    // A publicação tem detalhes que a decomposição por IA não conseguiu reproduzir.
+    // Abrir, selecionar, bloquear, renomear e gravar sem alterações visuais
+    // têm de conservar TODOS os píxeis, mesmo com recortes imperfeitos.
+    const arte=createCanvas(1080,1920),ac=arte.getContext('2d');
+    ac.fillStyle='#236890';ac.fillRect(0,0,1080,1920);
+    ac.fillStyle='#e8dcb6';ac.beginPath();ac.ellipse(540,160,200,100,.3,0,Math.PI*2);ac.fill();
+    ac.font='bold 60px sans-serif';ac.fillStyle='#ff7733';ac.fillText('TEMPLATE ORIGINAL',80,560);
+    const imagemArte=`data:image/png;base64,${arte.toBuffer('image/png').toString('base64')}`;
+    const fiel=preservarPublicacaoEstudio(projeto,imagemArte),mapa=new Map(imgs);
+    mapa.set('@original',await loadImage(arte.toBuffer('image/png')) as unknown as CanvasImageSource);
+    const esperado=Buffer.from(ac.getImageData(0,0,1080,1920).data);
+    const desenhar=(p:ProjetoEstudio)=>{desenharEstudio(ctx as unknown as CanvasRenderingContext2D,p,mapa);return Buffer.from(ctx.getImageData(0,0,1080,1920).data);};
+    assert.deepEqual(desenhar(fiel),esperado,'Abrir preserva a imagem completa, não uma reconstrução das camadas');
+    assert.deepEqual(desenhar(validarProjetoEstudio(fiel,fiel)),esperado,'A validação não marca elementos inalterados como modificados');
+    const comSombra=structuredClone(fiel);
+    comSombra.elementos.push({...elementoEstudio('sombra','gradiente'),sombra:{x:0,y:0,w:100,h:100,cor:'#000000',direcao:'baixo',paragens:[{posicao:0,opacidade:0},{posicao:1,opacidade:.7}]}});
+    const baselineSombra=preservarPublicacaoEstudio(comSombra,imagemArte);
+    const reordenar=(v:unknown):unknown=>Array.isArray(v)?v.map(reordenar):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).sort(([a],[b])=>a.localeCompare(b)).map(([k,n])=>[k,reordenar(n)])):v;
+    const jsonb=reordenar(baselineSombra) as ProjetoEstudio;
+    assert.deepEqual(zonasAlteradasEstudio(validarProjetoEstudio(jsonb,jsonb)),[],'A ordem das propriedades devolvida pelo JSONB não provoca alterações visuais');
+    const soNome=structuredClone(fiel);soNome.elementos[0]!.nome='Outro nome';soNome.elementos[0]!.bloqueado=true;
+    assert.deepEqual(zonasAlteradasEstudio(soNome),[]);assert.deepEqual(desenhar(soNome),esperado);
+    const falsificado=structuredClone(fiel);falsificado.preservacao!.imagem=url(base);
+    assert.equal(validarProjetoEstudio(falsificado,fiel).preservacao!.imagem,imagemArte,'O cliente não pode substituir a imagem original protegida');
+    const correcoes=structuredClone(fiel),textoCorrigido=correcoes.elementos.find(e=>e.tipo==='texto')!;
+    textoCorrigido.texto='Texto novo';textoCorrigido.recorte='';
+    const pixelsEditados=desenhar(correcoes);
+    assert.notDeepEqual(pixelsEditados,esperado);
+    assert.deepEqual(pixelsEditados.subarray(0,1080*300*4),esperado.subarray(0,1080*300*4),'Editar o texto preserva as etiquetas e a fotografia fora da sua zona');
+    assert.deepEqual(desenhar(fiel),esperado,'Desfazer recupera a imagem exata');
+    const outraFoto=structuredClone(fiel);outraFoto.fundo='';
+    assert.equal(zonasAlteradasEstudio(outraFoto),null,'Só a troca explícita do fundo ou formato reconstrói toda a composição');
+
+    const semEdicao=await guardarEstudio(email,r.id,projeto);
+    assert.equal(semEdicao.imagem,r.imagem,'Guardar sem edições visuais não recomprime nem redesenha o original');
+    assert.equal((await abrirEstudio(email,semEdicao.id)).projeto!.preservacao!.imagem,r.imagem);
+    const legado=structuredClone(projeto);delete legado.preservacao;
+    registos.set(`reservas:estudio:v1:${email}:${r.id}`,legado);
+    const migrado=(await abrirEstudio(email,r.id)).projeto!;
+    assert.equal(migrado.preservacao!.imagem,r.imagem,'Os projetos preparados antes da correção recuperam a publicação guardada');
+    assert.deepEqual(migrado.elementos,legado.elementos,'A recuperação preserva as camadas existentes');
+    assert.deepEqual(await abrirImagemReserva(email,r.id),r);
 
     const editado=structuredClone(projeto);editado.formato='feed';
     editado.elementos.find(e=>e.tipo==='texto')!.texto='Texto corrigido';
@@ -139,7 +183,7 @@ async function main() {
     await apagarImagemReserva(email,gravada.id);
     assert(!registos.has(`reservas:estudio:v1:${email}:${gravada.id}`));
     assert(registos.has(`reservas:estudio:v1:${email}:${r.id}`),'Apagar uma versão conserva o original');
-    console.log('OK: estúdio — preparação, migração, camadas, marca, validação, versões, isolamento e recuperação de falhas.');
+    console.log('OK: estúdio — fidelidade visual, edição localizada, migração, camadas, marca, validação, versões, isolamento e recuperação de falhas.');
   } finally {
     pool.query=query;globalThis.fetch=fetchOriginal;
     if(apiKey===undefined) delete process.env.RESERVAS_IMAGE_API_KEY;else process.env.RESERVAS_IMAGE_API_KEY=apiKey;
