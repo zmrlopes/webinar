@@ -2,6 +2,7 @@ import {ErroReserva, imagemReserva, dimensoesReserva, type FormatoReserva} from 
 import {FONTES_EDITOR_PUBLICACAO, conteudoTextoPublicacao, type EditorPublicacaoReserva} from './reservas-imagem-editor';
 import {fonteReserva, pesoFonteReserva, type FonteReserva} from './reservas-fontes';
 import {desenharSombreadosPublicacao, validarSombreadosPublicacao, type SombreadoPublicacao} from './reservas-imagem-sombras';
+import {limparElementosEstudio,luzFundoEstudio,mascaraElementoEstudio} from './reservas-estudio-restauro';
 
 export interface ElementoEstudio {
   id:string; tipo:'texto'|'forma'|'imagem'|'marca'|'sombra'; nome:string;
@@ -90,12 +91,66 @@ function desenharImagem(ctx:CanvasRenderingContext2D,img:CanvasImageSource,w:num
   const i=img as HTMLImageElement,iw=i.naturalWidth||i.width,ih=i.naturalHeight||i.height,s=ajuste==='cover'?Math.max(w/iw,h/ih):Math.min(w/iw,h/ih);
   ctx.save();ctx.beginPath();ctx.rect(0,0,w,h);ctx.clip();ctx.drawImage(img,(w-iw*s)/2,(h-ih*s)/2,iw*s,ih*s);ctx.restore();
 }
+type PlacaEstudio={chave:string;original:ImageData;placa:ImageData;luz:Float32Array;limpezas:Map<string,Uint8ClampedArray>;recortes:Map<string,CanvasImageSource>};
+const placasEstudio=new WeakMap<object,PlacaEstudio>();
+function telaEstudio(ctx:CanvasRenderingContext2D,w:number,h:number){
+  const tela=ctx.canvas.ownerDocument?ctx.canvas.ownerDocument.createElement('canvas'):new (ctx.canvas.constructor as {new(w:number,h:number):HTMLCanvasElement})(w,h);
+  tela.width=w;tela.height=h;tela.getContext('2d',{willReadFrequently:true});return tela;
+}
+function placaEstudio(ctx:CanvasRenderingContext2D,p:ProjetoEstudio,imagens:Map<string,CanvasImageSource>):PlacaEstudio {
+  const base=p.preservacao!,original=imagens.get('@original')!,{largura:W,altura:H}=dimensoesReserva(p.formato);
+  const chave=JSON.stringify([base.formato,base.fundo,base.corFundo,base.recursos,base.elementos.map(assinaturaElemento)]);
+  const existente=placasEstudio.get(original);if(existente?.chave===chave)return existente;
+  const tela=telaEstudio(ctx,W,H),c=tela.getContext('2d')!;c.drawImage(original,0,0,W,H);
+  const dadosOriginal=c.getImageData(0,0,W,H);
+  desenharCamadasEstudio(c,{...p,elementos:base.elementos.filter(e=>e.tipo==='forma'||e.tipo==='sombra')},imagens);
+  const fundo=c.getImageData(0,0,W,H);
+  const placa:PlacaEstudio={chave,original:dadosOriginal,placa:fundo,luz:luzFundoEstudio(dadosOriginal.data,fundo.data,W,H,base.elementos),limpezas:new Map(),recortes:new Map()};
+  placasEstudio.set(original,placa);return placa;
+}
+function editarSobreOriginal(ctx:CanvasRenderingContext2D,p:ProjetoEstudio,imagens:Map<string,CanvasImageSource>,zonas:ElementoEstudio[]):boolean {
+  if(zonas.some(e=>e.tipo!=='texto'&&e.tipo!=='marca'))return false;
+  const base=p.preservacao!,original=imagens.get('@original')!,{largura:W,altura:H}=dimensoesReserva(p.formato);
+  const ids=new Set(zonas.map(e=>e.id)),antigos=base.elementos.filter(e=>ids.has(e.id)&&!e.oculto);
+  const anteriores=base.elementos.filter(e=>p.elementos.some(n=>n.id===e.id)).map(e=>e.id).join('|');
+  const atuais=p.elementos.filter(e=>base.elementos.some(n=>n.id===e.id)).map(e=>e.id).join('|');
+  if(anteriores!==atuais)return false;
+  let renderizados=p.elementos.filter(e=>ids.has(e.id));
+  const recursos=new Map(imagens);
+  if(antigos.length){
+    const placa=placaEstudio(ctx,p,imagens);
+    const key=antigos.map(e=>e.id).sort().join('|');let dados=placa.limpezas.get(key);
+    if(!dados){dados=limparElementosEstudio(placa.original.data,placa.placa.data,placa.luz,W,H,antigos,base.elementos);if(placa.limpezas.size>=3)placa.limpezas.clear();placa.limpezas.set(key,dados);}
+    const limpa=ctx.createImageData(W,H);limpa.data.set(dados);ctx.putImageData(limpa,0,0);
+    renderizados=renderizados.map(e=>{
+      const antes=base.elementos.find(a=>a.id===e.id);
+      if(e.tipo!=='texto'||e.oculto||!antes||antes.rotacao!==0||antes.opacidade!==1||!e.recorte||['texto','fonte','tamanho','cor','negrito','italico','alinhar'].some(k=>e[k as keyof ElementoEstudio]!==antes[k as keyof ElementoEstudio]))return e;
+      let recorte=placa!.recortes.get(e.id);
+      if(!recorte){
+        const {b,mascara,cor}=mascaraElementoEstudio(placa!.original.data,placa!.placa.data,placa!.luz,W,H,antes,0);
+        const tela=telaEstudio(ctx,b.w,b.h),c=tela.getContext('2d')!,img=c.createImageData(b.w,b.h);
+        for(let i=0;i<mascara.length;i++){for(let canal=0;canal<3;canal++)img.data[i*4+canal]=cor[canal]!;img.data[i*4+3]=mascara[i]!;}
+        c.putImageData(img,0,0);recorte=tela;placa!.recortes.set(e.id,recorte);
+      }
+      const id='@recorte-'+e.id;recursos.set(id,recorte);return {...e,recorte:id};
+    });
+  }
+  // Nunca limpa a posição de destino nem as áreas de texto novo.
+  desenharElementosEstudio(ctx,{...p,elementos:renderizados},recursos);
+  return true;
+}
 export function desenharEstudio(ctx:CanvasRenderingContext2D,p:ProjetoEstudio,imagens:Map<string,CanvasImageSource>){
   const zonas=zonasAlteradasEstudio(p),{largura,altura}=dimensoesReserva(p.formato);
   if(zonas!==null){
     const original=imagens.get('@original');if(!original)throw new ErroReserva('Não foi possível carregar a publicação original. Volta a abrir o editor.');
     ctx.clearRect(0,0,largura,altura);ctx.drawImage(original,0,0,largura,altura);
     if(!zonas.length)return;
+    if(editarSobreOriginal(ctx,p,imagens,zonas))return;
+    const placa=placaEstudio(ctx,p,imagens),tela=telaEstudio(ctx,largura,altura),c=tela.getContext('2d')!;
+    desenharCamadasEstudio(c,{...p,elementos:p.elementos.filter(e=>e.tipo==='forma'||e.tipo==='sombra')},imagens);
+    const fundo=c.getImageData(0,0,largura,altura);
+    for(let i=0;i<largura*altura;i++)for(let canal=0;canal<3;canal++)fundo.data[i*4+canal]=Math.min(255,fundo.data[i*4+canal]!*placa.luz[i*3+canal]!);
+    c.putImageData(fundo,0,0);desenharElementosEstudio(c,{...p,elementos:p.elementos.filter(e=>e.tipo!=='forma'&&e.tipo!=='sombra')},imagens);
     ctx.save();ctx.beginPath();
     for(const e of zonas){
       const rad=e.rotacao*Math.PI/180,w=e.w/100*largura,h=e.h/100*altura;
@@ -104,13 +159,17 @@ export function desenharEstudio(ctx:CanvasRenderingContext2D,p:ProjetoEstudio,im
       const x=(e.x+e.w/2)/100*largura-rw/2-margem,y=(e.y+e.h/2)/100*altura-rh/2-margem;
       ctx.rect(Math.floor(x),Math.floor(y),Math.ceil(rw+2*margem+1),Math.ceil(rh+2*margem+1));
     }
-    ctx.clip();desenharCamadasEstudio(ctx,p,imagens);ctx.restore();return;
+    ctx.clip();ctx.drawImage(tela,0,0);ctx.restore();return;
   }
   desenharCamadasEstudio(ctx,p,imagens);
 }
 function desenharCamadasEstudio(ctx:CanvasRenderingContext2D,p:ProjetoEstudio,imagens:Map<string,CanvasImageSource>){
   const {largura:W,altura:H}=dimensoesReserva(p.formato);ctx.clearRect(0,0,W,H);ctx.fillStyle=p.corFundo;ctx.fillRect(0,0,W,H);
   const fundo=imagens.get(p.fundo);if(fundo)desenharImagem(ctx,fundo,W,H,'cover');
+  desenharElementosEstudio(ctx,p,imagens);
+}
+function desenharElementosEstudio(ctx:CanvasRenderingContext2D,p:ProjetoEstudio,imagens:Map<string,CanvasImageSource>){
+  const {largura:W,altura:H}=dimensoesReserva(p.formato);
   for(const e of p.elementos){if(e.oculto)continue;const w=e.w/100*W,h=e.h/100*H;ctx.save();ctx.translate((e.x+e.w/2)/100*W,(e.y+e.h/2)/100*H);ctx.rotate(e.rotacao*Math.PI/180);ctx.translate(-w/2,-h/2);ctx.globalAlpha=e.opacidade;
     if(e.tipo==='forma'){ctx.beginPath();if(e.figura==='elipse')ctx.ellipse(w/2,h/2,w/2,h/2,0,0,Math.PI*2);else if(e.figura==='poligono'){e.pontos.forEach((p,i)=>i?ctx.lineTo(p.x/100*w,p.y/100*h):ctx.moveTo(p.x/100*w,p.y/100*h));ctx.closePath();}else ctx.roundRect(0,0,w,h,e.raio/100*Math.min(w,h));ctx.fillStyle=e.cor;ctx.fill();}
     if(e.tipo==='sombra'&&e.sombra)desenharSombreadosPublicacao(ctx,[{...e.sombra,x:0,y:0,w:100,h:100,cor:e.cor}],w,h);

@@ -138,6 +138,47 @@ async function main() {
     const outraFoto=structuredClone(fiel);outraFoto.fundo='';
     assert.equal(zonasAlteradasEstudio(outraFoto),null,'Só a troca explícita do fundo ou formato reconstrói toda a composição');
 
+    // Regressão da caixa clara: a placa limpa perdeu o degradé preto e a
+    // análise antiga atribuiu laranja a letras que são brancas na publicação.
+    const foto=createCanvas(1080,1920),fc=foto.getContext('2d');fc.fillStyle='#8da9c2';fc.fillRect(0,0,1080,1920);
+    const escura=createCanvas(1080,1920),ec=escura.getContext('2d');ec.drawImage(foto,0,0);
+    const gradiente=ec.createLinearGradient(0,0,0,1920);gradiente.addColorStop(0,'#00000000');gradiente.addColorStop(1,'#000000cc');ec.fillStyle=gradiente;ec.fillRect(0,0,1080,1920);
+    const semLetras=Buffer.from(ec.getImageData(0,0,1080,1920).data);
+    ec.font='48px sans-serif';ec.fillStyle='#ffffff';ec.fillText('TEXTO ANTIGO',100,1450);
+    const pngUrl=(b:Buffer)=>`data:image/png;base64,${b.toString('base64')}`;
+    const label={...elementoEstudio('texto','label'),x:100/1080*100,y:1400/1920*100,w:450/1080*100,h:80/1920*100,texto:'TEXTO ANTIGO',cor:'#f05a3d',tamanho:48,recorte:'recorte-vazio'};
+    const cena=preservarPublicacaoEstudio({...projeto,elementos:[label,projeto.elementos.find(e=>e.tipo==='marca')!],recursos:{fundo:pngUrl(foto.toBuffer('image/png')),marca:logo,'recorte-vazio':pngUrl(createCanvas(1,1).toBuffer('image/png'))}},pngUrl(escura.toBuffer('image/png')));
+    const cenaImgs=new Map<string,CanvasImageSource>();
+    for(const [id,src] of Object.entries(cena.recursos))cenaImgs.set(id,await loadImage(Buffer.from(src.split(',')[1]!,'base64')) as unknown as CanvasImageSource);
+    cenaImgs.set('@original',await loadImage(escura.toBuffer('image/png')) as unknown as CanvasImageSource);
+    const desenharCena=(v:ProjetoEstudio)=>{desenharEstudio(ctx as unknown as CanvasRenderingContext2D,v,cenaImgs);return ctx.getImageData(0,0,1080,1920).data;};
+    const removido=structuredClone(cena);removido.elementos=removido.elementos.filter(e=>e.id!=='label');
+    const pixelsSemTexto=desenharCena(removido);let maiorDesvio=0;
+    for(let y=1400;y<1480;y++)for(let x=100;x<550;x++)for(let c=0;c<3;c++){const i=(y*1080+x)*4+c;maiorDesvio=Math.max(maiorDesvio,Math.abs(pixelsSemTexto[i]!-semLetras[i]!));}
+    assert(maiorDesvio<15,`Apagar restaura o degradé sob as letras, sem caixa clara ou restos de texto (desvio ${maiorDesvio})`);
+    const movido=structuredClone(cena);movido.elementos[0]!.x+=20;movido.elementos[0]!.y-=10;
+    const pixelsMovidos=desenharCena(movido);let branco=0;
+    for(let y=1208;y<1288;y++)for(let x=316;x<766;x++){const i=(y*1080+x)*4;if(pixelsMovidos[i]!>220&&pixelsMovidos[i+1]!>220&&pixelsMovidos[i+2]!>220)branco++;}
+    assert(branco>300,'Mover recupera as letras brancas do original, mesmo com recorte vazio e cor antiga incorreta');
+    const novoTexto=structuredClone(cena);novoTexto.elementos.push({...elementoEstudio('texto','adicionado'),texto:'NOVO',x:60,y:70,w:30,h:10,cor:'#ffffff'});
+    const adicionado=desenharCena(novoTexto),canto=(Math.round(.7*1920)*1080+Math.round(.6*1080))*4;
+    assert.deepEqual([...adicionado.slice(canto,canto+4)],[...semLetras.subarray(canto,canto+4)],'Acrescentar texto não limpa nem clareia a sua caixa');
+    const reescrito=structuredClone(cena);reescrito.elementos[0]!.texto='NOVO';reescrito.elementos[0]!.recorte='';reescrito.elementos[0]!.cor='#ffffff';
+    desenharCena(reescrito);
+    const longe=(1500*1080+900)*4;
+    assert.deepEqual([...ctx.getImageData(900,1500,1,1).data],[...semLetras.subarray(longe,longe+4)],'Reescrever conserva a fotografia e o degradé fora das letras');
+    assert.deepEqual(Buffer.from(desenharCena(cena)),Buffer.from(ec.getImageData(0,0,1080,1920).data),'Desfazer recupera exatamente a versão inicial');
+    const exemploDegrade={...r,id:randomUUID(),imagem:cena.preservacao!.imagem};
+    registos.set(`reservas:imagem:v1:${email}:${exemploDegrade.id}`,exemploDegrade);
+    registos.set(`reservas:estudio:v1:${email}:${exemploDegrade.id}`,cena);
+    const comTextoNovo=await guardarEstudio(email,exemploDegrade.id,reescrito),degradeReaberto=(await abrirEstudio(email,comTextoNovo.id)).projeto!;
+    assert.equal(degradeReaberto.preservacao!.imagem,comTextoNovo.imagem);
+    assert.deepEqual(zonasAlteradasEstudio(degradeReaberto),[],'Reabrir a versão editada não volta a retocar o fundo');
+    const apagarOutraVez=structuredClone(degradeReaberto);apagarOutraVez.elementos=apagarOutraVez.elementos.filter(e=>e.id!=='label');
+    const semNovoTexto=await guardarEstudio(email,comTextoNovo.id,apagarOutraVez);
+    const [amostraSemTexto,amostraComTexto]=await Promise.all([semNovoTexto,comTextoNovo].map(v=>sharp(Buffer.from(v.imagem!.split(',')[1]!,'base64')).extract({left:900,top:1500,width:1,height:1}).removeAlpha().raw().toBuffer()));
+    assert(amostraSemTexto!.every((v,i)=>Math.abs(v-amostraComTexto![i]!)<5),'Gravar, reabrir e apagar outra vez mantêm a iluminação da fotografia');
+
     const semEdicao=await guardarEstudio(email,r.id,projeto);
     assert.equal(semEdicao.imagem,r.imagem,'Guardar sem edições visuais não recomprime nem redesenha o original');
     assert.equal((await abrirEstudio(email,semEdicao.id)).projeto!.preservacao!.imagem,r.imagem);
