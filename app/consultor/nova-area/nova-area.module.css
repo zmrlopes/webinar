@@ -9,7 +9,7 @@
   font-size: 16px;
   line-height: 1.6;
 }
-.contentor { width: 100%; min-width: 0; margin: 0 auto; }
+.contentor { width: 100%; max-width: 1200px; min-width: 0; margin: 0 auto; }
 @media (min-width: 761px) {
   .pagina.paginaNegocio { padding-inline: 20px; }
   .paginaNegocio .layout { grid-template-columns: 240px minmax(0, 1fr); gap: 20px; }
