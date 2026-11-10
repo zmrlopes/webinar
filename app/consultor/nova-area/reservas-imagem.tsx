@@ -5,8 +5,9 @@ import { comprimirImagemReserva } from "@/lib/reservas-canvas";
 import { dadosPublicacaoReserva, textosPublicacaoReserva, type PublicacaoImagemReserva, type ReferenciaImagemReserva, type ResumoImagemReserva } from "@/lib/reservas-imagem";
 import type { DadosReserva, FormatoReserva } from "@/lib/reservas";
 import { CriarReservaOrcamento } from "./reservas-orcamento";
-import {EditorRapidoPublicacao} from "./reservas-imagem-editor";
-import type {AjustesEditorPublicacao,EditorPublicacaoReserva} from "@/lib/reservas-imagem-editor";
+import {EstudioReservas} from "./reservas-estudio";
+import type {ProjetoEstudio} from "@/lib/reservas-estudio";
+import type {EditorPublicacaoReserva} from "@/lib/reservas-imagem-editor";
 import css from "./reservas.module.css";
 import styles from "./reservas-imagem.module.css";
 
@@ -24,6 +25,12 @@ export function CriarPublicacaoImagem({email}: {email: string}) {
   const [revisto, setRevisto] = useState(false), [verificacao, setVerificacao] = useState<string[] | null>(null);
   const [verificacaoErro, setVerificacaoErro] = useState("");
   const [editor,setEditor]=useState<EditorPublicacaoReserva|null>(null),[editorAberto,setEditorAberto]=useState(false),[editorAlterado,setEditorAlterado]=useState(false);
+  const [projetoEstudio,setProjetoEstudio]=useState<ProjetoEstudio|null>(null);
+  async function pedirEstudio<T>(acao:string,extra:Record<string,unknown>={}):Promise<T>{
+    const r=await fetch("/api/consultor/nova-area/reservas/estudio",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,acao,...extra})});
+    let c;try{c=await r.json();}catch{throw new Error("A preparação foi interrompida. A publicação continua guardada; tenta abrir o editor novamente.");}
+    if(!r.ok)throw new Error(c.erro||"Não foi possível abrir o estúdio.");return c;
+  }
   const upload = useRef<HTMLInputElement>(null), bloqueado = useRef(false);
   const referencias = lista.filter(r => r.tipo === "referencia");
   async function pedir<T>(acao: string, extra: Record<string, unknown> = {}): Promise<T> {
@@ -60,10 +67,12 @@ export function CriarPublicacaoImagem({email}: {email: string}) {
       setReferencia(r); setFormato(r.formato); setRascunho(null); setResultado(null); setRevisto(false); setPasso(2); setAba("criar");
     });
   }
-  function mostrarResultado(r: PublicacaoImagemReserva) {setResultado(r); setRevisto(false); setVerificacao(r.verificacao?.avisos ?? null); setVerificacaoErro(""); setAjuste("");setEditor(null);setEditorAberto(false);setEditorAlterado(false);}
+  function mostrarResultado(r: PublicacaoImagemReserva) {setResultado(r); setRevisto(false); setVerificacao(r.verificacao?.avisos ?? null); setVerificacaoErro(""); setAjuste("");setEditor(null);setProjetoEstudio(null);setEditorAberto(false);setEditorAlterado(false);}
   async function abrirEditor(){
     if(!resultado)return;
     await fazer("A identificar os textos da publicação…",async()=>{
+      const guardado=await pedirEstudio<{projeto:ProjetoEstudio|null}>("abrir",{id:resultado.id});
+      if(guardado.projeto){setProjetoEstudio(guardado.projeto);setEditorAberto(true);return;}
       let e=editor??await pedir<EditorPublicacaoReserva>("preparar-editor",{id:resultado.id});
       setEditor(e);
       if(!e.camadasPreparadas||e.camadasVersao!==2||e.sombreados===undefined){
@@ -71,15 +80,12 @@ export function CriarPublicacaoImagem({email}: {email: string}) {
         e=await pedir<EditorPublicacaoReserva>("preparar-camadas",{id:resultado.id});
         setEditor(e);
       }
-      if(!e.fundoLimpo||!e.marcaPreparada){
-        setOcupado("A preparar os textos e o logótipo para mover… Só é necessário uma vez por publicação.");
-        e=await pedir<EditorPublicacaoReserva>("limpar-editor",{id:resultado.id});
-        setEditor(e);
-      }
+      setOcupado("A separar a fotografia das camadas editáveis… Esta preparação é feita uma vez por publicação.");
+      setProjetoEstudio(await pedirEstudio<ProjetoEstudio>("preparar",{id:resultado.id}));
       setEditorAberto(true);
     });
   }
-  async function guardarEditor(ajustes:AjustesEditorPublicacao){if(!resultado)return;await fazer("A guardar a versão editada…",async()=>{const r=await pedir<PublicacaoImagemReserva>("guardar-edicao",{id:resultado.id,ajustes});mostrarResultado(r);await carregarLista();});}
+  async function guardarEditor(projeto:ProjetoEstudio){if(!resultado)return;await fazer("A guardar a versão editada…",async()=>{const r=await pedirEstudio<PublicacaoImagemReserva>("guardar",{id:resultado.id,projeto});mostrarResultado(r);await carregarLista();});}
   async function verificar(id: string) {
     setVerificacaoErro("");
     try {const r = await pedir<{avisos: string[]}>("verificar", {id}); setVerificacao(r.avisos);}
@@ -142,7 +148,7 @@ export function CriarPublicacaoImagem({email}: {email: string}) {
         {resumo && referencia && <div className={css.cartao}>
           {resultado?.estado === "pronta" && resultado.imagem ? <>
             <h2>A tua publicação está guardada</h2><p className={css.nota}>Corrige ou apaga textos, move o logótipo e escolhe outra imagem de fundo no editor.</p>
-            {editorAberto&&editor?<EditorRapidoPublicacao key={resultado.id} email={email} destino={resultado.dados.destino} formato={resultado.formato} editor={editor} ocupado={!!ocupado} onGuardar={guardarEditor} onFechar={()=>setEditorAberto(false)} onAlterado={setEditorAlterado}/>:<div className={styles.resultado}><img className={styles.publicacao} src={resultado.imagem} alt={`Publicação gerada para ${resultado.dados.destino}`}/><div>
+            {editorAberto&&projetoEstudio?<EstudioReservas key={resultado.id} projeto={projetoEstudio} ocupado={!!ocupado} onGuardar={guardarEditor} onFechar={()=>setEditorAberto(false)} onAlterado={setEditorAlterado}/>:<div className={styles.resultado}><img className={styles.publicacao} src={resultado.imagem} alt={`Publicação gerada para ${resultado.dados.destino}`}/><div>
               <button type="button" className={css.primario} onClick={()=>void abrirEditor()}>Editar publicação</button>
               <h3>Dados confirmados</h3><p><strong>{resumo.destino}</strong><br/>{resumo.hotel}<br/>{resumo.datas}<br/>{resumo.preco}<br/>{resumo.basePreco}<br/>{resumo.regime}</p>
               <details><summary>Comparar com a referência</summary><img className={styles.comparacao} src={referencia.imagem} alt="Referência original para comparar"/></details>

@@ -32,6 +32,7 @@
     "test:operadores": "tsx scripts/testes-operadores.ts && tsx scripts/testes-operadores-atualizacao.ts",
     "test:reservas-imagem": "tsx scripts/testes-reservas-imagem.ts",
     "test:reservas-editor": "tsx scripts/testes-reservas-editor.ts",
+    "test:reservas-estudio": "tsx scripts/testes-reservas-estudio.ts",
     "test:reservas-camadas": "tsx scripts/testes-reservas-camadas.ts",
     "importar-documentos": "tsx scripts/importar-documentos.ts"
   },

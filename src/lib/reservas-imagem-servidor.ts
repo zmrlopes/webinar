@@ -44,6 +44,7 @@ export async function apagarImagemReserva(email: string, id: unknown) {
   }
   await db().query("delete from dashboard_config where chave = $1", [prefixo(email) + r.id]);
   await db().query("delete from dashboard_config where chave = $1", [`reservas:editor:v1:${email}:${r.id}`]);
+  await db().query("delete from dashboard_config where chave = $1", [`reservas:estudio:v1:${email}:${r.id}`]);
 }
 async function normalizarImagem(valor: unknown) {
   const data = imagemReserva(valor);
