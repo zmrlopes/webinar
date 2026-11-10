@@ -15,6 +15,8 @@ interface DadosIdentificacao {
   nome: string | null;
   link: string;
   ehConsultorEquipa: boolean;
+  acessoBlackfriday: boolean;
+  liderBlackfriday: boolean;
   linkGrupoWelcomeAboard: string;
   formacao: { titulo: string; sessaoExternaEm: string } | null;
   inscritoFormacao: boolean;
@@ -820,6 +822,16 @@ export function BackofficeHome() {
               {dados.ehConsultorEquipa && (
                 <Link href="/consultor/calendario-criativo" className="vqb-menu-item">
                   Calendário criativo
+                </Link>
+              )}
+              {dados.acessoBlackfriday && (
+                <Link href="/consultor/blackfriday" className="vqb-menu-item">
+                  BLACKFRIDAY
+                </Link>
+              )}
+              {dados.liderBlackfriday && (
+                <Link href="/consultor/blackfriday/equipa" className="vqb-menu-item">
+                  A minha equipa (bingo)
                 </Link>
               )}
               <button

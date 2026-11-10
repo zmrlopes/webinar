@@ -12,7 +12,7 @@ const prefixoRegistos = (simulacao: boolean) => PREFIXO + (simulacao ? "simulaca
 const chaveReserva = (id: string, simulacao = false) => prefixoRegistos(simulacao) + "reserva:" + id;
 const chaveFicheiro = (id: string, simulacao = false) => prefixoRegistos(simulacao) + "ficheiro:" + id;
 export class ErroBF extends Error {constructor(mensagem: string, public status = 400) {super(mensagem);}}
-function verificarSimulacao(email: string | undefined, simulacao: boolean) {
+function verificarSimulacao(email: string | string[] | undefined, simulacao: boolean) {
   if (simulacao && email !== undefined && email !== EMAIL_PAINEL_DEMONSTRACAO) throw new ErroBF("A simulação está disponível apenas na conta de teste.", 403);
 }
 export async function configuracaoBF(cliente: Pool | PoolClient = db()): Promise<ConfiguracaoBF> {
@@ -20,11 +20,15 @@ export async function configuracaoBF(cliente: Pool | PoolClient = db()): Promise
   // Aplica também a regra atual a configurações guardadas com o antigo centro livre.
   return {...CONFIG_BF, ...rows[0]?.valor, centro: "reserva5k"};
 }
-export async function listarReservasBF(email?: string, simulacao = false): Promise<InscricaoBF[]> {
+export async function listarReservasBF(email?: string | string[], simulacao = false): Promise<InscricaoBF[]> {
   verificarSimulacao(email, simulacao);
+  const emails = Array.isArray(email) ? email : null;
   const {rows} = await db().query<{valor: InscricaoBF}>(
-    "select valor from dashboard_config where starts_with(chave, $1) and ($2::text is null or valor->>'email' = $2) order by valor->>'enviadoEm', chave",
-    [prefixoRegistos(simulacao) + "reserva:", email ?? null]);
+    `select valor from dashboard_config where starts_with(chave, $1)
+       and ($2::text is null or valor->>'email' = $2)
+       and ($3::text[] is null or valor->>'email' = any($3::text[]))
+     order by valor->>'enviadoEm', chave`,
+    [prefixoRegistos(simulacao) + "reserva:", emails ? null : email ?? null, emails]);
   return rows.map(r => r.valor);
 }
 export async function dadosBF(email?: string, simulacao = false): Promise<DadosBF> {
@@ -127,6 +131,50 @@ export async function comprovativoBF(id: string, email?: string, simulacao = fal
     "Content-Disposition": `${r.valor.ficheiroTipo === "application/pdf" ? "attachment" : "inline"}; filename*=UTF-8''${encodeURIComponent(r.valor.ficheiroNome)}`,
     "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; sandbox"}});
 }
+// ---------- variante por equipa de um líder ----------
+const chaveFaturacaoEquipa = (liderEmail: string) => PREFIXO + "faturacao:" + liderEmail;
+
+/** Todas as reservas de quem pertence à equipa (lista de emails) de um líder. */
+export async function listarReservasEquipaBF(emailsEquipa: string[]): Promise<InscricaoBF[]> {
+  return listarReservasBF(emailsEquipa, false);
+}
+
+export async function faturacaoEquipaBF(liderEmail: string): Promise<FaturacaoBF | null> {
+  const {rows} = await db().query<{valor: FaturacaoBF}>("select valor from dashboard_config where chave = $1", [chaveFaturacaoEquipa(liderEmail)]);
+  const faturacao = rows[0]?.valor;
+  if (!faturacao) return null;
+  const config = await configuracaoBF();
+  const periodo = periodoBF(config, hojeBF());
+  const corresponde = faturacao.periodo === config.periodoFaturacao && faturacao.inicio === periodo.inicio
+    && faturacao.fim <= config.fim && faturacao.fim >= periodo.inicio;
+  return corresponde ? faturacao : null;
+}
+
+export async function guardarFaturacaoEquipaBF(liderEmail: string, valor: number): Promise<FaturacaoBF> {
+  if (typeof valor !== "number" || !Number.isFinite(valor) || valor < 0) throw new ErroBF("A faturação da equipa não é válida.");
+  const config = await configuracaoBF();
+  const {inicio, fim} = periodoBF(config, hojeBF());
+  const faturacao: FaturacaoBF = {valor: Math.round(valor * 100) / 100, atualizadoEm: new Date().toISOString(), inicio, fim, periodo: config.periodoFaturacao};
+  await db().query(`insert into dashboard_config (chave, valor) values ($1, $2::jsonb)
+    on conflict (chave) do update set valor = excluded.valor, atualizado_em = now()`, [chaveFaturacaoEquipa(liderEmail), JSON.stringify(faturacao)]);
+  return faturacao;
+}
+
+/** A função `reverReservaBF` não verifica posse nenhuma — confirma aqui que a reserva é de alguém da equipa antes de a chamar. */
+export async function reverReservaEquipaBF(emailsEquipa: string[], id: unknown, estado: unknown, motivo: unknown): Promise<void> {
+  if (typeof id !== "string" || !/^[0-9a-f-]{36}$/.test(id)) throw new ErroBF("Revisão inválida.");
+  const {rows} = await db().query<{valor: InscricaoBF}>("select valor from dashboard_config where chave = $1", [chaveReserva(id, false)]);
+  if (!rows[0] || !emailsEquipa.includes(rows[0].valor.email)) throw new ErroBF("Esta reserva não pertence à tua equipa.", 403);
+  await reverReservaBF(id, estado, motivo, false);
+}
+
+export async function comprovativoEquipaBF(emailsEquipa: string[], id: string): Promise<Response> {
+  if (!/^[0-9a-f-]{36}$/.test(id)) throw new ErroBF("Comprovativo não encontrado.", 404);
+  const {rows} = await db().query<{valor: InscricaoBF}>("select valor from dashboard_config where chave = $1", [chaveReserva(id, false)]);
+  if (!rows[0] || !emailsEquipa.includes(rows[0].valor.email)) throw new ErroBF("Comprovativo não encontrado.", 404);
+  return comprovativoBF(id, undefined, false);
+}
+
 /** Limpa exclusivamente os ficheiros e as marcas de demonstração desta campanha. */
 export async function limparSimulacaoBF() {
   const cliente = await db().connect();

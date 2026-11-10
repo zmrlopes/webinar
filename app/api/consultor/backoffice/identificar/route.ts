@@ -20,6 +20,8 @@ import { questionariosPendentes } from "@/lib/questionarios";
 import { listarFormacoesExternasFuturas } from "@/lib/formacoes-externas";
 import { listarWelcomeAboardDaEquipa, obterElegibilidadeWelcomeAboard } from "@/lib/welcome-aboard";
 import { obterLinkGrupoWelcomeAboard } from "@/lib/welcome-aboard-grupo";
+import { podeVerAreaEquipa } from "@/lib/lideres-equipa";
+import { metaBfParaEmail } from "@/lib/lideres-equipa-servidor";
 
 /**
  * Identifica o consultor no backoffice: valida o email em `equipa_afiliados`
@@ -70,6 +72,7 @@ export async function POST(request: Request): Promise<Response> {
       precisaResponderHotelBool,
       pedidoConvencao,
       linkGrupoWelcomeAboard,
+      metaBf,
     ] = await Promise.all([
       buscarWebinarFormacao(),
       buscarProximoWebinarPublico(),
@@ -87,6 +90,7 @@ export async function POST(request: Request): Promise<Response> {
         return "erro" as const;
       }),
       obterLinkGrupoWelcomeAboard(emailNormalizado),
+      metaBfParaEmail(emailNormalizado),
     ]);
 
     // Só vale a pena ir buscar a próxima sessão a quem realmente vai ver o
@@ -125,6 +129,8 @@ export async function POST(request: Request): Promise<Response> {
       nome: membro.nome,
       link,
       ehConsultorEquipa: true,
+      acessoBlackfriday: metaBf !== null,
+      liderBlackfriday: podeVerAreaEquipa(emailNormalizado),
       linkGrupoWelcomeAboard,
       formacao: formacao
         ? { titulo: formacao.titulo, sessaoExternaEm: formacao.sessaoExternaEm }

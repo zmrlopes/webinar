@@ -31,6 +31,8 @@ export interface FaturacaoBF {
 }
 export interface DadosBF {
   config: ConfiguracaoBF; hoje: string; inscricoes: InscricaoBF[]; faturacao: FaturacaoBF | null; simulacao?: boolean;
+  /** Presente quando o TP pertence à equipa de um líder com meta própria (em vez da meta geral de 3M). */
+  metaEquipa?: {nome: string; meta: number; faturacao: FaturacaoBF | null} | null;
 }
 export function hojeBF(agora = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", {timeZone: "Europe/Lisbon"}).format(agora);

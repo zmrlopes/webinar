@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { deSeroval, pedidoAnalisador, type NoAnalisador } from "@/lib/analisador-organizacao";
 
 /**
  * Corre a atualização do Dashboard Negócio. Esta página é aberta pelo botão
@@ -18,40 +19,7 @@ const GRAVAR = true;
 /** O código do favorito: corre no MyOffice e serve de ponte para os pedidos desta página. */
 const FAVORITO = `javascript:(async()=>{const S='${SITE}';if(!/(^|\\.)icligo\\.com$/.test(location.hostname)){alert('Abre primeiro o MyOffice da iCliGo, entra na tua conta e carrega outra vez neste botão.');return}let t=null;try{t=(await(await fetch('/api/auth/session')).json())?.token?.accessToken||null}catch(e){}const w=window.open(S+'/admin/dashboard-negocio/atualizar?ponte=2','dn-atualizar');if(!w){alert('O browser bloqueou a janela. Permite janelas do MyOffice e carrega outra vez.');return}window.addEventListener('message',async e=>{if(e.origin!==S||e.source!==w)return;const{id,url}=e.data||{};let u;try{u=new URL(url)}catch(x){return}if(u.protocol!=='https:'||!/^(api|myoffice)\\.icligo\\.com$/.test(u.hostname)){w.postMessage({id,erro:'endereço não permitido'},S);return}try{const r=await fetch(u.href,{credentials:'include',headers:t?{Authorization:'Bearer '+t}:{}});w.postMessage({id,status:r.status,corpo:await r.text()},S)}catch(x){w.postMessage({id,erro:String(x)},S)}})})();`;
 
-/**
- * A função do servidor do MyOffice por trás do Analisador de Organização
- * (filhos diretos de uma pessoa, com volume e reserva média da subárvore).
- * Se o MyOffice mudar de versão, este endereço pode mudar também.
- */
-const ANALISADOR = `${MYOFFICE}/_serverFn/4b457b9f58baf866962a4eb026255982ff0e9deb00bd1b341b16408098b7584a`;
-
 interface Periodo { chave: string; inicio: string; fim: string }
-interface NoAnalisador { consultantId: string; name: string; hasDownline: boolean; bookingVolume: number; avgBooking: number }
-
-/** O pedido no formato do MyOffice (seroval): só strings, números e «undefined». */
-function pedidoAnalisador(inicio: string, fim: string, pagina: number, pai?: string): string {
-  const v = (x: string | number | undefined) => x === undefined ? { t: 2, s: 1 } : typeof x === "number" ? { t: 0, s: x } : { t: 1, s: x };
-  const corpo = { t: { t: 10, i: 0, p: { k: ["data"], v: [{ t: 10, i: 1, p: { k: ["parent", "page", "size", "startDate", "endDate", "country", "user"], v: [v(pai), v(pagina), v(100), v(inicio), v(fim), v(undefined), v(undefined)] }, o: 0 }] }, o: 0 }, f: 127, m: [] };
-  return `${ANALISADOR}?payload=${encodeURIComponent(JSON.stringify(corpo))}`;
-}
-
-/** Converte a resposta seroval do MyOffice num objeto normal. */
-function deSeroval(raiz: unknown): unknown {
-  const refs: Record<number, unknown> = {};
-  const ler = (n: unknown): unknown => {
-    if (!n || typeof n !== "object") return n;
-    const no = n as { t: number; s?: unknown; i?: number; a?: unknown[]; p?: { k: string[]; v: unknown[] } };
-    let r: unknown;
-    if (no.t === 0 || no.t === 1) r = no.s;
-    else if (no.t === 2) r = ({ 0: null, 1: undefined, 2: true, 3: false } as Record<number, unknown>)[no.s as number];
-    else if (no.t === 4) r = refs[no.i!];
-    else if (no.t === 9) r = (no.a ?? []).map(ler);
-    else if (no.t === 10 || no.t === 11) { const o: Record<string, unknown> = {}; no.p?.k.forEach((k, i) => { o[k] = ler(no.p!.v[i]); }); r = o; }
-    if (no.i !== undefined && no.t !== 4) refs[no.i] = r;
-    return r;
-  };
-  return ler(raiz);
-}
 type Linha = { texto: string; estado: "a-decorrer" | "feito" | "erro" };
 
 function itensDaPagina(corpo: unknown): unknown[] {

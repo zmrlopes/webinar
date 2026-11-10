@@ -18,6 +18,20 @@ export function BarraBlackFriday({dados}: {dados: DadosBF}) {
     <small>{dados.config.periodoFaturacao === "anual" ? "Acumulado anual da equipa" : `Faturação da equipa de ${data(dados.config.inicio)} a ${data(dados.config.fim)}`}{dados.faturacao ? ` · Dados até ${data(dados.faturacao.fim)} · Atualizado em ${new Intl.DateTimeFormat("pt-PT", {dateStyle: "short", timeStyle: "short", timeZone: "Europe/Lisbon"}).format(new Date(dados.faturacao.atualizadoEm))}` : " · Atualiza com os dados do dashboard"}</small>
   </div>;
 }
+/** Para quem pertence à equipa de um líder com meta própria (ver src/lib/lideres-equipa.ts). */
+function BarraEquipaBF({dados}: {dados: DadosBF}) {
+  const metaEquipa = dados.metaEquipa;
+  if (!metaEquipa) return null;
+  const valor = metaEquipa.faturacao?.valor ?? 0;
+  const percentagem = Math.min(100, Math.max(0, valor / metaEquipa.meta * 100));
+  return <div className={css.meta}>
+    <div className={css.metaTopo}><span>EQUIPA DE {metaEquipa.nome.toUpperCase()}</span><span>{percentagem.toLocaleString("pt-PT", {maximumFractionDigits: 1})}%</span></div>
+    <div className={css.numeros}><strong>{metaEquipa.faturacao ? euros(valor) : "À espera do arranque"}</strong><span> / {euros(metaEquipa.meta)}</span></div>
+    <div className={css.barra} role="progressbar" aria-label={`Faturação da equipa de ${metaEquipa.nome}`} aria-valuemin={0} aria-valuemax={metaEquipa.meta} aria-valuenow={Math.min(metaEquipa.meta, Math.max(0, valor))} aria-valuetext={`${euros(valor)} de ${euros(metaEquipa.meta)}`}><span style={{width: `${percentagem}%`}} /></div>
+    <p>{valor >= metaEquipa.meta ? "Meta da equipa atingida! Todos os bingos validados dão acesso ao prémio." : <>Faltam <b>{euros(Math.max(0, metaEquipa.meta - valor))}</b> para a tua equipa desbloquear o prémio para todos os bingos.</>}</p>
+    <small>{dados.config.periodoFaturacao === "anual" ? "Acumulado anual da equipa" : `Faturação da equipa de ${data(dados.config.inicio)} a ${data(dados.config.fim)}`}{metaEquipa.faturacao ? ` · Dados até ${data(metaEquipa.faturacao.fim)} · Atualizado em ${new Intl.DateTimeFormat("pt-PT", {dateStyle: "short", timeStyle: "short", timeZone: "Europe/Lisbon"}).format(new Date(metaEquipa.faturacao.atualizadoEm))}` : " · A tua líder ainda não atualizou os dados da equipa"}</small>
+  </div>;
+}
 function Aviao() {return <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4L22 2Z" strokeLinejoin="round"/><path d="m11 13 6-6" strokeLinecap="round"/></svg>;}
 // Decorativos: cada casa mantém o nome acessível e o estado da reserva.
 // Os restantes desenhos foram vetorizados diretamente da referencia bingo.jpeg.
@@ -158,7 +172,7 @@ export function BlackFriday({email}: {email: string}) {
       <div className={css.acoesSimulacao}>{simulacao && <><a href="/admin/blackfriday?modo=simulacao" target="_blank" rel="noreferrer">Abrir simulação no admin ↗</a><button type="button" onClick={previsualizarAnimacao}>Ver animação de linha</button><button type="button" disabled={aGuardar} onClick={() => void recomeçarSimulacao()}>Recomeçar simulação</button></>}<button type="button" disabled={aGuardar} onClick={alternarSimulacao}>{simulacao ? "Sair da simulação" : "Experimentar simulação"}</button></div>
     </div>}
     {dados && resumo && confirmado && <>
-      <BarraBlackFriday dados={dados}/>
+      {dados.metaEquipa ? <BarraEquipaBF dados={dados}/> : <BarraBlackFriday dados={dados}/>}
       <div className={css.layout}>
         <div className={css.cartao} ref={cartaoBingo}>
           {celebracao && <ParabensLinha key={celebracao.id} conquista={celebracao}/>}
@@ -188,8 +202,13 @@ export function BlackFriday({email}: {email: string}) {
             <p>O prémio inclui os bilhetes pagos para:</p>
             <ul className={css.eventosPremio}><li>Be a Rock</li><li>Be a Pro</li><li>Convenção Nacional</li><li>Be a Leader</li><li>Mindset Elite</li><li>Evento Natal Tropa de Elite</li></ul>
             <small>Apenas as entradas nestes eventos.</small>
-            <p>Se a equipa atingir <b>3 milhões de euros</b>, <b>todos os TPs com bingo validado</b> recebem o prémio.</p>
-            <p>Se a meta não for atingida, recebe o prémio <b>apenas o primeiro TP a completar um bingo válido</b>.</p>
+            {dados.metaEquipa ? <>
+              <p>Se a equipa de {dados.metaEquipa.nome} atingir <b>{(dados.metaEquipa.meta / 1_000_000).toLocaleString("pt-PT", {maximumFractionDigits: 1})} milhões de euros</b>, <b>todos os TPs da equipa com bingo validado</b> recebem o prémio.</p>
+              <p>Se a meta da equipa não for atingida, recebe o prémio <b>apenas o primeiro TP da equipa a completar um bingo válido</b>.</p>
+            </> : <>
+              <p>Se a equipa atingir <b>3 milhões de euros</b>, <b>todos os TPs com bingo validado</b> recebem o prémio.</p>
+              <p>Se a meta não for atingida, recebe o prémio <b>apenas o primeiro TP a completar um bingo válido</b>.</p>
+            </>}
           </div>
           <div className={`${css.premio} ${css.premioPrincipal}`}>
             <span className={css.selo}>03 / PRÉMIO EXTRA</span>
@@ -218,6 +237,7 @@ export function BlackFriday({email}: {email: string}) {
         <li>Acumulação dos prémios de faturação e de linha: se fores JUNIOR e atingires 15.000 €, SENIOR e atingires 25.000 € ou MASTER e atingires 35.000 € de faturação durante o desafio, e também completares a tua primeira linha horizontal validada, recebes uma entrada no Mindset Elite de fevereiro pelo primeiro prémio e uma entrada no evento Black Friday de outubro pelo segundo prémio. A regra é igual nas duas ordens: atingir primeiro a faturação e depois completar a linha, ou completar primeiro a linha e depois atingir a faturação. Ambas as conquistas estão sujeitas a validação; recebes uma entrada para cada evento.</li>
         <li>Os prémios dependem da validação dos comprovativos. Uma recusa retira a casa do progresso e permite um novo envio.</li>
         <li>A ordem dos bingos é determinada pela hora de envio do último comprovativo necessário, desde que todos sejam aprovados.</li>
+        <li>Todos os prémios (bilhetes de evento) são entregues em voucher, após a realização dos respetivos eventos.</li>
         <li>O desafio decorre de {data(dados.config.inicio)} até às 23h59 de {data(dados.config.fim)}, no horário de Lisboa. A data da viagem pode ser posterior.</li>
       </ol></details>
     </>}
