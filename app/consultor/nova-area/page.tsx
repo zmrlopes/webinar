@@ -7,6 +7,8 @@ import {
   podeVerNovaArea,
   type DadosNovaArea,
 } from "@/lib/consultor-nova-area";
+import { podeVerAreaEquipa } from "@/lib/lideres-equipa";
+import { AdminBlackFriday } from "./admin-blackfriday";
 import { AlternarArea } from "../alternar-area";
 import { lerEmailGuardado, limparEmailGuardado } from "../armazenamento";
 import estilos from "./nova-area.module.css";
@@ -56,7 +58,7 @@ export default function NovaAreaConsultor() {
   const [aInscrever, setAInscrever] = useState(false);
   const [erroSessao, setErroSessao] = useState("");
   const [inscrito, setInscrito] = useState(false);
-  const [seccao, setSeccao] = useState<"inicio" | "comeca-aqui" | "calendario" | "blackfriday" | "calendario-criativo" | "leads" | "mentor-checklist" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "testemunhos" | "assistente" | "documentos" | "eventos-presenciais" | "calculadoras" | "core-rank" | "reservas" | "travel-planner" | "propostas" | "operadores" | "negocio" | "orcamentos">("inicio");
+  const [seccao, setSeccao] = useState<"inicio" | "comeca-aqui" | "calendario" | "blackfriday" | "calendario-criativo" | "leads" | "mentor-checklist" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "testemunhos" | "assistente" | "documentos" | "eventos-presenciais" | "calculadoras" | "core-rank" | "reservas" | "travel-planner" | "propostas" | "operadores" | "negocio" | "orcamentos" | "admin">("inicio");
   const [assistenteAberto, setAssistenteAberto] = useState(false);
   const [reservasAberto, setReservasAberto] = useState(false);
   const [coreAberto, setCoreAberto] = useState(false);
@@ -121,8 +123,10 @@ export default function NovaAreaConsultor() {
 
   useEffect(() => {
     const conta = lerEmailGuardado()?.trim().toLowerCase() ?? "";
-    if (!podeVerNovaArea(conta)) { setEstado("sem-acesso"); return; }
-    if (new URLSearchParams(window.location.search).get("seccao") === "negocio") setSeccao("negocio");
+    const souLiderConta = podeVerAreaEquipa(conta);
+    if (!podeVerNovaArea(conta) && !souLiderConta) { setEstado("sem-acesso"); return; }
+    if (souLiderConta && !podeVerNovaArea(conta)) setSeccao("admin");
+    else if (new URLSearchParams(window.location.search).get("seccao") === "negocio") setSeccao("negocio");
     const controller = new AbortController();
     setEmail(conta);
     let progressoLocal: number[] = [];
@@ -230,6 +234,7 @@ export default function NovaAreaConsultor() {
     );
   }
 
+  const souLider = podeVerAreaEquipa(email);
   const totalFeitos = feitos.length;
   const primeiroNome = dados.nome.split(" ")[0];
   const questionariosPendentes = dados.erroAvisos ? 0 : (dados.avisos?.length ?? 0);
@@ -237,7 +242,7 @@ export default function NovaAreaConsultor() {
   return (
     <div className={`${estilos.pagina} ${seccao === "negocio" ? estilos.paginaNegocio : ""}`}>
       <div className={estilos.contentor}>
-        <AlternarArea ativa="nova" />
+        {!souLider && <AlternarArea ativa="nova" />}
         <header className={estilos.topo}>
           <div className={estilos.marca}>
             <span className={estilos.simbolo} aria-hidden="true"><img src="/icons/icon-192.png" alt="" width="44" height="44" /></span>
@@ -258,6 +263,9 @@ export default function NovaAreaConsultor() {
         <div className={estilos.layout}>
           <aside className={estilos.lateral}>
             <nav id="menu-nova-area" ref={menu} aria-label="Secções da nova área">
+              {souLider ? <div className={estilos.grupoMenu}>
+                <button type="button" className={seccao === "admin" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("admin")} aria-current={seccao === "admin" ? "page" : undefined} aria-controls="conteudo-nova-area">Admin</button>
+              </div> : <>
               <div className={estilos.grupoMenu}>
                 <button type="button" className={seccao === "inicio" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("inicio")} aria-current={seccao === "inicio" ? "page" : undefined} aria-controls="conteudo-nova-area">Início <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3V10Z" stroke="currentColor" strokeWidth="1.6" /><path d="M9 20v-7h6v7" stroke="currentColor" strokeWidth="1.6" /></svg></button>
               </div>
@@ -307,11 +315,13 @@ export default function NovaAreaConsultor() {
                 <button type="button" className={seccao === "documentos" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("documentos")} aria-current={seccao === "documentos" ? "page" : undefined} aria-controls="conteudo-nova-area">Documentos</button>
                 <button type="button" className={seccao === "eventos-presenciais" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("eventos-presenciais")} aria-current={seccao === "eventos-presenciais" ? "page" : undefined} aria-controls="conteudo-nova-area">Eventos presenciais</button>
               </GrupoMenu>
+              </>}
             </nav>
             <Link className={estilos.voltar} href="/consultor">Consultar a área atual <Seta /></Link>
           </aside>
 
           <main id="conteudo-nova-area" ref={conteudo} tabIndex={-1} aria-label="Conteúdo da secção" className={estilos.conteudo}>
+            {seccao === "admin" && <AdminBlackFriday email={email} />}
             {seccao === "inicio" && <InicioNovaArea email={email} aoAbrirCore={() => {setAbrirRelatoriosCore(n => n + 1); abrirSeccao("core-rank");}} avisos={dados.avisos ?? []} erroAvisos={dados.erroAvisos ?? false} feitos={totalFeitos} aoComecar={() => abrirSeccao("comeca-aqui")} acabadoAgora={acabadoAgora} />}
             {seccao === "comeca-aqui" && <ComecaAqui
               linkGrupo={dados.linkGrupoWelcomeAboard || null} linkCurso={LINK_CURSO_TRAVEL_PARTNER}
@@ -347,7 +357,7 @@ export default function NovaAreaConsultor() {
             {assistenteAberto && <div hidden={seccao !== "assistente"}><AssistenteEquipa email={email} /></div>}
             {seccao === "documentos" && <DocumentosNovaArea />}
             {seccao === "eventos-presenciais" && <EventosPresenciais email={email} nome={dados.nome} />}
-            <footer className={estilos.rodape}><span className={estilos.ponto} />Nova área em construção <span>·</span> Visível apenas na conta de teste</footer>
+            <footer className={estilos.rodape}><span className={estilos.ponto} />{souLider ? "Área de administração da tua equipa" : <>Nova área em construção <span>·</span> Visível apenas na conta de teste</>}</footer>
           </main>
         </div>
       </div>

@@ -830,8 +830,8 @@ export function BackofficeHome() {
                 </Link>
               )}
               {dados.liderBlackfriday && (
-                <Link href="/consultor/blackfriday/equipa" className="vqb-menu-item">
-                  A minha equipa (bingo)
+                <Link href="/consultor/nova-area?seccao=admin" className="vqb-menu-item">
+                  Admin
                 </Link>
               )}
               <button

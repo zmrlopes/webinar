@@ -14,7 +14,7 @@ export function favoritoEquipaNegocio(site: string): string {
   return "javascript:" + encodeURIComponent(`(async()=>{
     const S=${JSON.stringify(site)}, C=${JSON.stringify(CANAL_EQUIPA_NEGOCIO)}, A=${JSON.stringify(ANALISADOR)};
     if(location.origin!==${JSON.stringify(MYOFFICE_EQUIPA)}){alert('Abre primeiro o MyOffice, entra na tua conta e carrega novamente neste favorito.');return}
-    const w=window.open(S+'/consultor/blackfriday/equipa/atualizar?ponte=1','equipa-negocio-atualizar');
+    const w=window.open(S+'/consultor/nova-area/admin-blackfriday/atualizar?ponte=1','equipa-negocio-atualizar');
     if(!w){alert('Permite janelas do MyOffice e carrega novamente no favorito.');return}
     const contexto=(async()=>{
       let sessao;try{const r=await fetch('/api/auth/session',{signal:AbortSignal.timeout(15000)});if(r.ok)sessao=await r.json()}catch{}

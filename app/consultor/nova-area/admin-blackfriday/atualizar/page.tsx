@@ -6,7 +6,7 @@ import { podeVerAreaEquipa } from "@/lib/lideres-equipa";
 import { deSeroval, pedidoAnalisador } from "@/lib/analisador-organizacao";
 import { CANAL_EQUIPA_NEGOCIO, MYOFFICE_EQUIPA } from "@/lib/equipa-negocio-ponte";
 import { lerEmailGuardado } from "../../../armazenamento";
-import estilos from "../equipa.module.css";
+import estilos from "./atualizar.module.css";
 
 export default function AtualizarEquipaNegocio() {
   const [estado, setEstado] = useState("A preparar a atualização…");
@@ -75,6 +75,6 @@ export default function AtualizarEquipaNegocio() {
     <span className={estilos.etiqueta}>EQUIPA · DESAFIO BLACKFRIDAY</span>
     <h1>Atualizar a faturação da equipa</h1>
     {erro ? <><p role="alert" className={estilos.erro}>{erro}</p><p>O último valor guardado mantém-se.</p></> : <p role="status">{estado}</p>}
-    <Link className={estilos.botao} href="/consultor/blackfriday/equipa">{feito ? "Ver a equipa →" : "Voltar à equipa"}</Link>
+    <Link className={estilos.botao} href="/consultor/nova-area?seccao=admin">{feito ? "Ver a equipa →" : "Voltar à equipa"}</Link>
   </main>;
 }

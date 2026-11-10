@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { podeVerNovaArea, type DadosNovaArea } from "@/lib/consultor-nova-area";
+import { podeVerAreaEquipa } from "@/lib/lideres-equipa";
 import { obterElegibilidadeWelcomeAboard } from "@/lib/welcome-aboard";
 import { buscarProximaSessaoWelcomeAboard, buscarProximoWebinarPublico, buscarWebinarFormacao, listarFormacoesEquipa } from "@/lib/webinars";
 import { listarFormacoesExternasFuturas } from "@/lib/formacoes-externas";
@@ -8,11 +9,21 @@ import { obterProgressoConsultor } from "@/lib/progresso-consultor";
 import { obterAvisosConsultor } from "@/lib/avisos-consultor";
 import { obterLinkGrupoWelcomeAboard } from "@/lib/welcome-aboard-grupo";
 
+/** Dados mínimos para quem só vê o separador "Admin" (líder de equipa), sem a carga do perfil completo. */
+const DADOS_VAZIOS_LIDER: Omit<DadosNovaArea, "nome"> = {
+  linkGrupoWelcomeAboard: "", linkPartilha: null, upline: null, welcomeAboard: null, proximaSessao: null,
+  inscritoWelcomeAboard: false, proximoWebinar: null, proximasFormacoes: [],
+  primeirosPassos: { feitos: [], guardado: true }, avisos: [], erroAvisos: false,
+};
+
 export async function POST(request: Request): Promise<Response> {
   const corpo = await request.json().catch(() => null);
   const email = typeof corpo?.email === "string" ? corpo.email.trim().toLowerCase() : "";
   if (!podeVerNovaArea(email)) {
-    return NextResponse.json({ erro: "A nova área ainda está em preparação." }, { status: 403 });
+    if (!podeVerAreaEquipa(email)) return NextResponse.json({ erro: "A nova área ainda está em preparação." }, { status: 403 });
+    const { rows } = await db().query<{ nome: string }>("select nome from equipa_afiliados where email = $1", [email]);
+    if (!rows[0]) return NextResponse.json({ erro: "Não encontrámos esta conta na equipa." }, { status: 403 });
+    return NextResponse.json({ nome: rows[0].nome, ...DADOS_VAZIOS_LIDER }, { headers: { "Cache-Control": "private, no-store" } });
   }
 
   try {

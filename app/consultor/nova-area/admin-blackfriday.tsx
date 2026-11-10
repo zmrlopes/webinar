@@ -1,13 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { CASAS_BF, resumirBF, type ConfiguracaoBF, type FaturacaoBF, type InscricaoBF } from "@/lib/blackfriday";
-import { podeVerAreaEquipa } from "@/lib/lideres-equipa";
 import { favoritoEquipaNegocio, MYOFFICE_EQUIPA } from "@/lib/equipa-negocio-ponte";
 import type { EstatisticasEquipa } from "@/lib/lideres-equipa-servidor";
-import { lerEmailGuardado } from "../../armazenamento";
-import css from "./equipa.module.css";
+import css from "./admin-blackfriday.module.css";
 
 const euros = (v: number) => new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
 const dataHora = (v: string) => new Intl.DateTimeFormat("pt-PT", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Lisbon" }).format(new Date(v));
@@ -15,9 +12,8 @@ const NOMES_ESTADO: Record<string, string> = { pendente: "Pendente", aprovada: "
 
 interface DadosEquipaBF { nome: string; meta: number; config: ConfiguracaoBF; reservas: InscricaoBF[]; faturacao: FaturacaoBF | null; estatisticas: EstatisticasEquipa; hoje: string }
 
-export default function PaginaEquipaBlackfriday() {
-  const [email, setEmail] = useState("");
-  const [acesso, setAcesso] = useState<"a-confirmar" | "negado" | "autorizado">("a-confirmar");
+/** O separador "Admin" da nova área de um líder de equipa: por agora, só a revisão do bingo da sua equipa. */
+export function AdminBlackFriday({ email }: { email: string }) {
   const [dados, setDados] = useState<DadosEquipaBF | null>(null);
   const [erro, setErro] = useState("");
   const [ocupado, setOcupado] = useState(false);
@@ -28,12 +24,7 @@ export default function PaginaEquipaBlackfriday() {
   const [motivos, setMotivos] = useState<Record<string, string>>({});
   const favorito = useRef<HTMLAnchorElement>(null);
 
-  useEffect(() => {
-    const conta = lerEmailGuardado()?.trim().toLowerCase() ?? "";
-    if (!podeVerAreaEquipa(conta)) { setAcesso("negado"); return; }
-    setEmail(conta); setAcesso("autorizado");
-  }, []);
-  useEffect(() => { favorito.current?.setAttribute("href", favoritoEquipaNegocio(window.location.origin)); }, [acesso]);
+  useEffect(() => { favorito.current?.setAttribute("href", favoritoEquipaNegocio(window.location.origin)); }, []);
 
   async function carregar() {
     try {
@@ -44,14 +35,13 @@ export default function PaginaEquipaBlackfriday() {
     } catch (e) { setErro(e instanceof Error ? e.message : "Não foi possível carregar a equipa."); }
   }
   useEffect(() => {
-    if (acesso !== "autorizado" || !email) return;
     void carregar();
     const intervalo = setInterval(() => { if (!document.hidden) void carregar(); }, 10_000);
     const aoFocar = () => void carregar();
     window.addEventListener("focus", aoFocar);
     return () => { clearInterval(intervalo); window.removeEventListener("focus", aoFocar); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [acesso, email]);
+  }, [email]);
 
   async function rever(i: InscricaoBF, estado: "aprovada" | "recusada") {
     if (ocupado) return;
@@ -74,12 +64,6 @@ export default function PaginaEquipaBlackfriday() {
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (e) { janela?.close(); setErro(e instanceof Error ? e.message : "Falha de ligação."); }
   }
-
-  if (acesso === "a-confirmar") return <main className={css.pagina}><p role="status">A confirmar a conta…</p></main>;
-  if (acesso === "negado") return <main className={css.pagina}>
-    <Link href="/consultor" className={css.voltar}>← Voltar à área do consultor</Link>
-    <p>Esta área é exclusiva de líderes com equipa própria no desafio BLACKFRIDAY.</p>
-  </main>;
 
   const porConsultor = new Map<string, { nome: string; reservas: InscricaoBF[] }>();
   dados?.reservas.forEach(i => {
@@ -105,9 +89,8 @@ export default function PaginaEquipaBlackfriday() {
 
   const percentagem = dados ? Math.min(100, Math.max(0, (dados.faturacao?.valor ?? 0) / dados.meta * 100)) : 0;
 
-  return <main className={css.pagina}>
-    <Link href="/consultor" className={css.voltar}>← Voltar à área do consultor</Link>
-    <header className={css.cabecalho}><span className={css.etiqueta}>A TUA EQUIPA · DESAFIO BLACKFRIDAY</span><h1>Equipa de {dados?.nome ?? "…"}</h1></header>
+  return <section className={css.pagina} aria-label="Admin · desafio BLACKFRIDAY">
+    <header className={css.cabecalho}><span className={css.etiqueta}>ADMIN · DESAFIO BLACKFRIDAY</span><h1>Equipa de {dados?.nome ?? "…"}</h1></header>
     {erro && <p role="alert" className={css.erro}>{erro} <button type="button" onClick={() => void carregar()}>Tentar novamente</button></p>}
 
     {dados && <section className={css.meta}>
@@ -165,5 +148,5 @@ export default function PaginaEquipaBlackfriday() {
         {!!i.revisoes.length && <details><summary>Histórico ({i.revisoes.length})</summary><ul>{i.revisoes.map((r, k) => <li key={k}>{NOMES_ESTADO[r.estado]} em {dataHora(r.em)}{r.motivo ? ` · ${r.motivo}` : ""}</li>)}</ul></details>}
       </article>)}
     </section>}
-  </main>;
+  </section>;
 }
