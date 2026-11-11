@@ -32,6 +32,8 @@ O UUID do pedido é inserido antes da chamada paga: repetir esse UUID recupera o
 
 Verificação do fluxo novo: `npm run test:reservas-imagem`. Os testes simulam fornecedor e base de dados, cobrindo isolamento, acesso, validação de ficheiros/dados, imagem de referência enviada, marca, formatos, versões, falhas e idempotência. O ensaio real com o orçamento iCliGo foi executado separadamente, sem inserir dados na base de dados de produção.
 
+Em **As minhas publicações**, cada cartão tem seleção individual, com **Selecionar todas**, **Limpar seleção**, contador e **Apagar selecionadas**. A confirmação indica a quantidade e que a eliminação é definitiva. Selecionar todas inclui o histórico completo da conta, mesmo além dos 100 registos apresentados na galeria; as publicações ainda em geração ficam excluídas. O servidor valida todo o lote antes de apagar as publicações e os respetivos editores/estúdios numa única operação, preservando referências, publicações não selecionadas e outras contas. Os testes cobrem também lotes inválidos sem eliminação parcial e a seleção/eliminação de mais de 100 publicações. Continua exclusivo da conta de teste.
+
 No fluxo de referência completa, a publicação já não cria um título automático «X noites em…». Sem frase promocional preenchida, omite esse título; mantém o destino e as datas. Uma frase escrita pelo consultor continua a ser usada.
 
 O editor guarda os sombreados largos e gradientes em `sombreados`, separados da fotografia, e desenha-os entre o novo fundo e os textos/cartões. A sombra das letras também é aplicada aos recortes transparentes da letra original. Ao manter ou repor a fotografia original, não duplica os sombreados já incorporados nela. O escurecimento manual continua disponível como ajuste adicional.

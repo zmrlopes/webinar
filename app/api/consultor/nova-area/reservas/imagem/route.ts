@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ErroReserva } from "@/lib/reservas";
 import { acessoReservas, lerBytesReserva } from "@/lib/reservas-servidor";
-import { abrirImagemReserva, apagarImagemReserva, criarReferenciaImagemReserva, gerarImagemReserva, listarImagensReserva, verificarImagemReserva } from "@/lib/reservas-imagem-servidor";
+import { abrirImagemReserva, apagarImagemReserva, apagarPublicacoesReserva, criarReferenciaImagemReserva, gerarImagemReserva, listarImagensReserva, listarPublicacoesSelecionaveisReserva, verificarImagemReserva } from "@/lib/reservas-imagem-servidor";
 import {guardarEdicaoPublicacao,limparFundoEditorPublicacao,prepararEditorPublicacao,prepararCamadasEditorPublicacao} from "@/lib/reservas-imagem-editor-servidor";
 
 export const runtime = "nodejs";
@@ -14,7 +14,10 @@ export async function POST(request: Request) {
     try {corpo = JSON.parse(new TextDecoder().decode(bytes)); if (!corpo || typeof corpo !== "object" || Array.isArray(corpo)) throw new Error();} catch {throw new ErroReserva("Pedido inválido.");}
     const email = await acessoReservas(corpo.email);
     switch (corpo.acao) {
-      case "listar": return json({registos: await listarImagensReserva(email), disponivel: !!(process.env.RESERVAS_IMAGE_API_KEY || process.env.OPENAI_API_KEY) && !!(process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY)});
+      case "listar": {
+        const [registos, selecionaveis] = await Promise.all([listarImagensReserva(email), listarPublicacoesSelecionaveisReserva(email)]);
+        return json({registos, selecionaveis, disponivel: !!(process.env.RESERVAS_IMAGE_API_KEY || process.env.OPENAI_API_KEY) && !!(process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY)});
+      }
       case "abrir": return json(await abrirImagemReserva(email, corpo.id));
       case "referencia": return json(await criarReferenciaImagemReserva(email, corpo));
       case "gerar": return json(await gerarImagemReserva(email, corpo));
@@ -24,6 +27,7 @@ export async function POST(request: Request) {
       case "limpar-editor": return json(await limparFundoEditorPublicacao(email, corpo.id));
       case "guardar-edicao": return json(await guardarEdicaoPublicacao(email, corpo));
       case "apagar": await apagarImagemReserva(email, corpo.id); return json({ok: true});
+      case "apagar-publicacoes": return json({apagados: await apagarPublicacoesReserva(email, corpo.ids)});
       default: throw new ErroReserva("Ação inválida.");
     }
   } catch (erro) {

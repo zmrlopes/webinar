@@ -46,6 +46,34 @@ export async function apagarImagemReserva(email: string, id: unknown) {
   await db().query("delete from dashboard_config where chave = $1", [`reservas:editor:v1:${email}:${r.id}`]);
   await db().query("delete from dashboard_config where chave = $1", [`reservas:estudio:v1:${email}:${r.id}`]);
 }
+export async function apagarPublicacoesReserva(email: string, valor: unknown): Promise<string[]> {
+  // O tamanho do pedido já é limitado pela API; a seleção pode incluir o histórico completo.
+  if (!Array.isArray(valor) || !valor.length) throw new ErroReserva("Seleciona pelo menos uma publicação para apagar.");
+  const ids = [...new Set(valor.map(idValido))];
+  const {rows} = await db().query<{valor: RegistoImagemReserva}>(
+    "select valor - 'imagem' - 'miniatura' as valor from dashboard_config where chave = any($1::text[])",
+    [ids.map(id => prefixo(email) + id)],
+  );
+  if (rows.length !== ids.length) throw new ErroReserva("Uma das publicações já não existe na tua conta. Atualiza o histórico e seleciona novamente.", 404);
+  for (const {valor: registo} of rows) {
+    const r = expirado(registo);
+    if (r.tipo !== "publicacao") throw new ErroReserva("Só podes selecionar publicações nesta ação.");
+    if (r.estado === "a-gerar") throw new ErroReserva("Espera que as publicações selecionadas terminem de gerar antes de apagar.", 409);
+  }
+  // Uma única operação apaga as publicações e os seus editores privados.
+  const chaves = ids.flatMap(id => [prefixo(email) + id, `reservas:editor:v1:${email}:${id}`, `reservas:estudio:v1:${email}:${id}`]);
+  await db().query("delete from dashboard_config where chave = any($1::text[])", [chaves]);
+  return ids;
+}
+export async function listarPublicacoesSelecionaveisReserva(email: string): Promise<string[]> {
+  // Só identificadores e estado: as imagens antigas não são carregadas para selecionar tudo.
+  const {rows} = await db().query<{id: string; estado: string; criada_em: string}>(
+    "select valor->>'id' as id, valor->>'estado' as estado, valor->>'criadaEm' as criada_em from dashboard_config where starts_with(chave, $1) and valor->>'tipo' = 'publicacao'",
+    [prefixo(email)],
+  );
+  const agora = Date.now();
+  return rows.filter(r => r.estado !== "a-gerar" || agora - Date.parse(r.criada_em) > 360_000).map(r => r.id);
+}
 async function normalizarImagem(valor: unknown) {
   const data = imagemReserva(valor);
   if (!data) throw new ErroReserva("Carrega a imagem completa da tua referência.");

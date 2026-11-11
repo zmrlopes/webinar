@@ -12,9 +12,12 @@ import css from "./reservas.module.css";
 import styles from "./reservas-imagem.module.css";
 
 const API = "/api/consultor/nova-area/reservas/imagem";
+type ListaPublicacoes = {registos: ResumoImagemReserva[]; selecionaveis: string[]; disponivel: boolean};
 export function CriarPublicacaoImagem({email}: {email: string}) {
   const [aba, setAba] = useState<"criar" | "historico">("criar"), [passo, setPasso] = useState(1);
   const [lista, setLista] = useState<ResumoImagemReserva[]>([]), [disponivel, setDisponivel] = useState<boolean | null>(null);
+  const [selecionadas, setSelecionadas] = useState<string[]>([]), [avisoHistorico, setAvisoHistorico] = useState("");
+  const [selecionaveis, setSelecionaveis] = useState<string[]>([]);
   const [referencia, setReferencia] = useState<ReferenciaImagemReserva | null>(null);
   const [rascunho, setRascunho] = useState<{nome: string; imagem: string} | null>(null);
   const [dados, setDados] = useState<DadosReserva | null>(null), [formato, setFormato] = useState<FormatoReserva>("story");
@@ -33,14 +36,19 @@ export function CriarPublicacaoImagem({email}: {email: string}) {
   }
   const upload = useRef<HTMLInputElement>(null), bloqueado = useRef(false);
   const referencias = lista.filter(r => r.tipo === "referencia");
+  const publicacoes = lista.filter(r => r.tipo === "publicacao");
   async function pedir<T>(acao: string, extra: Record<string, unknown> = {}): Promise<T> {
     const r = await fetch(API, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({email, acao, ...extra})});
     let c; try {c = await r.json();} catch {throw new Error("A ligação foi interrompida. Consulta o histórico para recuperar o resultado.");}
     if (!r.ok) throw new Error(c.erro || "Não foi possível concluir o pedido.");
     return c;
   }
-  async function carregarLista() {const r = await pedir<{registos: ResumoImagemReserva[]; disponivel: boolean}>("listar"); setLista(r.registos); setDisponivel(r.disponivel);}
-  useEffect(() => {let vivo = true; void pedir<{registos: ResumoImagemReserva[]; disponivel: boolean}>("listar").then(r => {if(vivo){setLista(r.registos);setDisponivel(r.disponivel);}}).catch(e => {if(vivo)setErro(e.message);}); return () => {vivo = false;};}, [email]); // eslint-disable-line react-hooks/exhaustive-deps
+  function atualizarLista(r: ListaPublicacoes) {
+    setLista(r.registos); setDisponivel(r.disponivel); setSelecionaveis(r.selecionaveis);
+    setSelecionadas(atuais => atuais.filter(id => r.selecionaveis.includes(id)));
+  }
+  async function carregarLista() {atualizarLista(await pedir<ListaPublicacoes>("listar"));}
+  useEffect(() => {let vivo = true; void pedir<ListaPublicacoes>("listar").then(r => {if(vivo)atualizarLista(r);}).catch(e => {if(vivo)setErro(e.message);}); return () => {vivo = false;};}, [email]); // eslint-disable-line react-hooks/exhaustive-deps
   async function fazer(titulo: string, acao: () => Promise<void>) {
     if (bloqueado.current || ocupado) return;
     bloqueado.current = true; setOcupado(titulo); setErro("");
@@ -123,6 +131,24 @@ export function CriarPublicacaoImagem({email}: {email: string}) {
       const url = URL.createObjectURL(blob), a = document.createElement("a"); a.href = url; a.download = `${resultado.dados.destino.replace(/[^\p{L}\p{N}]+/gu,"-")}-${resultado.formato}.png`; a.click(); setTimeout(() => URL.revokeObjectURL(url),10000);
     });
   }
+  function retirarPublicacoes(ids: string[]) {
+    setLista(atuais => atuais.filter(r => !ids.includes(r.id)));
+    setSelecionaveis(atuais => atuais.filter(id => !ids.includes(id)));
+    setSelecionadas(atuais => atuais.filter(id => !ids.includes(id)));
+    if (resultado && ids.includes(resultado.id)) {setResultado(null);setEditor(null);setProjetoEstudio(null);setEditorAberto(false);setEditorAlterado(false);}
+  }
+  async function apagarSelecionadas() {
+    if (ocupado || !selecionadas.length) return;
+    const ids = [...selecionadas];
+    if (!window.confirm(`Apagar ${ids.length === 1 ? "a publicação selecionada" : `as ${ids.length} publicações selecionadas`} e as respetivas edições? Esta ação é definitiva.`)) return;
+    await fazer("A apagar as publicações selecionadas…", async () => {
+      setAvisoHistorico("");
+      const r = await pedir<{apagados: string[]}>("apagar-publicacoes", {ids});
+      retirarPublicacoes(r.apagados);
+      setAvisoHistorico(r.apagados.length === 1 ? "Publicação apagada." : `${r.apagados.length} publicações apagadas.`);
+      await carregarLista();
+    });
+  }
   const resumo = dados ? textosPublicacaoReserva(dados) : null;
   const aGerar = resultado?.estado === "a-gerar";
   return <section className={css.pagina} aria-label="Publicações por referência">
@@ -177,6 +203,23 @@ export function CriarPublicacaoImagem({email}: {email: string}) {
         </div>}
       </fieldset>
     </div>
-    {aba === "historico" && <div className={css.cartao}><h2>As minhas publicações</h2><p className={css.nota}>Cada geração fica guardada na tua conta, incluindo as versões com ajustes.</p><div className={styles.galeria}>{lista.filter(r => r.tipo === "publicacao").map(r => <article key={r.id}><button type="button" className={styles.escolher} disabled={!!ocupado} onClick={() => void abrirHistorico(r.id)}>{r.miniatura && <img src={r.miniatura} alt={r.nome}/>}<strong>{r.nome}</strong><small>{r.estado === "a-gerar" ? "A gerar…" : r.estado === "falhou" ? "Geração interrompida · abrir para tentar novamente" : `${r.formato === "story" ? "Story" : "Publicação"} · ${new Date(r.atualizadoEm).toLocaleDateString("pt-PT")}`}</small></button><button type="button" disabled={!!ocupado || r.estado === "a-gerar"} className={css.botaoTexto} onClick={() => {if(window.confirm("Apagar esta publicação do histórico?"))void fazer("A apagar…", async () => {await pedir("apagar", {id:r.id});if(resultado?.id===r.id)setResultado(null);await carregarLista();});}}>Apagar</button></article>)}</div>{!lista.some(r => r.tipo === "publicacao") && <p>Ainda não criaste publicações.</p>}</div>}
+    {aba === "historico" && <div className={css.cartao}>
+      <h2>As minhas publicações</h2><p className={css.nota}>Cada geração fica guardada na tua conta, incluindo as versões com ajustes. Seleciona as publicações que queres apagar.</p>
+      {(publicacoes.length > 0 || selecionaveis.length > 0) && <div className={styles.acoesHistorico} role="group" aria-label="Seleção de publicações">
+        <button type="button" disabled={!!ocupado || !selecionaveis.length || selecionadas.length === selecionaveis.length} onClick={() => {setAvisoHistorico("");setSelecionadas(selecionaveis);}}>Selecionar todas</button>
+        <button type="button" disabled={!!ocupado || !selecionadas.length} onClick={() => {setAvisoHistorico("");setSelecionadas([]);}}>Limpar seleção</button>
+        <span aria-live="polite">{selecionadas.length} selecionada{selecionadas.length === 1 ? "" : "s"}</span>
+        <button type="button" className={styles.apagarSelecionadas} disabled={!!ocupado || !selecionadas.length} onClick={() => void apagarSelecionadas()}>Apagar selecionadas ({selecionadas.length})</button>
+      </div>}
+      {selecionaveis.some(id => !publicacoes.some(p => p.id === id)) && <p className={css.nota}>A galeria mostra as publicações mais recentes. Selecionar todas inclui também as anteriores.</p>}
+      {publicacoes.some(p => p.estado === "a-gerar") && <p className={css.nota}>As publicações que ainda estão a gerar só podem ser apagadas quando terminarem.</p>}
+      {avisoHistorico && <p role="status" className={css.nota}>{avisoHistorico}</p>}
+      <div className={`${styles.galeria} ${styles.historico}`}>{publicacoes.map(r => <article key={r.id} data-selecionado={selecionadas.includes(r.id)}>
+        <label className={styles.selecaoPublicacao}><input type="checkbox" aria-label={`Selecionar ${r.nome}`} checked={selecionadas.includes(r.id)} disabled={!!ocupado || !selecionaveis.includes(r.id)} onChange={e => {const marcada = e.currentTarget.checked;setAvisoHistorico("");setSelecionadas(atuais => marcada ? [...atuais, r.id] : atuais.filter(id => id !== r.id));}}/>Selecionar</label>
+        <button type="button" className={styles.escolher} disabled={!!ocupado} onClick={() => void abrirHistorico(r.id)}>{r.miniatura && <img src={r.miniatura} alt={r.nome}/>}<strong>{r.nome}</strong><small>{r.estado === "a-gerar" ? "A gerar…" : r.estado === "falhou" ? "Geração interrompida · abrir para tentar novamente" : `${r.formato === "story" ? "Story" : "Publicação"} · ${new Date(r.atualizadoEm).toLocaleDateString("pt-PT")}`}</small></button>
+        <button type="button" disabled={!!ocupado || r.estado === "a-gerar"} className={css.botaoTexto} onClick={() => {if(window.confirm("Apagar esta publicação do histórico?"))void fazer("A apagar…", async () => {await pedir("apagar", {id:r.id});retirarPublicacoes([r.id]);await carregarLista();});}}>Apagar</button>
+      </article>)}</div>
+      {!publicacoes.length && !selecionaveis.length && <p>Ainda não criaste publicações.</p>}
+    </div>}
   </section>;
 }
