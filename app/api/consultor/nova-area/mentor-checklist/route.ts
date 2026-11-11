@@ -7,7 +7,7 @@ export async function POST(request: Request): Promise<Response> {
   const json = (corpo: unknown, status = 200) => NextResponse.json(corpo, {status, headers: {"Cache-Control": "private, no-store"}});
   const corpo = await request.json().catch(() => null);
   const email = typeof corpo?.email === "string" ? corpo.email.trim().toLowerCase() : "";
-  if (!podeVerNovaArea(email)) return json({erro: "Esta página está disponível apenas na nova área da conta de teste."}, 403);
+  if (!podeVerNovaArea(email)) return json({erro: "Esta página ainda não está disponível para esta conta."}, 403);
   if (!corpo || !["listar", "marcar"].includes(corpo.acao)) return json({erro: "Pedido inválido."}, 400);
   try {
     if (!await buscarMembroEquipa(email)) return json({erro: "Conta não encontrada na equipa."}, 403);

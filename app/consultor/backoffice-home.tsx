@@ -7,7 +7,7 @@ import { ConvencaoCartao, type PedidoConvencao } from "./convencao-cartao";
 import { EventoForm } from "./evento-form";
 import { TeambuildingComprovativo } from "./teambuilding-comprovativo";
 import { NotificacoesPush } from "./notificacoes-push";
-import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
+import { destinoEntradaNovaArea, podeVerNovaArea } from "@/lib/consultor-nova-area";
 import { AlternarArea } from "./alternar-area";
 import { AvisoRelatorioCore } from "./nova-area/core-rank";
 
@@ -84,7 +84,7 @@ export function BackofficeHome() {
   const [webinarInscrito, setWebinarInscrito] = useState(false);
   const [webinarAcabadoDeInscrever, setWebinarAcabadoDeInscrever] = useState(false);
   const [seccaoAtiva, setSeccaoAtiva] = useState<Seccao>(null);
-  const emTesteVisual = email.trim().toLowerCase() === EMAIL_PAINEL_DEMONSTRACAO;
+  const acessoNovaArea = podeVerNovaArea(email);
   function alternarSeccao(seccao: Seccao): void {
     setSeccaoAtiva((atual) => (atual === seccao ? null : seccao));
   }
@@ -106,6 +106,8 @@ export function BackofficeHome() {
         return;
       }
       guardarEmail(emailParaIdentificar);
+      const destino = destinoEntradaNovaArea(emailParaIdentificar, window.location.search);
+      if (destino) { window.location.replace(destino); return; }
       setEmail(emailParaIdentificar);
       setDados(corpo);
       setWebinarInscrito(corpo.inscritoProximoWebinar === true);
@@ -555,7 +557,7 @@ export function BackofficeHome() {
 
         {estado === "pronto" && dados && (
           <>
-            {emTesteVisual && <AlternarArea ativa="atual" />}
+            {acessoNovaArea && <AlternarArea ativa="atual" email={email} />}
             <div className="vqb-topo">
               <h1>Olá{dados.nome ? `, ${dados.nome}` : ""}</h1>
               <button type="button" className="vqb-trocar" onClick={trocarConta}>

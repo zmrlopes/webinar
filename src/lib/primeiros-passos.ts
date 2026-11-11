@@ -1,3 +1,24 @@
+import { EMAIL_PAINEL_DEMONSTRACAO } from "./demo";
+
+export function chaveProgressoLocalPrimeirosPassos(email: string): string {
+  return `consultor-nova-area:primeiros-passos:v2:${email.trim().toLowerCase()}`;
+}
+
+/** As chaves sem conta pertencem à antiga proposta exclusiva de demonstração. */
+export function lerProgressoLocalPrimeirosPassos(email: string, armazenamento: {getItem(chave: string): string | null}): number[] {
+  try {
+    const guardado = armazenamento.getItem(chaveProgressoLocalPrimeirosPassos(email));
+    if (guardado !== null) return limparPrimeirosPassos(JSON.parse(guardado));
+    if (email.trim().toLowerCase() !== EMAIL_PAINEL_DEMONSTRACAO) return [];
+    const anterior = armazenamento.getItem("consultor-nova-area:primeiros-passos:v2");
+    if (anterior !== null) return limparPrimeirosPassos(JSON.parse(anterior));
+    return limparPrimeirosPassos([
+      ...importarOnboardingTemporario(JSON.parse(armazenamento.getItem("consultor-nova-area:onboarding-codex:v2") ?? "[]")),
+      ...migrarPrimeirosPassosAnteriores(JSON.parse(armazenamento.getItem("consultor-nova-area:primeiros-passos:v1") ?? "[]")),
+    ]);
+  } catch { return []; }
+}
+
 /** IDs estáveis dos sete checks, distribuídos pelos cinco cartões de Começa aqui. */
 export const TAREFAS_PRIMEIROS_PASSOS = [
   "acessos-equipa", "primeira-reuniao", "curso", "sessao-1", "sessao-2", "primeiras-acoes", "segunda-reuniao",

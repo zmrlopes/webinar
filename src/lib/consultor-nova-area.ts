@@ -1,8 +1,21 @@
 import { EMAIL_PAINEL_DEMONSTRACAO } from "./demo";
 
-/** Esta área só será aberta à equipa por indicação explícita do utilizador. */
+/** Primeira migração real autorizada; não abrange a descendência da Ana. */
+export const EMAIL_PILOTO_NOVA_AREA = "apensarnaproxima@gmail.com";
+
+/** Esta área só será aberta às restantes contas por indicação explícita do utilizador. */
 export function podeVerNovaArea(email: string): boolean {
-  return email.trim().toLowerCase() === EMAIL_PAINEL_DEMONSTRACAO;
+  const conta = email.trim().toLowerCase();
+  return conta === EMAIL_PAINEL_DEMONSTRACAO || conta === EMAIL_PILOTO_NOVA_AREA;
+}
+
+export function destinoEntradaNovaArea(email: string, pesquisa: string): string | null {
+  return email.trim().toLowerCase() === EMAIL_PILOTO_NOVA_AREA && new URLSearchParams(pesquisa).get("area") !== "atual"
+    ? "/consultor/nova-area" : null;
+}
+
+export function linkAreaAtual(email: string): string {
+  return email.trim().toLowerCase() === EMAIL_PILOTO_NOVA_AREA ? "/consultor?area=atual" : "/consultor";
 }
 
 /** Convite do grupo Welcome Aboard fornecido pelo utilizador. */

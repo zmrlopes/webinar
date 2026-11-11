@@ -15,7 +15,7 @@ export default function AtualizarNegocioConsultor() {
   const [progresso, setProgresso] = useState({feitos: 0, total: 1});
   useEffect(() => {
     const email = lerEmailGuardado()?.trim().toLowerCase() ?? "";
-    if (!podeVerNovaArea(email)) {setErro("Esta atualização está disponível apenas na conta de teste. Entra primeiro na nova área."); return;}
+    if (!podeVerNovaArea(email)) {setErro("Esta atualização ainda não está disponível para esta conta. Entra primeiro na nova área."); return;}
     if (!window.opener || new URLSearchParams(window.location.search).get("ponte") !== "1") {
       setErro("Abre o MyOffice e carrega no novo favorito «Atualizar o meu negócio», disponível na nova área."); return;
     }

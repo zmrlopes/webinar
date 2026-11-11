@@ -1,7 +1,7 @@
 "use client";
 import {useEffect, useRef, useState, type CSSProperties, type FormEvent} from "react";
 import {CASAS_BF, META_BF, resumirBF, type DadosBF, type InscricaoBF} from "@/lib/blackfriday";
-import {podeVerNovaArea} from "@/lib/consultor-nova-area";
+import {EMAIL_PAINEL_DEMONSTRACAO} from "@/lib/demo";
 import {detetarNovasLinhasBF, type MemoriaLinhasBF} from "@/lib/blackfriday-celebracao";
 import css from "./blackfriday.module.css";
 
@@ -91,7 +91,7 @@ export function BlackFriday({email}: {email: string}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [email, simulacao]);
   function alternarSimulacao() {
-    if (aGuardar || !podeVerNovaArea(email)) return;
+    if (aGuardar || email.trim().toLowerCase() !== EMAIL_PAINEL_DEMONSTRACAO) return;
     ++pedidoAtual.current; setDados(null);
     setSimulacao(!simulacao); setAviso(""); setErro("");
     setCelebracao(null);
@@ -167,7 +167,7 @@ export function BlackFriday({email}: {email: string}) {
     <header className={css.cabecalho}><span className={css.selo}>TROPA DE ELITE · DESAFIO {dados?.config.inicio.slice(0, 4) ?? "2026"}</span><h1>BLACK<span>FRIDAY</span></h1><p>Cada reserva, uma conquista.<br/>A próxima casa pode ser tua.</p><div className={css.datas}>{dados ? `${data(dados.config.inicio)} — ${data(dados.config.fim)}` : "A preparar o desafio…"}</div></header>
     {erro && casa === null && <p role="alert" className={css.erro}>{erro} <button type="button" onClick={() => void carregar()}>Tentar novamente</button></p>}
     {aviso && <p role="status" className={css.aviso}>{aviso}</p>}
-    {dados && podeVerNovaArea(email) && <div className={css.simulacao}>
+    {dados && email.trim().toLowerCase() === EMAIL_PAINEL_DEMONSTRACAO && <div className={css.simulacao}>
       <div><strong>{simulacao ? "SIMULAÇÃO LIGADA AO ADMIN" : "Experimenta o envio de um comprovativo"}</strong><p>{simulacao ? "Anexa um print numa casa e revê-o no admin, em Simulação. O cartão atualiza ao regressares e a cada 10 segundos. Os testes ficam guardados à parte até recomeçares a simulação e não contam para o desafio." : "Podes testar o envio, a aprovação e a recusa pelo admin antes do arranque do desafio."}</p></div>
       <div className={css.acoesSimulacao}>{simulacao && <><a href="/admin/blackfriday?modo=simulacao" target="_blank" rel="noreferrer">Abrir simulação no admin ↗</a><button type="button" onClick={previsualizarAnimacao}>Ver animação de linha</button><button type="button" disabled={aGuardar} onClick={() => void recomeçarSimulacao()}>Recomeçar simulação</button></>}<button type="button" disabled={aGuardar} onClick={alternarSimulacao}>{simulacao ? "Sair da simulação" : "Experimentar simulação"}</button></div>
     </div>}

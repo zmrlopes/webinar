@@ -8,7 +8,7 @@ import { dadosReservaVazios, elementoReserva, ErroReserva, imagemReserva, marcaR
 const prefixo = (email: string) => `reservas:v1:${email}:item:`;
 export async function acessoReservas(valor: unknown): Promise<string> {
   const email = typeof valor === "string" ? valor.trim().toLowerCase() : "";
-  if (!podeVerNovaArea(email)) throw new ErroReserva("Reservas está disponível apenas na conta de teste.", 403);
+  if (!podeVerNovaArea(email)) throw new ErroReserva("Reservas ainda não está disponível para esta conta.", 403);
   if (!await buscarMembroEquipa(email)) throw new ErroReserva("Conta não encontrada na equipa.", 403);
   return email;
 }

@@ -8,6 +8,23 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+Por indicação mais recente do utilizador, a nova área completa está também
+publicada para a Ana Custódia (`apensarnaproxima@gmail.com`), como primeira
+migração real, incluindo as APIs das secções. A entrada em `/consultor` abre
+a nova área por defeito apenas para a Ana; `/consultor?area=atual` permite
+consultar a versão anterior sem redirecionar. Mantém o menu completo e o
+separador Admin exclusivo de líder para rever o bingo da sua equipa.
+O bingo da Ana conserva a meta própria de 1.200.000 €, a faturação, as
+reservas, os comprovativos e o histórico existentes, nas mesmas chaves.
+A simulação e as ações de limpar testes continuam exclusivas da conta de
+demonstração, nunca da Ana. As marcas locais dos primeiros passos são
+separadas por email; só a conta de demonstração importa as antigas chaves
+do navegador sem email. Os dados guardados no servidor mantêm-se por conta.
+Esta autorização não inclui os descendentes da Ana nem os outros consultores;
+as restrições anteriores à conta de teste passam a incluir apenas esta
+exceção explícita. Correr `npm run test:nova-area`, `npm run test:blackfriday`,
+`npm run typecheck` e `npm run build`.
+
 Por indicação do utilizador, “Estatísticas e projeções” (antes “O meu negócio”) está em Gestão do negócio na nova área,
 apenas para a conta de teste definida em `src/lib/demo.ts`, incluindo a API
 `/api/consultor/nova-area/negocio`. Nesta fase inclui apenas Mapas e Projeções:

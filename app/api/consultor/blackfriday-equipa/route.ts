@@ -45,8 +45,8 @@ export async function POST(request: Request) {
     if (corpo?.acao === "comprovativo" && typeof corpo.id === "string") return await comprovativoEquipaBF(emails, corpo.id);
     if (corpo?.acao === "rever") {
       await reverReservaEquipaBF(emails, corpo.id, corpo.estado, corpo.motivo);
-      const [config, reservas, faturacao] = await Promise.all([configuracaoBF(), listarReservasEquipaBF(emails), faturacaoEquipaBF(liderEmail)]);
-      return json({ nome, meta, config, reservas, faturacao, hoje: hojeBF() });
+      const [config, reservas, faturacao, estatisticas] = await Promise.all([configuracaoBF(), listarReservasEquipaBF(emails), faturacaoEquipaBF(liderEmail), estatisticasEquipa(liderEmail)]);
+      return json({ nome, meta, config, reservas, faturacao, estatisticas, hoje: hojeBF() });
     }
     return json({ erro: "Pedido inválido." }, 400);
   } catch (e) {
