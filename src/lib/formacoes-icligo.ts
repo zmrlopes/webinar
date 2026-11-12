@@ -6,7 +6,8 @@ import type { CursoExterno, LicaoExterna, ModuloExterno } from "./formacoes-grav
  * temos o índice — título e link de cada lição — para o consultor as encontrar
  * na mesma pesquisa das formações da Tropa de Elite.
  *
- * Levantado da Academy a 2026-09-25. Os slugs vêm dos links das lições; há
+ * Índice revisto na Academy a 2026-11-12, incluindo a paginação dos cursos.
+ * Os slugs vêm dos links das lições; há
  * alguns trocados do lado deles (ex.: "laponia" é o Senegal) — vale o título.
  */
 
@@ -151,6 +152,12 @@ export const RESERVAS_ICLIGO: CursoExterno[] = [
   ]),
   cursoAcademy("formacao-parceiros", "Formação Parceiros", DESTINOS),
   cursoAcademy("be-a-travel-consultant-2", "Be a Travel Partner", ORCAMENTOS, [
+    modulo("Bem-vindo à Jornada", [
+      ["aula-1-bem-vindo-a-icligo", "Bem-vindo à iCliGo"],
+      ["aula-2-o-que-e-ser-travel-partner", "O que é ser Travel Partner"],
+      ["aula-3-como-te-deves-posicionar-enquanto-travel-partner", "Como te deves posicionar enquanto Travel Partner"],
+      ["aula-4-como-funciona-esta-certificacao", "Como funciona esta certificação"],
+    ]),
     modulo("Antes da Reserva", [
       [
         "aula-1-como-comecar-a-atrair-os-teus-primeiros-clientes",
@@ -190,7 +197,7 @@ export const RESERVAS_ICLIGO: CursoExterno[] = [
     ]),
     modulo("Como Contactar a iCliGo", [
       ["aula-1-onde-pedir-ajuda-da-forma-certa", "Onde pedir ajuda da forma certa", "suporte"],
-      ["aula-2-como-abrir-um-ticket-no-myoffice", "Como abrir um ticket no MyOffice", "suporte"],
+      ["aula-2-como-abrir-um-ticket-no-myoffice", "Como obter apoio no MyOffice", "suporte"],
       [
         "aula-3-prazos-de-resposta-e-como-nao-perder-tempo",
         "Prazos de resposta e como não perder tempo",
@@ -199,6 +206,7 @@ export const RESERVAS_ICLIGO: CursoExterno[] = [
       ["aula-4-telefone-so-para-emergencias", "Telefone: só para emergências", "suporte"],
       ["aula-5-emergencia-em-destino-o-que-fazer", "Emergência em destino: o que fazer", "suporte"],
       ["aula-6-fecho-do-modulo-a-regra-de-ouro-do-suporte", "A regra de ouro do suporte", "suporte"],
+      ["aula-antes-da-certificacao", "Antes da certificação"],
     ]),
   ]),
   cursoAcademy(
@@ -206,6 +214,11 @@ export const RESERVAS_ICLIGO: CursoExterno[] = [
     "Como Potenciar Maior Eficácia com o Departamento de Reservas",
     ORCAMENTOS,
   ),
+  cursoAcademy("icligo-black-friday-2026", "iCliGo Black Friday 2026", CAMPANHAS, [
+    modulo("Formações da campanha", [
+      ["dia-1-de-formacao-oportunidade-sem-limites", "Dia 1 de formação – Oportunidade sem limites", "Black Friday 2026 campanha vendas"],
+    ]),
+  ]),
   cursoAcademy("icligo-summer26", "iCliGo Summer’26", CAMPANHAS, [
     modulo("Sessões", [
       ["detalhes-de-campanha", "Detalhes de campanha"],
@@ -217,10 +230,41 @@ export const RESERVAS_ICLIGO: CursoExterno[] = [
       ],
     ]),
   ]),
-  cursoAcademy("blue-monday", "Blue Monday", CAMPANHAS),
-  cursoAcademy("icligo-open-season-26", "Open Season’26", CAMPANHAS),
-  cursoAcademy("black-friday-2025", "Black Friday 2025", CAMPANHAS),
-  cursoAcademy("icligo-reveillon-pt", "iCliGo Réveillon", CAMPANHAS),
+  cursoAcademy("blue-monday", "Blue Monday", CAMPANHAS, [
+    modulo("Sessões", [
+      ["blue-monday-1", "Blue Monday #1"],
+      ["blue-monday-2", "Blue Monday #2"],
+      ["blue-monday-3", "Blue Monday #3"],
+      ["blue-monday-4-3", "Blue Monday #4"],
+    ]),
+  ]),
+  cursoAcademy("icligo-open-season-26", "Open Season’26", CAMPANHAS, [
+    modulo("Sessões", [
+      ["open-season-01", "Open Season #01"],
+      ["open-season-02", "Open Season #02"],
+      ["open-season-03", "Open Season #03"],
+      ["open-season-04", "Open Season #04"],
+      ["open-season-05", "Open Season #05"],
+    ]),
+  ]),
+  cursoAcademy("black-friday-2025", "Black Friday 2025", CAMPANHAS, [
+    modulo("Sessões", [
+      ["black-friday-2025-marketing", "Black Friday 2025 – Marketing"],
+      ["bk25-1st-session", "Black Friday 2025 – Sessão 1"],
+      ["bk25-2st-session", "Black Friday 2025 – Sessão 2"],
+      ["bk25-3st-session", "Black Friday 2025 – Sessão 3"],
+      ["bk25-4th-session", "Black Friday 2025 – Sessão 4"],
+      ["bk25-5th-session", "Black Friday 2025 – Sessão 5"],
+    ]),
+  ]),
+  cursoAcademy("icligo-reveillon-pt", "iCliGo Réveillon", CAMPANHAS, [
+    modulo("Sessões", [
+      ["dia-1-de-formacao-24-08", "Dia 1 de formação · 24/08"],
+      ["dia-2-de-formacao-25-08", "Dia 2 de formação · 25/08"],
+      ["dia-3-de-formacao-26-08", "Dia 3 de formação · 26/08"],
+      ["dia-4-de-formacao-28-08", "Dia 4 de formação · 28/08"],
+    ]),
+  ]),
 ];
 
 const CURSOS_EQUIPA = "Cursos de Criação de Equipa";
@@ -228,7 +272,7 @@ const SESSOES_EQUIPA = "Sessões e Testemunhos";
 
 /**
  * Formações da iCliGo Academy sobre criação e liderança de equipa. Levantado
- * da Academy a 2026-09-28 (os cursos com mais de 20 lições têm uma 2ª página
+ * da Academy, revistas a 2026-11-12 (os cursos com mais de 20 lições têm uma 2ª página
  * que a Academy carrega à parte — está tudo incluído).
  */
 export const EQUIPA_ICLIGO: CursoExterno[] = [
@@ -449,7 +493,72 @@ export const EQUIPA_ICLIGO: CursoExterno[] = [
       ["26-convite", "#26 – Convite"],
       ["27-a-apresentacao", "#27 – A Apresentação"],
       ["28-objecoes-e-fecho", "#28 – Objeções e Fecho"],
+      ["29-follow-up", "#29 – Follow-Up", "acompanhamento"],
+      ["30-promocao-de-eventos", "#30 – Promoção de Eventos"],
     ]),
+  ]),
+  cursoAcademy("be-a-rock", "Be a Rock", SESSOES_EQUIPA, [
+    modulo("Dia 1", [
+      ["sessao-01-2", "Sessão 01"],
+      ["sessao-02-2", "Sessão 02"],
+      ["sessao-03-2", "Sessão 03"],
+      ["sessao-04-2", "Sessão 04"],
+      ["sessao-05", "Sessão 05"],
+      ["sessao-06", "Sessão 06"],
+      ["sessao-07", "Sessão 07"],
+      ["sessao-08", "Sessão 08"],
+    ]),
+    modulo("Dia 2", [
+      ["sessao-01", "Sessão 01"],
+      ["sessao-02", "Sessão 02"],
+      ["sessao-03", "Sessão 03"],
+      ["sessao-04", "Sessão 04"],
+      ["sessao-05-2", "Sessão 05"],
+      ["sessao-06-2", "Sessão 06"],
+      ["sessao-07-2", "Sessão 07"],
+    ]),
+  ]),
+  cursoAcademy("live-streaming-be-a-leader-25", "Be a Leader 2025 · Gravações", SESSOES_EQUIPA, [
+    modulo("10 de outubro", [
+      ["parte-1-3", "Parte 1"],
+      ["parte-2", "Parte 2"],
+      ["parte-3-2", "Parte 3"],
+    ]),
+    modulo("11 de outubro", [
+      ["parte-1-4", "Parte 1"],
+      ["parte-2-2", "Parte 2"],
+      ["parte-3-3", "Parte 3"],
+      ["parte-4-2", "Parte 4"],
+      ["parte-5", "Parte 5"],
+      ["parte-6", "Parte 6"],
+    ]),
+    modulo("12 de outubro", [
+      ["parte-1-5", "Parte 1"],
+      ["parte-1-6", "Parte 2"],
+      ["parte-3-4", "Parte 3"],
+      ["parte-4-3", "Parte 4"],
+    ]),
+  ]),
+  cursoAcademy("blitz-campaign", "Blitz Campaign", SESSOES_EQUIPA, [
+    modulo("Sessões", [
+      ["session-00", "Sessão #00"],
+      ["session-01", "Sessão #01"],
+      ["session-02", "Sessão #02"],
+      ["session-03-5", "Sessão #03"],
+      ["session-04-5", "Sessão #04"],
+      ["session-05-5", "Sessão #05"],
+      ["session-06-5", "Sessão #06"],
+      ["session-07-5", "Sessão #07"],
+      ["session-08-3", "Sessão #08"],
+      ["session-09", "Sessão #09"],
+      ["session-10", "Sessão #10"],
+      ["session-11", "Sessão #11"],
+      ["session-12", "Sessão #12"],
+      ["session-13", "Sessão #13"],
+    ]),
+  ]),
+  cursoAcademy("o-segredo-dos-grandes-vencedores", "O Segredo dos Grandes Vencedores", SESSOES_EQUIPA, [
+    modulo("Sessão", [["o-segredo-dos-grandes-vencedores", "O Segredo dos Grandes Vencedores"]]),
   ]),
   cursoAcademy("da-duvida-a-decisao", "Da Dúvida à Decisão", SESSOES_EQUIPA, [
     modulo(
