@@ -34,6 +34,11 @@ export interface DadosBF {
   /** Presente quando o TP pertence à equipa de um líder com meta própria (em vez da meta geral de 3M). */
   metaEquipa?: {nome: string; meta: number; faturacao: FaturacaoBF | null} | null;
 }
+export interface RankingBF {
+  inicio: string; fim: string; atualizadoEm: string;
+  consultores: {username: string; email: string; nome: string; valor: number}[];
+}
+export interface DadosAdminBF extends DadosBF {ranking: RankingBF | null}
 export function hojeBF(agora = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", {timeZone: "Europe/Lisbon"}).format(agora);
 }

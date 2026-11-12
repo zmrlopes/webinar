@@ -2,12 +2,12 @@
 import Link from "next/link";
 import {useEffect, useRef, useState, type FormEvent} from "react";
 import {BarraBlackFriday} from "../../consultor/nova-area/blackfriday";
-import {CASAS_BF, resumirBF, type ConfiguracaoBF, type DadosBF, type InscricaoBF} from "@/lib/blackfriday";
+import {CASAS_BF, resumirBF, type ConfiguracaoBF, type DadosAdminBF, type InscricaoBF} from "@/lib/blackfriday";
 import css from "./painel.module.css";
 const euros = (v: number) => new Intl.NumberFormat("pt-PT", {style: "currency", currency: "EUR"}).format(v);
 const dataHora = (v: string) => new Intl.DateTimeFormat("pt-PT", {dateStyle: "short", timeStyle: "medium", timeZone: "Europe/Lisbon"}).format(new Date(v));
 export function PainelBlackFriday() {
-  const [dados, setDados] = useState<DadosBF | null>(null);
+  const [dados, setDados] = useState<DadosAdminBF | null>(null);
   const [simulacao, setSimulacao] = useState<boolean | null>(null);
   const pedidoAtual = useRef(0);
   const aGuardar = useRef(false);
@@ -87,6 +87,15 @@ export function PainelBlackFriday() {
     {!dados && !erro && <p>A carregar o desafio…</p>}
     {dados && config && <>
       {!simulacao && <><BarraBlackFriday dados={dados}/><p className={css.nota}>A faturação vem do total geral da equipa no MyOffice para o período escolhido e atualiza com <Link href="/admin/dashboard-negocio/atualizar">Atualizar dados</Link>. Os comprovativos do bingo não são somados à barra.</p></>}
+      {!simulacao && <section className={css.bloco} aria-labelledby="bf-ranking-titulo">
+        <h2 id="bf-ranking-titulo">Top 10 Black Friday · Faturação própria</h2>
+        <p className={css.nota}>Os 10 consultores da equipa com maior faturação própria durante o desafio, de {dados.config.inicio.split("-").reverse().join("/")} a {dados.config.fim.split("-").reverse().join("/")}. Inclui quem ainda não enviou comprovativos para o bingo.</p>
+        {dados.ranking ? <>
+          <p className={css.nota}>Faturação até {dados.ranking.fim.split("-").reverse().join("/")} · Atualizado em {dataHora(dados.ranking.atualizadoEm)}.</p>
+          {dados.ranking.consultores.length ? <div className={`${css.tabela} ${css.ranking}`}><table><thead><tr><th scope="col">Posição</th><th scope="col">Consultor</th><th scope="col">Faturação própria</th></tr></thead><tbody>{dados.ranking.consultores.map((c, indice) => <tr key={c.username}><td><span className={css.posicao}>{indice + 1}º</span></td><th scope="row">{c.nome}</th><td>{euros(c.valor)}</td></tr>)}</tbody></table></div> : <p>Ainda não há faturação própria positiva no período recolhido.</p>}
+        </> : <p className={css.nota}>{dados.hoje < dados.config.inicio ? "O ranking fica disponível após o início do desafio." : "O ranking aguarda uma recolha completa da faturação do desafio."}</p>}
+        <p className={css.nota}>Atualiza com <Link href="/admin/dashboard-negocio/atualizar">Atualizar dados do MyOffice</Link>. Usa as vendas próprias devolvidas pelo MyOffice; os valores de equipa e os comprovativos do bingo não são somados a cada consultor.</p>
+      </section>}
       <div className={css.indicadores}><div><strong>{participantes.length}</strong><span>Participantes</span></div><div><strong>{dados.inscricoes.filter(i => i.estado === "pendente").length}</strong><span>Por validar</span></div><div><strong>{participantes.filter(p => p.confirmado.linhas.length).length}</strong><span>TPs com linha validada</span></div><div><strong>{participantes.filter(p => p.confirmado.bingo).length}</strong><span>Bingos validados</span></div></div>
       {!simulacao && <details className={css.bloco}><summary>Datas, avião e prémios</summary>
         <form onSubmit={configurar} className={css.config}>

@@ -3,6 +3,7 @@ import {CASAS_BF, CONFIG_BF, hojeBF, periodoBF, referenciaBF, resumirBF, validar
 import {dataSimulacaoBF} from "../src/lib/blackfriday-simulacao";
 import {EMAIL_PAINEL_DEMONSTRACAO} from "../src/lib/demo";
 import {detetarNovasLinhasBF} from "../src/lib/blackfriday-celebracao";
+import {prepararRankingBF} from "../src/lib/blackfriday-ranking";
 
 const config = {...CONFIG_BF};
 const reserva = {casa: "0", referencia: "AB-123", valor: "2500.50", dataReserva: "2026-11-13", curinga: false};
@@ -67,6 +68,39 @@ assert.deepEqual(detetarNovasLinhasBF(inicioSimulacao.memoria, "simulacao", [0])
 assert.deepEqual(detetarNovasLinhasBF(inicioSimulacao.memoria, "real", [0, 2]).novas, [], "Sair da simulação recupera a base real sem festejos falsos.");
 console.log("OK: animação só para novas linhas, sem repetir na leitura inicial, aprovação, atualização ou passagem entre cartões real e simulado.");
 
+const recolhaRanking = (lista: unknown[], total = lista.length) => ({
+  plano: {corpo: {periodos: [{chave: "blackfriday-2026", inicio: config.inicio, fim: "2026-11-12"}]}},
+  "equipa-blackfriday-2026:p0": {corpo: {stats: {sales: 9_000_000}, list: {content: lista, totalElements: total}}},
+});
+const membrosRanking = Array.from({length: 12}, (_, i) => ({user: {username: `TP${i}`, name: `Consultor ${i}`, email: `tp${i}@example.com`}, stats: {sales: (i + 1) * 1000}}));
+const atualizadoRanking = "2026-11-12T15:00:00Z";
+const prepararRanking = (bruto: Parameters<typeof prepararRankingBF>[0], configuracao = config) => prepararRankingBF(bruto, configuracao, "2026-11-12", atualizadoRanking);
+const ranking = prepararRanking(recolhaRanking(membrosRanking))!;
+assert.equal(ranking.consultores.length, 10);
+assert.equal(ranking.consultores[0]?.valor, 12000, "Ordena pelas vendas próprias, sem usar o total geral da equipa.");
+assert.equal(ranking.consultores.at(-1)?.valor, 3000);
+assert.equal(ranking.inicio, config.inicio);
+assert.equal(ranking.atualizadoEm, atualizadoRanking);
+assert.deepEqual(prepararRanking(recolhaRanking(membrosRanking), {...config, periodoFaturacao: "anual"}), ranking, "Mudar a barra para anual mantém o ranking no desafio.");
+const primeiraPagina = recolhaRanking(membrosRanking.slice(0, 6), 12);
+assert.equal(prepararRanking(primeiraPagina), null, "Recusa uma recolha parcial.");
+const paginado = {...primeiraPagina, "equipa-blackfriday-2026:p1": {corpo: {list: {content: membrosRanking.slice(6), totalElements: 12}}}};
+assert.deepEqual(prepararRanking(paginado), ranking);
+assert.equal(prepararRanking({...primeiraPagina, "equipa-blackfriday-2026:p2": paginado["equipa-blackfriday-2026:p1"]}), null, "Não aceita páginas em falta.");
+assert.equal(prepararRanking({...paginado, falhas: {corpo: ["Equipa blackfriday-2026: falhou"]}}), null);
+assert.equal(prepararRanking(recolhaRanking([membrosRanking[0], membrosRanking[0]])), null, "Duplicados não contam como uma recolha completa.");
+assert.equal(prepararRanking(recolhaRanking([{user: {username: "TP"}, stats: {sales: NaN}}])), null);
+assert.deepEqual(prepararRanking(recolhaRanking([]))?.consultores, [], "Uma lista vazia confirmada é válida.");
+assert.deepEqual(prepararRanking(recolhaRanking([{user: {username: "TP"}, stats: {sales: 0}}]))?.consultores, []);
+const anual = {...recolhaRanking(membrosRanking), plano: {corpo: {periodos: [{chave: "blackfriday-2026", inicio: "2026-01-01", fim: "2026-11-12"}]}}};
+assert.equal(prepararRanking(anual), null, "Nunca apresenta vendas anuais como vendas do desafio.");
+const rankingSeparado = {...anual, plano: {corpo: {periodos: [...anual.plano.corpo.periodos, {chave: "blackfriday-ranking-2026", inicio: config.inicio, fim: "2026-11-12"}]}}, "equipa-blackfriday-ranking-2026:p0": recolhaRanking(membrosRanking)["equipa-blackfriday-2026:p0"]};
+assert.deepEqual(prepararRanking(rankingSeparado, {...config, periodoFaturacao: "anual"}), ranking);
+const empatados = [{user: {username: "b", name: "Beatriz"}, stats: {sales: 1234.567}}, {user: {username: "a", name: "Ana"}, stats: {sales: 1234.57}}];
+assert.deepEqual(prepararRanking(recolhaRanking(empatados))?.consultores.map(c => c.nome), ["Ana", "Beatriz"]);
+assert.equal(prepararRankingBF(recolhaRanking(membrosRanking), config, "2026-11-08", atualizadoRanking), null);
+console.log("OK: top 10 por faturação própria, páginas completas, empates, período do desafio independente do anual e rejeição de falhas ou valores inválidos.");
+
 if (process.argv.includes("--db")) {
   const {loadEnvConfig} = await import("@next/env");
   loadEnvConfig(process.cwd());
@@ -102,7 +136,7 @@ if (process.argv.includes("--db")) {
     try {
       const hoje = hojeBF();
       assert(hoje.startsWith("2026-"), "Atualiza as datas dos testes de integração para o ano da campanha.");
-      await db().query("create table equipa_afiliados (email text primary key, nome text not null)");
+      await db().query("create table equipa_afiliados (email text primary key, nome text not null, upline_email text)");
       await db().query("insert into equipa_afiliados (email,nome) values ($1,'Conta de teste')", [EMAIL_PAINEL_DEMONSTRACAO]);
       const consultor = await import("../app/api/consultor/nova-area/blackfriday/route");
       const admin = await import("../app/api/admin/blackfriday/route");
@@ -216,6 +250,28 @@ if (process.argv.includes("--db")) {
       await calcularDashboard(true);
       assert.equal((await api.dadosBF(email)).faturacao?.valor, 0);
       console.log("OK: atualização real do dashboard alimenta a barra; falhas e simulações preservam o snapshot anterior; total zero é válido.");
+      const listaRanking = {stats: {sales: 500_000}, list: {content: membrosRanking, totalElements: membrosRanking.length}};
+      await guardarBruto("equipa-blackfriday-2026:p0", listaRanking);
+      const rankingRecuperado = await (await admin.GET(new Request("http://localhost/api/admin/blackfriday"))).json();
+      assert.equal(rankingRecuperado.ranking.consultores[0].valor, 12000, "A API recupera a recolha completa anterior sem nova sincronização.");
+      await calcularDashboard(true);
+      const rankingGuardado = (await api.dadosAdminBF()).ranking!;
+      assert.equal(rankingGuardado.consultores.length, 10);
+      assert.equal(rankingGuardado.consultores[0]?.valor, 12000);
+      assert.equal("ranking" in await api.dadosBF(email), false, "As APIs do consultor não recebem o ranking.");
+      assert.equal((await api.dadosAdminBF(true)).ranking, null, "A simulação nunca recebe o ranking real.");
+      await guardarBruto("equipa-blackfriday-2026:p0", {...listaRanking, list: {...listaRanking.list, content: membrosRanking.slice(0, 5)}});
+      await calcularDashboard(true);
+      assert.deepEqual((await api.dadosAdminBF()).ranking, rankingGuardado, "Uma lista parcial mantém o último ranking confirmado.");
+      await api.guardarConfigBF({...c, periodoFaturacao: "anual"});
+      assert.deepEqual((await api.dadosAdminBF()).ranking, rankingGuardado);
+      const sincronizar = await import("../app/api/admin/dashboard-negocio/sincronizar/route");
+      const planoAnual = await (await sincronizar.GET(new Request("http://localhost/api/admin/dashboard-negocio/sincronizar"))).json();
+      assert.equal(planoAnual.periodos.find((p: {chave: string}) => p.chave === "blackfriday-ranking-2026")?.inicio, hoje);
+      await api.guardarConfigBF({...c, periodoFaturacao: "desafio"});
+      const planoDesafio = await (await sincronizar.GET(new Request("http://localhost/api/admin/dashboard-negocio/sincronizar"))).json();
+      assert.equal(planoDesafio.periodos.some((p: {chave: string}) => p.chave === "blackfriday-ranking-2026"), false, "Reutiliza o mesmo pedido quando a barra já usa o desafio.");
+      console.log("OK: API admin recupera e guarda o top 10, preserva-o em falhas e separa os dados dos consultores, da simulação e do acumulado anual.");
     } finally {await fecharDb();}
   } finally {
     process.env.DATABASE_URL = original;

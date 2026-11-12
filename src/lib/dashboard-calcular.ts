@@ -3,7 +3,8 @@ import { lerBruto, type Periodo } from "./dashboard-sincronizar";
 import { calcularAno, juntarAnos, type AnoReservas, type ArvoreReservas, type DadosReservasMedias } from "./reservas-medias";
 import { importarLinhasEquipa, type LinhaEquipa } from "./equipa-import";
 import { CAMPANHA_BF, periodoBF, type FaturacaoBF } from "./blackfriday";
-import { CHAVE_FATURACAO_BF, configuracaoBF } from "./blackfriday-servidor";
+import { CHAVE_FATURACAO_BF, CHAVE_RANKING_BF, configuracaoBF } from "./blackfriday-servidor";
+import { prepararRankingBF } from "./blackfriday-ranking";
 import type { DadosCoreRank } from "../../app/admin/dashboard-negocio/core-rank-cliente";
 import type { DadosIncentivos } from "../../app/admin/dashboard-negocio/incentivos-cliente";
 import type { DadosLinhaDireta } from "../../app/admin/dashboard-negocio/linha-direta-cliente";
@@ -363,6 +364,9 @@ export async function calcularDashboard(gravar: boolean): Promise<Resultado> {
       inicio: pedidoBF.inicio, fim: pedidoBF.fim, periodo: configBF.periodoFaturacao};
     resumo.blackfriday = novaFaturacaoBF;
   } else if (pedidoBF) avisos.push("Black Friday: não foi possível atualizar o total. Mantém-se o último valor confirmado; volta a atualizar os dados.");
+  const novoRankingBF = prepararRankingBF(bruto, configBF, hoje, new Date().toISOString());
+  if (novoRankingBF) resumo.blackfridayRanking = novoRankingBF;
+  else if (hoje >= configBF.inicio) avisos.push("Top 10 Black Friday: recolha incompleta; mantém-se o último ranking confirmado.");
 
   if (gravar) {
     const gravacoes: [string, unknown, unknown][] = [
@@ -383,6 +387,7 @@ export async function calcularDashboard(gravar: boolean): Promise<Resultado> {
       delete resumo.coreRankGrupo;
     }
     if (novaFaturacaoBF) await gravarConfig(CHAVE_FATURACAO_BF, novaFaturacaoBF);
+    if (novoRankingBF) await gravarConfig(CHAVE_RANKING_BF, novoRankingBF);
   }
 
   return { hoje, avisos, resumo, gravado: gravar };

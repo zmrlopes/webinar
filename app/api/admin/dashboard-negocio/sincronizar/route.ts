@@ -42,8 +42,13 @@ async function plano(): Promise<{ hoje: string; periodos: Periodo[]; anosReserva
   const periodos = periodosAPedir(hoje, primeiroMes);
   const grupo = await lerConfig<DadosCoreDiretos>("core_rank_grupo");
   if (grupo?.grupo && grupo.desde <= hoje) periodos.push({ chave: "core-rank-grupo", inicio: grupo.desde, fim: grupo.ate < hoje ? grupo.ate : hoje });
-  const bf = periodoBF(await configuracaoBF(), hoje);
+  const configBF = await configuracaoBF();
+  const bf = periodoBF(configBF, hoje);
   if (bf.fim >= bf.inicio) periodos.push({chave: `blackfriday-${CAMPANHA_BF}`, ...bf});
+  const rankingBF = periodoBF({...configBF, periodoFaturacao: "desafio"}, hoje);
+  if (configBF.periodoFaturacao === "anual" && rankingBF.fim >= rankingBF.inicio) {
+    periodos.push({chave: `blackfriday-ranking-${CAMPANHA_BF}`, ...rankingBF});
+  }
   return { hoje, periodos, anosReservas };
 }
 

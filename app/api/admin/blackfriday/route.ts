@@ -1,5 +1,5 @@
 import {NextResponse} from "next/server";
-import {dadosBF, guardarConfigBF, reverReservaBF, limparSimulacaoBF, ErroBF} from "@/lib/blackfriday-servidor";
+import {dadosAdminBF, guardarConfigBF, reverReservaBF, limparSimulacaoBF, ErroBF} from "@/lib/blackfriday-servidor";
 export const runtime = "nodejs";
 const json = (corpo: unknown, status = 200) => NextResponse.json(corpo, {status, headers: {"Cache-Control": "private, no-store"}});
 function falha(e: unknown) {
@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   try {
     const modo = new URL(request.url).searchParams.get("modo");
     if (modo && !["real", "simulacao"].includes(modo)) return json({erro: "Modo inválido."}, 400);
-    return json(await dadosBF(undefined, modo === "simulacao"));
+    return json(await dadosAdminBF(modo === "simulacao"));
   } catch (e) {return falha(e);}
 }
 export async function POST(request: Request) {
@@ -24,6 +24,6 @@ export async function POST(request: Request) {
     else if (corpo?.acao === "rever") await reverReservaBF(corpo.id, corpo.estado, corpo.motivo, simulacao);
     else if (corpo?.acao === "limpar-simulacao" && simulacao) await limparSimulacaoBF();
     else return json({erro: "Pedido inválido."}, 400);
-    return json(await dadosBF(undefined, simulacao));
+    return json(await dadosAdminBF(simulacao));
   } catch (e) {return falha(e);}
 }

@@ -4,10 +4,12 @@ import type {Pool, PoolClient} from "pg";
 import {db} from "./db";
 import {EMAIL_PAINEL_DEMONSTRACAO} from "./demo";
 import {dataSimulacaoBF} from "./blackfriday-simulacao";
-import {CAMPANHA_BF, CONFIG_BF, dataValidaBF, hojeBF, periodoBF, validarReservaBF, type ConfiguracaoBF, type DadosBF, type FaturacaoBF, type InscricaoBF} from "./blackfriday";
+import {CAMPANHA_BF, CONFIG_BF, dataValidaBF, hojeBF, periodoBF, validarReservaBF, type ConfiguracaoBF, type DadosBF, type DadosAdminBF, type FaturacaoBF, type InscricaoBF, type RankingBF} from "./blackfriday";
+import {prepararRankingBF} from "./blackfriday-ranking";
 
 const PREFIXO = `blackfriday:${CAMPANHA_BF}:`;
 export const CHAVE_FATURACAO_BF = PREFIXO + "faturacao";
+export const CHAVE_RANKING_BF = PREFIXO + "ranking";
 const prefixoRegistos = (simulacao: boolean) => PREFIXO + (simulacao ? "simulacao:" : "");
 const chaveReserva = (id: string, simulacao = false) => prefixoRegistos(simulacao) + "reserva:" + id;
 const chaveFicheiro = (id: string, simulacao = false) => prefixoRegistos(simulacao) + "ficheiro:" + id;
@@ -39,6 +41,26 @@ export async function dadosBF(email?: string, simulacao = false): Promise<DadosB
   const corresponde = faturacao && faturacao.periodo === config.periodoFaturacao && faturacao.inicio === periodo.inicio
     && faturacao.fim <= config.fim && faturacao.fim >= periodo.inicio;
   return {config, inscricoes, hoje: simulacao ? dataSimulacaoBF(config, hojeBF()) : hojeBF(), faturacao: corresponde ? faturacao : null, simulacao};
+}
+
+/** Só a API do admin recebe o top 10 da equipa. */
+export async function dadosAdminBF(simulacao = false): Promise<DadosAdminBF> {
+  const dados = await dadosBF(undefined, simulacao);
+  if (simulacao) return {...dados, ranking: null};
+  const {rows} = await db().query<{valor: RankingBF}>("select valor from dashboard_config where chave = $1", [CHAVE_RANKING_BF]);
+  const intervalo = periodoBF({...dados.config, periodoFaturacao: "desafio"}, dados.hoje);
+  const ranking = rows[0]?.valor;
+  if (ranking && ranking.inicio === intervalo.inicio && ranking.fim >= intervalo.inicio && ranking.fim <= intervalo.fim) return {...dados, ranking};
+  // Aproveita a última recolha já existente, sem exigir uma nova atualização
+  // para estrear o painel. Nunca usa faturação anual nem uma lista parcial.
+  const {rows: recolha} = await db().query<{chave: string; corpo: unknown; recebido_em: Date}>(
+    "select chave, corpo, recebido_em from dashboard_bruto where chave in ('plano', 'falhas') or starts_with(chave, $1)", [`equipa-blackfriday-`]);
+  const bruto = Object.fromEntries(recolha.map(r => [r.chave, {corpo: r.corpo}]));
+  const atualizadoEm = recolha.filter(r => r.chave.startsWith("equipa-blackfriday-"))
+    .map(r => new Date(r.recebido_em).toISOString()).sort().at(-1) ?? new Date().toISOString();
+  const hojeRecolha = (bruto.plano?.corpo as {hoje?: string} | undefined)?.hoje;
+  return {...dados, ranking: dataValidaBF(hojeRecolha) && hojeRecolha <= dados.hoje
+    ? prepararRankingBF(bruto, dados.config, hojeRecolha, atualizadoEm) : null};
 }
 
 export async function guardarConfigBF(corpo: unknown) {
