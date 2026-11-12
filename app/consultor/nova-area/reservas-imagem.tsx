@@ -13,7 +13,7 @@ import styles from "./reservas-imagem.module.css";
 
 const API = "/api/consultor/nova-area/reservas/imagem";
 type ListaPublicacoes = {registos: ResumoImagemReserva[]; selecionaveis: string[]; disponivel: boolean};
-export function CriarPublicacaoImagem({email}: {email: string}) {
+export function CriarPublicacaoImagem({email, destinoDia}: {email: string; destinoDia?: {token: number; dados: DadosReserva} | null}) {
   const [aba, setAba] = useState<"criar" | "historico">("criar"), [passo, setPasso] = useState(1);
   const [lista, setLista] = useState<ResumoImagemReserva[]>([]), [disponivel, setDisponivel] = useState<boolean | null>(null);
   const [selecionadas, setSelecionadas] = useState<string[]>([]), [avisoHistorico, setAvisoHistorico] = useState("");
@@ -49,6 +49,17 @@ export function CriarPublicacaoImagem({email}: {email: string}) {
   }
   async function carregarLista() {atualizarLista(await pedir<ListaPublicacoes>("listar"));}
   useEffect(() => {let vivo = true; void pedir<ListaPublicacoes>("listar").then(r => {if(vivo)atualizarLista(r);}).catch(e => {if(vivo)setErro(e.message);}); return () => {vivo = false;};}, [email]); // eslint-disable-line react-hooks/exhaustive-deps
+  const destinoDiaToken = useRef<number | null>(null);
+  useEffect(() => {
+    if (!destinoDia || destinoDia.token === destinoDiaToken.current) return;
+    destinoDiaToken.current = destinoDia.token;
+    try {
+      const confirmados = dadosPublicacaoReserva(destinoDia.dados);
+      setDados(confirmados); setDadosParaRever(destinoDia.dados); setNotas(""); setAjuste("");
+      setResultado(null); setRevisto(false); setErro(""); setEditor(null); setProjetoEstudio(null); setEditorAberto(false); setEditorAlterado(false);
+      setPasso(referencia ? 3 : 1); setAba("criar");
+    } catch (e) {setErro(e instanceof Error ? e.message : "Não foi possível preparar os dados deste destino.");}
+  }, [destinoDia]); // eslint-disable-line react-hooks/exhaustive-deps
   async function fazer(titulo: string, acao: () => Promise<void>) {
     if (bloqueado.current || ocupado) return;
     bloqueado.current = true; setOcupado(titulo); setErro("");
@@ -72,7 +83,7 @@ export function CriarPublicacaoImagem({email}: {email: string}) {
   async function usar(id: string) {
     await fazer("A abrir a referência…", async () => {
       const r = await pedir<ReferenciaImagemReserva>("abrir", {id});
-      setReferencia(r); setFormato(r.formato); setRascunho(null); setResultado(null); setRevisto(false); setPasso(2); setAba("criar");
+      setReferencia(r); setFormato(r.formato); setRascunho(null); setResultado(null); setRevisto(false); setPasso(dados ? 3 : 2); setAba("criar");
     });
   }
   function mostrarResultado(r: PublicacaoImagemReserva) {setResultado(r); setRevisto(false); setVerificacao(r.verificacao?.avisos ?? null); setVerificacaoErro(""); setAjuste("");setEditor(null);setProjetoEstudio(null);setEditorAberto(false);setEditorAlterado(false);}
@@ -162,7 +173,7 @@ export function CriarPublicacaoImagem({email}: {email: string}) {
         <div className={css.cartao}><h2>Carrega o desenho que queres seguir</h2><p className={css.nota}>Exporta o teu template completo do Canva, com os textos e as fotografias. PNG, JPG ou WebP, até 15 MB. Só precisas de o guardar uma vez.</p>
           <input ref={upload} type="file" accept="image/png,image/jpeg,image/webp" className={css.inputOculto} aria-label="Referência completa do Canva" onChange={e => void carregarReferencia(e)}/>
           <button type="button" className={css.primario} onClick={() => upload.current?.click()}>Carregar referência completa</button>
-          {rascunho && <div className={css.referenciaOrcamento}><img src={rascunho.imagem} alt="Referência completa a guardar"/><div><label className={css.campo}><span>Nome da referência</span><input maxLength={120} value={rascunho.nome} onChange={e => setRascunho({...rascunho,nome:e.target.value})}/></label><button type="button" className={css.primario} disabled={!rascunho.nome.trim() || !disponivel} onClick={() => void fazer("A guardar e a compreender o teu desenho…", async () => {const ref = await pedir<ReferenciaImagemReserva>("referencia", rascunho); setReferencia(ref); setFormato(ref.formato); setRascunho(null); setResultado(null); await carregarLista(); setPasso(2);})}>Guardar referência e continuar</button><button type="button" onClick={() => setRascunho(null)}>Cancelar</button></div></div>}
+          {rascunho && <div className={css.referenciaOrcamento}><img src={rascunho.imagem} alt="Referência completa a guardar"/><div><label className={css.campo}><span>Nome da referência</span><input maxLength={120} value={rascunho.nome} onChange={e => setRascunho({...rascunho,nome:e.target.value})}/></label><button type="button" className={css.primario} disabled={!rascunho.nome.trim() || !disponivel} onClick={() => void fazer("A guardar e a compreender o teu desenho…", async () => {const ref = await pedir<ReferenciaImagemReserva>("referencia", rascunho); setReferencia(ref); setFormato(ref.formato); setRascunho(null); setResultado(null); await carregarLista(); setPasso(dados ? 3 : 2);})}>Guardar referência e continuar</button><button type="button" onClick={() => setRascunho(null)}>Cancelar</button></div></div>}
           {referencias.length > 0 && <><h3>As minhas referências</h3><div className={styles.galeria}>{referencias.map(r => <article key={r.id}><button type="button" className={styles.escolher} onClick={() => void usar(r.id)}><img src={r.miniatura} alt={r.nome}/><strong>{r.nome}</strong><small>Usar esta referência</small></button><button type="button" className={css.botaoTexto} onClick={() => {if(window.confirm(`Apagar a referência “${r.nome}”?`))void fazer("A apagar…", async () => {await pedir("apagar", {id:r.id});if(referencia?.id===r.id)setReferencia(null);await carregarLista();});}}>Apagar</button></article>)}</div></>}
         </div>
       </fieldset>

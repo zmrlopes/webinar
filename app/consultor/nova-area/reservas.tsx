@@ -21,9 +21,9 @@ function Campo({titulo, valor, alterar, tipo = "text"}: {titulo: string; valor: 
   return <label className={css.campo}><span>{titulo}</span><input type={tipo} value={valor ?? ""} min={tipo === "number" ? 0 : undefined} step={tipo === "number" ? "any" : undefined} onChange={e => alterar(e.target.value)} /></label>;
 }
 
-export function ReservasNovaArea({email}: {email: string}) {
+export function ReservasNovaArea({email, destinoDia}: {email: string; destinoDia?: {token: number; dados: DadosReserva} | null}) {
   const [anteriores, setAnteriores] = useState(false);
-  return <><CriarPublicacaoImagem key={email} email={email}/><details className={imagemCss.anteriores} onToggle={e => setAnteriores(e.currentTarget.open)}><summary>Editor e materiais anteriores</summary>{anteriores && <EditorReservasAnterior key={email} email={email}/>}</details></>;
+  return <><CriarPublicacaoImagem key={email} email={email} destinoDia={destinoDia}/><details className={imagemCss.anteriores} onToggle={e => setAnteriores(e.currentTarget.open)}><summary>Editor e materiais anteriores</summary>{anteriores && <EditorReservasAnterior key={email} email={email}/>}</details></>;
 }
 function EditorReservasAnterior({email}: {email: string}) {
   const [aba, setAba] = useState<"orcamento" | "criar" | "modelos" | "historico">("orcamento");

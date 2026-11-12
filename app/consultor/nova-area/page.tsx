@@ -28,6 +28,8 @@ import { AssistenteEquipa } from "./assistente";
 import { CalculadorasNovaArea } from "./calculadoras";
 import { CoreRankNovaArea } from "./core-rank";
 import { ReservasNovaArea } from "./reservas";
+import { DestinoDiaNovaArea } from "./destino-dia";
+import type { DadosReserva } from "@/lib/reservas";
 import { TravelPlannerNovaArea } from "./travel-planner";
 import { PropostaNovaArea } from "./proposta";
 import { OperadoresNovaArea } from "./operadores";
@@ -58,9 +60,10 @@ export default function NovaAreaConsultor() {
   const [aInscrever, setAInscrever] = useState(false);
   const [erroSessao, setErroSessao] = useState("");
   const [inscrito, setInscrito] = useState(false);
-  const [seccao, setSeccao] = useState<"inicio" | "comeca-aqui" | "calendario" | "blackfriday" | "calendario-criativo" | "leads" | "mentor-checklist" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "testemunhos" | "assistente" | "documentos" | "eventos-presenciais" | "calculadoras" | "core-rank" | "reservas" | "travel-planner" | "propostas" | "operadores" | "negocio" | "orcamentos" | "admin">("inicio");
+  const [seccao, setSeccao] = useState<"inicio" | "comeca-aqui" | "calendario" | "blackfriday" | "calendario-criativo" | "leads" | "mentor-checklist" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "testemunhos" | "assistente" | "documentos" | "eventos-presenciais" | "calculadoras" | "core-rank" | "reservas" | "destino-dia" | "travel-planner" | "propostas" | "operadores" | "negocio" | "orcamentos" | "admin">("inicio");
   const [assistenteAberto, setAssistenteAberto] = useState(false);
   const [reservasAberto, setReservasAberto] = useState(false);
+  const [destinoParaTemplate, setDestinoParaTemplate] = useState<{ token: number; dados: DadosReserva } | null>(null);
   const [coreAberto, setCoreAberto] = useState(false);
   const [abrirRelatoriosCore, setAbrirRelatoriosCore] = useState(0);
   const [aGuardarPasso, setAGuardarPasso] = useState<number | null>(null);
@@ -109,6 +112,11 @@ export default function NovaAreaConsultor() {
     setSeccao(proxima);
     // O contador também permite voltar ao conteúdo ao clicar na secção já ativa.
     setPedidoNavegacao(pedido => pedido + 1);
+  }
+
+  function criarTemplateComDestinoDia(dadosViagem: DadosReserva) {
+    setDestinoParaTemplate(atual => ({ token: (atual?.token ?? 0) + 1, dados: dadosViagem }));
+    abrirSeccao("reservas");
   }
 
   function voltarAoMenu() {
@@ -302,7 +310,8 @@ export default function NovaAreaConsultor() {
                   <button type="button" className={seccao === "calculadoras" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calculadoras")} aria-current={seccao === "calculadoras" ? "page" : undefined} aria-controls="conteudo-nova-area">Calculadoras</button>
                 </GrupoMenu>
               </GrupoMenu>
-              <GrupoMenu titulo="Reservas" ativo={seccao === "operadores" || seccao === "propostas" || seccao === "travel-planner" || seccao === "reservas" || seccao === "calendario-criativo" || seccao === "orcamentos"}>
+              <GrupoMenu titulo="Reservas" ativo={seccao === "operadores" || seccao === "propostas" || seccao === "travel-planner" || seccao === "reservas" || seccao === "destino-dia" || seccao === "calendario-criativo" || seccao === "orcamentos"}>
+                <button type="button" className={seccao === "destino-dia" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("destino-dia")} aria-current={seccao === "destino-dia" ? "page" : undefined} aria-controls="conteudo-nova-area">Destino do dia</button>
                 <button type="button" className={seccao === "operadores" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("operadores")} aria-current={seccao === "operadores" ? "page" : undefined} aria-controls="conteudo-nova-area">Onde posso vender?</button>
                 <button type="button" className={seccao === "orcamentos" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("orcamentos")} aria-current={seccao === "orcamentos" ? "page" : undefined} aria-controls="conteudo-nova-area">Pedidos de orçamento</button>
                 <button type="button" className={seccao === "propostas" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("propostas")} aria-current={seccao === "propostas" ? "page" : undefined} aria-controls="conteudo-nova-area">Propostas</button>
@@ -345,7 +354,8 @@ export default function NovaAreaConsultor() {
             {seccao === "blackfriday" && <BlackFriday email={email} />}
             {seccao === "calculadoras" && <CalculadorasNovaArea />}
             {seccao === "negocio" && <NegocioNovaArea email={email} />}
-            {reservasAberto && <div hidden={seccao !== "reservas"}><ReservasNovaArea email={email} /></div>}
+            {seccao === "destino-dia" && <DestinoDiaNovaArea aoCriarTemplate={criarTemplateComDestinoDia} />}
+            {reservasAberto && <div hidden={seccao !== "reservas"}><ReservasNovaArea email={email} destinoDia={destinoParaTemplate} /></div>}
             {seccao === "travel-planner" && <TravelPlannerNovaArea email={email} />}
             {seccao === "operadores" && <OperadoresNovaArea email={email} />}
             {seccao === "orcamentos" && <PedidosOrcamentoNovaArea email={email} />}
