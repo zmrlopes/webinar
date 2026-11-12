@@ -5,6 +5,12 @@
  */
 import { dadosReservaVazios, hotelVazio, type DadosReserva } from "./reservas";
 
+export interface FotoDestinoDia {
+  url: string;
+  credito: string;
+  origem: string;
+}
+
 export interface DestinoDiaCard {
   id: string;
   destino: string;
@@ -20,6 +26,8 @@ export interface DestinoDiaCard {
   precoPessoa: number;
   precoTotal: number;
   fonte: string;
+  /** Fotografia de domínio público/CC0 do Wikimedia Commons, confirmada manualmente. */
+  foto: FotoDestinoDia;
 }
 
 export const DESTINOS_DIA: DestinoDiaCard[] = [
@@ -37,6 +45,11 @@ export const DESTINOS_DIA: DestinoDiaCard[] = [
     precoPessoa: 1369,
     precoTotal: 2737,
     fonte: "Motor de Operadores · Travelplan",
+    foto: {
+      url: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Natura_Park_beach%2C_view_towards_the_southeast%2C_Punta_Cana%2C_2004.jpg/1280px-Natura_Park_beach%2C_view_towards_the_southeast%2C_Punta_Cana%2C_2004.jpg",
+      credito: "DimiTalen · CC0",
+      origem: "https://commons.wikimedia.org/wiki/File:Natura_Park_beach,_view_towards_the_southeast,_Punta_Cana,_2004.jpg",
+    },
   },
   {
     id: "cancun",
@@ -52,6 +65,11 @@ export const DESTINOS_DIA: DestinoDiaCard[] = [
     precoPessoa: 1528,
     precoTotal: 3055,
     fonte: "Motor de Operadores · Travelplan",
+    foto: {
+      url: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Playa_Delfines.jpg/1280px-Playa_Delfines.jpg",
+      credito: "Pikilita1024 · CC0",
+      origem: "https://commons.wikimedia.org/wiki/File:Playa_Delfines.jpg",
+    },
   },
 ];
 

@@ -19,7 +19,11 @@ export function DestinoDiaNovaArea({ aoCriarTemplate }: { aoCriarTemplate: (dado
     </div>
     <div className={s.grelha}>
       {DESTINOS_DIA.map(c => <article key={c.id} className={`${css.cartao} ${s.cartaoDestino}`}>
-        <div className={s.topoCartao}><span className={s.badge}>Promoção do dia</span><span className={s.fonte}>{c.fonte}</span></div>
+        <div className={s.foto}>
+          <img src={c.foto.url} alt={`${c.destino}, ${c.pais}`} loading="lazy" />
+          <span className={s.badge}>Promoção do dia</span>
+        </div>
+        <span className={s.fonte}>{c.fonte}</span>
         <h2>{c.destino}<small>{c.pais}</small></h2>
         <p className={s.hotel}>{c.hotel} · {"★".repeat(c.estrelas)}</p>
         <dl className={s.dados}>
@@ -30,8 +34,9 @@ export function DestinoDiaNovaArea({ aoCriarTemplate }: { aoCriarTemplate: (dado
         </dl>
         <p className={s.preco}>Desde<strong>{euros(c.precoPessoa)}</strong>/ pessoa<small>Total para {c.viajantes} viajantes: {euros(c.precoTotal)}</small></p>
         <button type="button" className={css.primario} onClick={() => aoCriarTemplate(dadosReservaDestinoDia(c))}>Criar template com este destino</button>
+        <small className={s.creditoFoto}>Foto: <a href={c.foto.origem} target="_blank" rel="noopener noreferrer">{c.foto.credito}</a></small>
       </article>)}
     </div>
-    <p className={css.nota}>Os preços e o hotel vêm da pesquisa mais recente no motor de Operadores do MyOffice e servem de base para testar a publicação diária. Confirma sempre a disponibilidade antes de enviar à equipa. Ao clicar em “Criar template”, estes dados abrem diretamente a secção Criar templates — só é preciso escolher a referência.</p>
+    <p className={css.nota}>Os preços e o hotel vêm da pesquisa mais recente no motor de Operadores do MyOffice e servem de base para testar a publicação diária. Confirma sempre a disponibilidade antes de enviar à equipa. As fotografias são de domínio público/CC0, com crédito. Ao clicar em “Criar template”, estes dados abrem diretamente a secção Criar templates — só é preciso escolher a referência.</p>
   </div>;
 }
