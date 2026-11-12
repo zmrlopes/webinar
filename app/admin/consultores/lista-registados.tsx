@@ -4,6 +4,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { ConsultorRegistado } from "@/lib/consultores-admin";
 import css from "./formulario.module.css";
+import {BotaoEmailTeste} from "./botao-email-teste";
 
 async function pedir(metodo: "PATCH" | "DELETE", corpo: unknown): Promise<void> {
   const resposta = await fetch("/api/admin/consultores", {
@@ -70,6 +71,7 @@ export function ListaConsultoresRegistados({ consultores }: { consultores: Consu
         e leva consigo o histórico (leads, Core Rank, respostas, troféus). Apagar tira-lhe o acesso; se
         continuar no CSV da equipa, volta a aparecer na próxima importação.
       </p>
+      <p>Para verificar a receção de emails, usa «Enviar email de teste» junto do consultor. O pedido vai apenas para o email dessa pessoa.</p>
       <label className={css.pesquisa}>
         Pesquisar
         <input type="search" value={pesquisa} onChange={(e) => setPesquisa(e.target.value)} placeholder="Nome ou email" />
@@ -116,6 +118,7 @@ export function ListaConsultoresRegistados({ consultores }: { consultores: Consu
                     <>
                       <button type="button" className={css.secundario} onClick={() => { setAEditar(c.email); setAConfirmarApagar(null); setErro(""); }}>Editar</button>
                       <button type="button" className={css.secundario} onClick={() => { setAConfirmarApagar(c.email); setAEditar(null); setErro(""); }}>Apagar</button>
+                      <BotaoEmailTeste key={c.email} email={c.email} nome={c.nome} disabled={ocupado}/>
                     </>
                   )}
                 </td>

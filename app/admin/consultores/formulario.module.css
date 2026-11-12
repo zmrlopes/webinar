@@ -28,3 +28,10 @@
 .caixa .secundario { min-height: 36px; padding: 6px 12px; border: 1px solid #4b5320; border-radius: 8px; background: #fff; color: #4b5320; font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer; }
 .caixa .perigo { min-height: 36px; padding: 6px 12px; border: 1px solid #b42318; border-radius: 8px; background: #b42318; color: #fff; font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer; }
 .caixa button:disabled { opacity: .6; cursor: default; }
+.emailTeste { display: block; margin-top: 8px; white-space: normal; }
+.botaoEmailTeste { min-height: 36px; padding: 6px 12px; border: 1px solid #4b5320; border-radius: 8px; background: #4b5320; color: #fff; font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer; }
+.botaoEmailTeste:disabled { opacity: .6; cursor: default; }
+.botaoEmailTeste:focus-visible { outline: 2px solid #4b5320; outline-offset: 3px; }
+.emailTeste .emailTesteResultado,.emailTeste .emailTesteErro { min-width: 180px; max-width: 320px; margin: 8px 0 0; font-size: .8rem; line-height: 1.5; overflow-wrap: anywhere; }
+.emailTesteResultado { color: #343b12; }
+.emailTesteErro { color: #b42318; }

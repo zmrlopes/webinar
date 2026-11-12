@@ -2,6 +2,7 @@ import { listarConsultoresAdmin } from "@/lib/admin";
 import { listarConsultoresRegistados } from "@/lib/consultores-admin";
 import { FormularioNovoConsultor } from "./formulario";
 import { ListaConsultoresRegistados } from "./lista-registados";
+import { BotaoEmailTeste } from "./botao-email-teste";
 
 export const dynamic = "force-dynamic";
 
@@ -80,6 +81,7 @@ export default async function AdminConsultores() {
                   <th>Código</th>
                   <th>Inscrições no total</th>
                   <th>Ativo desde</th>
+                  <th>Email de teste</th>
                 </tr>
               </thead>
               <tbody>
@@ -90,6 +92,7 @@ export default async function AdminConsultores() {
                     <td>{c.referencia}</td>
                     <td>{c.inscricoesTotais}</td>
                     <td>{formatarData(c.ativoDesde)}</td>
+                    <td><BotaoEmailTeste key={c.email} email={c.email} nome={c.nome ?? ""}/></td>
                   </tr>
                 ))}
               </tbody>
