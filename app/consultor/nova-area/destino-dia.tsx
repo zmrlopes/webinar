@@ -1,6 +1,6 @@
 "use client";
 
-import { DESTINOS_DIA, dadosReservaDestinoDia } from "@/lib/destino-dia";
+import { obterDestinosDoDia, dadosReservaDestinoDia } from "@/lib/destino-dia";
 import type { DadosReserva } from "@/lib/reservas";
 import estilos from "./nova-area.module.css";
 import css from "./reservas.module.css";
@@ -11,14 +11,15 @@ const dataPt = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString(
 const noites = (ida: string, regresso: string) => Math.round((Date.parse(regresso) - Date.parse(ida)) / 86_400_000);
 
 export function DestinoDiaNovaArea({ aoCriarTemplate }: { aoCriarTemplate: (dados: DadosReserva) => void }) {
+  const destinos = obterDestinosDoDia();
   return <div className={css.pagina}>
     <div className={estilos.intro}>
       <span className={estilos.etiqueta}>RESERVAS</span>
       <h1>Destino do dia<span>.</span></h1>
-      <p>Duas propostas já pesquisadas no motor de Operadores do MyOffice, prontas para divulgar. Escolhe uma e cria o teu template — só falta escolher a referência.</p>
+      <p>Duas propostas do dia, já pesquisadas no motor de Operadores do MyOffice e prontas para divulgar — amanhã mostramos outras duas. Escolhe uma e cria o teu template: só falta escolher a referência.</p>
     </div>
     <div className={s.grelha}>
-      {DESTINOS_DIA.map(c => <article key={c.id} className={`${css.cartao} ${s.cartaoDestino}`}>
+      {destinos.map(c => <article key={c.id} className={`${css.cartao} ${s.cartaoDestino}`}>
         <div className={s.foto}>
           <img src={c.foto.url} alt={`${c.destino}, ${c.pais}`} loading="lazy" />
           <span className={s.badge}>Promoção do dia</span>

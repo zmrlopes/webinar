@@ -247,12 +247,13 @@ posicionar campos neste fluxo. O editor antigo continua em “Editor e materiais
 anteriores”. A marca iCliGo é aplicada pelo servidor e permanece protegida.
 Este fluxo e a respetiva API continuam exclusivos da conta de teste.
 
-Por indicação do utilizador, em teste, Reservas inclui “Destino do dia”: dois
-cartões com viagens já pesquisadas no motor de Operadores do MyOffice (destino,
+Por indicação do utilizador, em teste, Reservas inclui “Destino do dia”: uma
+lista de destinos já pesquisados no motor de Operadores do MyOffice (destino,
 hotel, regime, datas, noites e preço, em `src/lib/destino-dia.ts`), sem API
-própria nesta fase. Cada cartão mostra também uma fotografia fixa do destino,
-de domínio público/CC0 do Wikimedia Commons, com crédito e ligação à origem.
-Cada cartão tem “Criar template com este destino”, que
+própria nesta fase. Mostra sempre 2 cartões diferentes, por rotação diária em
+Europe/Lisbon (como a Frase do dia), com fotografia fixa de domínio
+público/CC0 do Wikimedia Commons, crédito e ligação à origem. Cada cartão tem
+“Criar template com este destino”, que
 abre Criar templates já com esses dados confirmados e avança diretamente para
 escolher a referência; ao escolher ou guardar a referência, segue direto para
 gerar a publicação, saltando o passo do orçamento. Rever orçamento continua
