@@ -7,7 +7,8 @@ export function validarCampanha(valor: unknown) {
  if (!listas.length || listas.length > 100 || listas.some(l => typeof l !== 'string' || l.length > 260)) throw new Error('Escolhe pelo menos uma lista válida.');
  const local = typeof v?.data === 'string' ? v.data : '';
  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(local)) throw new Error('Escolhe a data e a hora de Lisboa.');
- return { assunto, corpo, listas: listas as string[], local };
+ const qrEvento = v?.qrEvento === true || v?.qrEvento === '1';
+ return { assunto, corpo, listas: listas as string[], local, qrEvento };
 }
 
 export function deduplicarDestinatarios(rows: {email: string}[]) {

@@ -120,6 +120,33 @@ export async function inscreverNoEventoEEnviarEmail(
   return { id, total, emailEnviado };
 }
 
+/**
+ * Os QR codes de todos os bilhetes das inscrições deste email (uma pessoa
+ * pode ter-se inscrito mais do que uma vez), prontos a anexar — os mesmos
+ * links de check-in do email de confirmação, por isso continuam a ser
+ * lidos à entrada da mesma forma.
+ */
+export async function anexosQrBilhetesDoEmail(email: string, baseUrl: string): Promise<AnexoMensagem[]> {
+  const { rows } = await db().query<{ id: string; rotulo: string }>(
+    `select b.id, b.rotulo
+       from evento_bilhetes b
+       join evento_inscricoes i on i.id = b.inscricao_id
+      where lower(trim(i.email)) = lower(trim($1))
+      order by i.criado_em, b.rotulo`,
+    [email],
+  );
+  const usados = new Map<string, number>();
+  return Promise.all(
+    rows.map(async (b) => {
+      const base = `qr-${gerarSlug(b.rotulo)}`;
+      const n = (usados.get(base) ?? 0) + 1;
+      usados.set(base, n);
+      const qr = await QRCode.toBuffer(`${baseUrl}/api/eventos/checkin/${b.id}`, { width: 500, margin: 2 });
+      return { nome: `${n > 1 ? `${base}-${n}` : base}.png`, conteudoBase64: qr.toString("base64") };
+    }),
+  );
+}
+
 /** Reutiliza os bilhetes existentes, sem criar inscrições nem alterar presenças. */
 export async function enviarEmailBilhetesEvento(
   sender: EmailSender,

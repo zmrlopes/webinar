@@ -29,7 +29,7 @@ export async function POST(request:Request) {
    const ficheiros=form.getAll('anexo');
    if(ficheiros.length>1 || (ficheiros[0] && !(ficheiros[0] instanceof File))) throw new Error('Escolhe apenas um anexo.');
    const anexo=await lerAnexoCampanha(ficheiros[0] instanceof File?ficheiros[0]:null);
-   const valor={assunto:form.get('assunto'),corpo:form.get('corpo'),data:form.get('data'),listas:JSON.parse(String(form.get('listas')))};
+   const valor={assunto:form.get('assunto'),corpo:form.get('corpo'),data:form.get('data'),listas:JSON.parse(String(form.get('listas'))),qrEvento:form.get('qrEvento')};
    return Response.json(await agendarCampanha(valor,anexo));
   } catch(e) {
    console.error('[campanhas-email-anexo]',e);
