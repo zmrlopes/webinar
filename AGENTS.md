@@ -248,9 +248,9 @@ anteriores”. A marca iCliGo é aplicada pelo servidor e permanece protegida.
 Este fluxo e a respetiva API continuam exclusivos da conta de teste.
 
 Por indicação do utilizador, em teste, Reservas inclui “Destino do dia”: uma
-lista de destinos já pesquisados no motor de Operadores do MyOffice (destino,
-hotel, regime, datas, noites e preço, em `src/lib/destino-dia.ts`), sem API
-própria nesta fase. Mostra sempre 2 cartões diferentes, por rotação diária em
+lista de 10 destinos já pesquisados no motor de Operadores do MyOffice
+(destino, hotel, regime, datas, noites e preço, em `src/lib/destino-dia.ts`),
+sem API própria nesta fase. Mostra sempre 2 cartões diferentes, por rotação diária em
 Europe/Lisbon (como a Frase do dia), com fotografia fixa de domínio
 público/CC0 do Wikimedia Commons, crédito e ligação à origem. Cada cartão tem
 “Criar template com este destino”, que
