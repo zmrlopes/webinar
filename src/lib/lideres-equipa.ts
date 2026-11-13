@@ -6,7 +6,7 @@
  * em componentes de cliente (ver lideres-equipa-servidor.ts para o resto).
  */
 export const LIDERES_EQUIPA_BF: Record<string, { nome: string; metaBingo: number }> = {
-  "apensarnaproxima@gmail.com": { nome: "Ana Custódia", metaBingo: 1_200_000 },
+  "apensarnaproxima@gmail.com": { nome: "Ana Custódia", metaBingo: 1_500_000 },
 };
 
 export function podeVerAreaEquipa(email: string): boolean {

@@ -96,14 +96,14 @@ async function main() {
     await assert.rejects(()=>acessoReservas(tp),/disponível/);
     const real=await bingo(pedido({email:ana,acao:"consultar"})); assert.equal(real.status,200);
     const cartao=await real.json();
-    assert.equal(cartao.metaEquipa.meta,1200000); assert.equal(cartao.metaEquipa.faturacao.valor,faturacao.valor);
+    assert.equal(cartao.metaEquipa.meta,1500000); assert.equal(cartao.metaEquipa.faturacao.valor,faturacao.valor);
     assert.deepEqual(cartao.inscricoes,[pessoal]); assert.equal(cartao.simulacao,false);
     for(const acao of ["consultar","enviar","comprovativo","limpar-simulacao"]) assert.equal((await bingo(pedido({email:ana,acao,simulacao:true,id:pessoal.id}))).status,403);
     const prova=await bingo(pedido({email:ana,acao:"comprovativo",id:pessoal.id}));
     assert.equal(prova.status,200); assert.equal(await prova.text(),"%PDF-teste");
     assert.equal((await bingo(pedido({email:ana,acao:"comprovativo",id:equipa.id}))).status,404);
     const admin=await adminBingo(pedido({email:ana,acao:"listar"})); assert.equal(admin.status,200);
-    const painel=await admin.json(); assert.equal(painel.reservas.length,2); assert.equal(painel.meta,1200000);
+    const painel=await admin.json(); assert.equal(painel.reservas.length,2); assert.equal(painel.meta,1500000);
     assert.deepEqual(painel.estatisticas,{total:1,ativos:1,entradasEsteAno:1});
     assert.equal((await adminBingo(pedido({email:tp,acao:"listar"}))).status,403);
     assert.equal((await adminBingo(pedido({email:demo,acao:"listar"}))).status,403);
@@ -124,7 +124,7 @@ async function main() {
     assert.deepEqual(dados.get(progresso(ana)),[4,5]); assert.deepEqual(dados.get(progresso(ana,1)),[1,3,4]);
     assert.deepEqual(dados.get(progresso(demo)),[1,2,3,4,5,6,7]);
     assert.equal((await importar(pedido({email:tp,versao:2,feitos:[]}))).status,403);
-    console.log("OK: migração exclusiva da Ana, entrada por defeito e regresso à área atual, perfil/API completos, progresso privado, meta de 1,2 M€, comprovativos existentes, revisão e estatísticas preservadas, equipa limitada e simulação bloqueada. Sem rede nem dados reais alterados.");
+    console.log("OK: migração exclusiva da Ana, entrada por defeito e regresso à área atual, perfil/API completos, progresso privado, meta de 1,5 M€, comprovativos existentes, revisão e estatísticas preservadas, equipa limitada e simulação bloqueada. Sem rede nem dados reais alterados.");
   } finally {pool.query=originalQuery;pool.connect=originalConnect;globalThis.fetch=originalFetch;await fecharDb();}
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

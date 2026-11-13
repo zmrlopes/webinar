@@ -14,7 +14,7 @@ migração real, incluindo as APIs das secções. A entrada em `/consultor` abre
 a nova área por defeito apenas para a Ana; `/consultor?area=atual` permite
 consultar a versão anterior sem redirecionar. Mantém o menu completo e o
 separador Admin exclusivo de líder para rever o bingo da sua equipa.
-O bingo da Ana conserva a meta própria de 1.200.000 €, a faturação, as
+O bingo da Ana conserva a meta própria de 1.500.000 €, a faturação, as
 reservas, os comprovativos e o histórico existentes, nas mesmas chaves.
 A simulação e as ações de limpar testes continuam exclusivas da conta de
 demonstração, nunca da Ana. As marcas locais dos primeiros passos são
