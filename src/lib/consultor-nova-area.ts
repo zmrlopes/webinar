@@ -26,15 +26,15 @@ export function podeVerNovaArea(email: string): boolean {
   return ehContaPilotoNovaArea(email);
 }
 
-/** Ao entrar em /consultor, os consultores da equipa seguem para a nova área; `?area=atual` mantém a versão anterior. */
+/** A nova área é a única disponível; `?area=atual` já não abre a anterior. */
 export function destinoEntradaNovaArea(email: string, pesquisa: string, ehConsultorEquipa = false): string | null {
   const conta = email.trim().toLowerCase();
   const entraNaNova = conta === EMAIL_PILOTO_NOVA_AREA || (NOVA_AREA_PARA_TODOS && ehConsultorEquipa);
-  return entraNaNova && new URLSearchParams(pesquisa).get("area") !== "atual" ? "/consultor/nova-area" : null;
+  return entraNaNova ? "/consultor/nova-area" : null;
 }
 
 export function linkAreaAtual(email: string): string {
-  return NOVA_AREA_PARA_TODOS || email.trim().toLowerCase() === EMAIL_PILOTO_NOVA_AREA ? "/consultor?area=atual" : "/consultor";
+  return "/consultor/nova-area";
 }
 
 /** Convite do grupo Welcome Aboard fornecido pelo utilizador. */

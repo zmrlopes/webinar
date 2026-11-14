@@ -9,16 +9,16 @@ base de dados Postgres (Neon) ligada.
 
 ## Estado
 
-### Primeira migração para a nova área
+### Área única dos consultores
 
-A Ana Custódia (`apensarnaproxima@gmail.com`) tem acesso à nova área completa,
-incluindo as APIs das secções, além da conta de demonstração. Ao identificar-se
-em `/consultor`, entra por defeito em `/consultor/nova-area`; o seletor e
-**Consultar a área atual** abrem `/consultor?area=atual` para comparar as versões.
-O menu inclui as secções habituais e **Admin**, que continua limitado à sua
-equipa. Os restantes consultores mantêm os acessos anteriores.
+A nova área completa está publicada para todos os consultores da equipa e é
+a única área disponível. `/consultor`, incluindo `?area=atual`, encaminha para
+`/consultor/nova-area`, onde fica a identificação por email. Os favoritos das
+secções antigas abrem a secção correspondente no painel novo, preservando a
+categoria das formações. Não existe seletor nem regresso à versão anterior.
+O separador **Admin** continua exclusivo de líder e limitado à sua equipa.
 
-O bingo conserva a meta de equipa de 1.200.000 €, os mesmos comprovativos,
+O bingo da Ana conserva a meta de equipa de 1.500.000 €, os mesmos comprovativos,
 reservas, decisões e faturação. Abrir a nova área não copia nem reinicia estes
 registos. A simulação e a sua limpeza continuam exclusivas da conta de teste.
 O progresso dos primeiros passos mantém as chaves privadas do servidor; no

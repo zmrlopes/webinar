@@ -1,8 +1,10 @@
 import type { NextConfig } from "next";
+import { REDIRECIONAMENTOS_AREA_ANTIGA } from "./src/lib/consultor-navegacao";
 
 const nextConfig: NextConfig = {
   async redirects() {
     return [
+      ...REDIRECIONAMENTOS_AREA_ANTIGA.map(regra => ({ ...regra, permanent: false })),
       { source: "/consultor/backoffice/webinares", destination: "/consultor/webinares", permanent: true },
       { source: "/consultor/backoffice", destination: "/consultor", permanent: true },
     ];

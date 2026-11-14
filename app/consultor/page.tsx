@@ -1,7 +1,7 @@
-import { BackofficeHome } from "./backoffice-home";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default function PaginaConsultor() {
-  return <BackofficeHome />;
+  redirect("/consultor/nova-area");
 }

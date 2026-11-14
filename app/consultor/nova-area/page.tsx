@@ -1,18 +1,17 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   LINK_CURSO_TRAVEL_PARTNER,
   podeVerNovaArea,
-  linkAreaAtual,
+  ehContaPilotoNovaArea,
   type DadosNovaArea,
 } from "@/lib/consultor-nova-area";
 import { podeVerAreaEquipa } from "@/lib/lideres-equipa";
 import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
 import { AdminBlackFriday } from "./admin-blackfriday";
-import { AlternarArea } from "../alternar-area";
-import { lerEmailGuardado, limparEmailGuardado } from "../armazenamento";
+import { lerEmailGuardado, limparEmailGuardado, guardarEmail } from "../armazenamento";
+import { seccaoEntradaNovaArea, type SeccaoNovaArea } from "@/lib/consultor-navegacao";
 import estilos from "./nova-area.module.css";
 import { ProximoWebinar } from "./organizacao";
 import { ChecklistMentor } from "./mentor-checklist";
@@ -54,13 +53,16 @@ function GrupoMenu({ titulo, ativo, children }: { titulo: string; ativo: boolean
 export default function NovaAreaConsultor() {
   const [estado, setEstado] = useState<"a-carregar" | "sem-acesso" | "erro" | "pronto">("a-carregar");
   const [email, setEmail] = useState("");
+  const [emailEntrada, setEmailEntrada] = useState("");
+  const [aEntrar, setAEntrar] = useState(false);
+  const [categoriaInicial, setCategoriaInicial] = useState<string | null>(null);
   const [dados, setDados] = useState<DadosNovaArea | null>(null);
   const [feitos, setFeitos] = useState<number[]>([]);
   const [erro, setErro] = useState("");
   const [aInscrever, setAInscrever] = useState(false);
   const [erroSessao, setErroSessao] = useState("");
   const [inscrito, setInscrito] = useState(false);
-  const [seccao, setSeccao] = useState<"inicio" | "comeca-aqui" | "calendario" | "blackfriday" | "calendario-criativo" | "leads" | "mentor-checklist" | "proximo-webinar" | "proximas-formacoes" | "formacoes-gravadas" | "testemunhos" | "assistente" | "documentos" | "eventos-presenciais" | "calculadoras" | "core-rank" | "reservas" | "destino-dia" | "travel-planner" | "propostas" | "operadores" | "negocio" | "orcamentos" | "admin">("inicio");
+  const [seccao, setSeccao] = useState<SeccaoNovaArea>("inicio");
   const [assistenteAberto, setAssistenteAberto] = useState(false);
   const [reservasAberto, setReservasAberto] = useState(false);
   const [destinoParaTemplate, setDestinoParaTemplate] = useState<{ token: number; dados: DadosReserva } | null>(null);
@@ -135,9 +137,12 @@ export default function NovaAreaConsultor() {
     if (!podeVerNovaArea(conta) && !souLiderConta) { setEstado("sem-acesso"); return; }
     if (souLiderConta && !podeVerNovaArea(conta)) setSeccao("admin");
     else {
-      const secaoPedida = new URLSearchParams(window.location.search).get("seccao");
-      if (secaoPedida === "admin" && souLiderConta) setSeccao("admin");
-      else if (secaoPedida === "negocio" || secaoPedida === "blackfriday") setSeccao(secaoPedida);
+      const pedida = seccaoEntradaNovaArea(window.location.search, souLiderConta);
+      setSeccao(pedida);
+      setAssistenteAberto(pedida === "assistente");
+      setReservasAberto(pedida === "reservas");
+      setCoreAberto(pedida === "core-rank");
+      setCategoriaInicial(new URLSearchParams(window.location.search).get("categoria"));
     }
     const controller = new AbortController();
     setEmail(conta);
@@ -180,6 +185,26 @@ export default function NovaAreaConsultor() {
     void carregar();
     return () => controller.abort();
   }, []);
+
+  async function entrar() {
+    if (aEntrar) return;
+    setAEntrar(true);
+    setErro("");
+    try {
+      const conta = emailEntrada.trim().toLowerCase();
+      const resposta = await fetch("/api/consultor/backoffice/identificar", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: conta }),
+      });
+      const corpo = await resposta.json();
+      if (!resposta.ok) throw new Error(corpo.erro ?? "Não foi possível entrar. Tenta novamente.");
+      if (!corpo.ehConsultorEquipa && !ehContaPilotoNovaArea(conta)) throw new Error("Não encontrámos esta conta na equipa.");
+      guardarEmail(conta);
+      window.location.reload();
+    } catch (falha) {
+      setErro(falha instanceof Error ? falha.message : "Falha de ligação. Tenta novamente.");
+      setAEntrar(false);
+    }
+  }
 
   async function alternarPasso(numero: number) {
     if (aGuardarPasso !== null) return;
@@ -234,9 +259,14 @@ export default function NovaAreaConsultor() {
       <div className={estilos.pagina}>
         <div className={estilos.estado} aria-live="polite">
           <span className={estilos.etiqueta}>A MINHA ÁREA</span>
-          <h1>{estado === "a-carregar" ? "A preparar a tua área…" : estado === "sem-acesso" ? "Esta área está em preparação" : "Não conseguimos carregar a página"}</h1>
-          <p>{estado === "erro" ? erro : estado === "sem-acesso" ? "Continua a consultar a tua área de consultor habitual." : "Os teus primeiros passos estão a chegar."}</p>
-          {estado !== "a-carregar" && <Link className={estilos.botao} href={linkAreaAtual(email)}>Voltar à área atual <Seta /></Link>}
+          <h1>{estado === "a-carregar" ? "A preparar a tua área…" : estado === "sem-acesso" ? "Entra na tua área" : "Não conseguimos carregar a página"}</h1>
+          <p>{estado === "erro" ? erro : estado === "sem-acesso" ? "Usa o email com que estás registado na equipa." : "Os teus primeiros passos estão a chegar."}</p>
+          {estado === "sem-acesso" && <form onSubmit={e => { e.preventDefault(); void entrar(); }} style={{ display: "grid", gap: "1rem", maxWidth: 360, margin: "1rem auto" }}>
+            <label htmlFor="email-consultor">O teu email</label>
+            <input id="email-consultor" type="email" autoComplete="email" required value={emailEntrada} onChange={e => setEmailEntrada(e.target.value)} style={{ padding: "0.8rem", border: "1px solid #4b5320", borderRadius: 8, fontSize: "1rem", minWidth: 0 }} />
+            <button type="submit" className={estilos.botao} disabled={aEntrar}>{aEntrar ? "A entrar…" : "Entrar"}</button>
+            {erro && <p role="alert">{erro}</p>}
+          </form>}
           {estado === "erro" && <button className={estilos.botaoSecundario} onClick={() => window.location.reload()}>Tentar novamente</button>}
         </div>
       </div>
@@ -252,7 +282,6 @@ export default function NovaAreaConsultor() {
   return (
     <div className={`${estilos.pagina} ${seccao === "negocio" ? estilos.paginaNegocio : ""}`}>
       <div className={estilos.contentor}>
-        {!soAdmin && <AlternarArea ativa="nova" email={email} />}
         <header className={estilos.topo}>
           <div className={estilos.marca}>
             <span className={estilos.simbolo} aria-hidden="true"><img src="/icons/icon-192.png" alt="" width="44" height="44" /></span>
@@ -331,7 +360,6 @@ export default function NovaAreaConsultor() {
               </div>}
               </>}
             </nav>
-            <Link className={estilos.voltar} href={linkAreaAtual(email)}>Consultar a área atual <Seta /></Link>
           </aside>
 
           <main id="conteudo-nova-area" ref={conteudo} tabIndex={-1} aria-label="Conteúdo da secção" className={estilos.conteudo}>
@@ -367,7 +395,7 @@ export default function NovaAreaConsultor() {
             {seccao === "proximas-formacoes" && <ProximasFormacoes formacoes={dados.proximasFormacoes} email={email} aoInscrever={id => setDados(atual => atual ? {
               ...atual, proximasFormacoes: atual.proximasFormacoes.map(f => f.id === id && f.tipo === "interna" ? { ...f, inscrito: true } : f),
             } : atual)} />}
-            {seccao === "formacoes-gravadas" && <FormacoesGravadas />}
+            {seccao === "formacoes-gravadas" && <FormacoesGravadas categoriaInicial={categoriaInicial} />}
             {seccao === "testemunhos" && <TestemunhosNovaArea />}
             {assistenteAberto && <div hidden={seccao !== "assistente"}><AssistenteEquipa email={email} /></div>}
             {seccao === "documentos" && <DocumentosNovaArea />}

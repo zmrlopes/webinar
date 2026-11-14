@@ -20,13 +20,13 @@ for (const email of [tp, outro]) { assert(podeVerNovaArea(email)); assert(!ehCon
 for (const email of ["", "__proto__"]) assert(!podeVerNovaArea(email));
 assert(ehContaPilotoNovaArea(normalizado)); assert(ehContaPilotoNovaArea(demo));
 assert.equal(destinoEntradaNovaArea(normalizado,""),"/consultor/nova-area");
-assert.equal(destinoEntradaNovaArea(ana,"?area=atual"),null,"A comparação com a área atual não pode criar um ciclo");
+assert.equal(destinoEntradaNovaArea(ana,"?area=atual"),"/consultor/nova-area","A versão antiga já não pode ser aberta");
 for (const email of [demo,tp]) {
   assert.equal(destinoEntradaNovaArea(email,"",true),"/consultor/nova-area","Os consultores da equipa entram na nova área por defeito");
-  assert.equal(destinoEntradaNovaArea(email,"?area=atual",true),null);
+  assert.equal(destinoEntradaNovaArea(email,"?area=atual",true),"/consultor/nova-area");
 }
-assert.equal(destinoEntradaNovaArea(outro,"",false),null,"Quem não é da equipa continua na área atual");
-for (const email of [ana,demo,tp]) assert.equal(linkAreaAtual(email),"/consultor?area=atual");
+assert.equal(destinoEntradaNovaArea(outro,"",false),null,"Quem não é da equipa não recebe acesso");
+for (const email of [ana,demo,tp]) assert.equal(linkAreaAtual(email),"/consultor/nova-area");
 const local = new Map<string,string>([["consultor-nova-area:primeiros-passos:v2","[1,3,4]"]]);
 const armazenamento = {getItem:(chave:string)=>local.get(chave)??null};
 assert.deepEqual(lerProgressoLocalPrimeirosPassos(ana,armazenamento),[],"Não importa marcas de demonstração para a Ana");
@@ -137,7 +137,7 @@ async function main() {
     assert.deepEqual(dados.get(progresso(ana)),[4,5]); assert.deepEqual(dados.get(progresso(ana,1)),[1,3,4]);
     assert.deepEqual(dados.get(progresso(demo)),[1,2,3,4,5,6,7]);
     assert.equal((await importar(pedido({email:semEquipa,versao:2,feitos:[]}))).status,403);
-    console.log("OK: nova área para toda a equipa (entrada por defeito, BLACKFRIDAY só para participantes, fora da equipa bloqueado), migração da Ana, entrada por defeito e regresso à área atual, perfil/API completos, progresso privado, meta de 1,5 M€, comprovativos existentes, revisão e estatísticas preservadas, equipa limitada e simulação bloqueada. Sem rede nem dados reais alterados.");
+    console.log("OK: área única para toda a equipa, sem acesso à versão anterior, BLACKFRIDAY só para participantes, fora da equipa bloqueado, perfil/API completos, progresso privado, meta de 1,5 M€, comprovativos existentes, revisão e estatísticas preservadas e simulação bloqueada. Sem rede nem dados reais alterados.");
   } finally {pool.query=originalQuery;pool.connect=originalConnect;globalThis.fetch=originalFetch;await fecharDb();}
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

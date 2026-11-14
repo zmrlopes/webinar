@@ -11,9 +11,15 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 Por indicação explícita mais recente do utilizador, a nova área completa está
 publicada para todos os consultores da equipa (`equipa_afiliados`), incluindo
 Reservas (Criar templates, Travel planner, Propostas, Onde posso vender) e as
-APIs das secções, com os limites de pedidos por conta. Ao entrar em `/consultor`,
-os consultores da equipa abrem a nova área por defeito; `/consultor?area=atual`
-mantém a versão anterior, com o seletor entre as duas. O interruptor está em
+APIs das secções, com os limites de pedidos por conta. Por confirmação de
+14/11/2026, a nova área é a única área dos TPs: `/consultor` e os links antigos
+das secções encaminham para `/consultor/nova-area`, mantendo a secção e a
+categoria de formação. `?area=atual` não abre a versão anterior. Não existe
+seletor nem ligação de regresso. A identificação por email fica na nova área;
+os formulários auxiliares dos eventos mantêm-se disponíveis. Correr
+`npx tsx scripts/testes-consultor-navegacao.ts`, `npm run test:nova-area`,
+`npm run test:blackfriday`, `npm run typecheck` e `npm run build`.
+O interruptor de acesso está em
 `NOVA_AREA_PARA_TODOS` (`src/lib/consultor-nova-area.ts`); o servidor confirma
 sempre a conta na equipa (`temAcessoNovaArea`). Esta publicação substitui as
 restrições “exclusivo da conta de teste” das secções descritas abaixo, exceto:

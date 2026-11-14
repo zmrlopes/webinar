@@ -80,8 +80,8 @@ export function ProximasFormacoes({ formacoes, email, aoInscrever }: {
   </section>;
 }
 
-export function FormacoesGravadas() {
-  const [categoria, setCategoria] = useState<string | null>(null);
+export function FormacoesGravadas({ categoriaInicial = null }: { categoriaInicial?: string | null }) {
+  const [categoria, setCategoria] = useState<string | null>(categoriaInicial);
   return <section id="formacoes-gravadas" aria-label="Formações gravadas">
     <Intro titulo="Formações gravadas" descricao="Aprende ao teu ritmo com as formações da Tropa de Elite e da iCliGo." />
     {categoria ? <CategoriaPagina key={categoria} categoriaId={categoria} embutida aoVoltar={() => setCategoria(null)} />

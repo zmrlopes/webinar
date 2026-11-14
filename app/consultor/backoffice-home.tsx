@@ -7,8 +7,7 @@ import { ConvencaoCartao, type PedidoConvencao } from "./convencao-cartao";
 import { EventoForm } from "./evento-form";
 import { TeambuildingComprovativo } from "./teambuilding-comprovativo";
 import { NotificacoesPush } from "./notificacoes-push";
-import { destinoEntradaNovaArea, ehContaPilotoNovaArea, podeVerNovaArea } from "@/lib/consultor-nova-area";
-import { AlternarArea } from "./alternar-area";
+import { destinoEntradaNovaArea } from "@/lib/consultor-nova-area";
 import { AvisoRelatorioCore } from "./nova-area/core-rank";
 
 interface DadosIdentificacao {
@@ -84,7 +83,6 @@ export function BackofficeHome() {
   const [webinarInscrito, setWebinarInscrito] = useState(false);
   const [webinarAcabadoDeInscrever, setWebinarAcabadoDeInscrever] = useState(false);
   const [seccaoAtiva, setSeccaoAtiva] = useState<Seccao>(null);
-  const acessoNovaArea = podeVerNovaArea(email);
   function alternarSeccao(seccao: Seccao): void {
     setSeccaoAtiva((atual) => (atual === seccao ? null : seccao));
   }
@@ -557,7 +555,6 @@ export function BackofficeHome() {
 
         {estado === "pronto" && dados && (
           <>
-            {acessoNovaArea && (dados.ehConsultorEquipa || ehContaPilotoNovaArea(email)) && <AlternarArea ativa="atual" email={email} />}
             <div className="vqb-topo">
               <h1>Olá{dados.nome ? `, ${dados.nome}` : ""}</h1>
               <button type="button" className="vqb-trocar" onClick={trocarConta}>

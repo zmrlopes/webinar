@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { WebinaresPagina } from "../webinares/webinares-pagina";
 import estilos from "./nova-area.module.css";
@@ -37,7 +36,7 @@ export function LeadsNovaArea({ linkPartilha }: { linkPartilha: string | null })
           </div>
           {copiado && <span className={estilos.linkCopiado} role="status">Link copiado. Já podes partilhá-lo.</span>}
           {erro && <p className={estilos.erroOrganizacao} role="alert">{erro}</p>}
-        </> : <p>O teu link ainda não está disponível. <Link href="/consultor">Consulta a área atual para o obteres.</Link></p>}
+        </> : <p>O teu link ainda não está disponível. Contacta o teu líder para confirmar o acesso.</p>}
       </section>
       <WebinaresPagina embutida />
     </section>
