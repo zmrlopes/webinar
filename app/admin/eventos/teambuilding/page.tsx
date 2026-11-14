@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { resumirPresencasEvento } from "@/lib/eventos-presencas";
+import { ResumoPresencasEvento } from "../resumo-presencas";
 import { listarConsultoresInscritosEventoPorLider } from "@/lib/admin";
 import {
   estaoInscricoesAbertas,
@@ -266,6 +268,8 @@ export default async function AdminEventos() {
             {inscricoesAbertas ? "inscrições abertas" : "inscrições encerradas"}
           </strong>
         </p>
+
+        <ResumoPresencasEvento {...resumirPresencasEvento(inscricoes)} />
 
         <SeparadoresEvento trofeus={<TrofeusInscritos inscritos={inscritosFaturacao} />} inscritos={inscritosFaturacao.map(i => ({
           nome: i.nome,

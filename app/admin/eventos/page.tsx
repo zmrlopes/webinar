@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { resumirPresencasEvento } from "@/lib/eventos-presencas";
+import { ResumoPresencasEvento } from "./resumo-presencas";
 import { listarPedidosBilhete, totaisBilhetes } from "@/lib/bilhetes-convencao";
 import {
   estaoInscricoesAbertas,
@@ -22,10 +24,7 @@ export default async function AdminEventos() {
     listarPedidosBilhete(),
   ]);
   const bilhetesPedidos = totaisBilhetes(pedidosBilhete).bilhetes;
-  const pessoas = inscricoes.reduce(
-    (soma, i) => soma + i.adultos + i.criancasMais10 + i.criancasMenos10,
-    0,
-  );
+  const presencas = resumirPresencasEvento(inscricoes);
 
   return (
     <main className="ad-pagina">
@@ -84,12 +83,13 @@ export default async function AdminEventos() {
               {EVENTO_DATA_TEXTO} · {EVENTO_LOCAL}
             </p>
             <div className="ad-evento-rodape">
-              <span className="ad-evento-numero">{pessoas} pessoas</span>
+              <span className="ad-evento-numero">{presencas.total} pessoas</span>
               <span className={inscricoesAbertas ? "ad-estado ad-estado-abertas" : "ad-estado ad-estado-fechadas"}>
                 {inscricoesAbertas ? "inscrições abertas" : "inscrições encerradas"}
               </span>
               <span className="ad-evento-seta">Abrir →</span>
             </div>
+            <ResumoPresencasEvento {...presencas} compacto />
           </Link>
           <Link href="/admin/bilhetes-convencao" className="ad-evento-cartao">
             <p className="ad-evento-titulo">Convenção Nacional iCligo 2027</p>

@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { InscricaoEvento } from "@/lib/eventos";
+import { resumirPresencasEvento } from "@/lib/eventos-presencas";
 import { EditarEmailInscricao } from "./editar-email";
 import { BotaoWhatsApp } from "../botao-whatsapp";
 
@@ -16,6 +17,7 @@ function formatarData(data: Date): string {
 
 export function TabelaInscricoesEvento({ inscricoes }: { inscricoes: InscricaoEvento[] }) {
   const [pesquisa, setPesquisa] = useState("");
+  const [presenca, setPresenca] = useState("todas");
   const router = useRouter();
   const bloqueado = useRef(false);
   const [aEnviar, setAEnviar] = useState(false);
@@ -57,9 +59,12 @@ export function TabelaInscricoesEvento({ inscricoes }: { inscricoes: InscricaoEv
 
   const inscricoesFiltradas = useMemo(() => {
     const termo = pesquisa.trim().toLowerCase();
-    if (!termo) return inscricoes;
-    return inscricoes.filter((i) => `${i.nome} ${i.telemovel} ${i.email}`.toLowerCase().includes(termo));
-  }, [inscricoes, pesquisa]);
+    return inscricoes.filter((i) => {
+      const resumo = resumirPresencasEvento([i]);
+      const correspondePresenca = presenca === "todas" || (presenca === "com" ? resumo.presentes > 0 : resumo.semCheckin > 0);
+      return correspondePresenca && `${i.nome} ${i.telemovel} ${i.email}`.toLowerCase().includes(termo);
+    });
+  }, [inscricoes, pesquisa, presenca]);
 
   return (
     <div>
@@ -86,7 +91,15 @@ export function TabelaInscricoesEvento({ inscricoes }: { inscricoes: InscricaoEv
           boxSizing: "border-box",
         }}
       />
-      {pesquisa.trim() !== "" && (
+      <label style={{ display: "inline-flex", gap: "0.5rem", alignItems: "center", margin: "0 0 0.75rem 0.75rem", flexWrap: "wrap" }}>
+        Presenças
+        <select value={presenca} onChange={e => setPresenca(e.target.value)} style={{ padding: "0.5rem", border: "1px solid #ccc", borderRadius: 8 }}>
+          <option value="todas">Todas as inscrições</option>
+          <option value="com">Com check-in efetuado</option>
+          <option value="sem">Com pessoas sem check-in</option>
+        </select>
+      </label>
+      {(pesquisa.trim() !== "" || presenca !== "todas") && (
         <p className="ad-legenda" style={{ marginTop: 0, marginBottom: "0.5rem" }}>
           {inscricoesFiltradas.length} de {inscricoes.length}
         </p>
@@ -103,7 +116,7 @@ export function TabelaInscricoesEvento({ inscricoes }: { inscricoes: InscricaoEv
               <th>Crianças +10</th>
               <th>Crianças -10</th>
               <th>Total</th>
-              <th>Compareceu</th>
+              <th>Check-ins</th>
               <th>Inscrito em</th>
               <th>Comprovativo</th>
               <th>Email QR code</th>
@@ -128,13 +141,15 @@ export function TabelaInscricoesEvento({ inscricoes }: { inscricoes: InscricaoEv
                 <td>{i.criancasMenos10}</td>
                 <td>{i.totalPagar}€</td>
                 <td>
+                  <p style={{ margin: "0 0 6px", fontSize: "0.8rem" }}>{resumirPresencasEvento([i]).presentes} de {resumirPresencasEvento([i]).total} com check-in</p>
                   <div className="ad-bilhetes">
                     {i.bilhetes.map((b) => (
                       <span
                         key={b.id}
                         className={b.presente ? "ad-presenca ad-presenca-sim" : "ad-presenca ad-presenca-nao"}
+                        title={b.presente ? (b.presenteEm ? `Check-in em ${formatarData(b.presenteEm)}` : "Check-in efetuado") : "Sem check-in"}
                       >
-                        {b.rotulo} {b.presente ? "✓" : "—"}
+                        {b.rotulo} · {b.presente ? "✓ Check-in" : "Sem check-in"}
                       </span>
                     ))}
                   </div>
@@ -160,6 +175,7 @@ export function TabelaInscricoesEvento({ inscricoes }: { inscricoes: InscricaoEv
                 </td>
               </tr>
             ))}
+            {!inscricoesFiltradas.length && <tr><td colSpan={12}>Não há inscrições para os filtros selecionados.</td></tr>}
           </tbody>
         </table>
       </div>
