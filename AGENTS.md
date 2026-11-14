@@ -196,6 +196,10 @@ mantendo o menu lateral. O link pessoal de partilha aparece no topo das
 Leads. A página original de Leads continua disponível na área atual.
 O botão Calendário fica entre Primeiros passos e A minha organização e
 abre uma vista mensal dos acontecimentos da plataforma no painel direito.
+Por indicação do utilizador, além de “Mês” e “Agenda”, o calendário tem
+“Eventos presenciais”: uma lista, agrupada por mês, de todos os encontros
+presenciais a partir de hoje (um item por evento, com o intervalo de dias),
+sem depender do mês escolhido. Continua exclusivo da nova área.
 
 Manter as cores da marca existente (branco, preto e verde-oliva `#4b5320`),
 mesmo quando a organização se inspira numa referência com outras cores.

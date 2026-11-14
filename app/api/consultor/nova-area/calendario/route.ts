@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { podeVerNovaArea } from "@/lib/consultor-nova-area";
-import { mudarMes, type AcontecimentoCalendario } from "@/lib/calendario-consultor";
+import { diaEmPortugal, mudarMes, type AcontecimentoCalendario } from "@/lib/calendario-consultor";
 import { TITULO_WEBINAR_PUBLICO, TITULO_WELCOME_ABOARD } from "@/lib/webinars";
 import { EVENTO_TITULO, EVENTO_LOCAL, estaoInscricoesAbertas } from "@/lib/eventos";
 import { obterCalendarioForum } from "@/lib/forum-icligo";
 import { juntarFormacoesIcligo, linguaDaFormacao, tituloSemBandeira } from "@/lib/formacoes-forum-icligo";
-import { eventosEquipa2027 } from "@/lib/eventos-equipa-2027";
+import { eventosEquipa2027, eventosPresenciais2027 } from "@/lib/eventos-equipa-2027";
 
 export async function POST(request: Request): Promise<Response> {
   const corpo = await request.json().catch(() => null);
@@ -54,13 +54,20 @@ export async function POST(request: Request): Promise<Response> {
       })), forum.formacoes),
     ];
     // Eventos presenciais já anunciados na plataforma; a hora ainda não foi indicada.
-    if (mes === "2026-11") acontecimentos.push({
+    const hoje = diaEmPortugal();
+    const teambuilding: AcontecimentoCalendario | null = mes === "2026-11" || hoje <= "2026-11-14" ? {
       id: "teambuilding-2026", titulo: EVENTO_TITULO, categoria: "evento", comecaEm: "2026-11-14",
       terminaEm: null, diaInteiro: true, local: EVENTO_LOCAL, url: null, inscricoesAbertas: await estaoInscricoesAbertas(),
-    });
+    } : null;
+    if (teambuilding && mes === "2026-11") acontecimentos.push(teambuilding);
     acontecimentos.push(...eventosEquipa2027(mes));
     acontecimentos.sort((a, b) => a.comecaEm.localeCompare(b.comecaEm) || a.titulo.localeCompare(b.titulo));
-    return NextResponse.json({ mes, acontecimentos, forum: { atualizadoEm: forum.atualizadoEm, aviso: forum.aviso } }, { headers: { "Cache-Control": "private, no-store" } });
+    // Vista "Eventos presenciais": todos os encontros presenciais a partir de hoje, sem depender do mês.
+    const presenciais = [
+      ...(teambuilding && hoje <= "2026-11-14" ? [teambuilding] : []),
+      ...eventosPresenciais2027(hoje),
+    ];
+    return NextResponse.json({ mes, acontecimentos, presenciais, forum: { atualizadoEm: forum.atualizadoEm, aviso: forum.aviso } }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (erro) {
     console.error("falha ao carregar o calendário da conta de teste:", erro);
     return NextResponse.json({ erro: "Não foi possível carregar o calendário. Tenta novamente." }, { status: 500 });

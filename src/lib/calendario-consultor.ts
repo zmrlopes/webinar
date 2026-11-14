@@ -9,6 +9,8 @@ export interface AcontecimentoCalendario {
   comecaEm: string;
   terminaEm: string | null;
   diaInteiro: boolean;
+  /** Último dia (AAAA-MM-DD) dos encontros de vários dias, na vista de eventos presenciais. */
+  diaFim?: string;
   local: string | null;
   url: string | null;
   webinarId?: string;

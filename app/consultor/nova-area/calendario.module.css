@@ -52,9 +52,13 @@
 .agendaDia > p, .agendaMes > p { font-size: 13px; color: #6b6a63; }
 .agendaMes > div + div { margin-top: 24px; }
 .lista { display: grid; gap: 8px; }
+.navegacao h2.semMaiusculas, .agendaMes h3.semMaiusculas { text-transform: none; }
 .itemAgenda { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px; border: 1px solid #e5e5dc; border-left: 3px solid var(--cor-evento); border-radius: 10px; background: #fff; text-align: left; color: #000; cursor: pointer; }
 .itemTexto { display: grid; gap: 4px; min-width: 0; flex: 1; overflow-wrap: anywhere; }
 .itemTexto strong { font-size: 13px; }
+.dataPresencial { display: grid; place-items: center; align-content: center; gap: 2px; flex: none; min-width: 64px; padding: 8px 6px; border-radius: 8px; background: var(--fundo-evento); color: var(--cor-evento); text-align: center; line-height: 1.1; }
+.dataPresencial strong { font-size: 17px; font-weight: 700; white-space: nowrap; }
+.dataPresencial span { font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
 .itemTexto span, .itemTexto small { color: #6b6a63; font-size: 12px; }
 .erro { margin: 0 20px 20px; padding: 16px; background: #fff5f4; color: #b3261e; border-radius: 10px; font-size: 13px; }
 .erro button { border: 1px solid #b3261e; background: #fff; color: #b3261e; border-radius: 6px; padding: 8px 12px; cursor: pointer; }
@@ -75,6 +79,9 @@
   .barra { padding: 16px; }
   .navegacao h2 { font-size: 18px; margin-left: 5px; }
   .controlos { width: 100%; flex-wrap: wrap; justify-content: space-between; }
+  .vistas button { padding: 8px 10px; }
+  .dataPresencial { min-width: 54px; }
+  .dataPresencial strong { font-size: 15px; }
   .barra input { min-width: 0; max-width: 100%; }
   .legenda { padding: 0 16px; gap: 6px; }
   .legenda button { font-size: 10px; }

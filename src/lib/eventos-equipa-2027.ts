@@ -56,3 +56,21 @@ export function eventosEquipa2027(mes: string): AcontecimentoCalendario[] {
   }
   return resultado;
 }
+
+/**
+ * Os encontros presenciais de 2027, um por evento (sem repetir cada dia),
+ * a partir de `desde` (AAAA-MM-DD, inclusive): um evento de vários dias
+ * conta enquanto o seu último dia não tiver passado.
+ */
+export function eventosPresenciais2027(desde: string): AcontecimentoCalendario[] {
+  return eventos.filter(([, , , local]) => local.startsWith("Presencial")).flatMap(([inicio, fim, titulo, local]) => {
+    const primeiro = `2027-${inicio}`;
+    const ultimo = `2027-${fim ?? inicio}`;
+    if (ultimo < desde) return [];
+    return [{
+      id: inicio === "03-13" ? "convencao-2027" : `presencial-2027-${inicio}`,
+      titulo, categoria: "evento" as const, comecaEm: primeiro, terminaEm: null, diaInteiro: true,
+      ...(fim ? { diaFim: ultimo } : {}), local, url: inicio === "03-13" ? "/bilhetes-convencao" : null,
+    }];
+  });
+}

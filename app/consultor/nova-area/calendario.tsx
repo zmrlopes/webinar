@@ -26,6 +26,26 @@ function hora(data: string): string {
   return new Date(data).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Lisbon" });
 }
 
+/** "8 a 10 de janeiro de 2027", "30 de abril a 2 de maio de 2027" ou só o dia, para os encontros presenciais. */
+function intervalo(acontecimento: AcontecimentoCalendario): string {
+  const inicio = acontecimento.comecaEm.slice(0, 10), fim = acontecimento.diaFim;
+  const formatar = (dia: string, opcoes: Intl.DateTimeFormatOptions) => new Date(`${dia}T12:00:00Z`).toLocaleDateString("pt-PT", { ...opcoes, timeZone: "Europe/Lisbon" });
+  if (!fim || fim === inicio) return dataLonga(inicio);
+  const ultimo = formatar(fim, { day: "numeric", month: "long", year: "numeric" });
+  if (inicio.slice(0, 7) === fim.slice(0, 7)) return `${Number(inicio.slice(8))} a ${ultimo}`;
+  return `${formatar(inicio, { day: "numeric", month: "long" })} a ${ultimo}`;
+}
+
+function DataPresencial({ acontecimento }: { acontecimento: AcontecimentoCalendario }) {
+  const inicio = acontecimento.comecaEm.slice(0, 10), fim = acontecimento.diaFim ?? inicio;
+  const mesCurto = (dia: string) => new Date(`${dia}T12:00:00Z`).toLocaleDateString("pt-PT", { month: "short", timeZone: "Europe/Lisbon" }).replace(".", "");
+  const mesmoMes = inicio.slice(0, 7) === fim.slice(0, 7);
+  return <span className={s.dataPresencial} aria-hidden="true">
+    <strong>{Number(inicio.slice(8))}{fim !== inicio && `–${Number(fim.slice(8))}`}</strong>
+    <span>{mesmoMes ? mesCurto(inicio) : `${mesCurto(inicio)}–${mesCurto(fim)}`}</span>
+  </span>;
+}
+
 function horario(acontecimento: AcontecimentoCalendario): string {
   if (acontecimento.diaInteiro) return "Hora por confirmar";
   return `${hora(acontecimento.comecaEm)}${acontecimento.terminaEm ? ` – ${hora(acontecimento.terminaEm)}` : ""}`;
@@ -35,9 +55,9 @@ export function CalendarioConsultor({ email, nome }: { email: string; nome: stri
   const hoje = diaEmPortugal();
   const [mes, setMes] = useState(hoje.slice(0, 7));
   const [diaSelecionado, setDiaSelecionado] = useState(hoje);
-  const [vista, setVista] = useState<"mes" | "agenda">("mes");
+  const [vista, setVista] = useState<"mes" | "agenda" | "presenciais">("mes");
   const [categorias, setCategorias] = useState(CATEGORIAS);
-  const [dados, setDados] = useState<{ mes: string; acontecimentos: AcontecimentoCalendario[]; forum?: { atualizadoEm: string | null; aviso?: string } } | null>(null);
+  const [dados, setDados] = useState<{ mes: string; acontecimentos: AcontecimentoCalendario[]; presenciais?: AcontecimentoCalendario[]; forum?: { atualizadoEm: string | null; aviso?: string } } | null>(null);
   const [estado, setEstado] = useState<"carregar" | "pronto" | "erro">("carregar");
   const [erro, setErro] = useState("");
   const [tentativa, setTentativa] = useState(0);
@@ -133,6 +153,12 @@ export function CalendarioConsultor({ email, nome }: { email: string; nome: stri
     const dia = diaDoAcontecimento(a);
     porDia.set(dia, [...(porDia.get(dia) ?? []), a]);
   }
+  const presenciais = estado !== "erro" ? dados?.presenciais ?? null : null;
+  const presenciaisPorMes = new Map<string, AcontecimentoCalendario[]>();
+  for (const a of presenciais ?? []) {
+    const chave = a.comecaEm.slice(0, 7);
+    presenciaisPorMes.set(chave, [...(presenciaisPorMes.get(chave) ?? []), a]);
+  }
   const tituloMes = new Date(`${mes}-01T12:00:00Z`).toLocaleDateString("pt-PT", { month: "long", year: "numeric", timeZone: "Europe/Lisbon" });
 
   function lista(listaEventos: AcontecimentoCalendario[]) {
@@ -152,30 +178,41 @@ export function CalendarioConsultor({ email, nome }: { email: string; nome: stri
     </div>
     <div className={s.contentor}>
       <div className={s.barra}>
-        <div className={s.navegacao}>
+        {vista === "presenciais" ? <div className={s.navegacao}><h2 id="mes-calendario" className={s.semMaiusculas}>Eventos presenciais</h2></div> : <div className={s.navegacao}>
           <button type="button" onClick={() => escolherMes(hoje.slice(0, 7))}>Hoje</button>
           <button type="button" aria-label="Mês anterior" disabled={mes === "2000-01"} onClick={() => escolherMes(mudarMes(mes, -1))}>‹</button>
           <button type="button" aria-label="Mês seguinte" disabled={mes === "2099-12"} onClick={() => escolherMes(mudarMes(mes, 1))}>›</button>
           <h2 id="mes-calendario">{tituloMes}</h2>
-        </div>
+        </div>}
         <div className={s.controlos}>
-          <input type="month" aria-label="Escolher mês" value={mes} min="2000-01" max="2099-12" onChange={e => escolherMes(e.target.value)} />
+          {vista !== "presenciais" && <input type="month" aria-label="Escolher mês" value={mes} min="2000-01" max="2099-12" onChange={e => escolherMes(e.target.value)} />}
           <div className={s.vistas} aria-label="Vista do calendário">
             <button type="button" aria-pressed={vista === "mes"} onClick={() => setVista("mes")}>Mês</button>
             <button type="button" aria-pressed={vista === "agenda"} onClick={() => setVista("agenda")}>Agenda</button>
+            <button type="button" aria-pressed={vista === "presenciais"} onClick={() => setVista("presenciais")}>Eventos presenciais</button>
           </div>
         </div>
       </div>
-      <div className={s.legenda} aria-label="Filtrar acontecimentos">
+      {vista !== "presenciais" && <div className={s.legenda} aria-label="Filtrar acontecimentos">
         {CATEGORIAS.map(c => <button key={c} type="button" data-categoria={c} aria-pressed={categorias.includes(c)} onClick={() => setCategorias(atual => atual.includes(c) ? atual.filter(v => v !== c) : [...atual, c])}>
           <span className={s.ponto} aria-hidden="true" />{NOMES_CATEGORIAS[c]}
         </button>)}
-      </div>
-      <p className={s.resumo} aria-live="polite">{estado === "erro" ? "Calendário indisponível" : estado === "carregar" || dados?.mes !== mes ? "A carregar os acontecimentos…" : `${visiveis.length} ${visiveis.length === 1 ? "acontecimento" : "acontecimentos"} neste mês · Horas de Portugal`}</p>
-      {dados?.mes === mes && dados.forum?.atualizadoEm && <p className={s.importacao}>Formações iCliGo atualizadas automaticamente · {new Date(dados.forum.atualizadoEm).toLocaleString("pt-PT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Lisbon" })}</p>}
-      {dados?.mes === mes && dados.forum?.aviso && <p className={s.avisoImportacao} role="status">{dados.forum.aviso} As formações já importadas continuam disponíveis.</p>}
+      </div>}
+      {vista === "presenciais" ? <p className={s.resumo} aria-live="polite">{estado === "erro" ? "Calendário indisponível" : presenciais === null ? "A carregar os eventos presenciais…" : `${presenciais.length} ${presenciais.length === 1 ? "evento presencial" : "eventos presenciais"} a partir de hoje`}</p> : <p className={s.resumo} aria-live="polite">{estado === "erro" ? "Calendário indisponível" : estado === "carregar" || dados?.mes !== mes ? "A carregar os acontecimentos…" : `${visiveis.length} ${visiveis.length === 1 ? "acontecimento" : "acontecimentos"} neste mês · Horas de Portugal`}</p>}
+      {vista !== "presenciais" && dados?.mes === mes && dados.forum?.atualizadoEm && <p className={s.importacao}>Formações iCliGo atualizadas automaticamente · {new Date(dados.forum.atualizadoEm).toLocaleString("pt-PT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Lisbon" })}</p>}
+      {vista !== "presenciais" && dados?.mes === mes && dados.forum?.aviso && <p className={s.avisoImportacao} role="status">{dados.forum.aviso} As formações já importadas continuam disponíveis.</p>}
       {estado === "erro" && <div className={s.erro} role="alert"><p>{erro}</p><button type="button" onClick={() => setTentativa(n => n + 1)}>Tentar novamente</button></div>}
-      {vista === "mes" ? <>
+      {vista === "presenciais" ? <div className={s.agendaMes}>
+        {[...presenciaisPorMes.entries()].map(([chave, eventos]) => <div key={chave}>
+          <h3 className={s.semMaiusculas}>{new Date(`${chave}-01T12:00:00Z`).toLocaleDateString("pt-PT", { month: "long", year: "numeric", timeZone: "Europe/Lisbon" }).replace(/^./, l => l.toUpperCase())}</h3>
+          <div className={s.lista}>{eventos.map(a => <button type="button" key={a.id} className={s.itemAgenda} data-categoria={a.categoria} aria-haspopup="dialog" onClick={() => abrirAcontecimento(a)}>
+            <DataPresencial acontecimento={a} />
+            <span className={s.itemTexto}><strong>{a.titulo}</strong><span>{intervalo(a)}</span>{a.local && <small>{a.local}</small>}</span>
+            <span aria-hidden="true">↗</span>
+          </button>)}</div>
+        </div>)}
+        {presenciais?.length === 0 && <p>Sem eventos presenciais anunciados a partir de hoje.</p>}
+      </div> : vista === "mes" ? <>
         <div className={s.deslocacaoMes} tabIndex={0} role="region" aria-label={`Calendário de ${tituloMes}`}>
         <div className={s.grelha} aria-labelledby="mes-calendario" aria-busy={estado === "carregar"}>
           {DIAS_SEMANA.map(d => <div className={s.diaSemana} key={d}>{d}</div>)}
@@ -206,7 +243,7 @@ export function CalendarioConsultor({ email, nome }: { email: string; nome: stri
         <button type="button" className={s.fechar} onClick={() => setSelecionado(null)} aria-label="Fechar detalhes">×</button>
         <span className={s.tipoDetalhes} data-categoria={selecionado.categoria}>{selecionado.categoria === "icligo" ? <img className={s.logoIcligo} src="/icligo-logo.png" alt="" width={32} height={32} /> : <span className={s.ponto} />}{NOMES_CATEGORIAS[selecionado.categoria]}</span>
         <h2 id="titulo-acontecimento">{selecionado.titulo}</h2>
-        <p>{dataLonga(diaDoAcontecimento(selecionado))}</p>
+        <p>{selecionado.diaFim ? intervalo(selecionado) : dataLonga(diaDoAcontecimento(selecionado))}</p>
         <p><strong>{horario(selecionado)}</strong>{!selecionado.diaInteiro && " · Hora de Portugal"}</p>
         {selecionado.local && <p>{selecionado.local}</p>}
         {selecionado.lingua && <p className={s.linguaDetalhes}><BandeiraFormacao lingua={selecionado.lingua} /> {LINGUAS_FORMACOES[selecionado.lingua].nome}</p>}
