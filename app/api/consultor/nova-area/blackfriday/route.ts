@@ -1,5 +1,4 @@
 import {NextResponse} from "next/server";
-import {ehContaPilotoNovaArea} from "@/lib/consultor-nova-area";
 import {EMAIL_PAINEL_DEMONSTRACAO} from "@/lib/demo";
 import {buscarMembroEquipa} from "@/lib/equipa";
 import {metaBfParaEmail} from "@/lib/lideres-equipa-servidor";
@@ -26,12 +25,11 @@ export async function POST(request: Request) {
     const corpo = formulario ? campos : await request.json().catch(() => null);
     const email = typeof corpo?.email === "string" ? corpo.email.trim().toLowerCase() : "";
     const demonstracao = email === EMAIL_PAINEL_DEMONSTRACAO;
-    if (!ehContaPilotoNovaArea(email) && !await metaBfParaEmail(email)) return json({erro: "Este desafio ainda não está disponível para esta conta."}, 403);
+    const membro = await buscarMembroEquipa(email);
+    if (!membro) return json({erro: "Conta não encontrada na equipa."}, 403);
     if (corpo.simulacao !== undefined && ![true, false, "true", "false"].includes(corpo.simulacao)) return json({erro: "Modo de teste inválido."}, 400);
     const simulacao = corpo.simulacao === true || corpo.simulacao === "true";
     if (simulacao && !demonstracao) return json({erro: "A simulação está disponível apenas na conta de teste."}, 403);
-    const membro = await buscarMembroEquipa(email);
-    if (!membro) return json({erro: "Conta não encontrada na equipa."}, 403);
     if (corpo.acao === "consultar") return json(await comMetaEquipa(await dadosBF(email, simulacao), email, demonstracao));
     if (corpo.acao === "comprovativo" && typeof corpo.id === "string") return await comprovativoBF(corpo.id, email, simulacao);
     if (corpo.acao === "limpar-simulacao" && simulacao) {await limparSimulacaoBF(); return json(await dadosBF(email, true));}

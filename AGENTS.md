@@ -24,8 +24,11 @@ O interruptor de acesso está em
 sempre a conta na equipa (`temAcessoNovaArea`). Esta publicação substitui as
 restrições “exclusivo da conta de teste” das secções descritas abaixo, exceto:
 a simulação do BLACKFRIDAY e “Limpar apenas os testes” continuam só na conta
-de demonstração, e o separador BLACKFRIDAY só aparece a quem participa no desafio
-(equipa de uma líder com bingo) ou às contas piloto. O separador Admin continua
+de demonstração. Por indicação mais recente de 14/11/2026, o BLACKFRIDAY está
+disponível para todos os consultores da equipa, no menu e na API, incluindo
+quem não pertence à equipa de uma líder com meta própria. Cada conta conserva
+as suas reservas e comprovativos privados; as metas específicas existentes
+mantêm-se, e as restantes contas usam a meta geral. O separador Admin continua
 exclusivo de líder. Os dados continuam privados por conta.
 
 Por indicação anterior do utilizador, a nova área completa está também

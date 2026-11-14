@@ -102,7 +102,7 @@ async function main() {
     const entradaTp=await entrada(pedido({email:tp})); assert.equal(entradaTp.status,200,"A nova área está aberta aos consultores da equipa");
     const paginaTp=await entradaTp.json(); assert.equal(paginaTp.nome,"TP"); assert.equal(paginaTp.acessoBlackfriday,true);
     const entradaOutro=await entrada(pedido({email:outro})); assert.equal(entradaOutro.status,200);
-    assert.equal((await entradaOutro.json()).acessoBlackfriday,false,"O BLACKFRIDAY só aparece a quem participa no desafio");
+    assert.equal((await entradaOutro.json()).acessoBlackfriday,true,"O BLACKFRIDAY aparece também fora das equipas com meta própria");
     assert.equal((await entrada(pedido({email:semEquipa}))).status,403);
     assert.equal(await acessoReservas(normalizado),ana);
     assert.equal(await acessoReservas(tp),tp);
@@ -111,6 +111,16 @@ async function main() {
     const cartao=await real.json();
     assert.equal(cartao.metaEquipa.meta,1500000); assert.equal(cartao.metaEquipa.faturacao.valor,faturacao.valor);
     assert.deepEqual(cartao.inscricoes,[pessoal]); assert.equal(cartao.simulacao,false);
+    const geral=await bingo(pedido({email:outro,acao:"consultar"})); assert.equal(geral.status,200,"Qualquer consultor da equipa pode abrir o bingo");
+    const cartaoGeral=await geral.json();
+    assert.deepEqual(cartaoGeral.inscricoes,[exterior],"O novo acesso mantém apenas as reservas da própria conta");
+    assert.equal(cartaoGeral.metaEquipa,undefined,"Sem meta própria, mantém a meta geral existente");
+    assert.equal(cartaoGeral.simulacao,false);
+    assert.equal((await bingo(pedido({email:semEquipa,acao:"consultar"}))).status,403);
+    assert.equal((await bingo(pedido(null))).status,403);
+    for(const acao of ["consultar","enviar","comprovativo","limpar-simulacao"]) assert.equal((await bingo(pedido({email:outro,acao,simulacao:true,id:exterior.id}))).status,403);
+    assert.equal((await bingo(pedido({email:outro,acao:"comprovativo",id:exterior.id}))).status,200);
+    assert.equal((await bingo(pedido({email:outro,acao:"comprovativo",id:pessoal.id}))).status,404);
     for(const acao of ["consultar","enviar","comprovativo","limpar-simulacao"]) assert.equal((await bingo(pedido({email:ana,acao,simulacao:true,id:pessoal.id}))).status,403);
     const prova=await bingo(pedido({email:ana,acao:"comprovativo",id:pessoal.id}));
     assert.equal(prova.status,200); assert.equal(await prova.text(),"%PDF-teste");
@@ -137,7 +147,7 @@ async function main() {
     assert.deepEqual(dados.get(progresso(ana)),[4,5]); assert.deepEqual(dados.get(progresso(ana,1)),[1,3,4]);
     assert.deepEqual(dados.get(progresso(demo)),[1,2,3,4,5,6,7]);
     assert.equal((await importar(pedido({email:semEquipa,versao:2,feitos:[]}))).status,403);
-    console.log("OK: área única para toda a equipa, sem acesso à versão anterior, BLACKFRIDAY só para participantes, fora da equipa bloqueado, perfil/API completos, progresso privado, meta de 1,5 M€, comprovativos existentes, revisão e estatísticas preservadas e simulação bloqueada. Sem rede nem dados reais alterados.");
+    console.log("OK: área única e BLACKFRIDAY para toda a equipa, fora da equipa bloqueado, reservas e comprovativos privados, metas gerais e próprias preservadas, simulação exclusiva de teste e histórico intacto. Sem rede nem dados reais alterados.");
   } finally {pool.query=originalQuery;pool.connect=originalConnect;globalThis.fetch=originalFetch;await fecharDb();}
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

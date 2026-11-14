@@ -62,7 +62,7 @@ export interface DadosNovaArea {
   primeirosPassos: { feitos: number[]; guardado: boolean };
   avisos: AvisoInicio[];
   erroAvisos: boolean;
-  /** Participa no desafio BLACKFRIDAY (equipa de uma líder com bingo) ou é conta piloto. */
+  /** BLACKFRIDAY disponível para todos os consultores registados na equipa. */
   acessoBlackfriday: boolean;
 }
 

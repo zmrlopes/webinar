@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { ehContaPilotoNovaArea, podeVerNovaArea, type DadosNovaArea } from "@/lib/consultor-nova-area";
-import { metaBfParaEmail } from "@/lib/lideres-equipa-servidor";
+import { podeVerNovaArea, type DadosNovaArea } from "@/lib/consultor-nova-area";
 import { podeVerAreaEquipa } from "@/lib/lideres-equipa";
 import { obterElegibilidadeWelcomeAboard } from "@/lib/welcome-aboard";
 import { buscarProximaSessaoWelcomeAboard, buscarProximoWebinarPublico, buscarWebinarFormacao, listarFormacoesEquipa } from "@/lib/webinars";
@@ -39,7 +38,7 @@ export async function POST(request: Request): Promise<Response> {
     if (!membro) {
       return NextResponse.json({ erro: "Não encontrámos esta conta na equipa." }, { status: 403 });
     }
-    const [welcomeAboard, sessao, proximoWebinar, links, formacao, formacoesEquipa, formacoesExternas, primeirosPassos, avisosInicio, linkGrupoWelcomeAboard, acessoBlackfriday] = await Promise.all([
+    const [welcomeAboard, sessao, proximoWebinar, links, formacao, formacoesEquipa, formacoesExternas, primeirosPassos, avisosInicio, linkGrupoWelcomeAboard] = await Promise.all([
       obterElegibilidadeWelcomeAboard(email),
       buscarProximaSessaoWelcomeAboard(),
       buscarProximoWebinarPublico(),
@@ -57,10 +56,6 @@ export async function POST(request: Request): Promise<Response> {
         return { avisos: [], erro: true };
       }),
       obterLinkGrupoWelcomeAboard(email),
-      ehContaPilotoNovaArea(email) ? Promise.resolve(true) : metaBfParaEmail(email).then(meta => meta !== null).catch(erro => {
-        console.error("falha ao confirmar o acesso ao BLACKFRIDAY:", erro);
-        return false;
-      }),
     ]);
     async function jaInscrito(webinarId: string | undefined): Promise<boolean> {
       if (!webinarId) return false;
@@ -83,7 +78,7 @@ export async function POST(request: Request): Promise<Response> {
       primeirosPassos,
       avisos: avisosInicio.avisos,
       erroAvisos: avisosInicio.erro,
-      acessoBlackfriday,
+      acessoBlackfriday: true,
       linkPartilha: links.rows[0] ? new URL(`/${encodeURIComponent(links.rows[0].referencia)}`, request.url).href : null,
       upline: membro.upline_email ? { nome: membro.upline_nome, email: membro.upline_email } : null,
       welcomeAboard,

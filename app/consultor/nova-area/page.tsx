@@ -173,7 +173,6 @@ export default function NovaAreaConsultor() {
         if (controller.signal.aborted) return;
         setFeitos(feitosGuardados);
         setDados(corpo);
-        if (!corpo.acessoBlackfriday) setSeccao(atual => atual === "blackfriday" ? "inicio" : atual);
         setInscrito(corpo.inscritoWelcomeAboard === true);
         setEstado("pronto");
       } catch (falha) {
@@ -323,9 +322,9 @@ export default function NovaAreaConsultor() {
               <div className={estilos.grupoMenu}>
                 <button type="button" className={seccao === "calendario" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calendario")} aria-current={seccao === "calendario" ? "page" : undefined} aria-controls="conteudo-nova-area">Calendário <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" strokeWidth="1.6" /><path d="M7 3v4m10-4v4M3 11h18" stroke="currentColor" strokeWidth="1.6" /></svg></button>
               </div>
-              {dados.acessoBlackfriday && <div className={estilos.grupoMenu}>
+              <div className={estilos.grupoMenu}>
                 <button type="button" className={estilos.navBlackFriday} onClick={() => abrirSeccao("blackfriday")} aria-current={seccao === "blackfriday" ? "page" : undefined} aria-controls="conteudo-nova-area">BLACKFRIDAY <span aria-hidden="true">✦</span></button>
-              </div>}
+              </div>
               <GrupoMenu titulo="O meu negócio" ativo={seccao === "assistente" || seccao === "leads" || seccao === "proximo-webinar" || seccao === "testemunhos" || seccao === "mentor-checklist" || seccao === "core-rank" || seccao === "calculadoras" || seccao === "negocio"}>
                 <GrupoMenu titulo="A minha organização" ativo={seccao === "assistente" || seccao === "leads" || seccao === "proximo-webinar" || seccao === "testemunhos" || seccao === "mentor-checklist"}>
                   <button type="button" className={seccao === "mentor-checklist" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("mentor-checklist")} aria-current={seccao === "mentor-checklist" ? "page" : undefined} aria-controls="conteudo-nova-area">Tenho um novo TP, e agora?</button>
@@ -380,7 +379,7 @@ export default function NovaAreaConsultor() {
             {seccao === "leads" && <LeadsNovaArea linkPartilha={dados.linkPartilha} />}
             {seccao === "calendario" && <CalendarioConsultor email={email} nome={dados.nome} />}
             {seccao === "calendario-criativo" && <CalendarioCriativo email={email} />}
-            {seccao === "blackfriday" && dados.acessoBlackfriday && <BlackFriday email={email} />}
+            {seccao === "blackfriday" && <BlackFriday email={email} />}
             {seccao === "calculadoras" && <CalculadorasNovaArea />}
             {seccao === "negocio" && <NegocioNovaArea email={email} />}
             {seccao === "destino-dia" && <DestinoDiaNovaArea aoCriarTemplate={criarTemplateComDestinoDia} />}
