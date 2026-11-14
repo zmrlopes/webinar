@@ -31,6 +31,16 @@ as suas reservas e comprovativos privados; as metas específicas existentes
 mantêm-se, e as restantes contas usam a meta geral. O separador Admin continua
 exclusivo de líder. Os dados continuam privados por conta.
 
+Por indicação de 14/11/2026, o envio do bingo foi revisto após uma falha
+«Failed to fetch» no telemóvel. Ler primeiro o comprovativo para memória;
+perante uma resposta perdida ou conflito, consultar a própria casa antes
+de confirmar ou repetir. Repetir no máximo uma vez, só após conseguir ler
+o cartão; preservar os campos em erro, a referência, os bytes e a hora
+original do envio aceite pelo servidor. As regras de duplicação, datas,
+validação e simulação mantêm-se. Correr também
+`npx tsx scripts/testes-blackfriday-envio.ts` e
+`npm run test:blackfriday -- --db` (estrutura isolada).
+
 Por indicação anterior do utilizador, a nova área completa está também
 publicada para a Ana Custódia (`apensarnaproxima@gmail.com`), como primeira
 migração real, incluindo as APIs das secções. A entrada em `/consultor` abre

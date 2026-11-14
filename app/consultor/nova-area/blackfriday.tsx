@@ -2,6 +2,7 @@
 import {useEffect, useRef, useState, type CSSProperties, type FormEvent} from "react";
 import {CASAS_BF, META_BF, resumirBF, type DadosBF, type InscricaoBF} from "@/lib/blackfriday";
 import {EMAIL_PAINEL_DEMONSTRACAO} from "@/lib/demo";
+import {enviarComprovativoBF} from "@/lib/blackfriday-envio";
 import {detetarNovasLinhasBF, type MemoriaLinhasBF} from "@/lib/blackfriday-celebracao";
 import css from "./blackfriday.module.css";
 
@@ -106,15 +107,14 @@ export function BlackFriday({email}: {email: string}) {
     dialogo.current?.showModal();
   }
   async function enviar(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault(); if (aGuardar || casa === null) return;
+    e.preventDefault(); if (aGuardarRef.current || casa === null) return;
     const form = new FormData(e.currentTarget);
     form.set("email", email); form.set("acao", "enviar"); form.set("casa", String(casa)); form.set("curinga", String(joker));
     form.set("simulacao", String(simulacao));
     aGuardarRef.current = true; ++pedidoAtual.current;
     setAGuardar(true); setErro("");
     try {
-      const r = await fetch("/api/consultor/nova-area/blackfriday", {method: "POST", body: form});
-      const d = await r.json(); if (!r.ok) throw new Error(d.erro);
+      const d = await enviarComprovativoBF(form);
       setDados(d); setAviso(simulacao ? "Comprovativo de teste enviado para o admin. A casa já conta no cartão de simulação e aguarda revisão." : "Reserva enviada! Esta casa já conta no teu cartão e aguarda validação.");
       dialogo.current?.close(); setCasa(null); botaoCasa.current?.focus();
     } catch (e) {setErro(e instanceof Error ? e.message : "Não foi possível enviar a reserva.");}
