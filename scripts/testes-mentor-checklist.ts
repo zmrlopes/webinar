@@ -30,7 +30,8 @@ async function main() {
     assert(!comporProgressoMentor([], []).feitos.includes("curso-travel-partner"), "Desmarcar no TP retira a confirmação automática");
     assert(comporProgressoMentor(["curso-travel-partner"], []).feitos.includes("curso-travel-partner"), "Não apaga uma confirmação independente do mentor");
     for (const acao of ["listar", "marcar"]) {
-      const r = await POST(new Request("http://localhost/api", {method: "POST", body: JSON.stringify({email: outro, acao})}));
+      // Email inválido: recusado antes da base de dados (a equipa é confirmada no servidor).
+      const r = await POST(new Request("http://localhost/api", {method: "POST", body: JSON.stringify({email: "sem-arroba.example.com", acao})}));
       assert.equal(r.status, 403); assert.equal(r.headers.get("Cache-Control"), "private, no-store");
     }
     pool.query = (async () => ({rows: []})) as unknown as typeof pool.query;

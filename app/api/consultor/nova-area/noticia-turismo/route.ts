@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { podeVerNovaArea } from "@/lib/consultor-nova-area";
+import { temAcessoNovaArea } from "@/lib/consultor-nova-area-servidor";
 import { obterNoticiaTurismo } from "@/lib/noticia-turismo-servidor";
 import { FontesTurismoIndisponiveis } from "@/lib/noticia-turismo";
 
@@ -8,7 +8,7 @@ export const maxDuration = 25;
 export async function POST(request: Request) {
   const corpo = await request.json().catch(() => null);
   const email = typeof corpo?.email === "string" ? corpo.email : "";
-  if (!podeVerNovaArea(email)) return NextResponse.json({ erro: "Esta área ainda está em preparação." }, { status: 403 });
+  if (!(await temAcessoNovaArea(email))) return NextResponse.json({ erro: "Esta área ainda está em preparação." }, { status: 403 });
   try {
     return NextResponse.json(await obterNoticiaTurismo(), { headers: { "Cache-Control": "private, no-store" } });
   } catch (erro) {

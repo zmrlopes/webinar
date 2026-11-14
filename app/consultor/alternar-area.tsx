@@ -9,7 +9,7 @@ export function AlternarArea({ ativa, email }: { ativa: "atual" | "nova"; email:
     <nav className={estilos.seletor} aria-label="Versões da área de consultor">
       <div className={estilos.contexto}>
         <span className={estilos.ponto} aria-hidden="true" />
-        <span>{demonstracao ? "Conta de teste" : "Acesso antecipado"} <small>Escolhe a área que queres consultar</small></span>
+        <span>{demonstracao ? "Conta de teste" : "Área de consultor"} <small>Escolhe a área que queres consultar</small></span>
       </div>
       <div className={estilos.opcoes}>
         <Link href={linkAreaAtual(email)} className={ativa === "atual" ? estilos.ativo : estilos.opcao} aria-current={ativa === "atual" ? "page" : undefined}>

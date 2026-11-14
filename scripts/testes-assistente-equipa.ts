@@ -3,7 +3,7 @@ import { MAX_PERGUNTA_ASSISTENTE, interpretarRespostaAssistente, respostaInicial
 import { podeVerNovaArea } from "../src/lib/consultor-nova-area";
 
 assert(podeVerNovaArea(" ZMRLOPES@GMAIL.COM "));
-assert(!podeVerNovaArea("outra-conta@example.com"));
+assert(podeVerNovaArea("outra-conta@example.com"), "Nova área publicada para a equipa; o servidor confirma a conta");
 const perguntaWebinar = "o que dizer a uma lead que acabou de assistir ao webinar";
 const respostaWebinar = { resposta: "O que gostaste mais?", passos: [], exemplo: null, fontes: [], semBase: false };
 for (const pergunta of [perguntaWebinar, "O que perguntar depois de alguém ver a apresentação?", "Como abordar uma pessoa que viu o webinar?", "Qual é a primeira pergunta após a apresentação?", "A lead acabou de ver a apresentação. O que digo?", "Que primeira mensagem envio a quem assistiu ao webinar?", "O que responder a alguém que assistiu à apresentação?", "Como iniciar a conversa após o webinar?", "A pessoa terminou a apresentação, como devo falar com ela?", "A lead viu o webinar e ainda não falei com ela. O que digo?"]) {

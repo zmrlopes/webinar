@@ -8,7 +8,21 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-Por indicação mais recente do utilizador, a nova área completa está também
+Por indicação explícita mais recente do utilizador, a nova área completa está
+publicada para todos os consultores da equipa (`equipa_afiliados`), incluindo
+Reservas (Criar templates, Travel planner, Propostas, Onde posso vender) e as
+APIs das secções, com os limites de pedidos por conta. Ao entrar em `/consultor`,
+os consultores da equipa abrem a nova área por defeito; `/consultor?area=atual`
+mantém a versão anterior, com o seletor entre as duas. O interruptor está em
+`NOVA_AREA_PARA_TODOS` (`src/lib/consultor-nova-area.ts`); o servidor confirma
+sempre a conta na equipa (`temAcessoNovaArea`). Esta publicação substitui as
+restrições “exclusivo da conta de teste” das secções descritas abaixo, exceto:
+a simulação do BLACKFRIDAY e “Limpar apenas os testes” continuam só na conta
+de demonstração, e o separador BLACKFRIDAY só aparece a quem participa no desafio
+(equipa de uma líder com bingo) ou às contas piloto. O separador Admin continua
+exclusivo de líder. Os dados continuam privados por conta.
+
+Por indicação anterior do utilizador, a nova área completa está também
 publicada para a Ana Custódia (`apensarnaproxima@gmail.com`), como primeira
 migração real, incluindo as APIs das secções. A entrada em `/consultor` abre
 a nova área por defeito apenas para a Ana; `/consultor?area=atual` permite
@@ -199,7 +213,12 @@ abre uma vista mensal dos acontecimentos da plataforma no painel direito.
 Por indicação do utilizador, além de “Mês” e “Agenda”, o calendário tem
 “Eventos presenciais”: uma lista, agrupada por mês, de todos os encontros
 presenciais a partir de hoje (um item por evento, com o intervalo de dias),
-sem depender do mês escolhido. Continua exclusivo da nova área.
+sem depender do mês escolhido.
+Por indicação explícita do utilizador, o calendário (Mês, Agenda e Eventos
+presenciais) está publicado para todos os consultores da equipa na área atual,
+em `/consultor/calendario`, com botão no menu; a API do calendário aceita os
+membros da equipa. Esta autorização abrange apenas o calendário; a restante
+nova área e o seletor continuam exclusivos da conta de teste.
 
 Manter as cores da marca existente (branco, preto e verde-oliva `#4b5320`),
 mesmo quando a organização se inspira numa referência com outras cores.

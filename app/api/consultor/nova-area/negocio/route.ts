@@ -1,5 +1,5 @@
 import {NextResponse} from "next/server";
-import {podeVerNovaArea} from "@/lib/consultor-nova-area";
+import { temAcessoNovaArea } from "@/lib/consultor-nova-area-servidor";
 import {buscarMembroEquipa} from "@/lib/equipa";
 import {atualizarNegocio, ErroNegocio, iniciarNegocio, lerNegocio} from "@/lib/consultor-negocio-servidor";
 
@@ -13,7 +13,7 @@ export async function POST(request: Request): Promise<Response> {
   if (texto.length > 16_384) return json({erro: "Pedido demasiado grande."}, 413);
   const corpo = (() => {try {return JSON.parse(texto);} catch {return null;}})();
   const email = typeof corpo?.email === "string" ? corpo.email.trim().toLowerCase() : "";
-  if (!podeVerNovaArea(email)) return json({erro: "Estatísticas e projeções ainda não está disponível para esta conta."}, 403);
+  if (!(await temAcessoNovaArea(email))) return json({erro: "Estatísticas e projeções ainda não está disponível para esta conta."}, 403);
   if (!["ler", "iniciar", "periodo", "concluir"].includes(corpo?.acao)) return json({erro: "Pedido inválido."}, 400);
   try {
     if (!await buscarMembroEquipa(email)) return json({erro: "Conta não encontrada na equipa."}, 403);

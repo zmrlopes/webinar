@@ -106,7 +106,7 @@ async function main() {
   assert.equal(validarMaterialReserva({...material,elementos:material.elementos.filter(e=>e.tipo!=="marca")}).elementos.filter(e=>e.tipo==="marca").length,1);
   assert.throws(()=>validarMaterialReserva({...material,referencia:"data:image/svg+xml;base64,PHN2Zz4="}));
   assert.throws(()=>validarMaterialReserva({...material,elementos:[{...campo,imagem:"https://example.com/image.jpg"}]}));
-  assert.equal((await POST(new Request("http://localhost/api",{method:"POST",body:JSON.stringify({email:"outra-conta@example.com",acao:"listar"})}))).status,403);
+  assert.equal((await POST(new Request("http://localhost/api",{method:"POST",body:JSON.stringify({email:"sem-arroba.example.com",acao:"listar"})}))).status,403);
   await assert.rejects(()=>descarregarFotoReserva("https://upload.wikimedia.org.evil.example/a.jpg"),/Origem/);
   await assert.rejects(()=>descarregarFotoReserva("https://user:password@upload.wikimedia.org/a.jpg"),/Origem/);
 

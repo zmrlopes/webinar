@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { podeVerNovaArea } from "@/lib/consultor-nova-area";
+import { temAcessoNovaArea } from "@/lib/consultor-nova-area-servidor";
 import { buscarMembroEquipa } from "@/lib/equipa";
 import { atualizarPassoConsultor, importarProgressoConsultor } from "@/lib/progresso-consultor";
 import { TOTAL_PRIMEIROS_PASSOS } from "@/lib/primeiros-passos";
@@ -7,7 +7,7 @@ import { TOTAL_PRIMEIROS_PASSOS } from "@/lib/primeiros-passos";
 async function guardar(request: Request, importar: boolean): Promise<Response> {
   const corpo = await request.json().catch(() => null);
   const email = typeof corpo?.email === "string" ? corpo.email.trim().toLowerCase() : "";
-  if (!podeVerNovaArea(email)) return NextResponse.json({ erro: "Esta área ainda está em preparação." }, { status: 403 });
+  if (!(await temAcessoNovaArea(email))) return NextResponse.json({ erro: "Esta área ainda está em preparação." }, { status: 403 });
   if (corpo?.versao !== 2) return NextResponse.json({ erro: "Atualiza a página para usar os novos primeiros passos." }, { status: 400 });
   const passoValido = (n: unknown) => typeof n === "number" && Number.isInteger(n) && n >= 1 && n <= TOTAL_PRIMEIROS_PASSOS;
   if (importar ? !Array.isArray(corpo?.feitos) || corpo.feitos.length > TOTAL_PRIMEIROS_PASSOS || !corpo.feitos.every(passoValido)

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { podeVerNovaArea, type DadosEventosPresenciais } from "@/lib/consultor-nova-area";
+import { type DadosEventosPresenciais } from "@/lib/consultor-nova-area";
+import { temAcessoNovaArea } from "@/lib/consultor-nova-area-servidor";
 import { buscarMembroEquipa } from "@/lib/equipa";
 import { buscarPedidoDoConsultor } from "@/lib/bilhetes-convencao";
 import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
@@ -8,7 +9,7 @@ import { EVENTO_TITULO, EVENTO_LOCAL, EVENTO_PRECO_ADULTO, EVENTO_PRECO_CRIANCA_
 export async function POST(request: Request): Promise<Response> {
   const corpo = await request.json().catch(() => null);
   const email = typeof corpo?.email === "string" ? corpo.email.trim().toLowerCase() : "";
-  if (!podeVerNovaArea(email)) {
+  if (!(await temAcessoNovaArea(email))) {
     return NextResponse.json({ erro: "Esta área ainda está em preparação." }, { status: 403 });
   }
   try {

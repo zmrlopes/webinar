@@ -7,7 +7,7 @@ import { ConvencaoCartao, type PedidoConvencao } from "./convencao-cartao";
 import { EventoForm } from "./evento-form";
 import { TeambuildingComprovativo } from "./teambuilding-comprovativo";
 import { NotificacoesPush } from "./notificacoes-push";
-import { destinoEntradaNovaArea, podeVerNovaArea } from "@/lib/consultor-nova-area";
+import { destinoEntradaNovaArea, ehContaPilotoNovaArea, podeVerNovaArea } from "@/lib/consultor-nova-area";
 import { AlternarArea } from "./alternar-area";
 import { AvisoRelatorioCore } from "./nova-area/core-rank";
 
@@ -106,7 +106,7 @@ export function BackofficeHome() {
         return;
       }
       guardarEmail(emailParaIdentificar);
-      const destino = destinoEntradaNovaArea(emailParaIdentificar, window.location.search);
+      const destino = destinoEntradaNovaArea(emailParaIdentificar, window.location.search, corpo.ehConsultorEquipa === true);
       if (destino) { window.location.replace(destino); return; }
       setEmail(emailParaIdentificar);
       setDados(corpo);
@@ -557,7 +557,7 @@ export function BackofficeHome() {
 
         {estado === "pronto" && dados && (
           <>
-            {acessoNovaArea && <AlternarArea ativa="atual" email={email} />}
+            {acessoNovaArea && (dados.ehConsultorEquipa || ehContaPilotoNovaArea(email)) && <AlternarArea ativa="atual" email={email} />}
             <div className="vqb-topo">
               <h1>Olá{dados.nome ? `, ${dados.nome}` : ""}</h1>
               <button type="button" className="vqb-trocar" onClick={trocarConta}>
@@ -816,6 +816,11 @@ export function BackofficeHome() {
               <Link href="/consultor/documentos" className="vqb-menu-item">
                 Documentos
               </Link>
+              {dados.ehConsultorEquipa && (
+                <Link href="/consultor/calendario" className="vqb-menu-item">
+                  Calendário
+                </Link>
+              )}
               {dados.ehConsultorEquipa && (
                 <Link href="/consultor/core-rank" className="vqb-menu-item">
                   Core Rank

@@ -18,5 +18,5 @@ for (const [texto, esperado] of [["1000,50", 1000.5], ["1000.50", 1000.5], [" 12
 for (const texto of ["", " ", "-1", "12%", "1,2,3", "1e3", "Infinity", "1".repeat(310)]) assert.equal(lerNumeroCalculadora(texto), null);
 for (const valores of [[-1, 12, 30], [1000, 101, 30], [1000, 12, 101], [1000, -1, 30], [1000, 12, -1], [NaN, 12, 30], [Infinity, 12, 30]]) assert.equal(calcularVenda(valores[0]!, valores[1]!, valores[2]!), null);
 assert(podeVerNovaArea(EMAIL_PAINEL_DEMONSTRACAO));
-assert(!podeVerNovaArea("outro-consultor@example.com"));
+assert(podeVerNovaArea("outro-consultor@example.com"));
 console.log("OK: comissão bruta, pontos proporcionais à margem e independentes da comissão, decimais, campos inválidos e acesso limitado à conta de teste.");

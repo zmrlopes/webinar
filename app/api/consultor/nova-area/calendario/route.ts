@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { podeVerNovaArea } from "@/lib/consultor-nova-area";
+import { temAcessoNovaArea } from "@/lib/consultor-nova-area-servidor";
 import { diaEmPortugal, mudarMes, type AcontecimentoCalendario } from "@/lib/calendario-consultor";
 import { TITULO_WEBINAR_PUBLICO, TITULO_WELCOME_ABOARD } from "@/lib/webinars";
 import { EVENTO_TITULO, EVENTO_LOCAL, estaoInscricoesAbertas } from "@/lib/eventos";
@@ -11,8 +11,15 @@ import { eventosEquipa2027, eventosPresenciais2027 } from "@/lib/eventos-equipa-
 export async function POST(request: Request): Promise<Response> {
   const corpo = await request.json().catch(() => null);
   const email = typeof corpo?.email === "string" ? corpo.email.trim().toLowerCase() : "";
-  if (!podeVerNovaArea(email)) {
-    return NextResponse.json({ erro: "Este calendário ainda está em preparação." }, { status: 403 });
+  // Publicado para todos os consultores da equipa (nova área e /consultor/calendario).
+  if (!email.includes("@")) return NextResponse.json({ erro: "Identifica-te com o teu email de consultor." }, { status: 400 });
+  try {
+    if (!(await temAcessoNovaArea(email))) {
+      return NextResponse.json({ erro: "Conta não encontrada na equipa." }, { status: 403 });
+    }
+  } catch (erro) {
+    console.error("falha ao confirmar o acesso ao calendário:", erro);
+    return NextResponse.json({ erro: "Não foi possível carregar o calendário. Tenta novamente." }, { status: 500 });
   }
   const mes = corpo?.mes;
   if (typeof mes !== "string" || !/^(20\d{2})-(0[1-9]|1[0-2])$/.test(mes)) {
@@ -69,7 +76,7 @@ export async function POST(request: Request): Promise<Response> {
     ];
     return NextResponse.json({ mes, acontecimentos, presenciais, forum: { atualizadoEm: forum.atualizadoEm, aviso: forum.aviso } }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (erro) {
-    console.error("falha ao carregar o calendário da conta de teste:", erro);
+    console.error("falha ao carregar o calendário:", erro);
     return NextResponse.json({ erro: "Não foi possível carregar o calendário. Tenta novamente." }, { status: 500 });
   }
 }

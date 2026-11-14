@@ -16,7 +16,7 @@ async function main() {
   let eliminacoesEmMassa = 0;
   pool.query = (async (sql: string, args: unknown[] = []) => {
     const key = String(args[0]);
-    if (sql.includes("equipa_afiliados")) return {rows:[{email,nome:"Teste"}]};
+    if (sql.includes("equipa_afiliados")) return {rows:key===email?[{email,nome:"Teste"}]:[]};
     if (sql.includes("'janela'")) return {rows:[{chave:key}]};
     if (sql.startsWith("insert into")) {
       if(sql.includes("do nothing") && registos.has(key)) return {rows:[]};

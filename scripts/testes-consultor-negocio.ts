@@ -92,11 +92,11 @@ await receber(evento("identidade"));
 assert.equal(JSON.parse(mensagens.at(-1)!.corpo.corpo as string).email, EMAIL_PAINEL_DEMONSTRACAO);
 assert(chamadas.some(url => url.startsWith("/_serverFn/")));
 
-// O bloqueio da conta de teste acontece antes de qualquer acesso à base de dados.
+// Emails inválidos são recusados antes de qualquer acesso à base de dados; a equipa é confirmada no servidor.
 assert(podeVerNovaArea(EMAIL_PAINEL_DEMONSTRACAO));
-assert(!podeVerNovaArea("outro@example.com"));
+assert(podeVerNovaArea("outro@example.com"));
 const pedido = (body: unknown, origin?: string) => new Request("https://painel.example/api/consultor/nova-area/negocio", {method: "POST", headers: {"Content-Type": "application/json", ...(origin ? {origin} : {})}, body: JSON.stringify(body)});
-for (const acao of ["ler", "iniciar", "periodo", "concluir"]) assert.equal((await POST(pedido({acao, email: "outro@example.com"}))).status, 403);
+for (const acao of ["ler", "iniciar", "periodo", "concluir"]) assert.equal((await POST(pedido({acao, email: "sem-arroba.example.com"}))).status, 403);
 assert.equal((await POST(pedido({acao: "ler", email: EMAIL_PAINEL_DEMONSTRACAO}, "https://outro.example"))).status, 403);
 assert.equal((await POST(pedido({acao: "apagar", email: EMAIL_PAINEL_DEMONSTRACAO}))).status, 400);
 assert.equal((await POST(pedido({email: EMAIL_PAINEL_DEMONSTRACAO, texto: "a".repeat(17000)}))).status, 413);

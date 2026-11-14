@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { podeVerNovaArea } from "@/lib/consultor-nova-area";
+import { temAcessoNovaArea } from "@/lib/consultor-nova-area-servidor";
 import { buscarMembroEquipa } from "@/lib/equipa";
 import { validarPedidoAssistente } from "@/lib/assistente-equipa";
 import { reservarPedidoAssistente, responderAssistenteEquipa } from "@/lib/assistente-equipa-servidor";
@@ -10,7 +10,7 @@ const headers = { "Cache-Control": "private, no-store" };
 export async function POST(request: Request) {
   const corpo = await request.json().catch(() => null);
   const email = typeof corpo?.email === "string" ? corpo.email.trim().toLowerCase() : "";
-  if (!podeVerNovaArea(email)) return NextResponse.json({ erro: "Esta ferramenta ainda está em preparação." }, { status: 403, headers });
+  if (!(await temAcessoNovaArea(email))) return NextResponse.json({ erro: "Esta ferramenta ainda está em preparação." }, { status: 403, headers });
   const pedido = validarPedidoAssistente(corpo);
   if (!pedido) return NextResponse.json({ erro: "Escreve uma pergunta entre 5 e 1600 caracteres." }, { status: 400, headers });
   try {

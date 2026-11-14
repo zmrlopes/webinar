@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import {randomUUID} from "node:crypto";
 import {db, fecharDb} from "../src/lib/db";
 import {EMAIL_PAINEL_DEMONSTRACAO} from "../src/lib/demo";
-import {EMAIL_PILOTO_NOVA_AREA, destinoEntradaNovaArea, linkAreaAtual, podeVerNovaArea} from "../src/lib/consultor-nova-area";
+import {EMAIL_PILOTO_NOVA_AREA, destinoEntradaNovaArea, ehContaPilotoNovaArea, linkAreaAtual, podeVerNovaArea} from "../src/lib/consultor-nova-area";
 import {chaveProgressoLocalPrimeirosPassos, lerProgressoLocalPrimeirosPassos} from "../src/lib/primeiros-passos";
 import {CONFIG_BF, hojeBF, periodoBF, type InscricaoBF} from "../src/lib/blackfriday";
 import {POST as entrada} from "../app/api/consultor/nova-area/route";
@@ -11,15 +11,22 @@ import {POST as adminBingo} from "../app/api/consultor/blackfriday-equipa/route"
 import {POST as importar, PATCH as marcar} from "../app/api/consultor/nova-area/progresso/route";
 import {acessoReservas} from "../src/lib/reservas-servidor";
 
-const ana = EMAIL_PILOTO_NOVA_AREA, demo = EMAIL_PAINEL_DEMONSTRACAO, tp = "tp-da-ana@example.com", outro = "outra-equipa@example.com";
+const ana = EMAIL_PILOTO_NOVA_AREA, demo = EMAIL_PAINEL_DEMONSTRACAO, tp = "tp-da-ana@example.com", outro = "outra-equipa@example.com", semEquipa = "sem-equipa@example.com";
 const pedido = (corpo: unknown) => new Request("http://localhost/api", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(corpo)});
 const normalizado = ` ${ana.toUpperCase()} `;
 assert(podeVerNovaArea(ana)); assert(podeVerNovaArea(normalizado)); assert(podeVerNovaArea(demo));
-for (const email of [tp, outro, "", "__proto__"]) assert(!podeVerNovaArea(email));
+// Publicação geral: qualquer email passa a verificação rápida; o servidor confirma a equipa.
+for (const email of [tp, outro]) { assert(podeVerNovaArea(email)); assert(!ehContaPilotoNovaArea(email)); }
+for (const email of ["", "__proto__"]) assert(!podeVerNovaArea(email));
+assert(ehContaPilotoNovaArea(normalizado)); assert(ehContaPilotoNovaArea(demo));
 assert.equal(destinoEntradaNovaArea(normalizado,""),"/consultor/nova-area");
 assert.equal(destinoEntradaNovaArea(ana,"?area=atual"),null,"A comparação com a área atual não pode criar um ciclo");
-for (const email of [demo,tp,outro]) assert.equal(destinoEntradaNovaArea(email,""),null);
-assert.equal(linkAreaAtual(ana),"/consultor?area=atual"); assert.equal(linkAreaAtual(demo),"/consultor");
+for (const email of [demo,tp]) {
+  assert.equal(destinoEntradaNovaArea(email,"",true),"/consultor/nova-area","Os consultores da equipa entram na nova área por defeito");
+  assert.equal(destinoEntradaNovaArea(email,"?area=atual",true),null);
+}
+assert.equal(destinoEntradaNovaArea(outro,"",false),null,"Quem não é da equipa continua na área atual");
+for (const email of [ana,demo,tp]) assert.equal(linkAreaAtual(email),"/consultor?area=atual");
 const local = new Map<string,string>([["consultor-nova-area:primeiros-passos:v2","[1,3,4]"]]);
 const armazenamento = {getItem:(chave:string)=>local.get(chave)??null};
 assert.deepEqual(lerProgressoLocalPrimeirosPassos(ana,armazenamento),[],"Não importa marcas de demonstração para a Ana");
@@ -56,7 +63,7 @@ async function main() {
     if(texto.startsWith("with recursive descendentes")) return {rows:[{email:tp}]};
     if(texto.startsWith("with recursive arvore")) return {rows:[{total:"1",ativos:"1",entradas:"1"}]};
     if(texto.startsWith("with recursive ascendentes")) return {rows:[{email:ana}]};
-    if(texto.includes("select membro.nome")) return {rows:chave===ana?[{nome:"Ana Custódia",upline_email:demo,upline_nome:"Mentor"}]:[]};
+    if(texto.includes("select membro.nome")) return {rows:chave===ana?[{nome:"Ana Custódia",upline_email:demo,upline_nome:"Mentor"}]:chave===tp||chave===outro?[{nome:"TP",upline_email:ana,upline_nome:"Ana Custódia"}]:[]};
     if(texto.startsWith("select nome from equipa_afiliados")) return {rows:[ana,demo,tp,outro].includes(chave)?[{nome:chave===ana?"Ana Custódia":"TP"}]:[]};
     if(texto.includes("select referencia from links_consultor")) return {rows:[{referencia:"ana-custodia"}]};
     if(texto.startsWith("select r.valor")) {
@@ -91,9 +98,15 @@ async function main() {
     assert.deepEqual(pagina.upline,{nome:"Mentor",email:demo},"Carrega o perfil completo, em vez dos dados vazios de Admin");
     assert.deepEqual(pagina.primeirosPassos,{feitos:[3,4,5],guardado:false});
     assert.equal(pagina.linkGrupoWelcomeAboard,"https://chat.whatsapp.com/CDFcyL0eYXc0kVl8Fp7XMK");
-    assert.equal((await entrada(pedido({email:tp}))).status,403);
+    assert.equal(pagina.acessoBlackfriday,true);
+    const entradaTp=await entrada(pedido({email:tp})); assert.equal(entradaTp.status,200,"A nova área está aberta aos consultores da equipa");
+    const paginaTp=await entradaTp.json(); assert.equal(paginaTp.nome,"TP"); assert.equal(paginaTp.acessoBlackfriday,true);
+    const entradaOutro=await entrada(pedido({email:outro})); assert.equal(entradaOutro.status,200);
+    assert.equal((await entradaOutro.json()).acessoBlackfriday,false,"O BLACKFRIDAY só aparece a quem participa no desafio");
+    assert.equal((await entrada(pedido({email:semEquipa}))).status,403);
     assert.equal(await acessoReservas(normalizado),ana);
-    await assert.rejects(()=>acessoReservas(tp),/disponível/);
+    assert.equal(await acessoReservas(tp),tp);
+    await assert.rejects(()=>acessoReservas(semEquipa),/equipa/);
     const real=await bingo(pedido({email:ana,acao:"consultar"})); assert.equal(real.status,200);
     const cartao=await real.json();
     assert.equal(cartao.metaEquipa.meta,1500000); assert.equal(cartao.metaEquipa.faturacao.valor,faturacao.valor);
@@ -123,8 +136,8 @@ async function main() {
     assert.equal((await marcar(pedido({email:ana,versao:2,passo:3,concluido:false}))).status,200);
     assert.deepEqual(dados.get(progresso(ana)),[4,5]); assert.deepEqual(dados.get(progresso(ana,1)),[1,3,4]);
     assert.deepEqual(dados.get(progresso(demo)),[1,2,3,4,5,6,7]);
-    assert.equal((await importar(pedido({email:tp,versao:2,feitos:[]}))).status,403);
-    console.log("OK: migração exclusiva da Ana, entrada por defeito e regresso à área atual, perfil/API completos, progresso privado, meta de 1,5 M€, comprovativos existentes, revisão e estatísticas preservadas, equipa limitada e simulação bloqueada. Sem rede nem dados reais alterados.");
+    assert.equal((await importar(pedido({email:semEquipa,versao:2,feitos:[]}))).status,403);
+    console.log("OK: nova área para toda a equipa (entrada por defeito, BLACKFRIDAY só para participantes, fora da equipa bloqueado), migração da Ana, entrada por defeito e regresso à área atual, perfil/API completos, progresso privado, meta de 1,5 M€, comprovativos existentes, revisão e estatísticas preservadas, equipa limitada e simulação bloqueada. Sem rede nem dados reais alterados.");
   } finally {pool.query=originalQuery;pool.connect=originalConnect;globalThis.fetch=originalFetch;await fecharDb();}
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { podeVerNovaArea } from "@/lib/consultor-nova-area";
+import { temAcessoNovaArea } from "@/lib/consultor-nova-area-servidor";
 import { buscarMembroEquipa } from "@/lib/equipa";
 import { ErroCore, guardarDiaCore, lerDadosCore, marcarRelatorioLido } from "@/lib/core-rank-registos";
 
 export async function POST(request: Request): Promise<Response> {
   const corpo = await request.json().catch(() => null);
   const email = typeof corpo?.email === "string" ? corpo.email.trim().toLowerCase() : "";
-  if (!podeVerNovaArea(email)) return NextResponse.json({erro: "Esta área ainda está em preparação."}, {status: 403});
+  if (!(await temAcessoNovaArea(email))) return NextResponse.json({erro: "Esta área ainda está em preparação."}, {status: 403});
   if (!corpo || !["consultar", "guardar", "gravar", "fechar", "ler-relatorio"].includes(corpo.acao)) return NextResponse.json({erro: "Pedido inválido."}, {status: 400});
   try {
     const membro = await buscarMembroEquipa(email);
