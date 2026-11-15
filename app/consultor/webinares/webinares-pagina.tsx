@@ -73,6 +73,10 @@ const ROTULOS_ESTADO: Record<EstadoLead, string> = {
 
 type Aba = "pessoais" | "equipa";
 
+function normalizarPesquisa(valor: string): string {
+  return valor.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
 export function WebinaresPagina({ embutida = false }: { embutida?: boolean } = {}) {
   const [email, setEmail] = useState<string | null>(null);
   const [dados, setDados] = useState<ResumoLeads | null>(null);
@@ -80,6 +84,7 @@ export function WebinaresPagina({ embutida = false }: { embutida?: boolean } = {
   const [aAtualizar, setAAtualizar] = useState<string | null>(null);
   const [aba, setAba] = useState<Aba>("pessoais");
   const [sessaoSelecionada, setSessaoSelecionada] = useState<string | null>(null);
+  const [pesquisa, setPesquisa] = useState("");
 
   async function carregar(emailAtual: string): Promise<void> {
     setErro("");
@@ -141,8 +146,12 @@ export function WebinaresPagina({ embutida = false }: { embutida?: boolean } = {
     }
   }
 
-  const leadsPessoais = dados ? dados.leads.filter((l) => l.trazidoPor === null) : [];
-  const leadsEquipa = dados ? dados.leads.filter((l) => l.trazidoPor !== null) : [];
+  const termoPesquisa = normalizarPesquisa(pesquisa);
+  const leadsEncontradas = dados ? dados.leads.filter((l) =>
+    !termoPesquisa || normalizarPesquisa(l.nome).includes(termoPesquisa) || normalizarPesquisa(l.email).includes(termoPesquisa),
+  ) : [];
+  const leadsPessoais = leadsEncontradas.filter((l) => l.trazidoPor === null);
+  const leadsEquipa = leadsEncontradas.filter((l) => l.trazidoPor !== null);
   const leadsVisiveis = aba === "pessoais" ? leadsPessoais : leadsEquipa;
 
   return (
@@ -164,6 +173,34 @@ export function WebinaresPagina({ embutida = false }: { embutida?: boolean } = {
         .vqw-pagina h1 { color: #000000; font-size: 1.5rem; margin: 0.75rem 0 1.25rem; }
         .vqw-mudo { color: #6b6a63; font-size: 0.9rem; }
         .vqw-erro { color: #b3261e; }
+        .vqw-pesquisa { margin-bottom: 1.25rem; }
+        .vqw-pesquisa label { display: block; font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .vqw-pesquisa-campo { display: flex; gap: 0.5rem; align-items: center; }
+        .vqw-pesquisa input {
+          flex: 1;
+          min-width: 0;
+          width: 100%;
+          box-sizing: border-box;
+          border: 1px solid #a8ac94;
+          border-radius: 8px;
+          padding: 0.7rem 0.85rem;
+          font: inherit;
+          font-size: 1rem;
+          background: #ffffff;
+          color: #000000;
+        }
+        .vqw-pesquisa input:focus-visible { outline: 2px solid #4b5320; outline-offset: 2px; }
+        .vqw-pesquisa button {
+          flex: none;
+          border: 1px solid #4b5320;
+          border-radius: 8px;
+          padding: 0.7rem;
+          background: #ffffff;
+          color: #4b5320;
+          font: inherit;
+          cursor: pointer;
+        }
+        .vqw-pesquisa .vqw-mudo { margin: 0.5rem 0 0; }
         .vqw-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -348,6 +385,24 @@ export function WebinaresPagina({ embutida = false }: { embutida?: boolean } = {
               <SessaoUnica email={email} webinarId={sessaoSelecionada} />
             ) : (
               <>
+                <section className="vqw-pesquisa" role="search" aria-label="Pesquisar leads em todas as sessões">
+                  <label htmlFor="pesquisa-leads-geral">Pesquisar em todas as sessões</label>
+                  <div className="vqw-pesquisa-campo">
+                    <input
+                      id="pesquisa-leads-geral"
+                      type="search"
+                      placeholder="Nome ou email"
+                      value={pesquisa}
+                      onChange={e => setPesquisa(e.target.value)}
+                      aria-describedby="pesquisa-leads-ajuda"
+                    />
+                    {pesquisa && <button type="button" onClick={() => setPesquisa("")}>Limpar</button>}
+                  </div>
+                  <p id="pesquisa-leads-ajuda" className="vqw-mudo">Procura por nome ou email nas leads pessoais e da equipa, em todas as sessões.</p>
+                  {termoPesquisa && <p className="vqw-mudo" role="status">
+                    {leadsEncontradas.length} {leadsEncontradas.length === 1 ? "lead encontrada" : "leads encontradas"}: {leadsPessoais.length} pessoais e {leadsEquipa.length} da equipa.
+                  </p>}
+                </section>
                 {!embutida && <div className="vqw-grid">
                   <div className="vqw-cartao">
                     <div className="vqw-numero">{dados.leadsTotais}</div>
@@ -389,7 +444,9 @@ export function WebinaresPagina({ embutida = false }: { embutida?: boolean } = {
 
                 {leadsVisiveis.length === 0 ? (
                   <p className="vqw-mudo">
-                    {aba === "pessoais" ? "Ainda sem leads pessoais." : "Ainda sem leads trazidas pela equipa."}
+                    {termoPesquisa
+                      ? aba === "pessoais" ? "Nenhuma lead pessoal encontrada para esta pesquisa." : "Nenhuma lead da equipa encontrada para esta pesquisa."
+                      : aba === "pessoais" ? "Ainda sem leads pessoais." : "Ainda sem leads trazidas pela equipa."}
                   </p>
                 ) : (
                   <div className="vqw-tabela-wrap">
