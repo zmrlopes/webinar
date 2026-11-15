@@ -9,10 +9,11 @@ assert.equal(eventosEquipa2027("2027-08").length, 0);
 assert.equal(eventosEquipa2027("2026-12").length, 0);
 for (const [data, titulo] of [
   ["2027-05-22", "Business Brunch Centro"], ["2027-05-29", "Business Brunch Norte"],
+  ["2027-07-24", "Summer Experience Norte"],
   ["2027-09-25", "Produtividade Centro"], ["2027-12-11", "Vision 2028 Centro"],
   ["2027-12-18", "Vision 2028 Norte"],
 ]) assert(ano.some(e => diaDoAcontecimento(e) === data && e.titulo === titulo));
-assert.equal(ano.filter(e => e.titulo === "Team Building").length, 4);
+assert.equal(ano.filter(e => e.titulo === "Cruzeiro Tropa de Elite").length, 8);
 assert.equal(ano.filter(e => e.titulo === "Be a Rock").length, 3);
 assert.equal(ano.filter(e => e.id === "convencao-2027").length, 1);
 for (const e of ano.filter(e => !e.diaInteiro)) {
@@ -30,7 +31,7 @@ assert.equal(presenciais.find(e => e.titulo === "Mindset Elite")?.diaFim, undefi
 assert.equal(presenciais.find(e => e.id === "convencao-2027")?.url, "/bilhetes-convencao");
 assert(!presenciais.some(e => e.titulo === "Kick-Off Elite 2027"));
 // Um encontro de vários dias continua visível até ao último dia.
-assert(eventosPresenciais2027("2027-04-25").some(e => e.titulo === "Team Building"));
-assert(!eventosPresenciais2027("2027-04-26").some(e => e.titulo === "Team Building"));
+assert(eventosPresenciais2027("2027-04-29").some(e => e.titulo === "Cruzeiro Tropa de Elite"));
+assert(!eventosPresenciais2027("2027-04-30").some(e => e.titulo === "Cruzeiro Tropa de Elite"));
 assert.equal(eventosPresenciais2027("2028-01-01").length, 0);
 console.log("Eventos presenciais: 20 encontros, intervalos de vários dias e corte por data verificados.");
