@@ -507,14 +507,18 @@ motor/manual, sinal, regras e data de cada FAQ) e só são lidos no servidor pel
 Ao rever as FAQs, atualizar as linhas, as datas `atualizado` e `REVISTO_EM`, e correr
 `npm run test:operadores`. Continua exclusivo da nova área da conta de teste.
 
-Por indicação de 15/11/2026, a pesquisa distingue a programação de reserva manual
-da consulta no motor iCliGo. Um operador integrado sem linhas manuais para o
-destino aparece para pesquisar no motor, com disponibilidade a confirmar; só os
-pacotes efetivamente apresentados no motor podem ser reservados. A ausência de
-Hurghada da lista manual da Nortravel não deve ocultar a consulta no motor nem
-autorizar automaticamente o formulário manual. Aceita também “hurgadha” e
-“hurgada”. Esta distinção aplica-se ao catálogo base e às atualizações publicadas,
-preservando as fontes, as datas das FAQs e o histórico.
+Por indicação mais recente de 15/11/2026, “Onde posso vender?” só mostra operadores
+com destinos concretos identificados nas FAQs ou com pacotes confirmados no motor.
+Não apresenta “confirma no site se tem este destino”, não infere países a partir
+de continentes e não sugere todos os operadores integrados. A autorização geral
+de todo o produto de Catai/Icárion mantém-se nas regras, mas não comprova um destino.
+A FAQ da Icárion identifica Maldivas, Vietname, Japão, Costa Rica e safaris; a
+transcrição da recolha publicada em 12/11/2026 recebe essa correção de leitura,
+limitada à versão revista, sem alterar o registo original nem o histórico.
+Hurghada na Nortravel é uma confirmação explícita do utilizador para o motor
+iCliGo em 15/11/2026; não autoriza automaticamente o formulário manual e não se
+estende a outros destinos. Aceita também “hurgadha” e “hurgada”. Novas publicações
+de FAQs mantêm os seus próprios dados e fontes.
 
 Por indicação do utilizador, o admin inclui “Atualizar FAQs” em `/admin/operadores`,
 independente de Atualizar dados do MyOffice. Um favorito corre no Centro de Ajuda

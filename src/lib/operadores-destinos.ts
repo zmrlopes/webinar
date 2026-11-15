@@ -9,7 +9,7 @@
  * Só é importado pelo servidor (API da nova área), para não ir no bundle do cliente.
  */
 
-export const REVISTO_EM = "30/10/2026";
+export const REVISTO_EM = "15/11/2026";
 export const CENTRO_AJUDA = "https://help.icligo.com/suporte-operacional/operadores-turisticos";
 
 export type IdOperador =
@@ -41,6 +41,8 @@ export interface Linha {
   periodo?: string;
   detalhe?: string;
   temas?: Tema[];
+  /** Limita uma indicação genérica (ex.: safaris) ao termo efetivamente confirmado. */
+  termosPesquisa?: string[];
 }
 
 export interface Operador {
@@ -639,7 +641,10 @@ export const OPERADORES: Operador[] = [
     permitido: ["Reserva sempre manual (formulário).", "Todo o produto disponível no site da Icárion."],
     proibido: [],
     todoOSite: [ASI, AL, CAR, AFR, IND, MO, "Oceania"],
-    linhas: [],
+    linhas: ["maldivas", "vietname", "japao", "costa-rica", "safari"].map(destino => ({
+      destino, bloco: "Destinos identificados na FAQ", detalhe: "Destino indicado na FAQ da Icárion. Reserva pelo formulário manual.",
+      ...(destino === "safari" ? { termosPesquisa: ["safari", "safaris"] } : {}),
+    })),
   },
 ];
 
@@ -683,8 +688,8 @@ export interface ResultadoLinha extends Omit<Linha, "destino" | "temas"> { desti
 export interface ResultadoOperador {
   id: IdOperador; nome: string; motor: boolean; sinal: string; atualizado: string; faq: string; resumo: string;
   permitido: string[]; proibido: string[]; avisos: string[];
-  /** "programacao": linhas da FAQ; "motor": pesquisar disponibilidade na iCliGo, sem autorização manual; "todo-o-site": confirmar no site. */
-  tipo: "programacao" | "motor" | "todo-o-site";
+  /** "programacao": destinos identificados na FAQ; "motor": destino confirmado no motor iCliGo, sem autorização manual automática. */
+  tipo: "programacao" | "motor";
   linhas: ResultadoLinha[];
 }
 export interface ResultadoPesquisa {
@@ -692,6 +697,13 @@ export interface ResultadoPesquisa {
   destinos: { id: string; nome: string; pais: string }[];
   operadores: ResultadoOperador[];
 }
+
+// Confirmação explícita do utilizador em 15/11/2026: há pacotes Nortravel
+// para Hurghada no motor iCliGo. Não estende a confirmação a outros destinos
+// nem altera as autorizações de reserva manual da FAQ.
+const DESTINOS_CONFIRMADOS_MOTOR: Partial<Record<IdOperador, Linha[]>> = {
+  nortravel: [{ destino: "hurghada", bloco: "Motor iCliGo", detalhe: "Pacotes para Hurghada identificados no motor iCliGo. Confirmado pela equipa a 15/11/2026." }],
+};
 
 /** Destinos que correspondem à pesquisa, já expandidos (país → cidades, tema → linhas do tema). */
 export function procurarDestinos(consulta: string, catalogo = CATALOGO_BASE): Destino[] {
@@ -719,24 +731,22 @@ export function pesquisarOperadores(consulta: string, filtroDestino?: string, ca
   // Um destino puxa as linhas do "guarda-chuva" do seu país/arquipélago (ex.: Salvador → Brasil).
   for (const d of [...destinos]) for (const g of d.grupos) for (const chapeu of DESTINOS.filter(x => x.abrange === g)) ids.add(chapeu.id);
   const temas = new Set(destinos.map(d => d.tema).filter((t): t is Tema => !!t));
-  const regioes = new Set(destinos.filter(d => !d.tema).flatMap(d => d.grupos));
 
   const operadores: ResultadoOperador[] = [];
   for (const o of OPERADORES) {
     const base = { id: o.id, nome: o.nome, motor: o.motor, sinal: o.sinal, atualizado: o.atualizado, faq: o.faq, resumo: o.resumo, permitido: o.permitido, proibido: o.proibido, avisos: o.avisos ?? [] };
-    const doOperador = o.linhas.filter(l => ids.has(l.destino) || l.temas?.some(t => temas.has(t)));
+    const doOperador = o.linhas.filter(l => (ids.has(l.destino) || l.temas?.some(t => temas.has(t))) &&
+      (!l.termosPesquisa?.length || l.termosPesquisa.some(t => correspondeTermo(normalizar(consulta), t) || correspondeTermo(normalizar(consulta), t, "contida"))));
     if (doOperador.length) {
       operadores.push({ ...base, tipo: "programacao", linhas: doOperador.map(({ temas: _t, ...l }) => ({ ...l, nomeDestino: POR_ID.get(l.destino)?.nome ?? l.destino })) });
-    } else if (o.todoOSite?.some(r => regioes.has(r))) {
-      operadores.push({ ...base, tipo: "todo-o-site", linhas: [] });
-    } else if (o.motor && destinos.length) {
-      // As listas da FAQ delimitam a reserva manual. No motor, só os pacotes
-      // efetivamente apresentados estão validados; a sua disponibilidade não é inferida aqui.
-      operadores.push({ ...base, tipo: "motor", linhas: [] });
+    } else if (o.motor) {
+      const confirmadas = (DESTINOS_CONFIRMADOS_MOTOR[o.id] ?? []).filter(l => ids.has(l.destino));
+      if (confirmadas.length) operadores.push({ ...base, tipo: "motor", linhas: confirmadas.map(l => ({ ...l, nomeDestino: POR_ID.get(l.destino)?.nome ?? l.destino })) });
     }
   }
-  // Programação concreta, consulta no motor, e por fim confirmação no site do operador.
-  const ordem = { programacao: 0, motor: 1, "todo-o-site": 2 };
+  // Só correspondências com destinos identificados; autorização geral ou
+  // integração no motor, por si só, nunca comprovam oferta para um destino.
+  const ordem = { programacao: 0, motor: 1 };
   operadores.sort((a, b) => ordem[a.tipo] - ordem[b.tipo]);
   return { consulta, destinos: destinos.map(d => ({ id: d.id, nome: d.nome, pais: d.pais })), operadores };
 }

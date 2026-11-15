@@ -34,6 +34,7 @@ export function validarCatalogo(valor: unknown): CatalogoOperadores {
       const linha: Operador["linhas"][number] = {destino};
       for (const c of ["bloco", "origem", "companhia", "dias", "periodo", "detalhe"] as const) if (l[c] != null && l[c] !== "") linha[c] = texto(l[c]);
       if (l.temas != null) {const t = lista(l.temas, 4); if (t.some(v => !temas.has(v))) throw new ErroFAQ("Tema inválido."); linha.temas = t as NonNullable<typeof linha.temas>;}
+      if (l.termosPesquisa != null) linha.termosPesquisa = lista(l.termosPesquisa, 20);
       return linha;
     });
     const todoOSite = o.todoOSite ? lista(o.todoOSite) : [];

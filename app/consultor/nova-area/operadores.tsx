@@ -37,17 +37,13 @@ function CartaoOperador({ o }: { o: ResultadoOperador }) {
     <header className={s.topoOperador}>
       <div>
         <h3>{o.nome}</h3>
-        <p>{o.tipo === "motor" ? "Disponibilidade a confirmar no motor iCliGo." : o.resumo}</p>
+        <p>{o.tipo === "motor" ? "Destino identificado no motor iCliGo." : o.resumo}</p>
       </div>
       <Modo motor={o.motor} />
     </header>
-    {o.tipo === "todo-o-site"
-      ? <p className={s.todoSite}>Todo o produto do site da {o.nome} é autorizado. <strong>Confirma no site se tem este destino</strong> e reserva pelo formulário manual.</p>
-      : o.tipo === "motor" ? <>
-        <p className={s.dica}><strong>Pesquisa este destino no motor de operadores da iCliGo.</strong> Podes reservar os pacotes que aparecerem nos resultados, já validados com voos charter ou especiais.</p>
-        <p className={s.nota}>Para uma reserva manual, confirma que o pacote cumpre as condições da FAQ. Se não aparecer no motor, confirma também com o Departamento de Reservas antes de submeter o formulário.</p>
-      </> : <>
-        {o.motor && <p className={s.dica}>Pesquisa primeiro no motor de operadores: tudo o que aparece nos resultados pode ser reservado. Se não aparecer, usa o formulário manual com esta programação.</p>}
+    <>
+        {o.tipo === "motor" ? <p className={s.dica}>Este destino tem pacotes identificados no motor iCliGo. Consulta aí as datas, os preços e os lugares disponíveis. Esta confirmação não alarga a autorização para reserva manual.</p>
+          : o.motor && <p className={s.dica}>Reserva no motor de operadores iCliGo. A reserva manual segue a programação e as condições da FAQ abaixo.</p>}
         {blocos.map(bloco => <div key={bloco} className={s.bloco}>
           {bloco && <h4>{bloco}</h4>}
           <ul className={s.linhas}>
@@ -66,7 +62,7 @@ function CartaoOperador({ o }: { o: ResultadoOperador }) {
         {o.linhas.length > LINHAS_VISIVEIS && <button type="button" className={s.botaoTexto} onClick={() => setTodas(v => !v)} aria-expanded={todas}>
           {todas ? "Mostrar menos" : `Ver as ${o.linhas.length} opções`}
         </button>}
-      </>}
+    </>
     {!!o.avisos.length && <ul className={s.avisos}>{o.avisos.map(a => <li key={a}>{a}</li>)}</ul>}
     <details className={s.regrasOperador}>
       <summary>Regras da {o.nome}</summary>
@@ -123,14 +119,13 @@ export function OperadoresNovaArea({ email }: { email: string }) {
 
   const comProgramacao = resultado?.operadores.filter(o => o.tipo === "programacao") ?? [];
   const noMotor = resultado?.operadores.filter(o => o.tipo === "motor") ?? [];
-  const todoOSite = resultado?.operadores.filter(o => o.tipo === "todo-o-site") ?? [];
   const opcoesReserva = [...comProgramacao, ...noMotor];
 
   return <section className={s.raiz} aria-label="Onde posso vender">
     <header className={s.intro}>
       <span className={s.etiqueta}>RESERVAS</span>
       <h1>Onde posso vender<span>?</span></h1>
-      <p>Pesquisa um destino e consulta as opções no motor iCliGo e a programação autorizada para reserva manual, segundo as FAQs da iCliGo.</p>
+      <p>Pesquisa um destino e vê os operadores com programação identificada nas FAQs da iCliGo ou pacotes confirmados no motor.</p>
     </header>
 
     <form className={s.pesquisa} onSubmit={submeter} role="search">
@@ -156,27 +151,23 @@ export function OperadoresNovaArea({ email }: { email: string }) {
 
       {!resultado.destinos.length ? <div className={s.vazio}>
         <h2>Não encontrámos “{resultado.consulta}” nas FAQs dos operadores</h2>
-        <p>Experimenta o nome do país, da ilha ou o código do aeroporto. Se o destino não estiver numa programação autorizada, podes vendê-lo como pacote dinâmico nos motores da plataforma iCliGo (Voo + Hotel, Multidestino…) ou confirmar com o Departamento de Reservas.</p>
+        <p>Experimenta o nome do país, da ilha ou o código do aeroporto. Só mostramos operadores com uma correspondência identificada para o destino.</p>
       </div> : <>
         <h2 className={s.tituloResultados}>
-          Opções de reserva para <strong>{destino ? resultado.destinos.find(d => d.id === destino)?.nome : resultado.consulta}</strong>
+          {opcoesReserva.length ? <>Operadores identificados para <strong>{destino ? resultado.destinos.find(d => d.id === destino)?.nome : resultado.consulta}</strong></>
+            : <>Sem correspondências confirmadas para <strong>{destino ? resultado.destinos.find(d => d.id === destino)?.nome : resultado.consulta}</strong></>}
         </h2>
-        {!comProgramacao.length && <p className={s.nota}>Sem programação manual detalhada para este destino nesta pesquisa.{noMotor.length ? " Pesquisa nos operadores integrados abaixo: podes reservar os pacotes que aparecerem no motor iCliGo." : " Podes pesquisar nos motores Voo + Hotel e Multidestino da iCliGo ou confirmar com o Departamento de Reservas."}{todoOSite.length ? " Confirma também nos operadores onde todo o produto do site é autorizado." : ""}</p>}
+        {!opcoesReserva.length && <p className={s.nota}>Não temos um operador identificado para este destino nas fontes disponíveis. Uma autorização geral de venda não confirma que um operador tenha este destino.</p>}
         {opcoesReserva.length > 1 && <ul className={s.resumo} aria-label="Resumo por operador">
           {opcoesReserva.map(o => <li key={o.id}><a href={`#operador-${o.id}`}>
             <strong>{o.nome}</strong>
-            <span>{o.tipo === "motor" ? "Pesquisar no motor iCliGo" : `${o.linhas.length} ${o.linhas.length === 1 ? "opção" : "opções"} · ${o.motor ? "motor e manual" : "manual"}`}</span>
+            <span>{o.tipo === "motor" ? "Destino confirmado · motor iCliGo" : `${o.linhas.length} ${o.linhas.length === 1 ? "opção" : "opções"} · ${o.motor ? "motor e manual" : "manual"}`}</span>
           </a></li>)}
         </ul>}
         <div className={s.grelha}>{comProgramacao.map(o => <CartaoOperador key={o.id} o={o} />)}</div>
         {!!noMotor.length && <>
-          <h3 className={s.subtitulo}>Pesquisar também no motor iCliGo</h3>
-          <p className={s.nota}>A integração permite reservar os pacotes apresentados no motor. Confirma aí a disponibilidade para o destino e as datas pretendidas.</p>
+          <h3 className={s.subtitulo}>Destinos confirmados no motor iCliGo</h3>
           <div className={s.grelha}>{noMotor.map(o => <CartaoOperador key={o.id} o={o} />)}</div>
-        </>}
-        {!!todoOSite.length && <>
-          <h3 className={s.subtitulo}>Também podes confirmar</h3>
-          <div className={s.grelha}>{todoOSite.map(o => <CartaoOperador key={o.id} o={o} />)}</div>
         </>}
       </>}
     </div>}

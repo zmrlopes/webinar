@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { CATALOGO_BASE, pesquisarOperadores } from "../src/lib/operadores-destinos";
 import { validarCatalogo, validarPaginas, diferencasCatalogo } from "../src/lib/operadores-atualizacao";
 import { favoritoFAQs } from "../src/lib/operadores-favorito";
+import { corrigirCorrespondenciasPublicadas } from "../src/lib/operadores-correspondencias";
 
 const base = structuredClone(CATALOGO_BASE);
 assert.equal(validarCatalogo(base).operadores.length, 12);
@@ -23,6 +24,18 @@ assert.equal(pesquisarOperadores("hurgadha", undefined, validarCatalogo(base)).o
 const semMotor = structuredClone(base);
 semMotor.operadores.find(o=>o.id==="nortravel")!.motor=false;
 assert.ok(!pesquisarOperadores("Hurghada", undefined, validarCatalogo(semMotor)).operadores.some(o=>o.id==="nortravel"), "Respeita uma integração retirada do catálogo publicado");
+const legado = structuredClone(base);
+legado.operadores.find(o=>o.id==="icarion")!.linhas=[];
+const originalLegado = JSON.stringify(legado);
+const corrigido = validarCatalogo(corrigirCorrespondenciasPublicadas(legado, "aa067bfa-132f-4029-9003-48163b87dd8e"));
+assert.deepEqual(pesquisarOperadores("Japão", undefined, corrigido).operadores.map(o=>o.id), ["icarion"]);
+assert.ok(!pesquisarOperadores("Quénia", undefined, corrigido).operadores.some(o=>o.id==="icarion"));
+assert.equal(JSON.stringify(legado), originalLegado, "Preserva a versão original da recolha");
+assert.equal(corrigirCorrespondenciasPublicadas(legado, "outra-versao"), legado, "Não reinventa destinos retirados numa publicação posterior");
+assert.equal(pesquisarOperadores("Japão", undefined, legado).operadores.length, 0, "Não usa autorização geral para adivinhar destinos");
+const cataiConfirmada = structuredClone(base);
+cataiConfirmada.operadores.find(o=>o.id==="catai")!.linhas=[{destino:"japao",detalhe:"Destino confirmado na nova FAQ de teste"}];
+assert.ok(pesquisarOperadores("Japão", undefined, validarCatalogo(cataiConfirmada)).operadores.some(o=>o.id==="catai"), "Uma publicação com destino explícito pode incluir Catai");
 assert.ok(diferencasCatalogo(base,validado).some(d=>d.nome.includes("linhas")));
 const paginas=base.operadores.map(o=>({url:o.faq,texto:("Que destinos posso reservar com este operador? Destinos autorizados e regras. ").repeat(4),imagens:[]}));
 assert.equal(validarPaginas(paginas).length,12);
