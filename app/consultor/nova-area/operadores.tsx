@@ -37,13 +37,16 @@ function CartaoOperador({ o }: { o: ResultadoOperador }) {
     <header className={s.topoOperador}>
       <div>
         <h3>{o.nome}</h3>
-        <p>{o.resumo}</p>
+        <p>{o.tipo === "motor" ? "Disponibilidade a confirmar no motor iCliGo." : o.resumo}</p>
       </div>
       <Modo motor={o.motor} />
     </header>
     {o.tipo === "todo-o-site"
       ? <p className={s.todoSite}>Todo o produto do site da {o.nome} é autorizado. <strong>Confirma no site se tem este destino</strong> e reserva pelo formulário manual.</p>
-      : <>
+      : o.tipo === "motor" ? <>
+        <p className={s.dica}><strong>Pesquisa este destino no motor de operadores da iCliGo.</strong> Podes reservar os pacotes que aparecerem nos resultados, já validados com voos charter ou especiais.</p>
+        <p className={s.nota}>Para uma reserva manual, confirma que o pacote cumpre as condições da FAQ. Se não aparecer no motor, confirma também com o Departamento de Reservas antes de submeter o formulário.</p>
+      </> : <>
         {o.motor && <p className={s.dica}>Pesquisa primeiro no motor de operadores: tudo o que aparece nos resultados pode ser reservado. Se não aparecer, usa o formulário manual com esta programação.</p>}
         {blocos.map(bloco => <div key={bloco} className={s.bloco}>
           {bloco && <h4>{bloco}</h4>}
@@ -69,7 +72,7 @@ function CartaoOperador({ o }: { o: ResultadoOperador }) {
       <summary>Regras da {o.nome}</summary>
       <div className={s.colunas}>
         <div><h5>Podes reservar</h5><ul>{o.permitido.map(p => <li key={p}>{p}</li>)}</ul></div>
-        {!!o.proibido.length && <div><h5>Não é permitido</h5><ul data-proibido="true">{o.proibido.map(p => <li key={p}>{p}</li>)}</ul></div>}
+        {!!o.proibido.length && <div><h5>{o.motor ? "Restrições no formulário manual" : "Não é permitido"}</h5><ul data-proibido="true">{o.proibido.map(p => <li key={p}>{p}</li>)}</ul></div>}
       </div>
     </details>
     <footer className={s.rodapeOperador}>
@@ -119,13 +122,15 @@ export function OperadoresNovaArea({ email }: { email: string }) {
   function submeter(e: FormEvent) { e.preventDefault(); void pesquisar(termo); }
 
   const comProgramacao = resultado?.operadores.filter(o => o.tipo === "programacao") ?? [];
+  const noMotor = resultado?.operadores.filter(o => o.tipo === "motor") ?? [];
   const todoOSite = resultado?.operadores.filter(o => o.tipo === "todo-o-site") ?? [];
+  const opcoesReserva = [...comProgramacao, ...noMotor];
 
   return <section className={s.raiz} aria-label="Onde posso vender">
     <header className={s.intro}>
       <span className={s.etiqueta}>RESERVAS</span>
       <h1>Onde posso vender<span>?</span></h1>
-      <p>Pesquisa um destino e vê em que operadores turísticos o podes reservar, segundo as regras da iCliGo. Nem tudo o que os operadores vendem está autorizado.</p>
+      <p>Pesquisa um destino e consulta as opções no motor iCliGo e a programação autorizada para reserva manual, segundo as FAQs da iCliGo.</p>
     </header>
 
     <form className={s.pesquisa} onSubmit={submeter} role="search">
@@ -154,18 +159,21 @@ export function OperadoresNovaArea({ email }: { email: string }) {
         <p>Experimenta o nome do país, da ilha ou o código do aeroporto. Se o destino não estiver numa programação autorizada, podes vendê-lo como pacote dinâmico nos motores da plataforma iCliGo (Voo + Hotel, Multidestino…) ou confirmar com o Departamento de Reservas.</p>
       </div> : <>
         <h2 className={s.tituloResultados}>
-          {comProgramacao.length
-            ? <>{comProgramacao.length} {comProgramacao.length === 1 ? "operador autorizado" : "operadores autorizados"} para <strong>{destino ? resultado.destinos.find(d => d.id === destino)?.nome : resultado.consulta}</strong></>
-            : <>Nenhuma programação autorizada para <strong>{resultado.consulta}</strong></>}
+          Opções de reserva para <strong>{destino ? resultado.destinos.find(d => d.id === destino)?.nome : resultado.consulta}</strong>
         </h2>
-        {!comProgramacao.length && <p className={s.nota}>Nenhum operador tem este destino na programação autorizada. Podes vendê-lo como pacote dinâmico nos motores da plataforma iCliGo (Voo + Hotel, Multidestino…){todoOSite.length ? ", ou confirmar nos operadores abaixo, onde todo o produto do site é autorizado" : ""}.</p>}
-        {comProgramacao.length > 1 && <ul className={s.resumo} aria-label="Resumo por operador">
-          {comProgramacao.map(o => <li key={o.id}><a href={`#operador-${o.id}`}>
+        {!comProgramacao.length && <p className={s.nota}>Sem programação manual detalhada para este destino nesta pesquisa.{noMotor.length ? " Pesquisa nos operadores integrados abaixo: podes reservar os pacotes que aparecerem no motor iCliGo." : " Podes pesquisar nos motores Voo + Hotel e Multidestino da iCliGo ou confirmar com o Departamento de Reservas."}{todoOSite.length ? " Confirma também nos operadores onde todo o produto do site é autorizado." : ""}</p>}
+        {opcoesReserva.length > 1 && <ul className={s.resumo} aria-label="Resumo por operador">
+          {opcoesReserva.map(o => <li key={o.id}><a href={`#operador-${o.id}`}>
             <strong>{o.nome}</strong>
-            <span>{o.linhas.length} {o.linhas.length === 1 ? "opção" : "opções"} · {o.motor ? "motor" : "manual"}</span>
+            <span>{o.tipo === "motor" ? "Pesquisar no motor iCliGo" : `${o.linhas.length} ${o.linhas.length === 1 ? "opção" : "opções"} · ${o.motor ? "motor e manual" : "manual"}`}</span>
           </a></li>)}
         </ul>}
         <div className={s.grelha}>{comProgramacao.map(o => <CartaoOperador key={o.id} o={o} />)}</div>
+        {!!noMotor.length && <>
+          <h3 className={s.subtitulo}>Pesquisar também no motor iCliGo</h3>
+          <p className={s.nota}>A integração permite reservar os pacotes apresentados no motor. Confirma aí a disponibilidade para o destino e as datas pretendidas.</p>
+          <div className={s.grelha}>{noMotor.map(o => <CartaoOperador key={o.id} o={o} />)}</div>
+        </>}
         {!!todoOSite.length && <>
           <h3 className={s.subtitulo}>Também podes confirmar</h3>
           <div className={s.grelha}>{todoOSite.map(o => <CartaoOperador key={o.id} o={o} />)}</div>

@@ -507,6 +507,15 @@ motor/manual, sinal, regras e data de cada FAQ) e só são lidos no servidor pel
 Ao rever as FAQs, atualizar as linhas, as datas `atualizado` e `REVISTO_EM`, e correr
 `npm run test:operadores`. Continua exclusivo da nova área da conta de teste.
 
+Por indicação de 15/11/2026, a pesquisa distingue a programação de reserva manual
+da consulta no motor iCliGo. Um operador integrado sem linhas manuais para o
+destino aparece para pesquisar no motor, com disponibilidade a confirmar; só os
+pacotes efetivamente apresentados no motor podem ser reservados. A ausência de
+Hurghada da lista manual da Nortravel não deve ocultar a consulta no motor nem
+autorizar automaticamente o formulário manual. Aceita também “hurgadha” e
+“hurgada”. Esta distinção aplica-se ao catálogo base e às atualizações publicadas,
+preservando as fontes, as datas das FAQs e o histórico.
+
 Por indicação do utilizador, o admin inclui “Atualizar FAQs” em `/admin/operadores`,
 independente de Atualizar dados do MyOffice. Um favorito corre no Centro de Ajuda
 autenticado e recolhe os textos e imagens das FAQs sem transmitir credenciais.

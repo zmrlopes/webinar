@@ -17,8 +17,19 @@ assert.ok(ops("réveillon").includes("viagens-tempo") && ops("fim de ano").inclu
 assert.deepEqual(ops("mercados de natal"), ["viagens-tempo"]);
 assert.ok(ops("Canárias").includes("soltour"), "grupo");
 assert.ok(ops("Ilha do Sal", "sal").length >= 6);
-assert.equal(pesquisarOperadores("Japão").operadores.every(o => o.tipo === "todo-o-site"), true);
-assert.deepEqual(pesquisarOperadores("Japão").operadores.map(o => o.id).sort(), ["catai", "icarion"]);
+assert.deepEqual(pesquisarOperadores("Japão").operadores.filter(o => o.tipo === "todo-o-site").map(o => o.id).sort(), ["catai", "icarion"]);
+assert.ok(!pesquisarOperadores("Japão").operadores.some(o => o.tipo === "programacao"), "Não inventa programação manual para um destino apenas a confirmar no motor");
+for (const consulta of ["Hurghada", "hurgadha", "HURGADA", "HRG", "pacotes hurgadha"]) {
+  const resultado = pesquisarOperadores(consulta);
+  assert.ok(resultado.destinos.some(d => d.id === "hurghada"), `${consulta}: reconhece o destino`);
+  const nortravel = resultado.operadores.find(o => o.id === "nortravel");
+  assert.equal(nortravel?.tipo, "motor", `${consulta}: Nortravel aparece para consulta no motor`);
+  assert.equal(nortravel?.motor, true);
+  assert.deepEqual(nortravel?.linhas, [], "Não apresenta Hurghada como programação manual autorizada");
+}
+assert.equal(pesquisarOperadores("Hurghada").operadores.some(o => o.id === "soltour"), false, "Operador só manual não aparece sem programação para o destino");
+assert.equal(pesquisarOperadores("Hurghada", "inexistente").operadores.length, 0, "Um filtro sem destinos não devolve sugestões de motor");
+assert.equal(pesquisarOperadores("Ilha do Sal", "sal").operadores.find(o => o.id === "nortravel")?.tipo, "programacao", "Mantém as linhas manuais autorizadas existentes");
 assert.equal(pesquisarOperadores("Islândia").operadores.length, 0);
 assert.equal(procurarDestinos("a").length, 0);
 assert.ok(!ops("Maiorca").includes("catai"), "Europa não puxa Catai");

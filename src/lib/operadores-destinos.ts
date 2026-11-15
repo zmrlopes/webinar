@@ -683,8 +683,8 @@ export interface ResultadoLinha extends Omit<Linha, "destino" | "temas"> { desti
 export interface ResultadoOperador {
   id: IdOperador; nome: string; motor: boolean; sinal: string; atualizado: string; faq: string; resumo: string;
   permitido: string[]; proibido: string[]; avisos: string[];
-  /** "programacao": há linhas concretas; "todo-o-site": autorizado mas é preciso confirmar se o site tem o destino. */
-  tipo: "programacao" | "todo-o-site";
+  /** "programacao": linhas da FAQ; "motor": pesquisar disponibilidade na iCliGo, sem autorização manual; "todo-o-site": confirmar no site. */
+  tipo: "programacao" | "motor" | "todo-o-site";
   linhas: ResultadoLinha[];
 }
 export interface ResultadoPesquisa {
@@ -696,7 +696,7 @@ export interface ResultadoPesquisa {
 /** Destinos que correspondem à pesquisa, já expandidos (país → cidades, tema → linhas do tema). */
 export function procurarDestinos(consulta: string, catalogo = CATALOGO_BASE): Destino[] {
   const DESTINOS = catalogo.destinos;
-  const q = normalizar(consulta);
+  const q = normalizar(consulta).replace(/\bhurg(?:adha|ada)\b/g, "hurghada");
   if (q.length < 2) return [];
   // Primeiro a correspondência direta; só se não houver nenhuma, procura destinos dentro da frase (ex.: "pacote punta cana").
   for (const modo of ["direta", "contida"] as const) {
@@ -729,10 +729,15 @@ export function pesquisarOperadores(consulta: string, filtroDestino?: string, ca
       operadores.push({ ...base, tipo: "programacao", linhas: doOperador.map(({ temas: _t, ...l }) => ({ ...l, nomeDestino: POR_ID.get(l.destino)?.nome ?? l.destino })) });
     } else if (o.todoOSite?.some(r => regioes.has(r))) {
       operadores.push({ ...base, tipo: "todo-o-site", linhas: [] });
+    } else if (o.motor && destinos.length) {
+      // As listas da FAQ delimitam a reserva manual. No motor, só os pacotes
+      // efetivamente apresentados estão validados; a sua disponibilidade não é inferida aqui.
+      operadores.push({ ...base, tipo: "motor", linhas: [] });
     }
   }
-  // Ordem da lista OPERADORES: primeiro partidas de Portugal, depois Espanha; "todo o site" no fim.
-  operadores.sort((a, b) => Number(b.tipo === "programacao") - Number(a.tipo === "programacao"));
+  // Programação concreta, consulta no motor, e por fim confirmação no site do operador.
+  const ordem = { programacao: 0, motor: 1, "todo-o-site": 2 };
+  operadores.sort((a, b) => ordem[a.tipo] - ordem[b.tipo]);
   return { consulta, destinos: destinos.map(d => ({ id: d.id, nome: d.nome, pais: d.pais })), operadores };
 }
 
