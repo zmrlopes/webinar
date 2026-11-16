@@ -10,9 +10,14 @@ import { LINGUAS_FORMACOES } from "@/lib/formacoes-forum-icligo";
 
 const CATEGORIAS = Object.keys(NOMES_CATEGORIAS) as CategoriaAcontecimento[];
 const DIAS_SEMANA = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+/** Logótipo da origem, quando há um — iCliGo ou Tropa de Elite (formações internas); as restantes categorias ficam só com o ponto de cor. */
+const LOGO_CATEGORIA: Partial<Record<CategoriaAcontecimento, string>> = {
+  icligo: "/icligo-logo.png", formacao: "/tropa-elite-logo.png",
+};
 function MarcaAcontecimento({ categoria }: { categoria: CategoriaAcontecimento }) {
+  const logo = LOGO_CATEGORIA[categoria];
   return <span className={s.marcaEvento}>
-    {categoria === "icligo" ? <img className={s.logoIcligo} src="/icligo-logo.png" alt="" width={32} height={32} /> : <span className={s.ponto} aria-hidden="true" />}
+    {logo ? <img className={s.logoCategoria} src={logo} alt="" width={32} height={32} /> : <span className={s.ponto} aria-hidden="true" />}
   </span>;
 }
 
@@ -163,7 +168,7 @@ export function CalendarioConsultor({ email, nome }: { email: string; nome: stri
 
   function lista(listaEventos: AcontecimentoCalendario[]) {
     return <div className={s.lista}>{listaEventos.map(a => <button type="button" key={a.id} className={s.itemAgenda} data-categoria={a.categoria} data-criado-pelo-admin={a.criadaPeloAdmin} onClick={() => abrirAcontecimento(a)}>
-      {a.categoria === "icligo" ? <img className={s.logoIcligo} src="/icligo-logo.png" alt="" width={32} height={32} /> : <span className={s.ponto} aria-hidden="true" />}
+      <MarcaAcontecimento categoria={a.categoria} />
       <span className={s.itemTexto}><strong>{a.titulo}</strong><span>{horario(a)} · {NOMES_CATEGORIAS[a.categoria]}</span>{a.local && <small>{a.local}</small>}</span>
       <BandeiraFormacao lingua={a.lingua} className={s.bandeiraAgenda} />
       <span aria-hidden="true">↗</span>
@@ -241,7 +246,7 @@ export function CalendarioConsultor({ email, nome }: { email: string; nome: stri
     <dialog ref={dialogo} className={s.dialogo} aria-labelledby="titulo-acontecimento" onCancel={() => setSelecionado(null)} onClick={e => { if (e.target === e.currentTarget) setSelecionado(null); }}>
       {selecionado && <div>
         <button type="button" className={s.fechar} onClick={() => setSelecionado(null)} aria-label="Fechar detalhes">×</button>
-        <span className={s.tipoDetalhes} data-categoria={selecionado.categoria} data-criado-pelo-admin={selecionado.criadaPeloAdmin}>{selecionado.categoria === "icligo" ? <img className={s.logoIcligo} src="/icligo-logo.png" alt="" width={32} height={32} /> : <span className={s.ponto} />}{NOMES_CATEGORIAS[selecionado.categoria]}</span>
+        <span className={s.tipoDetalhes} data-categoria={selecionado.categoria} data-criado-pelo-admin={selecionado.criadaPeloAdmin}><MarcaAcontecimento categoria={selecionado.categoria} />{NOMES_CATEGORIAS[selecionado.categoria]}</span>
         <h2 id="titulo-acontecimento">{selecionado.titulo}</h2>
         <p>{selecionado.diaFim ? intervalo(selecionado) : dataLonga(diaDoAcontecimento(selecionado))}</p>
         <p><strong>{horario(selecionado)}</strong>{!selecionado.diaInteiro && " · Hora de Portugal"}</p>
