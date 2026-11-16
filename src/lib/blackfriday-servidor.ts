@@ -6,6 +6,8 @@ import {EMAIL_PAINEL_DEMONSTRACAO} from "./demo";
 import {dataSimulacaoBF} from "./blackfriday-simulacao";
 import {CAMPANHA_BF, CONFIG_BF, dataValidaBF, hojeBF, periodoBF, validarReservaBF, type ConfiguracaoBF, type DadosBF, type DadosAdminBF, type FaturacaoBF, type InscricaoBF, type RankingBF} from "./blackfriday";
 import {prepararRankingBF} from "./blackfriday-ranking";
+import {LIDERES_EQUIPA_BF} from "./lideres-equipa";
+import {equipaDoLider} from "./lideres-equipa-servidor";
 
 const PREFIXO = `blackfriday:${CAMPANHA_BF}:`;
 export const CHAVE_FATURACAO_BF = PREFIXO + "faturacao";
@@ -43,9 +45,23 @@ export async function dadosBF(email?: string, simulacao = false): Promise<DadosB
   return {config, inscricoes, hoje: simulacao ? dataSimulacaoBF(config, hojeBF()) : hojeBF(), faturacao: corresponde ? faturacao : null, simulacao};
 }
 
+/**
+ * As equipas dos líderes com variante própria (ex.: Ana Custódia) revem o
+ * seu próprio bingo em "/consultor/nova-area" → Admin; por isso ficam de
+ * fora do que chega aqui para o admin geral aprovar.
+ */
+async function emailsComRevisaoPropria(): Promise<Set<string>> {
+  const todos = await Promise.all(Object.keys(LIDERES_EQUIPA_BF).map(equipaDoLider));
+  return new Set(todos.flat());
+}
+
 /** Só a API do admin recebe o top 10 da equipa. */
 export async function dadosAdminBF(simulacao = false): Promise<DadosAdminBF> {
   const dados = await dadosBF(undefined, simulacao);
+  if (!simulacao) {
+    const excluidos = await emailsComRevisaoPropria();
+    dados.inscricoes = dados.inscricoes.filter(i => !excluidos.has(i.email.trim().toLowerCase()));
+  }
   if (simulacao) return {...dados, ranking: null};
   const {rows} = await db().query<{valor: RankingBF}>("select valor from dashboard_config where chave = $1", [CHAVE_RANKING_BF]);
   const intervalo = periodoBF({...dados.config, periodoFaturacao: "desafio"}, dados.hoje);
