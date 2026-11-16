@@ -115,6 +115,7 @@ export async function POST(request: Request): Promise<Response> {
         })),
         ...externas.map(f => ({
           id: f.id, titulo: f.titulo, comecaEm: f.comecaEm, tipo: "externa" as const, link: f.url ?? "",
+          lingua: f.lingua ?? null,
         })),
       ].sort((a, b) => new Date(a.comecaEm).getTime() - new Date(b.comecaEm).getTime()),
     };

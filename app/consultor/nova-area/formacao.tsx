@@ -7,6 +7,7 @@ import { CategoriaPagina } from "../formacoes/[categoria]/categoria-pagina";
 import { DocumentosPagina } from "../documentos/documentos-pagina";
 import estilos from "./nova-area.module.css";
 import cartoes from "./formacao.module.css";
+import { BandeiraFormacao } from "./bandeira-formacao";
 
 function Intro({ titulo, descricao }: { titulo: string; descricao: string }) {
   return <div className={estilos.intro}>
@@ -53,7 +54,7 @@ function CartaoFormacao({ formacao, email, aoInscrever }: {
 
   const destaque = formacao.tipo === "externa" ? cartoes.icligo : formacao.criadaPeloAdmin ? cartoes.interna : "";
   return <article className={`${cartoes.cartao}${destaque ? ` ${destaque}` : ""}`}>
-    <span className={cartoes.etiqueta}>{formacao.tipo === "externa" && <img src="/icligo-logo.png" alt="" />} {formacao.tipo === "externa" ? "Formação iCliGo" : "Formação interna"}</span>
+    <span className={cartoes.etiqueta}>{formacao.tipo === "externa" && <img src="/icligo-logo.png" alt="" />} {formacao.tipo === "externa" ? "Formação iCliGo" : "Formação interna"}{formacao.tipo === "externa" && <BandeiraFormacao lingua={formacao.lingua} className={cartoes.bandeira} />}</span>
     <h2 className={cartoes.titulo}>{formacao.titulo}</h2>
     <p className={cartoes.data}><time dateTime={formacao.comecaEm}>{new Date(formacao.comecaEm).toLocaleString("pt-PT", {
       dateStyle: "long", timeStyle: "short", timeZone: "Europe/Lisbon",

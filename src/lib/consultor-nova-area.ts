@@ -1,4 +1,5 @@
 import { EMAIL_PAINEL_DEMONSTRACAO } from "./demo";
+import type { LinguaFormacao } from "./formacoes-forum-icligo";
 
 /** Primeira migração real autorizada; não abrange a descendência da Ana. */
 export const EMAIL_PILOTO_NOVA_AREA = "apensarnaproxima@gmail.com";
@@ -83,7 +84,8 @@ export interface AvisoInicio {
  */
 export type FormacaoNovaArea = {
   id: string; titulo: string; comecaEm: string;
-} & ({ tipo: "interna"; duracaoMinutos: number; inscrito: boolean; criadaPeloAdmin: boolean } | { tipo: "externa"; link: string });
+} & ({ tipo: "interna"; duracaoMinutos: number; inscrito: boolean; criadaPeloAdmin: boolean }
+  | { tipo: "externa"; link: string; lingua: LinguaFormacao | null });
 
 export interface DadosEventosPresenciais {
   teambuilding: {
