@@ -84,6 +84,13 @@ chaves `consultor:negocio:`, separados do admin. Só uma recolha completa substi
 o dashboard; falhas mantêm os dados anteriores. Não importa a equipa nem altera
 ranking, campanhas ou os snapshots do admin. Correr `npm run test:negocio`.
 
+Por indicação de 16/11/2026, a faturação dos Mapas e Projeções é o total do
+negócio de cada TP (própria + equipa, como um só), lida na raiz do Analisador
+de Organização do MyOffice para cada período, porque `team/affiliates` omite
+a própria conta. Pontos e novos consultores continuam a vir da equipa. O
+favorito passa à versão 3; dados de versões anteriores mostram um aviso até
+o TP voltar a atualizar.
+
 Por indicação do utilizador, o separador BLACKFRIDAY da nova área apresenta
 um bingo 5×5 inspirado em `docs/bingo.jpeg`, com gradiente escuro e progresso
 privado por TP. Está em preparação apenas na conta de teste definida em

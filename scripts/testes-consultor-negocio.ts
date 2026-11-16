@@ -33,24 +33,29 @@ assert.throws(() => validarTotaisNegocio({faturacao: 0}));
 assert.equal(validarTotaisNegocio({...totais(1), faturacao: -1.256}).faturacao, -1.26);
 
 const periodo = periodos[0]!;
+const raiz = (v: number) => ({t: 10, i: 0, p: {k: ["result"], v: [{t: 10, i: 1, p: {k: ["parent"], v: [{t: 10, i: 2, p: {k: ["bookingVolume"], v: [{t: 0, s: v}]}}]}}]}});
+const analisador = (url: string) => url.includes("/_serverFn/");
 const pedidos: string[] = [];
 const resultado = await recolherPeriodoNegocio(periodo, async url => {
   pedidos.push(url);
+  if (analisador(url)) return raiz(1250);
   if (url.includes("affiliates")) return {stats: {sales: 1000, points: 25, subscriptions: 2}};
   if (url.includes("activeIncome")) return {totalCommissions: 12.25, currency: "EUR"};
   if (url.includes("passiveIncome")) return {totalCommissions: 30.5, currency: "EUR"};
   throw new Error("Fonte de comissões inesperada ou duplicada.");
 });
-assert.deepEqual(resultado, {faturacao: 1000, pontos: 25, consultores: 2, comissoes: 42.75});
-assert.equal(pedidos.length, 3);
-assert(pedidos.every(url => url.includes("startDate=2019-01-01&endDate=2019-01-31")));
+assert.deepEqual(resultado, {faturacao: 1250, pontos: 25, consultores: 2, comissoes: 42.75});
+assert.equal(pedidos.length, 4);
+assert(pedidos.filter(url => !analisador(url)).every(url => url.includes("startDate=2019-01-01&endDate=2019-01-31")));
+assert(decodeURIComponent(pedidos.find(analisador)!).includes('"2019-01-31"'));
+await assert.rejects(() => recolherPeriodoNegocio(periodo, async url => analisador(url) ? {} : url.includes("affiliates") ? {stats: {sales: 1, points: 1, subscriptions: 0}} : {totalCommissions: 0, currency: "EUR"}), /faturação total/);
 await assert.rejects(() => recolherPeriodoNegocio(periodo, async () => ({})), /totais da equipa/);
 const equipaVazia = {stats: {sales: 0, points: 0, subscriptions: 0}};
-await assert.rejects(() => recolherPeriodoNegocio(periodo, async url => url.includes("affiliates") ? equipaVazia : {}), /comissões próprias/);
-await assert.rejects(() => recolherPeriodoNegocio(periodo, async url => url.includes("affiliates") ? equipaVazia : url.includes("activeIncome") ? {totalCommissions: 10} : {}), /comissões passivas/);
-await assert.rejects(() => recolherPeriodoNegocio(periodo, async url => url.includes("affiliates") ? equipaVazia : {totalCommissions: 10, currency: "USD"}), /euros/);
-assert.equal((await recolherPeriodoNegocio(periodo, async url => url.includes("affiliates") ? equipaVazia : {totalCommissions: 0, currency: "EUR"})).comissoes, 0);
-assert.equal((await recolherPeriodoNegocio(periodo, async url => url.includes("affiliates") ? equipaVazia : {totalCommissions: url.includes("activeIncome") ? -5 : 30})).comissoes, 25);
+await assert.rejects(() => recolherPeriodoNegocio(periodo, async url => analisador(url) ? raiz(0) : url.includes("affiliates") ? equipaVazia : {}), /comissões próprias/);
+await assert.rejects(() => recolherPeriodoNegocio(periodo, async url => analisador(url) ? raiz(0) : url.includes("affiliates") ? equipaVazia : url.includes("activeIncome") ? {totalCommissions: 10} : {}), /comissões passivas/);
+await assert.rejects(() => recolherPeriodoNegocio(periodo, async url => analisador(url) ? raiz(0) : url.includes("affiliates") ? equipaVazia : {totalCommissions: 10, currency: "USD"}), /euros/);
+assert.equal((await recolherPeriodoNegocio(periodo, async url => analisador(url) ? raiz(0) : url.includes("affiliates") ? equipaVazia : {totalCommissions: 0, currency: "EUR"})).comissoes, 0);
+assert.equal((await recolherPeriodoNegocio(periodo, async url => analisador(url) ? raiz(0) : url.includes("affiliates") ? equipaVazia : {totalCommissions: url.includes("activeIncome") ? -5 : 30})).comissoes, 25);
 
 // Executa o favorito num MyOffice simulado: só a identidade e as respostas autorizadas saem da ponte.
 const mensagens: {corpo: Record<string, unknown>; origem: string}[] = [];
@@ -78,8 +83,10 @@ await receber(evento("https://api.icligo.com/legacy-system/v1/stats/passiveIncom
 await receber(evento("https://api.icligo.com/legacy-system/v1/account/movements"));
 await receber(evento("https://outro.example/roubar"));
 await receber(evento("https://api.icligo.com/legacy-system/v1/account/qualquer-coisa"));
-assert.equal(chamadas.length, 4);
-assert.equal(JSON.parse(mensagens[0]!.corpo.corpo as string).versao, 2);
+await receber(evento("https://myoffice.icligo.com/_serverFn/4b457b9f58baf866962a4eb026255982ff0e9deb00bd1b341b16408098b7584a?payload=x"));
+await receber(evento("https://myoffice.icligo.com/_serverFn/outra-funcao"));
+assert.equal(chamadas.length, 5);
+assert.equal(JSON.parse(mensagens[0]!.corpo.corpo as string).versao, 3);
 assert(!JSON.stringify(mensagens).includes("token-privado"));
 
 // O MyOffice atual usa sessão por cookie e getMe em vez de /api/auth/session.

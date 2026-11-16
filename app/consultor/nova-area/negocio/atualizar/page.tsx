@@ -51,7 +51,7 @@ export default function AtualizarNegocioConsultor() {
         setEstado("A confirmar a conta do MyOffice…");
         const identidade = await pedir("identidade") as {email?: string; versao?: number};
         if (!identidade.email) throw new Error("Não foi possível confirmar o email da sessão do MyOffice. Entra novamente no MyOffice e repete o favorito.");
-        if (identidade.versao !== 2) throw new Error("Substitui o favorito «Atualizar o meu negócio» pela versão disponível na nova área e volta a clicar nele no MyOffice. A nova versão inclui comissões próprias e passivas.");
+        if (identidade.versao !== 3) throw new Error("Substitui o favorito «Atualizar o meu negócio» pela versão disponível na nova área e volta a clicar nele no MyOffice. A nova versão junta a tua faturação própria à da equipa.");
         const {plano} = await enviar({acao: "iniciar", origemEmail: identidade.email}) as {plano: PlanoNegocio};
         setProgresso({feitos: 0, total: plano.periodos.length});
         let seguinte = 0, feitos = 0, falhou = false;

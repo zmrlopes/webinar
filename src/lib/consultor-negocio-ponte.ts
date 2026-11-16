@@ -1,3 +1,4 @@
+import {ANALISADOR, deSeroval, pedidoAnalisador} from "./analisador-organizacao";
 import {arredondarNegocio, type PeriodoNegocio, type TotaisNegocio} from "./consultor-negocio";
 
 export const CANAL_NEGOCIO = "icligo-consultor-negocio-v1";
@@ -7,7 +8,7 @@ const API = "https://api.icligo.com/legacy-system/v1";
 /** Executado só no MyOffice. A sessão e o token nunca são enviados para a plataforma. */
 export function favoritoNegocio(site: string): string {
   return "javascript:" + encodeURIComponent(`(async()=>{
-    const S=${JSON.stringify(site)}, C=${JSON.stringify(CANAL_NEGOCIO)};
+    const S=${JSON.stringify(site)}, C=${JSON.stringify(CANAL_NEGOCIO)}, A=${JSON.stringify(ANALISADOR)};
     if(location.origin!==${JSON.stringify(MYOFFICE_NEGOCIO)}){alert('Abre primeiro o MyOffice, entra na tua conta e carrega novamente neste favorito.');return}
     const w=window.open(S+'/consultor/nova-area/negocio/atualizar?ponte=1','consultor-negocio-atualizar');
     if(!w){alert('Permite janelas do MyOffice e carrega novamente no favorito.');return}
@@ -32,8 +33,9 @@ export function favoritoNegocio(site: string): string {
       const {id,url}=e.data;
       const responder=d=>w.postMessage({canal:C,id,...d},S);
       const {token,email}=await contexto;
-      if(url==='identidade'){responder({corpo:JSON.stringify({email,versao:2}),status:200});return}
+      if(url==='identidade'){responder({corpo:JSON.stringify({email,versao:3}),status:200});return}
       let u;try{u=new URL(url)}catch{return}
+      if(u.origin+u.pathname===A){try{const r=await fetch(u.href,{credentials:'include',headers:token?{Authorization:'Bearer '+token}:{},signal:AbortSignal.timeout(180000)});responder({status:r.status,corpo:await r.text()})}catch{responder({erro:'O MyOffice não respondeu. Repete a atualização.'})}return}
       if(u.origin!=='https://api.icligo.com'||!['/legacy-system/v1/team/affiliates','/legacy-system/v1/stats/activeIncome','/legacy-system/v1/stats/passiveIncome'].includes(u.pathname)){responder({erro:'Endereço não permitido.'});return}
       try{const r=await fetch(u.href,{credentials:'include',headers:token?{Authorization:'Bearer '+token}:{},signal:AbortSignal.timeout(180000)});responder({status:r.status,corpo:await r.text()})}catch{responder({erro:'O MyOffice não respondeu. Repete a atualização.'})}
     };
@@ -42,13 +44,23 @@ export function favoritoNegocio(site: string): string {
 }
 
 type PedirMyOffice = (url: string) => Promise<unknown>;
-/** As duas fontes de rendimento são disjuntas: não somar também movimentos ou o gráfico total. */
+/**
+ * `team/affiliates` omite a própria conta, por isso a faturação total (própria +
+ * equipa) vem da raiz do Analisador de Organização, que inclui a pessoa e toda a
+ * descendência. Pontos e adesões continuam a vir da equipa (sem fonte própria).
+ * As duas fontes de rendimento são disjuntas: não somar também movimentos ou o gráfico total.
+ */
 export async function recolherPeriodoNegocio(periodo: PeriodoNegocio, pedir: PedirMyOffice): Promise<TotaisNegocio> {
   const query = `startDate=${periodo.inicio}&endDate=${periodo.fim}`;
   const equipa = await pedir(`${API}/team/affiliates?${query}&page=0&size=1`) as {stats?: {sales?: unknown; points?: unknown; subscriptions?: unknown}} | null;
   const stats = equipa?.stats;
   if (!stats || [stats.sales, stats.points, stats.subscriptions].some(n => typeof n !== "number" || !Number.isFinite(n))) {
     throw new Error("O MyOffice não devolveu os totais da equipa. Não foram usados zeros em falta.");
+  }
+  const analisador = deSeroval(await pedir(pedidoAnalisador(periodo.inicio, periodo.fim, 0))) as {result?: {parent?: {bookingVolume?: unknown}}} | null;
+  const total = analisador?.result?.parent?.bookingVolume;
+  if (typeof total !== "number" || !Number.isFinite(total)) {
+    throw new Error("O MyOffice não devolveu a faturação total (própria + equipa). Os dados anteriores mantêm-se.");
   }
   const rendimento = async (tipo: "activeIncome" | "passiveIncome") => {
     const corpo = await pedir(`${API}/stats/${tipo}?${query}`) as {totalCommissions?: unknown; currency?: unknown} | null;
@@ -59,6 +71,6 @@ export async function recolherPeriodoNegocio(periodo: PeriodoNegocio, pedir: Ped
     return corpo.totalCommissions;
   };
   const proprias = await rendimento("activeIncome"), passivas = await rendimento("passiveIncome");
-  return {faturacao: stats.sales as number, pontos: stats.points as number, consultores: stats.subscriptions as number,
+  return {faturacao: total, pontos: stats.points as number, consultores: stats.subscriptions as number,
     comissoes: arredondarNegocio(proprias + passivas)};
 }
