@@ -18,6 +18,8 @@ export interface AcontecimentoCalendario {
   inscricoesAbertas?: boolean;
   lingua?: LinguaFormacao | null;
   origem?: "forum-icligo";
+  /** Só para `categoria === "formacao"`: distingue as criadas no admin ("Criar formação") das sincronizadas da sala do Patrick. */
+  criadaPeloAdmin?: boolean;
 }
 
 export const NOMES_CATEGORIAS: Record<CategoriaAcontecimento, string> = {

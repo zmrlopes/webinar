@@ -76,9 +76,14 @@ export interface AvisoInicio {
   anonimo?: boolean;
 }
 
+/**
+ * `criadaPeloAdmin` distingue, dentro das formações internas, as que vêm do
+ * botão "Criar formação" do admin das sincronizadas da sala do Patrick (ex:
+ * a formação recorrente de segunda-feira) — só as primeiras são "minhas".
+ */
 export type FormacaoNovaArea = {
   id: string; titulo: string; comecaEm: string;
-} & ({ tipo: "interna"; duracaoMinutos: number; inscrito: boolean } | { tipo: "externa"; link: string });
+} & ({ tipo: "interna"; duracaoMinutos: number; inscrito: boolean; criadaPeloAdmin: boolean } | { tipo: "externa"; link: string });
 
 export interface DadosEventosPresenciais {
   teambuilding: {

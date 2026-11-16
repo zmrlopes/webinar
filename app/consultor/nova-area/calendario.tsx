@@ -162,7 +162,7 @@ export function CalendarioConsultor({ email, nome }: { email: string; nome: stri
   const tituloMes = new Date(`${mes}-01T12:00:00Z`).toLocaleDateString("pt-PT", { month: "long", year: "numeric", timeZone: "Europe/Lisbon" });
 
   function lista(listaEventos: AcontecimentoCalendario[]) {
-    return <div className={s.lista}>{listaEventos.map(a => <button type="button" key={a.id} className={s.itemAgenda} data-categoria={a.categoria} onClick={() => abrirAcontecimento(a)}>
+    return <div className={s.lista}>{listaEventos.map(a => <button type="button" key={a.id} className={s.itemAgenda} data-categoria={a.categoria} data-criado-pelo-admin={a.criadaPeloAdmin} onClick={() => abrirAcontecimento(a)}>
       {a.categoria === "icligo" ? <img className={s.logoIcligo} src="/icligo-logo.png" alt="" width={32} height={32} /> : <span className={s.ponto} aria-hidden="true" />}
       <span className={s.itemTexto}><strong>{a.titulo}</strong><span>{horario(a)} · {NOMES_CATEGORIAS[a.categoria]}</span>{a.local && <small>{a.local}</small>}</span>
       <BandeiraFormacao lingua={a.lingua} className={s.bandeiraAgenda} />
@@ -218,7 +218,7 @@ export function CalendarioConsultor({ email, nome }: { email: string; nome: stri
           {DIAS_SEMANA.map(d => <div className={s.diaSemana} key={d}>{d}</div>)}
           {diasDoMes(mes).map(dia => <div key={dia} className={s.dia} data-dia={dia} data-fora={!dia.startsWith(mes)} data-selecionado={diaSelecionado === dia}>
             <button type="button" className={s.numero} data-hoje={dia === hoje} aria-label={dataLonga(dia)} aria-pressed={diaSelecionado === dia} onClick={() => escolherDia(dia)}>{Number(dia.slice(-2))}</button>
-            <div className={s.eventosDia}>{(porDia.get(dia) ?? []).map(a => <button type="button" className={s.acontecimento} key={a.id} data-categoria={a.categoria} data-com-lingua={!!a.lingua} title={`${a.titulo} · ${horario(a)}${a.lingua ? ` · ${LINGUAS_FORMACOES[a.lingua].nome}` : ""}`} aria-label={`${a.titulo}, ${dataLonga(dia)}, ${horario(a)}${a.lingua ? `, ${LINGUAS_FORMACOES[a.lingua].nome}` : ""}`} aria-haspopup="dialog" onClick={() => { setDiaSelecionado(dia); abrirAcontecimento(a); }}>
+            <div className={s.eventosDia}>{(porDia.get(dia) ?? []).map(a => <button type="button" className={s.acontecimento} key={a.id} data-categoria={a.categoria} data-criado-pelo-admin={a.criadaPeloAdmin} data-com-lingua={!!a.lingua} title={`${a.titulo} · ${horario(a)}${a.lingua ? ` · ${LINGUAS_FORMACOES[a.lingua].nome}` : ""}`} aria-label={`${a.titulo}, ${dataLonga(dia)}, ${horario(a)}${a.lingua ? `, ${LINGUAS_FORMACOES[a.lingua].nome}` : ""}`} aria-haspopup="dialog" onClick={() => { setDiaSelecionado(dia); abrirAcontecimento(a); }}>
               <MarcaAcontecimento categoria={a.categoria} />
               <span className={s.conteudoEvento}>
                 <span className={s.hora}>{a.diaInteiro ? "Hora por confirmar" : hora(a.comecaEm)}</span>
@@ -241,7 +241,7 @@ export function CalendarioConsultor({ email, nome }: { email: string; nome: stri
     <dialog ref={dialogo} className={s.dialogo} aria-labelledby="titulo-acontecimento" onCancel={() => setSelecionado(null)} onClick={e => { if (e.target === e.currentTarget) setSelecionado(null); }}>
       {selecionado && <div>
         <button type="button" className={s.fechar} onClick={() => setSelecionado(null)} aria-label="Fechar detalhes">×</button>
-        <span className={s.tipoDetalhes} data-categoria={selecionado.categoria}>{selecionado.categoria === "icligo" ? <img className={s.logoIcligo} src="/icligo-logo.png" alt="" width={32} height={32} /> : <span className={s.ponto} />}{NOMES_CATEGORIAS[selecionado.categoria]}</span>
+        <span className={s.tipoDetalhes} data-categoria={selecionado.categoria} data-criado-pelo-admin={selecionado.criadaPeloAdmin}>{selecionado.categoria === "icligo" ? <img className={s.logoIcligo} src="/icligo-logo.png" alt="" width={32} height={32} /> : <span className={s.ponto} />}{NOMES_CATEGORIAS[selecionado.categoria]}</span>
         <h2 id="titulo-acontecimento">{selecionado.titulo}</h2>
         <p>{selecionado.diaFim ? intervalo(selecionado) : dataLonga(diaDoAcontecimento(selecionado))}</p>
         <p><strong>{horario(selecionado)}</strong>{!selecionado.diaInteiro && " · Hora de Portugal"}</p>

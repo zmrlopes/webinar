@@ -28,8 +28,8 @@ export async function POST(request: Request): Promise<Response> {
   try {
     const inicio = `${mes}-01`, fim = `${mudarMes(mes, 1)}-01`;
     const [sessoes, externas, forum] = await Promise.all([
-      db().query<{ id: string; titulo: string; publico_para_leads: boolean; sessao_externa_em: Date; duracao_minutos: number | null; inscrito: boolean }>(
-        `select w.id, w.titulo, w.publico_para_leads, w.sessao_externa_em, w.duracao_minutos,
+      db().query<{ id: string; titulo: string; tipo: string; publico_para_leads: boolean; sessao_externa_em: Date; duracao_minutos: number | null; inscrito: boolean }>(
+        `select w.id, w.titulo, w.tipo, w.publico_para_leads, w.sessao_externa_em, w.duracao_minutos,
            exists(select 1 from registrations r where r.webinar_id = w.id
              and r.email = $3 and r.cancelada_em is null and r.link_pessoal is not null) as inscrito
          from webinars w where w.cancelada_em is null
@@ -54,6 +54,8 @@ export async function POST(request: Request): Promise<Response> {
         comecaEm: s.sessao_externa_em.toISOString(),
         terminaEm: s.duracao_minutos && s.duracao_minutos > 0 ? new Date(s.sessao_externa_em.getTime() + s.duracao_minutos * 60000).toISOString() : null,
         diaInteiro: false, local: "Online", url: null, webinarId: s.id, inscrito: s.inscrito,
+        // Dentro da categoria "formacao", só `tipo = 'formacao'` vem do botão "Criar formação" do admin — o resto é sincronizado da sala do Patrick.
+        criadaPeloAdmin: s.tipo === "formacao",
       })),
       ...juntarFormacoesIcligo(externas.rows.map(f => ({
         id: `icligo-${f.id}`, titulo: tituloSemBandeira(f.titulo), categoria: "icligo" as const, lingua: linguaDaFormacao(f.titulo) ?? "pt",

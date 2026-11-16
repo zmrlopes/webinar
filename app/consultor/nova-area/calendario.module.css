@@ -16,7 +16,8 @@
 .ponto { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--cor-evento, #4b5320); flex: none; }
 .contentor [data-categoria=webinar], .dialogo [data-categoria=webinar] { --cor-evento: #242424; --fundo-evento: #e8e8e4; }
 .contentor [data-categoria=welcome], .dialogo [data-categoria=welcome] { --cor-evento: #6f7b35; --fundo-evento: #e5ead5; }
-.contentor [data-categoria=formacao], .dialogo [data-categoria=formacao] { --cor-evento: #d6368f; --fundo-evento: #fbdcee; }
+.contentor [data-categoria=formacao], .dialogo [data-categoria=formacao] { --cor-evento: #4b5320; --fundo-evento: #e6e8d9; }
+.contentor [data-categoria=formacao][data-criado-pelo-admin=true], .dialogo [data-categoria=formacao][data-criado-pelo-admin=true] { --cor-evento: #d6368f; --fundo-evento: #fbdcee; }
 .contentor [data-categoria=icligo], .dialogo [data-categoria=icligo] { --cor-evento: #f0603f; --fundo-evento: #f9dfd4; }
 .contentor [data-categoria=evento], .dialogo [data-categoria=evento] { --cor-evento: #907433; --fundo-evento: #f0e7d3; }
 .resumo { margin: 0; padding: 14px 20px; color: #6b6a63; font-size: 12px; }

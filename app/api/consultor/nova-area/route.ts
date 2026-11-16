@@ -67,7 +67,12 @@ export async function POST(request: Request): Promise<Response> {
       );
       return rows[0]?.inscrito ?? false;
     }
-    const internas = [...(formacao ? [formacao] : []), ...formacoesEquipa];
+    // `formacao` vem da sala sincronizada do Patrick (ex: a formação de segunda-feira);
+    // `formacoesEquipa` vem do botão "Criar formação" do admin — só essas são "minhas".
+    const internas = [
+      ...(formacao ? [{ ...formacao, criadaPeloAdmin: false }] : []),
+      ...formacoesEquipa.map(f => ({ ...f, criadaPeloAdmin: true })),
+    ];
     const [inscritoWelcomeAboard, inscritoWebinar, inscricoesFormacoes] = await Promise.all([
       jaInscrito(sessao?.id), jaInscrito(proximoWebinar?.id),
       Promise.all(internas.map(f => jaInscrito(f.id))),
@@ -93,6 +98,7 @@ export async function POST(request: Request): Promise<Response> {
         ...internas.map((f, i) => ({
           id: f.id, titulo: f.titulo, comecaEm: f.sessaoExternaEm.toISOString(),
           tipo: "interna" as const, duracaoMinutos: f.duracaoMinutos, inscrito: inscricoesFormacoes[i] ?? false,
+          criadaPeloAdmin: f.criadaPeloAdmin,
         })),
         ...formacoesExternas.map(f => ({
           id: f.id, titulo: f.titulo, comecaEm: f.sessaoExternaEm.toISOString(), tipo: "externa" as const, link: f.link,
