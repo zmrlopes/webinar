@@ -8,6 +8,8 @@ import { listarFormacoesExternasFuturas } from "@/lib/formacoes-externas";
 import { obterProgressoConsultor } from "@/lib/progresso-consultor";
 import { obterAvisosConsultor } from "@/lib/avisos-consultor";
 import { obterLinkGrupoWelcomeAboard } from "@/lib/welcome-aboard-grupo";
+import { listarFormacoesForumFuturas } from "@/lib/forum-icligo";
+import { juntarFormacoesIcligo } from "@/lib/formacoes-forum-icligo";
 
 /** Dados mínimos para quem só vê o separador "Admin" (líder de equipa), sem a carga do perfil completo. */
 const DADOS_VAZIOS_LIDER: Omit<DadosNovaArea, "nome"> = {
@@ -38,7 +40,7 @@ export async function POST(request: Request): Promise<Response> {
     if (!membro) {
       return NextResponse.json({ erro: "Não encontrámos esta conta na equipa." }, { status: 403 });
     }
-    const [welcomeAboard, sessao, proximoWebinar, links, formacao, formacoesEquipa, formacoesExternas, primeirosPassos, avisosInicio, linkGrupoWelcomeAboard] = await Promise.all([
+    const [welcomeAboard, sessao, proximoWebinar, links, formacao, formacoesEquipa, formacoesExternas, formacoesForum, primeirosPassos, avisosInicio, linkGrupoWelcomeAboard] = await Promise.all([
       obterElegibilidadeWelcomeAboard(email),
       buscarProximaSessaoWelcomeAboard(),
       buscarProximoWebinarPublico(),
@@ -50,6 +52,7 @@ export async function POST(request: Request): Promise<Response> {
       buscarWebinarFormacao(),
       listarFormacoesEquipa(email),
       listarFormacoesExternasFuturas(),
+      listarFormacoesForumFuturas(),
       obterProgressoConsultor(email),
       obterAvisosConsultor(email).then(avisos => ({ avisos, erro: false })).catch(erro => {
         console.error("falha ao carregar avisos da página inicial:", erro);
@@ -73,6 +76,16 @@ export async function POST(request: Request): Promise<Response> {
       ...(formacao ? [{ ...formacao, criadaPeloAdmin: false }] : []),
       ...formacoesEquipa.map(f => ({ ...f, criadaPeloAdmin: true })),
     ];
+    // As formações da iCliGo vêm de duas fontes: a tabela manual (`formacoes_externas`)
+    // e a sincronização automática do fórum — o fórum prevalece quando há sobreposição,
+    // mesma regra já usada no calendário (ver juntarFormacoesIcligo).
+    const externas = juntarFormacoesIcligo(
+      formacoesExternas.map(f => ({
+        id: `externa-${f.id}`, titulo: f.titulo, categoria: "icligo" as const,
+        comecaEm: f.sessaoExternaEm.toISOString(), terminaEm: null, diaInteiro: false, local: null, url: f.link,
+      })),
+      formacoesForum,
+    );
     const [inscritoWelcomeAboard, inscritoWebinar, inscricoesFormacoes] = await Promise.all([
       jaInscrito(sessao?.id), jaInscrito(proximoWebinar?.id),
       Promise.all(internas.map(f => jaInscrito(f.id))),
@@ -100,8 +113,8 @@ export async function POST(request: Request): Promise<Response> {
           tipo: "interna" as const, duracaoMinutos: f.duracaoMinutos, inscrito: inscricoesFormacoes[i] ?? false,
           criadaPeloAdmin: f.criadaPeloAdmin,
         })),
-        ...formacoesExternas.map(f => ({
-          id: f.id, titulo: f.titulo, comecaEm: f.sessaoExternaEm.toISOString(), tipo: "externa" as const, link: f.link,
+        ...externas.map(f => ({
+          id: f.id, titulo: f.titulo, comecaEm: f.comecaEm, tipo: "externa" as const, link: f.url ?? "",
         })),
       ].sort((a, b) => new Date(a.comecaEm).getTime() - new Date(b.comecaEm).getTime()),
     };

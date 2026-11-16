@@ -29,6 +29,24 @@ export async function ligarForumIcligo(cookie: string): Promise<void> {
   await gravar(CHAVE_LIGACAO_FORUM, { cookie });
 }
 
+/**
+ * Todas as formações futuras já em cache, de qualquer mês sincronizado —
+ * para quem precisa de todas as próximas sessões (ex: o cartão "Próximas
+ * formações"), não apenas as de um mês como `obterCalendarioForum`. Só lê
+ * o que já está em cache (sem forçar nova consulta ao fórum).
+ */
+export async function listarFormacoesForumFuturas(): Promise<AcontecimentoCalendario[]> {
+  const { rows } = await db().query<{ formacoes: AcontecimentoCalendario[] }>(
+    `select valor->'formacoes' as formacoes from dashboard_config
+     where chave like $1 and valor->>'aviso' is null`,
+    [PREFIXO_CALENDARIO + "%"],
+  );
+  const agora = Date.now();
+  return rows.flatMap(r => r.formacoes ?? [])
+    .filter(f => Number.isFinite(Date.parse(f.comecaEm)) && Date.parse(f.comecaEm) > agora)
+    .sort((a, b) => a.comecaEm.localeCompare(b.comecaEm) || a.id.localeCompare(b.id));
+}
+
 const emCurso = new Map<string, Promise<CalendarioForum>>();
 export function obterCalendarioForum(mes: string, forcar = false): Promise<CalendarioForum> {
   if (!/^20\d{2}-(0[1-9]|1[0-2])$/.test(mes)) return Promise.reject(new Error("Mês inválido."));
