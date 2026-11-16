@@ -51,3 +51,6 @@
 .cartao.icligo { background: #fff2ee; border-color: #f0603f; }
 .icligo .etiqueta { color: #e0532f; }
 .icligo .botao { background: linear-gradient(135deg, #f5895f, #f0603f); }
+.cartao.interna { background: #fdf0f8; border-color: #d6368f; }
+.interna .etiqueta { color: #a6246d; }
+.interna .botao { background: linear-gradient(135deg, #e85fab, #d6368f); }
