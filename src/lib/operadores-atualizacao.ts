@@ -1,4 +1,5 @@
 import { CATALOGO_BASE, type CatalogoOperadores, type Operador, type Destino } from "./operadores-destinos";
+import { fonteOfertaValida } from "./operadores-oferta";
 
 export class ErroFAQ extends Error { constructor(message: string, public status = 400) { super(message); } }
 const objeto = (v: unknown): Record<string, unknown> => {
@@ -35,6 +36,12 @@ export function validarCatalogo(valor: unknown): CatalogoOperadores {
       for (const c of ["bloco", "origem", "companhia", "dias", "periodo", "detalhe"] as const) if (l[c] != null && l[c] !== "") linha[c] = texto(l[c]);
       if (l.temas != null) {const t = lista(l.temas, 4); if (t.some(v => !temas.has(v))) throw new ErroFAQ("Tema inválido."); linha.temas = t as NonNullable<typeof linha.temas>;}
       if (l.termosPesquisa != null) linha.termosPesquisa = lista(l.termosPesquisa, 20);
+      if (l.fonte != null) {
+        const f = objeto(l.fonte);
+        const fonte = {url: texto(f.url, 1000), titulo: texto(f.titulo, 300), consultadoEm: texto(f.consultadoEm, 10)};
+        if (!fonteOfertaValida(base.id, fonte)) throw new ErroFAQ("Fonte de produto inválida.");
+        linha.fonte = fonte;
+      }
       return linha;
     });
     const todoOSite = o.todoOSite ? lista(o.todoOSite) : [];

@@ -1,0 +1,5155 @@
+{
+  "revistoEm": "16/11/2026",
+  "recolhaFAQs": "aa067bfa-132f-4029-9003-48163b87dd8e",
+  "destinos": [
+    {
+      "id": "oferta-mexico",
+      "nome": "México",
+      "pais": "México",
+      "grupos": [
+        "México",
+        "América Latina"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-colombia",
+      "nome": "Colômbia",
+      "pais": "Colômbia",
+      "grupos": [
+        "Colômbia",
+        "América Latina"
+      ],
+      "termos": [
+        "colombia"
+      ]
+    },
+    {
+      "id": "oferta-argentina",
+      "nome": "Argentina",
+      "pais": "Argentina",
+      "grupos": [
+        "Argentina",
+        "América Latina"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-bolivia",
+      "nome": "Bolívia",
+      "pais": "Bolívia",
+      "grupos": [
+        "Bolívia",
+        "América Latina"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-chile",
+      "nome": "Chile",
+      "pais": "Chile",
+      "grupos": [
+        "Chile",
+        "América Latina"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-equador",
+      "nome": "Equador",
+      "pais": "Equador",
+      "grupos": [
+        "Equador",
+        "América Latina"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-guatemala",
+      "nome": "Guatemala",
+      "pais": "Guatemala",
+      "grupos": [
+        "Guatemala",
+        "América Latina"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-nicaragua",
+      "nome": "Nicarágua",
+      "pais": "Nicarágua",
+      "grupos": [
+        "Nicarágua",
+        "América Latina"
+      ],
+      "termos": [
+        "nicaragua"
+      ]
+    },
+    {
+      "id": "oferta-panama",
+      "nome": "Panamá",
+      "pais": "Panamá",
+      "grupos": [
+        "Panamá",
+        "América Latina"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-uruguai",
+      "nome": "Uruguai",
+      "pais": "Uruguai",
+      "grupos": [
+        "Uruguai",
+        "América Latina"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-estados-unidos",
+      "nome": "Estados Unidos",
+      "pais": "Estados Unidos",
+      "grupos": [
+        "Estados Unidos",
+        "América do Norte"
+      ],
+      "termos": [
+        "eua",
+        "usa",
+        "estados unidos da america"
+      ]
+    },
+    {
+      "id": "oferta-canada",
+      "nome": "Canadá",
+      "pais": "Canadá",
+      "grupos": [
+        "Canadá",
+        "América do Norte"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-bahamas",
+      "nome": "Bahamas",
+      "pais": "Bahamas",
+      "grupos": [
+        "Bahamas",
+        "Caraíbas"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-porto-rico",
+      "nome": "Porto Rico",
+      "pais": "Porto Rico",
+      "grupos": [
+        "Porto Rico",
+        "Caraíbas"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-jamaica",
+      "nome": "Jamaica",
+      "pais": "Jamaica",
+      "grupos": [
+        "Jamaica",
+        "Caraíbas"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-alemanha",
+      "nome": "Alemanha",
+      "pais": "Alemanha",
+      "grupos": [
+        "Alemanha",
+        "Europa"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-austria",
+      "nome": "Áustria",
+      "pais": "Áustria",
+      "grupos": [
+        "Áustria",
+        "Europa"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-belgica",
+      "nome": "Bélgica",
+      "pais": "Bélgica",
+      "grupos": [
+        "Bélgica",
+        "Europa"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-croacia",
+      "nome": "Croácia",
+      "pais": "Croácia",
+      "grupos": [
+        "Croácia",
+        "Europa"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-dinamarca",
+      "nome": "Dinamarca",
+      "pais": "Dinamarca",
+      "grupos": [
+        "Dinamarca",
+        "Europa"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-escocia",
+      "nome": "Escócia",
+      "pais": "Escócia",
+      "grupos": [
+        "Escócia",
+        "Europa"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-eslovaquia",
+      "nome": "Eslováquia",
+      "pais": "Eslováquia",
+      "grupos": [
+        "Eslováquia",
+        "Europa"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-estonia",
+      "nome": "Estónia",
+      "pais": "Estónia",
+      "grupos": [
+        "Estónia",
+        "Europa"
+      ],
+      "termos": [
+        "estonia"
+      ]
+    },
+    {
+      "id": "oferta-finlandia",
+      "nome": "Finlândia",
+      "pais": "Finlândia",
+      "grupos": [
+        "Finlândia",
+        "Europa"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-franca",
+      "nome": "França",
+      "pais": "França",
+      "grupos": [
+        "França",
+        "Europa"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-grecia",
+      "nome": "Grécia",
+      "pais": "Grécia",
+      "grupos": [
+        "Grécia",
+        "Europa"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-hungria",
+      "nome": "Hungria",
+      "pais": "Hungria",
+      "grupos": [
+        "Hungria",
+        "Europa"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-islandia",
+      "nome": "Islândia",
+      "pais": "Islândia",
+      "grupos": [
+        "Islândia",
+        "Europa"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-italia",
+      "nome": "Itália",
+      "pais": "Itália",
+      "grupos": [
+        "Itália",
+        "Europa"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-kosovo",
+      "nome": "Kosovo",
+      "pais": "Kosovo",
+      "grupos": [
+        "Kosovo",
+        "Europa"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-letonia",
+      "nome": "Letónia",
+      "pais": "Letónia",
+      "grupos": [
+        "Letónia",
+        "Europa"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-lituania",
+      "nome": "Lituânia",
+      "pais": "Lituânia",
+      "grupos": [
+        "Lituânia",
+        "Europa"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-macedonia-do-norte",
+      "nome": "Macedónia do Norte",
+      "pais": "Macedónia do Norte",
+      "grupos": [
+        "Macedónia do Norte",
+        "Europa"
+      ],
+      "termos": [
+        "macedonia"
+      ]
+    },
+    {
+      "id": "oferta-malta",
+      "nome": "Malta",
+      "pais": "Malta",
+      "grupos": [
+        "Malta",
+        "Europa"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-noruega",
+      "nome": "Noruega",
+      "pais": "Noruega",
+      "grupos": [
+        "Noruega",
+        "Europa"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-paises-baixos",
+      "nome": "Países Baixos",
+      "pais": "Países Baixos",
+      "grupos": [
+        "Países Baixos",
+        "Europa"
+      ],
+      "termos": [
+        "holanda"
+      ]
+    },
+    {
+      "id": "oferta-polonia",
+      "nome": "Polónia",
+      "pais": "Polónia",
+      "grupos": [
+        "Polónia",
+        "Europa"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-republica-checa",
+      "nome": "República Checa",
+      "pais": "República Checa",
+      "grupos": [
+        "República Checa",
+        "Europa"
+      ],
+      "termos": [
+        "chequia"
+      ]
+    },
+    {
+      "id": "oferta-suecia",
+      "nome": "Suécia",
+      "pais": "Suécia",
+      "grupos": [
+        "Suécia",
+        "Europa"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-suica",
+      "nome": "Suíça",
+      "pais": "Suíça",
+      "grupos": [
+        "Suíça",
+        "Europa"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-turquia",
+      "nome": "Turquia",
+      "pais": "Turquia",
+      "grupos": [
+        "Turquia",
+        "Europa"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-africa-do-sul",
+      "nome": "África do Sul",
+      "pais": "África do Sul",
+      "grupos": [
+        "África do Sul",
+        "África"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-botswana",
+      "nome": "Botswana",
+      "pais": "Botswana",
+      "grupos": [
+        "Botswana",
+        "África"
+      ],
+      "termos": [
+        "botsuana"
+      ]
+    },
+    {
+      "id": "oferta-madagascar",
+      "nome": "Madagáscar",
+      "pais": "Madagáscar",
+      "grupos": [
+        "Madagáscar",
+        "África"
+      ],
+      "termos": [
+        "madagascar"
+      ]
+    },
+    {
+      "id": "oferta-namibia",
+      "nome": "Namíbia",
+      "pais": "Namíbia",
+      "grupos": [
+        "Namíbia",
+        "África"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-quenia",
+      "nome": "Quénia",
+      "pais": "Quénia",
+      "grupos": [
+        "Quénia",
+        "África"
+      ],
+      "termos": [
+        "kenya"
+      ]
+    },
+    {
+      "id": "oferta-ruanda",
+      "nome": "Ruanda",
+      "pais": "Ruanda",
+      "grupos": [
+        "Ruanda",
+        "África"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-tanzania",
+      "nome": "Tanzânia",
+      "pais": "Tanzânia",
+      "grupos": [
+        "Tanzânia",
+        "África"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-uganda",
+      "nome": "Uganda",
+      "pais": "Uganda",
+      "grupos": [
+        "Uganda",
+        "África"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-zambia",
+      "nome": "Zâmbia",
+      "pais": "Zâmbia",
+      "grupos": [
+        "Zâmbia",
+        "África"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-zimbabue",
+      "nome": "Zimbabué",
+      "pais": "Zimbabué",
+      "grupos": [
+        "Zimbabué",
+        "África"
+      ],
+      "termos": [
+        "zimbabwe"
+      ]
+    },
+    {
+      "id": "oferta-arabia-saudita",
+      "nome": "Arábia Saudita",
+      "pais": "Arábia Saudita",
+      "grupos": [
+        "Arábia Saudita",
+        "Médio Oriente"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-azerbaijao",
+      "nome": "Azerbaijão",
+      "pais": "Azerbaijão",
+      "grupos": [
+        "Azerbaijão",
+        "Ásia"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-butao",
+      "nome": "Butão",
+      "pais": "Butão",
+      "grupos": [
+        "Butão",
+        "Ásia"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-camboja",
+      "nome": "Camboja",
+      "pais": "Camboja",
+      "grupos": [
+        "Camboja",
+        "Ásia"
+      ],
+      "termos": [
+        "cambodja"
+      ]
+    },
+    {
+      "id": "oferta-china",
+      "nome": "China",
+      "pais": "China",
+      "grupos": [
+        "China",
+        "Ásia"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-coreia-do-sul",
+      "nome": "Coreia do Sul",
+      "pais": "Coreia do Sul",
+      "grupos": [
+        "Coreia do Sul",
+        "Ásia"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-emirados-arabes-unidos",
+      "nome": "Emirados Árabes Unidos",
+      "pais": "Emirados Árabes Unidos",
+      "grupos": [
+        "Emirados Árabes Unidos",
+        "Médio Oriente"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-filipinas",
+      "nome": "Filipinas",
+      "pais": "Filipinas",
+      "grupos": [
+        "Filipinas",
+        "Ásia"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-hong-kong",
+      "nome": "Hong Kong",
+      "pais": "Hong Kong",
+      "grupos": [
+        "Hong Kong",
+        "Ásia"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-laos",
+      "nome": "Laos",
+      "pais": "Laos",
+      "grupos": [
+        "Laos",
+        "Ásia"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-malasia",
+      "nome": "Malásia",
+      "pais": "Malásia",
+      "grupos": [
+        "Malásia",
+        "Ásia"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-mongolia",
+      "nome": "Mongólia",
+      "pais": "Mongólia",
+      "grupos": [
+        "Mongólia",
+        "Ásia"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-nepal",
+      "nome": "Nepal",
+      "pais": "Nepal",
+      "grupos": [
+        "Nepal",
+        "Ásia"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-oma",
+      "nome": "Omã",
+      "pais": "Omã",
+      "grupos": [
+        "Omã",
+        "Médio Oriente"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-qatar",
+      "nome": "Qatar",
+      "pais": "Qatar",
+      "grupos": [
+        "Qatar",
+        "Médio Oriente"
+      ],
+      "termos": [
+        "catar"
+      ]
+    },
+    {
+      "id": "oferta-singapura",
+      "nome": "Singapura",
+      "pais": "Singapura",
+      "grupos": [
+        "Singapura",
+        "Ásia"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-taiwan",
+      "nome": "Taiwan",
+      "pais": "Taiwan",
+      "grupos": [
+        "Taiwan",
+        "Ásia"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-tajiquistao",
+      "nome": "Tajiquistão",
+      "pais": "Tajiquistão",
+      "grupos": [
+        "Tajiquistão",
+        "Ásia"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-turquemenistao",
+      "nome": "Turquemenistão",
+      "pais": "Turquemenistão",
+      "grupos": [
+        "Turquemenistão",
+        "Ásia"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-fiji",
+      "nome": "Fiji",
+      "pais": "Fiji",
+      "grupos": [
+        "Fiji",
+        "Oceania"
+      ],
+      "termos": [
+        "fiyi"
+      ]
+    },
+    {
+      "id": "oferta-ilhas-cook",
+      "nome": "Ilhas Cook",
+      "pais": "Ilhas Cook",
+      "grupos": [
+        "Ilhas Cook",
+        "Oceania"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-nova-zelandia",
+      "nome": "Nova Zelândia",
+      "pais": "Nova Zelândia",
+      "grupos": [
+        "Nova Zelândia",
+        "Oceania"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-nova-iorque",
+      "nome": "Nova Iorque",
+      "pais": "Estados Unidos",
+      "grupos": [
+        "Estados Unidos"
+      ],
+      "termos": [
+        "new york",
+        "NYC",
+        "JFK",
+        "EWR"
+      ]
+    },
+    {
+      "id": "oferta-montreal",
+      "nome": "Montreal",
+      "pais": "Canadá",
+      "grupos": [
+        "Canadá"
+      ],
+      "termos": [
+        "YUL"
+      ]
+    },
+    {
+      "id": "oferta-quebec",
+      "nome": "Quebec",
+      "pais": "Canadá",
+      "grupos": [
+        "Canadá"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-toronto",
+      "nome": "Toronto",
+      "pais": "Canadá",
+      "grupos": [
+        "Canadá"
+      ],
+      "termos": [
+        "YYZ"
+      ]
+    },
+    {
+      "id": "oferta-vancouver",
+      "nome": "Vancouver",
+      "pais": "Canadá",
+      "grupos": [
+        "Canadá"
+      ],
+      "termos": [
+        "YVR"
+      ]
+    },
+    {
+      "id": "oferta-paris",
+      "nome": "Paris",
+      "pais": "França",
+      "grupos": [
+        "França"
+      ],
+      "termos": [
+        "CDG",
+        "ORY"
+      ]
+    },
+    {
+      "id": "oferta-amesterdao",
+      "nome": "Amesterdão",
+      "pais": "Países Baixos",
+      "grupos": [
+        "Países Baixos"
+      ],
+      "termos": [
+        "amsterdam",
+        "AMS"
+      ]
+    },
+    {
+      "id": "oferta-bruxelas",
+      "nome": "Bruxelas",
+      "pais": "Bélgica",
+      "grupos": [
+        "Bélgica"
+      ],
+      "termos": [
+        "BRU"
+      ]
+    },
+    {
+      "id": "oferta-bruges",
+      "nome": "Bruges",
+      "pais": "Bélgica",
+      "grupos": [
+        "Bélgica"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-munique",
+      "nome": "Munique",
+      "pais": "Alemanha",
+      "grupos": [
+        "Alemanha"
+      ],
+      "termos": [
+        "MUC"
+      ]
+    },
+    {
+      "id": "oferta-frankfurt",
+      "nome": "Frankfurt",
+      "pais": "Alemanha",
+      "grupos": [
+        "Alemanha"
+      ],
+      "termos": [
+        "FRA"
+      ]
+    },
+    {
+      "id": "oferta-berlim",
+      "nome": "Berlim",
+      "pais": "Alemanha",
+      "grupos": [
+        "Alemanha"
+      ],
+      "termos": [
+        "BER"
+      ]
+    },
+    {
+      "id": "oferta-viena",
+      "nome": "Viena",
+      "pais": "Áustria",
+      "grupos": [
+        "Áustria"
+      ],
+      "termos": [
+        "VIE"
+      ]
+    },
+    {
+      "id": "oferta-praga",
+      "nome": "Praga",
+      "pais": "República Checa",
+      "grupos": [
+        "República Checa"
+      ],
+      "termos": [
+        "PRG"
+      ]
+    },
+    {
+      "id": "oferta-budapeste",
+      "nome": "Budapeste",
+      "pais": "Hungria",
+      "grupos": [
+        "Hungria"
+      ],
+      "termos": [
+        "BUD"
+      ]
+    },
+    {
+      "id": "oferta-bratislava",
+      "nome": "Bratislava",
+      "pais": "Eslováquia",
+      "grupos": [
+        "Eslováquia"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-zurique",
+      "nome": "Zurique",
+      "pais": "Suíça",
+      "grupos": [
+        "Suíça"
+      ],
+      "termos": [
+        "ZRH"
+      ]
+    },
+    {
+      "id": "oferta-basileia",
+      "nome": "Basileia",
+      "pais": "Suíça",
+      "grupos": [
+        "Suíça"
+      ],
+      "termos": [
+        "BSL"
+      ]
+    },
+    {
+      "id": "oferta-genebra",
+      "nome": "Genebra",
+      "pais": "Suíça",
+      "grupos": [
+        "Suíça"
+      ],
+      "termos": [
+        "GVA"
+      ]
+    },
+    {
+      "id": "oferta-varsovia",
+      "nome": "Varsóvia",
+      "pais": "Polónia",
+      "grupos": [
+        "Polónia"
+      ],
+      "termos": [
+        "WAW"
+      ]
+    },
+    {
+      "id": "oferta-cracovia",
+      "nome": "Cracóvia",
+      "pais": "Polónia",
+      "grupos": [
+        "Polónia"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-reykjavik",
+      "nome": "Reykjavik",
+      "pais": "Islândia",
+      "grupos": [
+        "Islândia"
+      ],
+      "termos": [
+        "KEF"
+      ]
+    },
+    {
+      "id": "oferta-copenhaga",
+      "nome": "Copenhaga",
+      "pais": "Dinamarca",
+      "grupos": [
+        "Dinamarca"
+      ],
+      "termos": [
+        "CPH"
+      ]
+    },
+    {
+      "id": "oferta-rovaniemi",
+      "nome": "Rovaniemi",
+      "pais": "Finlândia",
+      "grupos": [
+        "Finlândia"
+      ],
+      "termos": [
+        "RVN"
+      ]
+    },
+    {
+      "id": "oferta-oslo",
+      "nome": "Oslo",
+      "pais": "Noruega",
+      "grupos": [
+        "Noruega"
+      ],
+      "termos": [
+        "OSL"
+      ]
+    },
+    {
+      "id": "oferta-estocolmo",
+      "nome": "Estocolmo",
+      "pais": "Suécia",
+      "grupos": [
+        "Suécia"
+      ],
+      "termos": [
+        "ARN"
+      ]
+    },
+    {
+      "id": "oferta-tallinn",
+      "nome": "Tallinn",
+      "pais": "Estónia",
+      "grupos": [
+        "Estónia"
+      ],
+      "termos": [
+        "tallin"
+      ]
+    },
+    {
+      "id": "oferta-sao-vicente",
+      "nome": "São Vicente",
+      "pais": "Cabo Verde",
+      "grupos": [
+        "Cabo Verde"
+      ],
+      "termos": [
+        "sao vicente",
+        "VXE"
+      ]
+    },
+    {
+      "id": "oferta-kruger",
+      "nome": "Kruger",
+      "pais": "África do Sul",
+      "grupos": [
+        "África do Sul"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-cidade-do-cabo",
+      "nome": "Cidade do Cabo",
+      "pais": "África do Sul",
+      "grupos": [
+        "África do Sul"
+      ],
+      "termos": [
+        "cape town",
+        "CPT"
+      ]
+    },
+    {
+      "id": "oferta-nairobi",
+      "nome": "Nairobi",
+      "pais": "Quénia",
+      "grupos": [
+        "Quénia"
+      ],
+      "termos": [
+        "NBO"
+      ]
+    },
+    {
+      "id": "oferta-masai-mara",
+      "nome": "Masai Mara",
+      "pais": "Quénia",
+      "grupos": [
+        "Quénia"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-mombaca",
+      "nome": "Mombaça",
+      "pais": "Quénia",
+      "grupos": [
+        "Quénia"
+      ],
+      "termos": [
+        "mombasa"
+      ]
+    },
+    {
+      "id": "oferta-serengeti",
+      "nome": "Serengeti",
+      "pais": "Tanzânia",
+      "grupos": [
+        "Tanzânia"
+      ],
+      "termos": []
+    },
+    {
+      "id": "oferta-ngorongoro",
+      "nome": "Ngorongoro",
+      "pais": "Tanzânia",
+      "grupos": [
+        "Tanzânia"
+      ],
+      "termos": []
+    }
+  ],
+  "operadores": [
+    {
+      "id": "catai",
+      "faq": {
+        "atualizado": "—",
+        "permitido": [
+          "Reserva sempre manual (formulário).",
+          "Todo o produto disponível no site da Catai."
+        ],
+        "proibido": []
+      },
+      "linhas": [
+        {
+          "destino": "armenia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Arménia, Terra de Emoções",
+          "termosPesquisa": [
+            "Arménia",
+            "armenia",
+            "yerevan"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/armenia",
+            "titulo": "Arménia, Terra de Emoções",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "assuao",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Essências do Egito",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/essencias-do-egito",
+            "titulo": "Essências do Egito",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "atenas-ilhas",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Estadia em Atenas",
+          "termosPesquisa": [
+            "Atenas, Mykonos e Santorini",
+            "atenas"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/estadia-em-atenas",
+            "titulo": "Estadia em Atenas",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "atenas-ilhas",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Grécia Completa",
+          "termosPesquisa": [
+            "Atenas, Mykonos e Santorini",
+            "atenas",
+            "mykonos",
+            "santorini"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/grecia-completa",
+            "titulo": "Grécia Completa",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "australia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Volta ao Mundo: Bula",
+          "termosPesquisa": [
+            "Austrália",
+            "sydney"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/volta-ao-mundo-bula",
+            "titulo": "Volta ao Mundo: Bula",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "brasil",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Brasil Cultural",
+          "termosPesquisa": [
+            "Brasil"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/brasil",
+            "titulo": "Brasil Cultural",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "cairo",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Cairo Completo e Hurgada",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/cairo-completo-e-hurgada",
+            "titulo": "Cairo Completo e Hurgada",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "cancun",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Férias Na Riviera Maya",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/ferias-na-riviera-maya",
+            "titulo": "Férias Na Riviera Maya",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "cartagena",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Descobrir Cartagena das Indias",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/descobrir-cartagena-das-indias",
+            "titulo": "Descobrir Cartagena das Indias",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "costa-rica",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Maravilhas da Costa Rica",
+          "termosPesquisa": [
+            "Costa Rica"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/maravilhas-da-costa-rica",
+            "titulo": "Maravilhas da Costa Rica",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "dubai",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Férias em Zanzibar",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/ferias-em-zanzibar",
+            "titulo": "Férias em Zanzibar",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "egito",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Egito: Estadia em Sharm el Sheikh",
+          "termosPesquisa": [
+            "Egito"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/egipto",
+            "titulo": "Egito: Estadia em Sharm el Sheikh",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "el-salvador",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Descobrindo El Salvador",
+          "termosPesquisa": [
+            "El Salvador"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/descobrindo-el-salvador",
+            "titulo": "Descobrindo El Salvador",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "georgia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Arménia e Georgia",
+          "termosPesquisa": [
+            "Geórgia",
+            "georgia",
+            "tbilisi"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/armenia-e-georgia",
+            "titulo": "Arménia e Georgia",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "honduras",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Guatemala Completa",
+          "termosPesquisa": [
+            "Honduras"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/honduras",
+            "titulo": "Guatemala Completa",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "honduras",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Honduras Maya e Costa Das Caraíbas",
+          "termosPesquisa": [
+            "Honduras",
+            "roatan",
+            "roatán"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/honduras-maya-e-costa-das-caraibas",
+            "titulo": "Honduras Maya e Costa Das Caraíbas",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "hurghada",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Cairo Completo e Hurgada",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/cairo-completo-e-hurgada",
+            "titulo": "Cairo Completo e Hurgada",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "india",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Índia Ao Seu Alcance",
+          "termosPesquisa": [
+            "Índia",
+            "india"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/india",
+            "titulo": "Índia Ao Seu Alcance",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "india",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Romance no Rajastão",
+          "termosPesquisa": [
+            "Índia",
+            "rajastao",
+            "rajastão"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/romance-no-rajastao",
+            "titulo": "Romance no Rajastão",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "indonesia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Lua De Mel No Vietname",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/lua-de-mel-no-vietname",
+            "titulo": "Lua De Mel No Vietname",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "japao",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Japão e Fiji",
+          "termosPesquisa": [
+            "Japão",
+            "toquio",
+            "tóquio",
+            "quioto"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/japao-e-fiji",
+            "titulo": "Japão e Fiji",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "jordania",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Jordânia Completa com Maldivas",
+          "termosPesquisa": [
+            "Jordânia",
+            "jordania",
+            "petra",
+            "aqaba"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/jordania-completa-com-maldivas",
+            "titulo": "Jordânia Completa com Maldivas",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "luxor",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Essências do Egito",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/essencias-do-egito",
+            "titulo": "Essências do Egito",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "maldivas",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Tanzânia, Safari Marafiki",
+          "termosPesquisa": [
+            "Maldivas"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/tanzania-safari-marafiki",
+            "titulo": "Tanzânia, Safari Marafiki",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "marraquexe",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Marrakech e Sahara",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/marrakech-e-sahara",
+            "titulo": "Marrakech e Sahara",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "marrocos",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Marrakech e Sahara",
+          "termosPesquisa": [
+            "Marrocos"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/marruecos",
+            "titulo": "Marrakech e Sahara",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "mauricias",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Escapada ao Quénia",
+          "termosPesquisa": [
+            "Maurícias",
+            "mauricio",
+            "maurício"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/escapada-ao-quenia",
+            "titulo": "Escapada ao Quénia",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "mocambique",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Moçambique Fascinante",
+          "termosPesquisa": [
+            "Moçambique"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/mozambique",
+            "titulo": "Moçambique Fascinante",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "natal",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Férias em Zanzibar, Especial Natal e Fim de Ano",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/ferias-em-zanzibar-especial-natal-e-fim-de-ano",
+            "titulo": "Férias em Zanzibar, Especial Natal e Fim de Ano",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-africa-do-sul",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Essência da África do Sul",
+          "termosPesquisa": [
+            "África do Sul"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/essencia-da-africa-do-sul",
+            "titulo": "Essência da África do Sul",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-alemanha",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Cruzeiro Fluvial no Danúbio",
+          "termosPesquisa": [
+            "Alemanha"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/alemania",
+            "titulo": "Cruzeiro Fluvial no Danúbio",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-amesterdao",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Cruzeiro Fluvial pelo Reno Especial Fim de Ano",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/cruzeiro-fluvial-pelo-reno-especial-de-fim-de-ano",
+            "titulo": "Cruzeiro Fluvial pelo Reno Especial Fim de Ano",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-arabia-saudita",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Joias da Arábia",
+          "termosPesquisa": [
+            "Arábia Saudita"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/arabia-saudi",
+            "titulo": "Joias da Arábia",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-argentina",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Argentina maravilhas naturais",
+          "termosPesquisa": [
+            "Argentina"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/argentina-maravilhas-naturais",
+            "titulo": "Argentina maravilhas naturais",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-austria",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Sinfonia Austro- Húngara",
+          "termosPesquisa": [
+            "Áustria"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/austria",
+            "titulo": "Sinfonia Austro- Húngara",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-azerbaijao",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Azerbaijão: Anel de Ouro",
+          "termosPesquisa": [
+            "Azerbaijão"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/azerbaiyan",
+            "titulo": "Azerbaijão: Anel de Ouro",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-bahamas",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Niágara Fantástico",
+          "termosPesquisa": [
+            "Bahamas"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/niagara-fantastico",
+            "titulo": "Niágara Fantástico",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-basileia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Suíça - Basileia e Alsácia",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/suica-basileia-e-alsacia",
+            "titulo": "Suíça - Basileia e Alsácia",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-belgica",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Cruzeiro Fluvial pelo Reno Especial Fim de Ano",
+          "termosPesquisa": [
+            "Bélgica"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/belgica",
+            "titulo": "Cruzeiro Fluvial pelo Reno Especial Fim de Ano",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-bolivia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "O Melhor da Bolivia e Peru",
+          "termosPesquisa": [
+            "Bolívia"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/bolivia",
+            "titulo": "O Melhor da Bolivia e Peru",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-botswana",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Cataratas Vitória com Chobe e Cidade do Cabo",
+          "termosPesquisa": [
+            "Botswana"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/botswana",
+            "titulo": "Cataratas Vitória com Chobe e Cidade do Cabo",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-botswana",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Botsuana Espetacular",
+          "termosPesquisa": [
+            "Botswana",
+            "botsuana"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/botsuana-espetacular",
+            "titulo": "Botsuana Espetacular",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-butao",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Butão Essencial",
+          "termosPesquisa": [
+            "Butão"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/butan",
+            "titulo": "Butão Essencial",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-camboja",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Grande Tour do Camboja",
+          "termosPesquisa": [
+            "Camboja"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/grande-tour-do-camboja",
+            "titulo": "Grande Tour do Camboja",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-canada",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Canadá Clássico",
+          "termosPesquisa": [
+            "Canadá"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/canada",
+            "titulo": "Canadá Clássico",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-chile",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "O Melhor do Peru, Bolivia e Chile",
+          "termosPesquisa": [
+            "Chile"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/o-melhor-do-peru-bolivia-e-chile",
+            "titulo": "O Melhor do Peru, Bolivia e Chile",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-china",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Capitais Imperiais da China e Fiji",
+          "termosPesquisa": [
+            "China"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/capitais-imperiais-da-china-e-fiji",
+            "titulo": "Capitais Imperiais da China e Fiji",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-cidade-do-cabo",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Volta ao Mundo: Bula",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/volta-ao-mundo-bula",
+            "titulo": "Volta ao Mundo: Bula",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-colombia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Descobrir Cartagena das Indias",
+          "termosPesquisa": [
+            "Colômbia"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/colombia",
+            "titulo": "Descobrir Cartagena das Indias",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-copenhaga",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Escapada a Copenhaga",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/escapada-a-copenhaga",
+            "titulo": "Escapada a Copenhaga",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-coreia-do-sul",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Descubra a Coreia",
+          "termosPesquisa": [
+            "Coreia do Sul"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/corea-sur",
+            "titulo": "Descubra a Coreia",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-cracovia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Polónia do Sul ao Norte",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/polonia-do-sul-ao-norte",
+            "titulo": "Polónia do Sul ao Norte",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-croacia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Croácia Fabulosa",
+          "termosPesquisa": [
+            "Croácia"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/croacia",
+            "titulo": "Croácia Fabulosa",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-dinamarca",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Escapada a Copenhaga",
+          "termosPesquisa": [
+            "Dinamarca"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/dinamarca",
+            "titulo": "Escapada a Copenhaga",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-emirados-arabes-unidos",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Estadia no Dubai",
+          "termosPesquisa": [
+            "Emirados Árabes Unidos"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/emiratosarabes",
+            "titulo": "Estadia no Dubai",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-equador",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Equador Essencial",
+          "termosPesquisa": [
+            "Equador"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/ecuador",
+            "titulo": "Equador Essencial",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-escocia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Tesouros  de  Escócia",
+          "termosPesquisa": [
+            "Escócia"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/escocia",
+            "titulo": "Tesouros  de  Escócia",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-eslovaquia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Cruzeiro Fluvial pelo Danúbio Mercados de Natal",
+          "termosPesquisa": [
+            "Eslováquia"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/eslovaquia",
+            "titulo": "Cruzeiro Fluvial pelo Danúbio Mercados de Natal",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-estados-unidos",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Nova Iorque",
+          "termosPesquisa": [
+            "Estados Unidos"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/estados-unidos",
+            "titulo": "Nova Iorque",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-estocolmo",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Terras Escandinavas",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/terras-escandinavas",
+            "titulo": "Terras Escandinavas",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-estonia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Fim de Ano em Tallinn",
+          "termosPesquisa": [
+            "Estónia"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/estonia",
+            "titulo": "Fim de Ano em Tallinn",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-fiji",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Ilhas Fiji",
+          "termosPesquisa": [
+            "Fiji"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/fiyi",
+            "titulo": "Ilhas Fiji",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-filipinas",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Manila e Ilhas Filipinas",
+          "termosPesquisa": [
+            "Filipinas"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/filipinas",
+            "titulo": "Manila e Ilhas Filipinas",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-finlandia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Rovaniemi ao Seu Ritmo",
+          "termosPesquisa": [
+            "Finlândia"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/finlandia",
+            "titulo": "Rovaniemi ao Seu Ritmo",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-franca",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Escapada a Paris",
+          "termosPesquisa": [
+            "França"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/francia",
+            "titulo": "Escapada a Paris",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-frankfurt",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Cruzeiro Fluvial no Reno Clássico",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/cruzeiro-fluvial-no-reno-classico",
+            "titulo": "Cruzeiro Fluvial no Reno Clássico",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-grecia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Grécia Completa",
+          "termosPesquisa": [
+            "Grécia"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/grecia-completa",
+            "titulo": "Grécia Completa",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-guatemala",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Legado Maya",
+          "termosPesquisa": [
+            "Guatemala"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/legado-maya",
+            "titulo": "Legado Maya",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-hong-kong",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Hong Kong e Praias",
+          "termosPesquisa": [
+            "Hong Kong"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/hong-kong-e-praias",
+            "titulo": "Hong Kong e Praias",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-hungria",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Sinfonia Austro- Húngara",
+          "termosPesquisa": [
+            "Hungria"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/hungria",
+            "titulo": "Sinfonia Austro- Húngara",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-ilhas-cook",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Maoris e Polinésia Neozelandesa",
+          "termosPesquisa": [
+            "Ilhas Cook"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/islas-cook",
+            "titulo": "Maoris e Polinésia Neozelandesa",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-islandia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Islândia em Liberdade",
+          "termosPesquisa": [
+            "Islândia"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/islandia-em-liberdade",
+            "titulo": "Islândia em Liberdade",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-italia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Costa Amalfitana Completa",
+          "termosPesquisa": [
+            "Itália"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/italia",
+            "titulo": "Costa Amalfitana Completa",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-jamaica",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Nova Iorque e Praias",
+          "termosPesquisa": [
+            "Jamaica"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/jamaica",
+            "titulo": "Nova Iorque e Praias",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-kruger",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Volta ao Mundo: Bula",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/volta-ao-mundo-bula",
+            "titulo": "Volta ao Mundo: Bula",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-laos",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Paisagens Do Camboja E Laos",
+          "termosPesquisa": [
+            "Laos"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/paisagens-do-camboja-e-laos",
+            "titulo": "Paisagens Do Camboja E Laos",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-letonia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Fim de Ano Riga",
+          "termosPesquisa": [
+            "Letónia"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/letonia",
+            "titulo": "Fim de Ano Riga",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-lituania",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Tesouros das Repúblicas Bálticas",
+          "termosPesquisa": [
+            "Lituânia"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/lituania",
+            "titulo": "Tesouros das Repúblicas Bálticas",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-madagascar",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Madagáscar, Sul Malgaxe",
+          "termosPesquisa": [
+            "Madagáscar",
+            "madagascar"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/madagascar",
+            "titulo": "Madagáscar, Sul Malgaxe",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-malasia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Malásia Clássica",
+          "termosPesquisa": [
+            "Malásia"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/malasia",
+            "titulo": "Malásia Clássica",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-malta",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Malta Espetacular",
+          "termosPesquisa": [
+            "Malta"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/malta-espetacular",
+            "titulo": "Malta Espetacular",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-masai-mara",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Escapada ao Quénia",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/escapada-ao-quenia",
+            "titulo": "Escapada ao Quénia",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-mexico",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Baja Califórnia Sul México Fly & Drive",
+          "termosPesquisa": [
+            "México"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/baja-california-sul-mexico-fly-drive",
+            "titulo": "Baja Califórnia Sul México Fly & Drive",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-mombaca",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Escapada ao Quénia",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/escapada-ao-quenia",
+            "titulo": "Escapada ao Quénia",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-mongolia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Mongólia Essencial",
+          "termosPesquisa": [
+            "Mongólia"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/mongolia",
+            "titulo": "Mongólia Essencial",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-montreal",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Canadá Clássico",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/canada-classico",
+            "titulo": "Canadá Clássico",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-munique",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Cruzeiro Fluvial no Danúbio",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/cruzeiro-fluvial-no-danubio",
+            "titulo": "Cruzeiro Fluvial no Danúbio",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-nairobi",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Escapada ao Quénia",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/escapada-ao-quenia",
+            "titulo": "Escapada ao Quénia",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-namibia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Namíbia Completa",
+          "termosPesquisa": [
+            "Namíbia"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/namibia-completa-pt-i",
+            "titulo": "Namíbia Completa",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-nepal",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Nepal, Reino dos Himalaias",
+          "termosPesquisa": [
+            "Nepal"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/nepal",
+            "titulo": "Nepal, Reino dos Himalaias",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-nicaragua",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "O Melhor da América Central",
+          "termosPesquisa": [
+            "Nicarágua"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/nicaragua",
+            "titulo": "O Melhor da América Central",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-noruega",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Estadia em Bergen",
+          "termosPesquisa": [
+            "Noruega"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/noruega",
+            "titulo": "Estadia em Bergen",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-nova-iorque",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Nova Iorque e Praias",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/nova-iorque-e-praias",
+            "titulo": "Nova Iorque e Praias",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-nova-zelandia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Pinceladas da Nova Zelândia",
+          "termosPesquisa": [
+            "Nova Zelândia"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/pinceladas-da-nova-zelandia",
+            "titulo": "Pinceladas da Nova Zelândia",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-oma",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Fantasia em Omã",
+          "termosPesquisa": [
+            "Omã"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/oman",
+            "titulo": "Fantasia em Omã",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-oslo",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Terras Escandinavas",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/terras-escandinavas",
+            "titulo": "Terras Escandinavas",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-paises-baixos",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Cruzeiro Fluvial pelo Reno Especial Fim de Ano",
+          "termosPesquisa": [
+            "Países Baixos"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/paises-bajos",
+            "titulo": "Cruzeiro Fluvial pelo Reno Especial Fim de Ano",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-panama",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Costa Rica e Panamá",
+          "termosPesquisa": [
+            "Panamá"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/costa-rica-e-panama",
+            "titulo": "Costa Rica e Panamá",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-paris",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Escapada a Paris",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/escapada-a-paris",
+            "titulo": "Escapada a Paris",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-polonia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Polónia do Sul ao Norte",
+          "termosPesquisa": [
+            "Polónia"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/polonia-do-sul-ao-norte",
+            "titulo": "Polónia do Sul ao Norte",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-porto-rico",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Férias em Porto Rico",
+          "termosPesquisa": [
+            "Porto Rico"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/ferias-em-porto-rico",
+            "titulo": "Férias em Porto Rico",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-praga",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Sinfonia Austro- Húngara",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/sinfonia-austro-hungara",
+            "titulo": "Sinfonia Austro- Húngara",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-qatar",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Qatar e Arábia Saudita",
+          "termosPesquisa": [
+            "Qatar"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/qatar-e-arabia-saudita",
+            "titulo": "Qatar e Arábia Saudita",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-quebec",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Canadá Clássico",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/canada-classico",
+            "titulo": "Canadá Clássico",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-quenia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Escapada ao Quénia",
+          "termosPesquisa": [
+            "Quénia"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/escapada-ao-quenia",
+            "titulo": "Escapada ao Quénia",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-republica-checa",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Sinfonia Austro- Húngara",
+          "termosPesquisa": [
+            "República Checa"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/republica-checa",
+            "titulo": "Sinfonia Austro- Húngara",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-reykjavik",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Reykjavik e Auroras Boreais",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/reykjavik-e-auroras-boreais",
+            "titulo": "Reykjavik e Auroras Boreais",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-rovaniemi",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Rovaniemi ao Seu Ritmo",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/rovaniemi-ao-seu-ritmo",
+            "titulo": "Rovaniemi ao Seu Ritmo",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-ruanda",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Ruanda, o País das Mil Colinas",
+          "termosPesquisa": [
+            "Ruanda"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/ruanda",
+            "titulo": "Ruanda, o País das Mil Colinas",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-singapura",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Singapura, Ubud e Bali",
+          "termosPesquisa": [
+            "Singapura"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/singapura-ubud-e-bali",
+            "titulo": "Singapura, Ubud e Bali",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-suecia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Fim de Ano No Báltico",
+          "termosPesquisa": [
+            "Suécia"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/suecia",
+            "titulo": "Fim de Ano No Báltico",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-suica",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Suíça - Basileia e Alsácia",
+          "termosPesquisa": [
+            "Suíça"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/suica-basileia-e-alsacia",
+            "titulo": "Suíça - Basileia e Alsácia",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-taiwan",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Taiwan Autêntico",
+          "termosPesquisa": [
+            "Taiwan"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/taiwan-autentico",
+            "titulo": "Taiwan Autêntico",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-tajiquistao",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "A Rota da Seda e o Tajiquistão",
+          "termosPesquisa": [
+            "Tajiquistão"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/tayikistan",
+            "titulo": "A Rota da Seda e o Tajiquistão",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-tallinn",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Fim de Ano em Tallinn",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/fim-de-ano-em-tallinn",
+            "titulo": "Fim de Ano em Tallinn",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-tanzania",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Tanzânia, Safari Marafiki",
+          "termosPesquisa": [
+            "Tanzânia"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/tanzania-safari-marafiki",
+            "titulo": "Tanzânia, Safari Marafiki",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-toronto",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Niágara Fantástico",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/niagara-fantastico",
+            "titulo": "Niágara Fantástico",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-turquemenistao",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Uzbequistão e Turquemenistão",
+          "termosPesquisa": [
+            "Turquemenistão"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/turkmenistan",
+            "titulo": "Uzbequistão e Turquemenistão",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-turquia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Estadia em Istambul",
+          "termosPesquisa": [
+            "Turquia"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/turquia",
+            "titulo": "Estadia em Istambul",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-uganda",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Paisagens do Uganda",
+          "termosPesquisa": [
+            "Uganda"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/uganda",
+            "titulo": "Paisagens do Uganda",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-uruguai",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "À Descoberta Do Uruguai",
+          "termosPesquisa": [
+            "Uruguai"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/uruguay",
+            "titulo": "À Descoberta Do Uruguai",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-vancouver",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Um passeio pelas Montanhas Rochosas e Fiji",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/um-passeio-pelas-montanhas-rochosas-e-fiji",
+            "titulo": "Um passeio pelas Montanhas Rochosas e Fiji",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-varsovia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Polónia do Sul ao Norte",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/polonia-do-sul-ao-norte",
+            "titulo": "Polónia do Sul ao Norte",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-viena",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Cruzeiro Fluvial no Danúbio",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/cruzeiro-fluvial-no-danubio",
+            "titulo": "Cruzeiro Fluvial no Danúbio",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-zimbabue",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Cataratas Vitória com Chobe e Cidade do Cabo",
+          "termosPesquisa": [
+            "Zimbabué"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/zimbabwe",
+            "titulo": "Cataratas Vitória com Chobe e Cidade do Cabo",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "peru",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Peru Real",
+          "termosPesquisa": [
+            "Peru",
+            "machu picchu",
+            "lima"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/peru-real",
+            "titulo": "Peru Real",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "polinesia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Ilhas de Tahiti: Ilha de Moorea",
+          "termosPesquisa": [
+            "Polinésia Francesa",
+            "tahiti"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/ilhas-de-tahiti-ilha-de-moorea",
+            "titulo": "Ilhas de Tahiti: Ilha de Moorea",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "polinesia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "As Ilhas do Tahiti: Ilhas e Atóis",
+          "termosPesquisa": [
+            "Polinésia Francesa",
+            "bora bora",
+            "tahiti"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/as-ilhas-do-tahiti-ilhas-e-atois",
+            "titulo": "As Ilhas do Tahiti: Ilhas e Atóis",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "punta-cana",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Niágara Fantástico",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/niagara-fantastico",
+            "titulo": "Niágara Fantástico",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "queretaro",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Tesouros Coloniais",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/tesouros-coloniais",
+            "titulo": "Tesouros Coloniais",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "recife",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Brasil, Encanto e Natureza",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/brasil-encanto-e-natureza",
+            "titulo": "Brasil, Encanto e Natureza",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "rep-dominicana",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Nova Iorque e Praias",
+          "termosPesquisa": [
+            "República Dominicana"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/destinos/republica-dominicana",
+            "titulo": "Nova Iorque e Praias",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "rio",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Brasil Cultural",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/brasil-cultural",
+            "titulo": "Brasil Cultural",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "safari",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Tanzânia, Safari Marafiki",
+          "termosPesquisa": [
+            "safari",
+            "safaris"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/tanzania-safari-marafiki",
+            "titulo": "Tanzânia, Safari Marafiki",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "salvador",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Impressões do Vietname",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/impressoes-do-vietname",
+            "titulo": "Impressões do Vietname",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "seicheles",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Tanzânia, Safari Marafiki",
+          "termosPesquisa": [
+            "Seicheles",
+            "seychelles"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/tanzania-safari-marafiki",
+            "titulo": "Tanzânia, Safari Marafiki",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "senegal",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Essências do Senegal e Praias",
+          "termosPesquisa": [
+            "Senegal",
+            "dakar",
+            "saly"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/essencia-senegal-praias-i",
+            "titulo": "Essências do Senegal e Praias",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "sharm",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Cairo Completo e Hurgada",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/cairo-completo-e-hurgada",
+            "titulo": "Cairo Completo e Hurgada",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "sri-lanka",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Sri Lanka e Maldivas",
+          "termosPesquisa": [
+            "Sri Lanka"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/sri-lanka-e-maldivas",
+            "titulo": "Sri Lanka e Maldivas",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "tailandia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "VIETNAME E PRAIAS",
+          "termosPesquisa": [
+            "Tailândia",
+            "phuket"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/vietname-e-praias",
+            "titulo": "VIETNAME E PRAIAS",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "tailandia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Tailândia e Vietname",
+          "termosPesquisa": [
+            "Tailândia",
+            "bangkok",
+            "phuket"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/tailandia-e-vietname",
+            "titulo": "Tailândia e Vietname",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "turquia-capadocia",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Capadócia Fantástica II",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/capadocia-fantastica-ii",
+            "titulo": "Capadócia Fantástica II",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "turquia-circuitos",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Estadia em Istambul",
+          "termosPesquisa": [
+            "Circuitos na Turquia",
+            "istambul"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/estadia-em-istambul",
+            "titulo": "Estadia em Istambul",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "uzbequistao",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Uzbequistão e Turquemenistão",
+          "termosPesquisa": [
+            "Uzbequistão"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/uzbequistao-e-turquemenistao",
+            "titulo": "Uzbequistão e Turquemenistão",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "vietname",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Impressões do Vietname",
+          "termosPesquisa": [
+            "Vietname",
+            "hanoi"
+          ],
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/impressoes-do-vietname",
+            "titulo": "Impressões do Vietname",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "zanzibar",
+          "bloco": "Catálogo autorizado · Catai",
+          "detalhe": "Tanzânia, Safari Marafiki",
+          "fonte": {
+            "url": "https://www.catai.pt/viagens/tanzania-safari-marafiki",
+            "titulo": "Tanzânia, Safari Marafiki",
+            "consultadoEm": "2026-11-15"
+          }
+        }
+      ]
+    },
+    {
+      "id": "icarion",
+      "faq": {
+        "atualizado": "—",
+        "permitido": [
+          "Reserva sempre manual (formulário).",
+          "Todo o produto disponível no site da Icárion."
+        ],
+        "proibido": []
+      },
+      "linhas": [
+        {
+          "destino": "assuao",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "EGIPTO EXTRAORDINÁRIO",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/egipto-extraordinario-seg-sab",
+            "titulo": "EGIPTO EXTRAORDINÁRIO",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "atenas-ilhas",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "MYKONOS",
+          "termosPesquisa": [
+            "Atenas, Mykonos e Santorini",
+            "mykonos"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/mykonos",
+            "titulo": "MYKONOS",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "atenas-ilhas",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "SANTORINI",
+          "termosPesquisa": [
+            "Atenas, Mykonos e Santorini",
+            "santorini"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/santorini",
+            "titulo": "SANTORINI",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "atenas-ilhas",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "ATENAS, CRETA E SANTORINI",
+          "termosPesquisa": [
+            "Atenas, Mykonos e Santorini",
+            "atenas",
+            "santorini"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/atenas-creta-e-santorini",
+            "titulo": "ATENAS, CRETA E SANTORINI",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "australia",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "ÍCONES DA AUSTRÁLIA",
+          "termosPesquisa": [
+            "Austrália",
+            "australia"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/icones-da-australia-2027",
+            "titulo": "ÍCONES DA AUSTRÁLIA",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "australia",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "AUSTRÁLIA, TERRA DE SONHO",
+          "termosPesquisa": [
+            "Austrália",
+            "australia",
+            "sydney"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/australia-terra-de-sonho",
+            "titulo": "AUSTRÁLIA, TERRA DE SONHO",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "cairo",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "EGIPTO EXTRAORDINÁRIO",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/egipto-extraordinario-seg-sab",
+            "titulo": "EGIPTO EXTRAORDINÁRIO",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "cancun",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "PERU, TERRA DE CONTRASTES (com extensão disponível)",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/peru-terra-de-contrastes",
+            "titulo": "PERU, TERRA DE CONTRASTES (com extensão disponível)",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "cartagena",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "COLÔMBIA, PARAÍSO CARIBENHO",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/colombia-paraiso-caribenho",
+            "titulo": "COLÔMBIA, PARAÍSO CARIBENHO",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "costa-rica",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "ESSÊNCIAS DA COSTA RICA",
+          "termosPesquisa": [
+            "Costa Rica",
+            "san jose"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/essencia-da-costa-rica",
+            "titulo": "ESSÊNCIAS DA COSTA RICA",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "creta",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "CRETA",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/creta",
+            "titulo": "CRETA",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "dubai",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Jeddah (com extensão disponível)",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/jeddah",
+            "titulo": "Jeddah (com extensão disponível)",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "egito",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "EGIPTO EXTRAORDINÁRIO",
+          "termosPesquisa": [
+            "Egito",
+            "egipto"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/egipto-extraordinario-seg-sab",
+            "titulo": "EGIPTO EXTRAORDINÁRIO",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "hurghada",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "EGIPTO EXTRAORDINÁRIO (com extensão disponível)",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/egipto-extraordinario-seg-sab",
+            "titulo": "EGIPTO EXTRAORDINÁRIO (com extensão disponível)",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "india",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "ÍNDIA, SENSAÇÕES AUTÊNTICAS",
+          "termosPesquisa": [
+            "Índia",
+            "india"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/india-sensacoes-autenticas-2024",
+            "titulo": "ÍNDIA, SENSAÇÕES AUTÊNTICAS",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "indonesia",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "KUALA LUMPUR (com extensão disponível)",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/kuala-lumpur",
+            "titulo": "KUALA LUMPUR (com extensão disponível)",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "japao",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Japão, Terra dos Samurais",
+          "termosPesquisa": [
+            "Japão",
+            "toquio",
+            "tóquio",
+            "quioto"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/japao-terra-dos-samurais",
+            "titulo": "Japão, Terra dos Samurais",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "jordania",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "JORDÂNIA EXPRESS",
+          "termosPesquisa": [
+            "Jordânia",
+            "jordania",
+            "petra"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/jordania-express",
+            "titulo": "JORDÂNIA EXPRESS",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "jordania",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "JORDÂNIA ESPETACULAR",
+          "termosPesquisa": [
+            "Jordânia",
+            "jordania",
+            "petra",
+            "aqaba"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/jordania-espectacular",
+            "titulo": "JORDÂNIA ESPETACULAR",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "luxor",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "EGIPTO EXTRAORDINÁRIO",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/egipto-extraordinario-seg-sab",
+            "titulo": "EGIPTO EXTRAORDINÁRIO",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "maldivas",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "KUALA LUMPUR (com extensão disponível)",
+          "termosPesquisa": [
+            "Maldivas"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/kuala-lumpur",
+            "titulo": "KUALA LUMPUR (com extensão disponível)",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "marraquexe",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "POSTAIS DE MARROCOS",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/postais-de-marrocos",
+            "titulo": "POSTAIS DE MARROCOS",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "marrocos",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "POSTAIS DE MARROCOS",
+          "termosPesquisa": [
+            "Marrocos"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/postais-de-marrocos",
+            "titulo": "POSTAIS DE MARROCOS",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "mocambique",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "ESSÊNCIA DE ÁFRICA DO SUL (com extensão disponível)",
+          "termosPesquisa": [
+            "Moçambique"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/essencia-de-africa-do-sul-23",
+            "titulo": "ESSÊNCIA DE ÁFRICA DO SUL (com extensão disponível)",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "natal",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "CRUZEIRO FLUVIAL DE NATAL NO RENO E ALSÁCIA",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/cruzeiro-de-natal-pelo-reno-alsacia",
+            "titulo": "CRUZEIRO FLUVIAL DE NATAL NO RENO E ALSÁCIA",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-africa-do-sul",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "ESSÊNCIA DE ÁFRICA DO SUL",
+          "termosPesquisa": [
+            "África do Sul"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/essencia-de-africa-do-sul-23",
+            "titulo": "ESSÊNCIA DE ÁFRICA DO SUL",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-alemanha",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Cruzeiro fluvial pela Alemanha, Bélgica e Países Baixos",
+          "termosPesquisa": [
+            "Alemanha"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/cruzeiro-fluvial-pela-alemanha-belgica-e-paises-baixos",
+            "titulo": "Cruzeiro fluvial pela Alemanha, Bélgica e Países Baixos",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-amesterdao",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Cruzeiro fluvial pela Bélgica e Países Baixos.",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/cruzeiro-fluvial-pela-belgica-e-paises-baixos",
+            "titulo": "Cruzeiro fluvial pela Bélgica e Países Baixos.",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-arabia-saudita",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Jeddah",
+          "termosPesquisa": [
+            "Arábia Saudita"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/jeddah",
+            "titulo": "Jeddah",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-argentina",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "ARGENTINA ESSENCIAL",
+          "termosPesquisa": [
+            "Argentina"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/argentina-essencial",
+            "titulo": "ARGENTINA ESSENCIAL",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-basileia",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "BASILEIA",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/basileia",
+            "titulo": "BASILEIA",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-belgica",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Cruzeiro fluvial pela Alemanha, Bélgica e Países Baixos",
+          "termosPesquisa": [
+            "Bélgica"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/cruzeiro-fluvial-pela-alemanha-belgica-e-paises-baixos",
+            "titulo": "Cruzeiro fluvial pela Alemanha, Bélgica e Países Baixos",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-berlim",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "MARAVILHAS DA ALEMANHA, POLÓNIA E HUNGRIA",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/maravilhas-da-alemanha-polonia-e-hungria",
+            "titulo": "MARAVILHAS DA ALEMANHA, POLÓNIA E HUNGRIA",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-bruges",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Cruzeiro fluvial pela Bélgica e Países Baixos.",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/cruzeiro-fluvial-pela-belgica-e-paises-baixos",
+            "titulo": "Cruzeiro fluvial pela Bélgica e Países Baixos.",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-bruxelas",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Cruzeiro fluvial pela Alemanha, Bélgica e Países Baixos",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/cruzeiro-fluvial-pela-alemanha-belgica-e-paises-baixos",
+            "titulo": "Cruzeiro fluvial pela Alemanha, Bélgica e Países Baixos",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-budapeste",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "MARAVILHAS DA ALEMANHA, POLÓNIA E HUNGRIA",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/maravilhas-da-alemanha-polonia-e-hungria",
+            "titulo": "MARAVILHAS DA ALEMANHA, POLÓNIA E HUNGRIA",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-butao",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "A Alma do Butão",
+          "termosPesquisa": [
+            "Butão"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/a-alma-do-butao",
+            "titulo": "A Alma do Butão",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-camboja",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Encantos do Vietname & Cambodja",
+          "termosPesquisa": [
+            "Camboja",
+            "cambodja"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/encantos-do-vietname-e-cambodja",
+            "titulo": "Encantos do Vietname & Cambodja",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-china",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "CHINA IMPRESCINDÍVEL EM HOTÉIS DE 4*",
+          "termosPesquisa": [
+            "China"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/china-imprescindivel-4-estrelas",
+            "titulo": "CHINA IMPRESCINDÍVEL EM HOTÉIS DE 4*",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-cidade-do-cabo",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "ESSÊNCIA DE ÁFRICA DO SUL",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/essencia-de-africa-do-sul-23",
+            "titulo": "ESSÊNCIA DE ÁFRICA DO SUL",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-colombia",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "COLÔMBIA, PARAÍSO CARIBENHO",
+          "termosPesquisa": [
+            "Colômbia",
+            "colombia"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/colombia-paraiso-caribenho",
+            "titulo": "COLÔMBIA, PARAÍSO CARIBENHO",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-coreia-do-sul",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "CORES DA COREIA 2027",
+          "termosPesquisa": [
+            "Coreia do Sul"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/cores-da-coreia-2027",
+            "titulo": "CORES DA COREIA 2027",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-cracovia",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "MARAVILHAS DA ALEMANHA, POLÓNIA E HUNGRIA",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/maravilhas-da-alemanha-polonia-e-hungria",
+            "titulo": "MARAVILHAS DA ALEMANHA, POLÓNIA E HUNGRIA",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-croacia",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "DUBROVNIK",
+          "termosPesquisa": [
+            "Croácia"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/dubrovnik",
+            "titulo": "DUBROVNIK",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-emirados-arabes-unidos",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "DUBAI (Voo Diurno)",
+          "termosPesquisa": [
+            "Emirados Árabes Unidos"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/dubai",
+            "titulo": "DUBAI (Voo Diurno)",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-escocia",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "TESOUROS DA ESCÓCIA",
+          "termosPesquisa": [
+            "Escócia"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/tesouros-da-escocia",
+            "titulo": "TESOUROS DA ESCÓCIA",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-estados-unidos",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "NEW YORK",
+          "termosPesquisa": [
+            "Estados Unidos"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/new-york",
+            "titulo": "NEW YORK",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-fiji",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Simplesmente Coreia (com extensão disponível)",
+          "termosPesquisa": [
+            "Fiji"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/simplesmente-coreia-2026",
+            "titulo": "Simplesmente Coreia (com extensão disponível)",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-filipinas",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "FILIPINAS A DOIS: MANILA - BOHOL - CEBU - EL NIDO",
+          "termosPesquisa": [
+            "Filipinas"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/filipinas-a-dois",
+            "titulo": "FILIPINAS A DOIS: MANILA - BOHOL - CEBU - EL NIDO",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-franca",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "CRUZEIRO FLUVIAL DE NATAL NO RENO E ALSÁCIA",
+          "termosPesquisa": [
+            "França"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/cruzeiro-de-natal-pelo-reno-alsacia",
+            "titulo": "CRUZEIRO FLUVIAL DE NATAL NO RENO E ALSÁCIA",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-frankfurt",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Cruzeiro fluvial pela Alemanha, Bélgica e Países Baixos",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/cruzeiro-fluvial-pela-alemanha-belgica-e-paises-baixos",
+            "titulo": "Cruzeiro fluvial pela Alemanha, Bélgica e Países Baixos",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-genebra",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Genebra",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/genebra",
+            "titulo": "Genebra",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-grecia",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "MYKONOS",
+          "termosPesquisa": [
+            "Grécia"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/mykonos",
+            "titulo": "MYKONOS",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-guatemala",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Guatemala Surpreendente",
+          "termosPesquisa": [
+            "Guatemala"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/guatemala-surpreendente",
+            "titulo": "Guatemala Surpreendente",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-hong-kong",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Japão, Terra dos Samurais (com extensão disponível)",
+          "termosPesquisa": [
+            "Hong Kong"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/japao-terra-dos-samurais",
+            "titulo": "Japão, Terra dos Samurais (com extensão disponível)",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-hungria",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "MARAVILHAS DA ALEMANHA, POLÓNIA E HUNGRIA",
+          "termosPesquisa": [
+            "Hungria"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/maravilhas-da-alemanha-polonia-e-hungria",
+            "titulo": "MARAVILHAS DA ALEMANHA, POLÓNIA E HUNGRIA",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-kruger",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "ESSÊNCIA DE ÁFRICA DO SUL",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/essencia-de-africa-do-sul-23",
+            "titulo": "ESSÊNCIA DE ÁFRICA DO SUL",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-malasia",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "KUALA LUMPUR",
+          "termosPesquisa": [
+            "Malásia"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/kuala-lumpur",
+            "titulo": "KUALA LUMPUR",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-masai-mara",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Safari Express",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/safari-express",
+            "titulo": "Safari Express",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-mexico",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "New York & Riviera Maya",
+          "termosPesquisa": [
+            "México"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/new-york-e-riviera-maya",
+            "titulo": "New York & Riviera Maya",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-mombaca",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Safari Express (com extensão disponível)",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/safari-express",
+            "titulo": "Safari Express (com extensão disponível)",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-munique",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "ROTA ROMÂNTICA E VIENA IMPERIAL",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/rota-romantica-e-viena-imperial",
+            "titulo": "ROTA ROMÂNTICA E VIENA IMPERIAL",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-nairobi",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Safari Express",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/safari-express",
+            "titulo": "Safari Express",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-namibia",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "POSTAIS DA NAMÍBIA",
+          "termosPesquisa": [
+            "Namíbia"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/postais-da-namibia",
+            "titulo": "POSTAIS DA NAMÍBIA",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-nepal",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "JOIAS DO NEPAL",
+          "termosPesquisa": [
+            "Nepal"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/joias-do-nepal",
+            "titulo": "JOIAS DO NEPAL",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-ngorongoro",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "SENSAÇÕES DA TANZÂNIA",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/sensacoes-da-tanzania",
+            "titulo": "SENSAÇÕES DA TANZÂNIA",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-noruega",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Oslo",
+          "termosPesquisa": [
+            "Noruega"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/oslo",
+            "titulo": "Oslo",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-nova-iorque",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "NEW YORK",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/new-york",
+            "titulo": "NEW YORK",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-nova-zelandia",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "NOVA ZELÂNDIA IMPRESCINDÍVEL",
+          "termosPesquisa": [
+            "Nova Zelândia"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/nova-zelandia-imprescendivel-2024",
+            "titulo": "NOVA ZELÂNDIA IMPRESCINDÍVEL",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-oslo",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Oslo",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/oslo",
+            "titulo": "Oslo",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-paises-baixos",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Cruzeiro fluvial pela Alemanha, Bélgica e Países Baixos",
+          "termosPesquisa": [
+            "Países Baixos"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/cruzeiro-fluvial-pela-alemanha-belgica-e-paises-baixos",
+            "titulo": "Cruzeiro fluvial pela Alemanha, Bélgica e Países Baixos",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-polonia",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "MARAVILHAS DA ALEMANHA, POLÓNIA E HUNGRIA",
+          "termosPesquisa": [
+            "Polónia"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/maravilhas-da-alemanha-polonia-e-hungria",
+            "titulo": "MARAVILHAS DA ALEMANHA, POLÓNIA E HUNGRIA",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-qatar",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "DOHA (VOO DIURNO)",
+          "termosPesquisa": [
+            "Qatar"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/doha-diurnoi",
+            "titulo": "DOHA (VOO DIURNO)",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-quenia",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Safari Express",
+          "termosPesquisa": [
+            "Quénia"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/safari-express",
+            "titulo": "Safari Express",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-serengeti",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "O Melhor da Tanzânia",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/o-melhor-da-tanzania",
+            "titulo": "O Melhor da Tanzânia",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-singapura",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "KUALA LUMPUR (com extensão disponível)",
+          "termosPesquisa": [
+            "Singapura"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/kuala-lumpur",
+            "titulo": "KUALA LUMPUR (com extensão disponível)",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-suica",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Genebra",
+          "termosPesquisa": [
+            "Suíça"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/genebra",
+            "titulo": "Genebra",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-tanzania",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "SENSAÇÕES DA TANZÂNIA",
+          "termosPesquisa": [
+            "Tanzânia"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/sensacoes-da-tanzania",
+            "titulo": "SENSAÇÕES DA TANZÂNIA",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-turquia",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "ENCANTOS DA TURQUIA",
+          "termosPesquisa": [
+            "Turquia"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/encantos-da-turquia",
+            "titulo": "ENCANTOS DA TURQUIA",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-varsovia",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "MARAVILHAS DA ALEMANHA, POLÓNIA E HUNGRIA",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/maravilhas-da-alemanha-polonia-e-hungria",
+            "titulo": "MARAVILHAS DA ALEMANHA, POLÓNIA E HUNGRIA",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-viena",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "ROTA ROMÂNTICA E VIENA IMPERIAL",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/rota-romantica-e-viena-imperial",
+            "titulo": "ROTA ROMÂNTICA E VIENA IMPERIAL",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-zambia",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "ESSÊNCIA DA ÁFRICA DO SUL EM RESERVA PRIVADA (com extensão disponível)",
+          "termosPesquisa": [
+            "Zâmbia"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/essencia-da-africa-do-sul-em-reserva-privada",
+            "titulo": "ESSÊNCIA DA ÁFRICA DO SUL EM RESERVA PRIVADA (com extensão disponível)",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-zimbabue",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Essência do Zimbabwe",
+          "termosPesquisa": [
+            "Zimbabué",
+            "zimbabwe"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/essencia-do-zimbabwe",
+            "titulo": "Essência do Zimbabwe",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-zurique",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "ZURIQUE",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/zurique-pt",
+            "titulo": "ZURIQUE",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "peru",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "PERU, TERRA DE CONTRASTES",
+          "termosPesquisa": [
+            "Peru",
+            "machu picchu",
+            "lima"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/peru-terra-de-contrastes",
+            "titulo": "PERU, TERRA DE CONTRASTES",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "polinesia",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Ícones da Polinésia",
+          "termosPesquisa": [
+            "Polinésia Francesa",
+            "bora bora",
+            "tahiti"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/icones-da-polinesia",
+            "titulo": "Ícones da Polinésia",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "safari",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Safari Express",
+          "termosPesquisa": [
+            "safari",
+            "safaris"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/safari-express",
+            "titulo": "Safari Express",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "salvador",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Encantos do Vietname & Cambodja",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/encantos-do-vietname-e-cambodja",
+            "titulo": "Encantos do Vietname & Cambodja",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "seicheles",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "ESSÊNCIA DE ÁFRICA DO SUL (com extensão disponível)",
+          "termosPesquisa": [
+            "Seicheles",
+            "seychelles"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/essencia-de-africa-do-sul-23",
+            "titulo": "ESSÊNCIA DE ÁFRICA DO SUL (com extensão disponível)",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "sharm",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "EGIPTO EXTRAORDINÁRIO (com extensão disponível)",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/egipto-extraordinario-seg-sab",
+            "titulo": "EGIPTO EXTRAORDINÁRIO (com extensão disponível)",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "sri-lanka",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "SRI LANKA MARAVILHOSO",
+          "termosPesquisa": [
+            "Sri Lanka"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/sri-lanka-maravilhoso-24",
+            "titulo": "SRI LANKA MARAVILHOSO",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "tailandia",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "KUALA LUMPUR (com extensão disponível)",
+          "termosPesquisa": [
+            "Tailândia",
+            "bangkok",
+            "phuket"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/kuala-lumpur",
+            "titulo": "KUALA LUMPUR (com extensão disponível)",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "turquia-capadocia",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "ENCANTOS DA TURQUIA",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/encantos-da-turquia",
+            "titulo": "ENCANTOS DA TURQUIA",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "turquia-circuitos",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "ENCANTOS DA TURQUIA",
+          "termosPesquisa": [
+            "Circuitos na Turquia",
+            "istambul"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/encantos-da-turquia",
+            "titulo": "ENCANTOS DA TURQUIA",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "turquia-circuitos",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "MAGIA DA TURQUIA",
+          "termosPesquisa": [
+            "Circuitos na Turquia",
+            "ancara",
+            "istambul"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/magia-da-turquia",
+            "titulo": "MAGIA DA TURQUIA",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "uzbequistao",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "MARAVILHAS DO UZBEQUISTÃO EM PRIVADO: ROTA DA SEDA",
+          "termosPesquisa": [
+            "Uzbequistão",
+            "tashkent",
+            "samarcanda",
+            "khiva",
+            "bukhara"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/maravilhas-do-uzbequistao-em-privado",
+            "titulo": "MARAVILHAS DO UZBEQUISTÃO EM PRIVADO: ROTA DA SEDA",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "vietname",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "Encantos do Vietname & Cambodja",
+          "termosPesquisa": [
+            "Vietname",
+            "hanoi"
+          ],
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/encantos-do-vietname-e-cambodja",
+            "titulo": "Encantos do Vietname & Cambodja",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "zanzibar",
+          "bloco": "Catálogo autorizado · Icárion",
+          "detalhe": "ESSÊNCIA DE ÁFRICA DO SUL (com extensão disponível)",
+          "fonte": {
+            "url": "https://www.icarion.pt/viagem/essencia-de-africa-do-sul-23",
+            "titulo": "ESSÊNCIA DE ÁFRICA DO SUL (com extensão disponível)",
+            "consultadoEm": "2026-11-15"
+          }
+        }
+      ]
+    },
+    {
+      "id": "nortravel",
+      "faq": {
+        "atualizado": "29/10/2026",
+        "permitido": [
+          "No motor de operadores do MyOffice podes reservar todos os pacotes que aparecem nos resultados (já validados com voos charter ou especiais).",
+          "Todos os pacotes do separador \"Circuitos Exclusivos\".",
+          "Todos os pacotes do separador \"Voos Especiais\".",
+          "Madeira & Açores: só os Circuitos Exclusivos.",
+          "Praias: Brasil (Fim de Ano 2026/27), Cabo Verde (Boa Vista e Sal) e Porto Santo."
+        ],
+        "proibido": [
+          "Circuitos Regulares.",
+          "Estadias e Combinados.",
+          "Special Tours.",
+          "Outros produtos fora da programação autorizada."
+        ]
+      },
+      "linhas": [
+        {
+          "destino": "albania",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "Paisagens dos Balcãs - Albânia, Kosovo e Montenegro",
+          "termosPesquisa": [
+            "Albânia",
+            "albania"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20080",
+            "titulo": "Paisagens dos Balcãs - Albânia, Kosovo e Montenegro",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "brasil",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "Encantos do Brasil - História e Tradição",
+          "termosPesquisa": [
+            "Brasil"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT7227",
+            "titulo": "Encantos do Brasil - História e Tradição",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "cabo-verde",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "À Descoberta de Cabo Verde",
+          "termosPesquisa": [
+            "Cabo Verde"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20120",
+            "titulo": "À Descoberta de Cabo Verde",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "egito",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "Maravilhas do Egito - Voos Especiais",
+          "termosPesquisa": [
+            "Egito"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20135",
+            "titulo": "Maravilhas do Egito - Voos Especiais",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "hurghada",
+          "bloco": "Voos Especiais · Nortravel",
+          "detalhe": "Hurghada — Voos Especiais 2027",
+          "fonte": {
+            "url": "https://www.nortravel.pt/offers/Hurghada-voosespeciais2027",
+            "titulo": "Hurghada — Voos Especiais 2027",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "india",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "A Índia dos Marajás",
+          "termosPesquisa": [
+            "Índia",
+            "india"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20128",
+            "titulo": "A Índia dos Marajás",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "japao",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "Contrastes do Japão",
+          "termosPesquisa": [
+            "Japão"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20132",
+            "titulo": "Contrastes do Japão",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "madeira",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "Circuito da Madeira 5 Dias - Especial Festa da Flor",
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20001FF",
+            "titulo": "Circuito da Madeira 5 Dias - Especial Festa da Flor",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "montenegro",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "Paisagens dos Balcãs - Albânia, Kosovo e Montenegro",
+          "termosPesquisa": [
+            "Montenegro"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20080",
+            "titulo": "Paisagens dos Balcãs - Albânia, Kosovo e Montenegro",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "oferta-amesterdao",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "O Melhor de Amesterdão e Países Baixos",
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20801",
+            "titulo": "O Melhor de Amesterdão e Países Baixos",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "oferta-argentina",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "Chile e Argentina com Região dos lagos",
+          "termosPesquisa": [
+            "Argentina"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20142",
+            "titulo": "Chile e Argentina com Região dos lagos",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "oferta-camboja",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "Indochina - Vietname, Laos e Camboja",
+          "termosPesquisa": [
+            "Camboja"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20130",
+            "titulo": "Indochina - Vietname, Laos e Camboja",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "oferta-chile",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "Chile e Argentina com Região dos lagos",
+          "termosPesquisa": [
+            "Chile"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20142",
+            "titulo": "Chile e Argentina com Região dos lagos",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "oferta-china",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "China Milenar",
+          "termosPesquisa": [
+            "China"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20131",
+            "titulo": "China Milenar",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "oferta-grecia",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "Tradições dos Balcãs - Albânia, Grécia (Corfu, Meteora) e Macedónia",
+          "termosPesquisa": [
+            "Grécia"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20081",
+            "titulo": "Tradições dos Balcãs - Albânia, Grécia (Corfu, Meteora) e Macedónia",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "oferta-italia",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "Itália Clássica",
+          "termosPesquisa": [
+            "Itália"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20054",
+            "titulo": "Itália Clássica",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "oferta-kosovo",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "Paisagens dos Balcãs - Albânia, Kosovo e Montenegro",
+          "termosPesquisa": [
+            "Kosovo"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20080",
+            "titulo": "Paisagens dos Balcãs - Albânia, Kosovo e Montenegro",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "oferta-laos",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "Indochina - Vietname, Laos e Camboja",
+          "termosPesquisa": [
+            "Laos"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20130",
+            "titulo": "Indochina - Vietname, Laos e Camboja",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "oferta-macedonia-do-norte",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "Tradições dos Balcãs - Albânia, Grécia (Corfu, Meteora) e Macedónia",
+          "termosPesquisa": [
+            "Macedónia do Norte",
+            "macedonia"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20081",
+            "titulo": "Tradições dos Balcãs - Albânia, Grécia (Corfu, Meteora) e Macedónia",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "oferta-noruega",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "Costa Diadema | Cruzeiro nos Fiordes da Noruega",
+          "termosPesquisa": [
+            "Noruega"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT7103",
+            "titulo": "Costa Diadema | Cruzeiro nos Fiordes da Noruega",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "oferta-paises-baixos",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "O Melhor de Amesterdão e Países Baixos",
+          "termosPesquisa": [
+            "Países Baixos"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20801",
+            "titulo": "O Melhor de Amesterdão e Países Baixos",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "oferta-turquia",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "Turquia Mágica",
+          "termosPesquisa": [
+            "Turquia"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20133",
+            "titulo": "Turquia Mágica",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "peru",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "Peru Mágico",
+          "termosPesquisa": [
+            "Peru"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20123",
+            "titulo": "Peru Mágico",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "sao-miguel",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "Circuito São Miguel - Especial Fim de Ano",
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20011FA",
+            "titulo": "Circuito São Miguel - Especial Fim de Ano",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "turquia-circuitos",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "Turquia Mágica",
+          "termosPesquisa": [
+            "Circuitos na Turquia"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20133",
+            "titulo": "Turquia Mágica",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "uzbequistao",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "Uzbequistão - O Património e a Magia da Rota da Seda",
+          "termosPesquisa": [
+            "Uzbequistão"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20127",
+            "titulo": "Uzbequistão - O Património e a Magia da Rota da Seda",
+            "consultadoEm": "2026-11-16"
+          }
+        },
+        {
+          "destino": "vietname",
+          "bloco": "Circuitos Exclusivos · Nortravel",
+          "detalhe": "Indochina - Vietname, Laos e Camboja",
+          "termosPesquisa": [
+            "Vietname"
+          ],
+          "fonte": {
+            "url": "https://www.nortravel.pt/tours-premium/productcontent/?webproduct=NT20130",
+            "titulo": "Indochina - Vietname, Laos e Camboja",
+            "consultadoEm": "2026-11-16"
+          }
+        }
+      ]
+    },
+    {
+      "id": "viagens-tempo",
+      "faq": {
+        "atualizado": "29/10/2026",
+        "permitido": [
+          "Reserva sempre manual (formulário).",
+          "Todos os Safaris do separador \"África\".",
+          "Todos os pacotes do separador \"Fim de Ano\".",
+          "Todos os pacotes do separador \"Mercados de Natal\"."
+        ],
+        "proibido": [
+          "Pacotes dinâmicos.",
+          "Outros produtos fora da programação."
+        ]
+      },
+      "linhas": [
+        {
+          "destino": "oferta-africa-do-sul",
+          "bloco": "África · Viagens Tempo",
+          "detalhe": "Na Rota de Bartolomeu Dias",
+          "termosPesquisa": [
+            "África do Sul"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=324",
+            "titulo": "Na Rota de Bartolomeu Dias",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-alemanha",
+          "bloco": "Mercados de Natal · Viagens Tempo",
+          "detalhe": "Mercados de Natal - Tirol e Baviera",
+          "temas": [
+            "mercados-natal"
+          ],
+          "termosPesquisa": [
+            "Alemanha"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1399",
+            "titulo": "Mercados de Natal - Tirol e Baviera",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-amesterdao",
+          "bloco": "Mercados de Natal · Viagens Tempo",
+          "detalhe": "Mercados de Natal - Bélgica e Países Baixos",
+          "temas": [
+            "mercados-natal"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1398",
+            "titulo": "Mercados de Natal - Bélgica e Países Baixos",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-austria",
+          "bloco": "Mercados de Natal · Viagens Tempo",
+          "detalhe": "Mercados de Natal - Tirol e Baviera",
+          "temas": [
+            "mercados-natal"
+          ],
+          "termosPesquisa": [
+            "Áustria"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1399",
+            "titulo": "Mercados de Natal - Tirol e Baviera",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-basileia",
+          "bloco": "Mercados de Natal · Viagens Tempo",
+          "detalhe": "Mercados de Natal - Suíça e Floresta Negra",
+          "temas": [
+            "mercados-natal"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1418",
+            "titulo": "Mercados de Natal - Suíça e Floresta Negra",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-belgica",
+          "bloco": "Mercados de Natal · Viagens Tempo",
+          "detalhe": "Mercados de Natal - Bélgica",
+          "temas": [
+            "mercados-natal"
+          ],
+          "termosPesquisa": [
+            "Bélgica"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1359",
+            "titulo": "Mercados de Natal - Bélgica",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-bratislava",
+          "bloco": "Mercados de Natal · Viagens Tempo",
+          "detalhe": "Mercados de Natal - Praga, Budapeste e Viena",
+          "temas": [
+            "mercados-natal"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1419",
+            "titulo": "Mercados de Natal - Praga, Budapeste e Viena",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-bruges",
+          "bloco": "Mercados de Natal · Viagens Tempo",
+          "detalhe": "Mercados de Natal - Bélgica",
+          "temas": [
+            "mercados-natal"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1359",
+            "titulo": "Mercados de Natal - Bélgica",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-bruxelas",
+          "bloco": "Mercados de Natal · Viagens Tempo",
+          "detalhe": "Mercados de Natal - Bélgica",
+          "temas": [
+            "mercados-natal"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1359",
+            "titulo": "Mercados de Natal - Bélgica",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-budapeste",
+          "bloco": "Mercados de Natal · Viagens Tempo",
+          "detalhe": "Mercados de Natal - Praga, Budapeste e Viena",
+          "temas": [
+            "mercados-natal"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1419",
+            "titulo": "Mercados de Natal - Praga, Budapeste e Viena",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-cidade-do-cabo",
+          "bloco": "África · Viagens Tempo",
+          "detalhe": "Na Rota de Bartolomeu Dias",
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=324",
+            "titulo": "Na Rota de Bartolomeu Dias",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-cracovia",
+          "bloco": "Mercados de Natal · Viagens Tempo",
+          "detalhe": "Mercados de Natal - Polónia",
+          "temas": [
+            "mercados-natal"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1415",
+            "titulo": "Mercados de Natal - Polónia",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-franca",
+          "bloco": "Mercados de Natal · Viagens Tempo",
+          "detalhe": "Mercados de Natal - Alemanha, Floresta Negra e Alsácia",
+          "temas": [
+            "mercados-natal"
+          ],
+          "termosPesquisa": [
+            "França"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1400",
+            "titulo": "Mercados de Natal - Alemanha, Floresta Negra e Alsácia",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-frankfurt",
+          "bloco": "Mercados de Natal · Viagens Tempo",
+          "detalhe": "Mercados de Natal - Alemanha e Vale do Reno",
+          "temas": [
+            "mercados-natal"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1401",
+            "titulo": "Mercados de Natal - Alemanha e Vale do Reno",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-hungria",
+          "bloco": "Mercados de Natal · Viagens Tempo",
+          "detalhe": "Mercados de Natal - Praga, Budapeste e Viena",
+          "temas": [
+            "mercados-natal"
+          ],
+          "termosPesquisa": [
+            "Hungria"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1419",
+            "titulo": "Mercados de Natal - Praga, Budapeste e Viena",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-masai-mara",
+          "bloco": "África · Viagens Tempo",
+          "detalhe": "Pegada de Elefante",
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1264",
+            "titulo": "Pegada de Elefante",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-mombaca",
+          "bloco": "África · Viagens Tempo",
+          "detalhe": "A Caminho de Mombaça  - Safari com Praia",
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=204",
+            "titulo": "A Caminho de Mombaça  - Safari com Praia",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-montreal",
+          "bloco": "Fim de Ano · Viagens Tempo",
+          "detalhe": "Fim de Ano - Montreal e Quebec",
+          "temas": [
+            "fim-de-ano"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1258",
+            "titulo": "Fim de Ano - Montreal e Quebec",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-munique",
+          "bloco": "Mercados de Natal · Viagens Tempo",
+          "detalhe": "Mercados de Natal - Tirol e Baviera",
+          "temas": [
+            "mercados-natal"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1399",
+            "titulo": "Mercados de Natal - Tirol e Baviera",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-nairobi",
+          "bloco": "África · Viagens Tempo",
+          "detalhe": "Pegada de Elefante",
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1264",
+            "titulo": "Pegada de Elefante",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-ngorongoro",
+          "bloco": "África · Viagens Tempo",
+          "detalhe": "Jambo Tanzânia com Zanzibar",
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=330",
+            "titulo": "Jambo Tanzânia com Zanzibar",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-nova-iorque",
+          "bloco": "Fim de Ano · Viagens Tempo",
+          "detalhe": "Fim de Ano em Nova Iorque",
+          "temas": [
+            "fim-de-ano"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1254",
+            "titulo": "Fim de Ano em Nova Iorque",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-paises-baixos",
+          "bloco": "Mercados de Natal · Viagens Tempo",
+          "detalhe": "Mercados de Natal - Bélgica e Países Baixos",
+          "temas": [
+            "mercados-natal"
+          ],
+          "termosPesquisa": [
+            "Países Baixos"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1398",
+            "titulo": "Mercados de Natal - Bélgica e Países Baixos",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-polonia",
+          "bloco": "Mercados de Natal · Viagens Tempo",
+          "detalhe": "Mercados de Natal - Polónia",
+          "temas": [
+            "mercados-natal"
+          ],
+          "termosPesquisa": [
+            "Polónia"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1415",
+            "titulo": "Mercados de Natal - Polónia",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-praga",
+          "bloco": "Mercados de Natal · Viagens Tempo",
+          "detalhe": "Mercados de Natal - Praga, Budapeste e Viena",
+          "temas": [
+            "mercados-natal"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1419",
+            "titulo": "Mercados de Natal - Praga, Budapeste e Viena",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-quebec",
+          "bloco": "Fim de Ano · Viagens Tempo",
+          "detalhe": "Fim de Ano - Montreal e Quebec",
+          "temas": [
+            "fim-de-ano"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1258",
+            "titulo": "Fim de Ano - Montreal e Quebec",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-quenia",
+          "bloco": "África · Viagens Tempo",
+          "detalhe": "Pegada de Elefante",
+          "termosPesquisa": [
+            "Quénia"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1264",
+            "titulo": "Pegada de Elefante",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-republica-checa",
+          "bloco": "Mercados de Natal · Viagens Tempo",
+          "detalhe": "Mercados de Natal - Praga, Budapeste e Viena",
+          "temas": [
+            "mercados-natal"
+          ],
+          "termosPesquisa": [
+            "República Checa"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1419",
+            "titulo": "Mercados de Natal - Praga, Budapeste e Viena",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-serengeti",
+          "bloco": "África · Viagens Tempo",
+          "detalhe": "Mufasa Safari com Zanzibar",
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=629",
+            "titulo": "Mufasa Safari com Zanzibar",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-suica",
+          "bloco": "Mercados de Natal · Viagens Tempo",
+          "detalhe": "Mercados de Natal - Suíça e Floresta Negra",
+          "temas": [
+            "mercados-natal"
+          ],
+          "termosPesquisa": [
+            "Suíça"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1418",
+            "titulo": "Mercados de Natal - Suíça e Floresta Negra",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-tanzania",
+          "bloco": "África · Viagens Tempo",
+          "detalhe": "Mara Safari com Zanzibar",
+          "termosPesquisa": [
+            "Tanzânia"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=200",
+            "titulo": "Mara Safari com Zanzibar",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-varsovia",
+          "bloco": "Mercados de Natal · Viagens Tempo",
+          "detalhe": "Mercados de Natal - Polónia",
+          "temas": [
+            "mercados-natal"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1415",
+            "titulo": "Mercados de Natal - Polónia",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-viena",
+          "bloco": "Mercados de Natal · Viagens Tempo",
+          "detalhe": "Mercados de Natal - Baviera e Áustria",
+          "temas": [
+            "mercados-natal"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1403",
+            "titulo": "Mercados de Natal - Baviera e Áustria",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-zurique",
+          "bloco": "Mercados de Natal · Viagens Tempo",
+          "detalhe": "Mercados de Natal - Suíça e Floresta Negra",
+          "temas": [
+            "mercados-natal"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1418",
+            "titulo": "Mercados de Natal - Suíça e Floresta Negra",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "safari",
+          "bloco": "África · Viagens Tempo",
+          "detalhe": "Pegada de Elefante",
+          "termosPesquisa": [
+            "safari",
+            "safaris"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1264",
+            "titulo": "Pegada de Elefante",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "seicheles",
+          "bloco": "África · Viagens Tempo",
+          "detalhe": "Mara Safari com Seychelles",
+          "termosPesquisa": [
+            "Seicheles",
+            "seychelles"
+          ],
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=1290",
+            "titulo": "Mara Safari com Seychelles",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "zanzibar",
+          "bloco": "África · Viagens Tempo",
+          "detalhe": "Mara Safari com Zanzibar",
+          "fonte": {
+            "url": "https://www.viagenstempo.pt/single_product.php?pkt_id=200",
+            "titulo": "Mara Safari com Zanzibar",
+            "consultadoEm": "2026-11-15"
+          }
+        }
+      ]
+    },
+    {
+      "id": "viajar-tours",
+      "faq": {
+        "atualizado": "29/10/2026",
+        "permitido": [
+          "Reserva sempre manual (formulário).",
+          "Pacotes de voos charter ou especiais de Fim de Ano, Carnaval e Páscoa.",
+          "Todos os pacotes de Fim de Ano 2026/2027."
+        ],
+        "proibido": [
+          "Pacotes dinâmicos.",
+          "Outros produtos fora da programação."
+        ]
+      },
+      "linhas": [
+        {
+          "destino": "boa-vista",
+          "bloco": "Fim de Ano · Viajar Tours",
+          "detalhe": "5319: Ilha da Boavista",
+          "temas": [
+            "fim-de-ano"
+          ],
+          "fonte": {
+            "url": "https://www.viajartours.pt/single_product.php?pkt_id=495",
+            "titulo": "5319: Ilha da Boavista",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "djerba",
+          "bloco": "Páscoa · Viajar Tours",
+          "detalhe": "5207: Djerba [LIS] Páscoa",
+          "temas": [
+            "pascoa"
+          ],
+          "fonte": {
+            "url": "https://www.viajartours.pt/single_product.php?pkt_id=339",
+            "titulo": "5207: Djerba [LIS] Páscoa",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "madeira",
+          "bloco": "Fim de Ano · Viajar Tours",
+          "detalhe": "5179: Funchal (LIS)",
+          "temas": [
+            "fim-de-ano"
+          ],
+          "fonte": {
+            "url": "https://www.viajartours.pt/single_product.php?pkt_id=293",
+            "titulo": "5179: Funchal (LIS)",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "oferta-sao-vicente",
+          "bloco": "Fim de Ano · Viajar Tours",
+          "detalhe": "5674: São Vicente",
+          "temas": [
+            "fim-de-ano"
+          ],
+          "fonte": {
+            "url": "https://www.viajartours.pt/single_product.php?pkt_id=849",
+            "titulo": "5674: São Vicente",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "recife",
+          "bloco": "Fim de Ano · Viajar Tours",
+          "detalhe": "5616 : Recife",
+          "temas": [
+            "fim-de-ano"
+          ],
+          "fonte": {
+            "url": "https://www.viajartours.pt/single_product.php?pkt_id=792",
+            "titulo": "5616 : Recife",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "sal",
+          "bloco": "Fim de Ano · Viajar Tours",
+          "detalhe": "5537: Ilha do Sal (regresso noturno)",
+          "temas": [
+            "fim-de-ano"
+          ],
+          "fonte": {
+            "url": "https://www.viajartours.pt/single_product.php?pkt_id=713",
+            "titulo": "5537: Ilha do Sal (regresso noturno)",
+            "consultadoEm": "2026-11-15"
+          }
+        },
+        {
+          "destino": "sao-vicente",
+          "bloco": "Fim de Ano · Viajar Tours",
+          "detalhe": "5674: São Vicente",
+          "temas": [
+            "fim-de-ano"
+          ],
+          "fonte": {
+            "url": "https://www.viajartours.pt/single_product.php?pkt_id=849",
+            "titulo": "5674: São Vicente",
+            "consultadoEm": "2026-11-15"
+          }
+        }
+      ]
+    }
+  ]
+}

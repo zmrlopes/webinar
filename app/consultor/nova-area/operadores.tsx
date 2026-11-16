@@ -56,6 +56,7 @@ function CartaoOperador({ o }: { o: ResultadoOperador }) {
                 {l.periodo && <span className={s.periodo}>{l.periodo}</span>}
               </span>}
               {l.detalhe && <span className={s.detalhe}>{l.detalhe}</span>}
+              {l.fonte && <span className={s.detalhe}><a href={l.fonte.url} target="_blank" rel="noreferrer">Ver produto no catálogo ↗</a> · Consultado a {l.fonte.consultadoEm.split("-").reverse().join("/")}</span>}
             </li>)}
           </ul>
         </div>)}
@@ -125,7 +126,7 @@ export function OperadoresNovaArea({ email }: { email: string }) {
     <header className={s.intro}>
       <span className={s.etiqueta}>RESERVAS</span>
       <h1>Onde posso vender<span>?</span></h1>
-      <p>Pesquisa um destino e vê os operadores com programação identificada nas FAQs da iCliGo ou pacotes confirmados no motor.</p>
+      <p>Pesquisa um destino e vê os operadores com programação identificada nas FAQs da iCliGo, nos catálogos autorizados ou no motor.</p>
     </header>
 
     <form className={s.pesquisa} onSubmit={submeter} role="search">
@@ -150,7 +151,7 @@ export function OperadoresNovaArea({ email }: { email: string }) {
       </div>}
 
       {!resultado.destinos.length ? <div className={s.vazio}>
-        <h2>Não encontrámos “{resultado.consulta}” nas FAQs dos operadores</h2>
+        <h2>Não encontrámos “{resultado.consulta}” nas fontes dos operadores</h2>
         <p>Experimenta o nome do país, da ilha ou o código do aeroporto. Só mostramos operadores com uma correspondência identificada para o destino.</p>
       </div> : <>
         <h2 className={s.tituloResultados}>
@@ -189,7 +190,7 @@ export function OperadoresNovaArea({ email }: { email: string }) {
     </details>}
 
     {inicio && <p className={s.fonte}>
-      Fonte: FAQs do Centro de Ajuda iCliGo, revistas a {inicio.revistoEm}. As programações mudam — confirma sempre a FAQ do operador antes de reservar. <a href={inicio.centroAjuda} target="_blank" rel="noreferrer">Centro de Ajuda ↗</a>
+      Fontes: FAQs do Centro de Ajuda iCliGo e produtos dos catálogos autorizados, revistos a {inicio.revistoEm}. As programações mudam — confirma sempre a FAQ do operador e a disponibilidade antes de reservar. <a href={inicio.centroAjuda} target="_blank" rel="noreferrer">Centro de Ajuda ↗</a>
     </p>}
   </section>;
 }

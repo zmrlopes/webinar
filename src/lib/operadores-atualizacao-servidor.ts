@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { db } from "./db";
 import { CATALOGO_BASE, type CatalogoOperadores } from "./operadores-destinos";
 import { corrigirCorrespondenciasPublicadas } from "./operadores-correspondencias";
+import { completarCatalogoComOferta } from "./operadores-oferta";
 import { ErroFAQ, validarCatalogo, validarPaginas, diferencasCatalogo, type PaginaFAQ } from "./operadores-atualizacao";
 import { chamarIAReservas } from "./reservas-servidor";
 
@@ -10,7 +11,9 @@ interface Recolha {id: string; criadoEm: string; publicadoEm?: string; base: str
 const hash = (v: unknown) => createHash("sha256").update(JSON.stringify(v)).digest("hex");
 export async function lerCatalogoOperadores(): Promise<CatalogoOperadores> {
   const {rows} = await db().query("select valor from dashboard_config where chave = $1", [ATUAL]);
-  return rows[0] ? corrigirCorrespondenciasPublicadas(validarCatalogo(rows[0].valor.catalogo), rows[0].valor.recolha) : CATALOGO_BASE;
+  if (!rows[0]) return CATALOGO_BASE;
+  const recolha = rows[0].valor.recolha;
+  return completarCatalogoComOferta(corrigirCorrespondenciasPublicadas(validarCatalogo(rows[0].valor.catalogo), recolha), recolha);
 }
 async function lerRecolha(id: unknown): Promise<Recolha> {
   if (typeof id !== "string" || !/^[0-9a-f-]{36}$/.test(id)) throw new ErroFAQ("Recolha inválida.");

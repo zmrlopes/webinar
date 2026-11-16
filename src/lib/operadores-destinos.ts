@@ -43,6 +43,8 @@ export interface Linha {
   temas?: Tema[];
   /** Limita uma indicação genérica (ex.: safaris) ao termo efetivamente confirmado. */
   termosPesquisa?: string[];
+  /** Produto concreto de um catálogo autorizado pela FAQ. */
+  fonte?: { url: string; titulo: string; consultadoEm: string };
 }
 
 export interface Operador {

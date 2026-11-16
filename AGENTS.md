@@ -538,3 +538,15 @@ Publicações concorrentes ou base entretanto alterada são recusadas. A base in
 em `src/lib/operadores-destinos.ts` mantém-se; as atualizações aprovadas são lidas
 pela API no servidor. O acesso de consultor continua exclusivo da conta de teste.
 Correr `npm run test:operadores` e `npm run typecheck`.
+
+Na continuação do levantamento dos operadores de 16/11/2026, a pesquisa cruza
+as FAQs revistas com produtos concretos dos catálogos autorizados. As fontes,
+categorias e datas estão em `src/lib/operadores-oferta.json`; a auditoria está em
+`docs/operadores-oferta-2026-11-16.md`. O cruzamento só se aplica à recolha de FAQs
+efetivamente revista e às mesmas regras por operador, preservando os originais.
+Novas publicações de FAQs são soberanas. A página oficial de Hurghada na secção
+Voos Especiais da Nortravel confirma agora essa categoria para reserva manual;
+não autoriza as estadas regulares de Praias. Não inferir destinos a partir de
+continentes, safaris genéricos ou páginas sem programas. Não apresentar este
+levantamento como disponibilidade em tempo real ou inventário integral do motor.
+Correr `npm run test:operadores`, `npm run typecheck` e `npm run build`.
