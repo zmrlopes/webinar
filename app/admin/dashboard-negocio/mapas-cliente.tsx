@@ -208,13 +208,18 @@ export function MapasCliente({ dados, historico }: { dados: DadosMapas; historic
               {y === dados.years_recent[dados.years_recent.length - 1] ? " (atual)" : ""}
             </span>
           ))}
+          <span className="legend-item">
+            <span className="legend-line dashed" style={{ borderTopColor: "var(--text-primary)" }} />
+            mesmo período ({dados.years_recent[dados.years_recent.length - 1]! - 1}) do mês em curso
+          </span>
         </div>
       </div>
 
       <div className="section-note" style={{ marginTop: "-6px" }}>
         <b>{mesAtual} está a meio.</b> A barra do mês em curso mostra só o que já entrou, por isso é normal parecer mais
         baixa — não é uma queda. O acumulado dos cartões vai de <b>Janeiro a {mesAtual}</b> e é comparado com <b>exatamente
-        os mesmos dias de 2025</b>.
+        os mesmos dias de 2025</b>. Na barra de {mesAtual}, a linha tracejada marca esse mesmo período (dia 1 a{" "}
+        {dados.ytd_partial_day}) no ano anterior — compara diretamente com a barra a decorrer.
       </div>
 
       {ORDEM.map((key) => {
@@ -353,8 +358,12 @@ function GraficoBarras({
   const plotW = W - padL - padR,
     plotH = H - padT - padB;
   const years = dados.years_recent;
+  const through = dados.ytd_through_idx;
+  const comparoAno = (years[years.length - 1] ?? 0) - 1;
+  const comparoValor = m.last_month_2025;
   let maxV = 0;
   years.forEach((y) => (m.monthly_recent[y] ?? []).forEach((v) => (v > maxV ? (maxV = v) : null)));
+  if (comparoValor > maxV) maxV = comparoValor;
   maxV = maxV * 1.18 || 1;
   const groupW = plotW / dados.months.length;
   const barGap = 3;
@@ -407,6 +416,31 @@ function GraficoBarras({
                 </g>
               );
             })}
+            {mi === through && comparoValor > 0 && (() => {
+              const my = padT + plotH - (comparoValor / maxV) * plotH;
+              return (
+                <g>
+                  <line x1={gx + 2} x2={gx + groupW - 2} y1={my} y2={my} className="compare-marker" />
+                  <line x1={gx + 2} x2={gx + 2} y1={my - 4} y2={my + 4} className="compare-tick" />
+                  <line x1={gx + groupW - 2} x2={gx + groupW - 2} y1={my - 4} y2={my + 4} className="compare-tick" />
+                  <rect
+                    x={gx}
+                    y={my - 6}
+                    width={groupW}
+                    height={12}
+                    fill="transparent"
+                    style={{ cursor: "pointer" }}
+                    onMouseMove={(e) =>
+                      onHover(
+                        e,
+                        `<b>Mesmo período ${comparoAno}</b> (dia 1–${dados.ytd_partial_day} de ${mo})<br>${m.label}: ${fmtFull(comparoValor, m.unit, m.decimals)}`,
+                      )
+                    }
+                    onMouseLeave={onLeave}
+                  />
+                </g>
+              );
+            })()}
             <text x={gx + groupW / 2} y={H - 6} className="axis-label" textAnchor="middle">
               {mo}
             </text>
@@ -1210,6 +1244,8 @@ function MapasEstilos(): React.JSX.Element {
       .bar-value-label { font-size:6.6px; font-weight:700; fill:var(--text-secondary); }
       .gridline { stroke:var(--grid); stroke-width:1; }
       .baseline { stroke:var(--axis); stroke-width:1; }
+      .compare-marker { stroke:var(--text-primary); stroke-width:1.6; stroke-dasharray:4 3; }
+      .compare-tick { stroke:var(--text-primary); stroke-width:1.6; }
       .proj-section { background:var(--surface-2); border:1px solid var(--border-soft); border-radius:16px; padding:22px 22px 8px; margin-top:8px; }
       .proj-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
       @media (max-width:780px){ .proj-grid { grid-template-columns:1fr; } }
