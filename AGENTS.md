@@ -87,9 +87,11 @@ ranking, campanhas ou os snapshots do admin. Correr `npm run test:negocio`.
 Por indicação de 16/11/2026, a faturação dos Mapas e Projeções é o total do
 negócio de cada TP (própria + equipa, como um só), lida na raiz do Analisador
 de Organização do MyOffice para cada período, porque `team/affiliates` omite
-a própria conta. Pontos e novos consultores continuam a vir da equipa. O
-favorito passa à versão 3; dados de versões anteriores mostram um aviso até
-o TP voltar a atualizar.
+a própria conta. Os pontos totais são a linha da própria conta em
+`ranking/topPoints?team=true` (o Top Pontos do Início), confirmada pelo
+utilizador; sem linha própria, usam os pontos da equipa. Novos consultores
+continuam a vir da equipa. O favorito passa à versão 4; dados de versões
+anteriores mostram um aviso até o TP voltar a atualizar.
 
 Por indicação do utilizador, o separador BLACKFRIDAY da nova área apresenta
 um bingo 5×5 inspirado em `docs/bingo.jpeg`, com gradiente escuro e progresso
