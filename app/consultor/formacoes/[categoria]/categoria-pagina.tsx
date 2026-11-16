@@ -6,7 +6,7 @@ import type { Aula, Categoria, Curso, CursoExterno, Modulo } from "@/lib/formaco
 import { lerEmailGuardado } from "../../armazenamento";
 import { ESTILOS_FORMACOES } from "../estilos";
 import { LicaoLinha, ResultadosPesquisa } from "../pesquisa";
-import { aulaTemVideo, urlDaAula } from "@/lib/formacoes-links";
+import { aulaCriadaPeloAdmin, aulaTemVideo, urlDaAula } from "@/lib/formacoes-links";
 
 type Estado = "a-carregar" | "sem-conta" | "indisponivel" | "nao-encontrada" | "erro" | "pronto";
 
@@ -113,6 +113,7 @@ function AulaCartao({
   etiqueta?: string;
   onAlternar: (aula: Aula) => void;
 }) {
+  const criadaPeloAdmin = aulaCriadaPeloAdmin(aula);
   const corpo = (
     <div className="vqf-aula-corpo">
       {etiqueta && <p className="vqf-aula-etiqueta">{etiqueta}</p>}
@@ -123,15 +124,16 @@ function AulaCartao({
 
   if (!aulaTemVideo(aula)) {
     return (
-      <div className="vqf-aula">
+      <div className={criadaPeloAdmin ? "vqf-aula vqf-aula-admin" : "vqf-aula"}>
         <div className="vqf-capa vqf-capa-vazia">Vídeo em breve</div>
         {corpo}
       </div>
     );
   }
 
+  const classes = ["vqf-aula", criadaPeloAdmin && "vqf-aula-admin", vista && "vqf-aula-vista"].filter(Boolean).join(" ");
   return (
-    <div className={vista ? "vqf-aula vqf-aula-vista" : "vqf-aula"}>
+    <div className={classes}>
       <a
         href={urlDaAula(aula)}
         target="_blank"
@@ -145,6 +147,7 @@ function AulaCartao({
           ▶
         </span>
         {aula.min !== null && <span className="vqf-min">{aula.min} min</span>}
+        {criadaPeloAdmin && <span className="vqf-badge-admin">Nova</span>}
         {vista && <span className="vqf-badge-vista">✓ Vista</span>}
       </a>
       {corpo}

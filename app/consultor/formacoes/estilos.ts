@@ -116,6 +116,21 @@ export const ESTILOS_FORMACOES = `
     overflow: hidden;
   }
   .vqf-aula-vista { border-color: #1e7a34; }
+  .vqf-aula-admin { border-color: #d6368f; border-width: 2px; }
+  .vqf-aula-admin.vqf-aula-vista { border-color: #1e7a34; }
+  .vqf-badge-admin {
+    position: absolute;
+    left: 0.5rem;
+    top: 0.5rem;
+    background: #d6368f;
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+  }
+  .vqf-aula-admin .vqf-aula-titulo { color: #a6246d; }
+  .vqf-aula-admin .vqf-badge-vista { top: 2.05rem; }
   .vqf-capa {
     position: relative;
     display: block;
@@ -277,6 +292,18 @@ export const ESTILOS_FORMACOES = `
   .vqf-licao-titulo { font-size: 0.9rem; font-weight: 600; }
   .vqf-licao-contexto { font-size: 0.78rem; color: #6b6a63; }
   .vqf-licao-seta { flex: none; color: #4b5320; font-weight: 700; }
+  .vqf-licao-admin .vqf-licao-titulo { color: #a6246d; }
+  .vqf-badge-admin-inline {
+    display: inline-block;
+    margin-left: 0.5rem;
+    background: #d6368f;
+    color: #ffffff;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    vertical-align: middle;
+  }
 
   @media (max-width: 520px) {
     .vqf-curso-capa { width: 4.5rem; }

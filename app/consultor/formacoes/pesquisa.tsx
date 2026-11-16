@@ -11,7 +11,7 @@ import type {
   ModuloExterno,
 } from "@/lib/formacoes-gravadas";
 import { comDestinos } from "@/lib/destinos";
-import { aulaTemVideo, urlDaAula } from "@/lib/formacoes-links";
+import { aulaCriadaPeloAdmin, aulaTemVideo, urlDaAula } from "@/lib/formacoes-links";
 
 /**
  * Pesquisa das formações gravadas, partilhada pela página inicial das
@@ -37,17 +37,22 @@ export function LicaoLinha({
   licao,
   contexto,
   seta = "↗",
+  criadaPeloAdmin = false,
 }: {
   licao: Pick<LicaoExterna, "titulo" | "url">;
   contexto?: string;
   /** ↗ = abre noutro site; ▶ = vídeo do YouTube. */
   seta?: string;
+  criadaPeloAdmin?: boolean;
 }) {
   return (
     <li>
-      <a href={licao.url} target="_blank" rel="noopener noreferrer" className="vqf-licao">
+      <a href={licao.url} target="_blank" rel="noopener noreferrer" className={criadaPeloAdmin ? "vqf-licao vqf-licao-admin" : "vqf-licao"}>
         <span className="vqf-licao-texto">
-          <span className="vqf-licao-titulo">{licao.titulo}</span>
+          <span className="vqf-licao-titulo">
+            {licao.titulo}
+            {criadaPeloAdmin && <span className="vqf-badge-admin-inline">Nova</span>}
+          </span>
           {contexto && <span className="vqf-licao-contexto">{contexto}</span>}
         </span>
         <span className="vqf-licao-seta" aria-hidden="true">
@@ -181,6 +186,7 @@ export function ResultadosPesquisa({
         licao={{ titulo: aula.titulo, url: urlDaAula(aula) }}
         contexto={contexto}
         seta="▶"
+        criadaPeloAdmin={aulaCriadaPeloAdmin(aula)}
       />
     );
   }

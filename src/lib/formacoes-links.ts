@@ -4,6 +4,11 @@ export function aulaTemVideo(aula: Aula): boolean {
   return !!(aula.youtube || aula.url);
 }
 
+/** As gravações acrescentadas em /admin/formacoes-gravadas ficam com este prefixo — ver src/lib/formacoes-gravadas-servidor.ts. */
+export function aulaCriadaPeloAdmin(aula: Aula): boolean {
+  return aula.id.startsWith("gravada-");
+}
+
 export function urlDaAula(aula: Aula): string {
   return aula.url || (aula.youtube ? `https://www.youtube.com/watch?v=${aula.youtube}` : "");
 }
