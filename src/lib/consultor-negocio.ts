@@ -3,14 +3,14 @@ export const METRICAS_NEGOCIO = ["faturacao", "comissoes", "pontos", "consultore
 export type MetricaNegocio = typeof METRICAS_NEGOCIO[number];
 export type TotaisNegocio = Record<MetricaNegocio, number>;
 export const ROTULOS_NEGOCIO: Record<MetricaNegocio, string> = {
-  faturacao: "Faturação total (própria + equipa)", comissoes: "Comissões totais", pontos: "Pontos totais (próprios + equipa)", consultores: "Novos consultores",
+  faturacao: "Faturação Total (própria + equipa)", comissoes: "Comissões totais", pontos: "Pontos totais (próprios + equipa)", consultores: "Novos consultores",
 };
 export const MESES_NEGOCIO = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 export interface PeriodoNegocio { chave: string; inicio: string; fim: string }
 export interface PlanoNegocio { id: string; hoje: string; periodos: PeriodoNegocio[] }
 export interface DadosNegocio {
   ate: string; atualizadoEm: string; origemEmail: string;
-  versao?: 2 | 3 | 4; inicioHistorico?: string;
+  versao?: 2 | 3 | 4 | 5; inicioHistorico?: string;
   meses: Record<string, TotaisNegocio>;
   homologo: TotaisNegocio;
 }

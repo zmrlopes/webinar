@@ -8,7 +8,7 @@ const API = "https://api.icligo.com/legacy-system/v1";
 /** Executado só no MyOffice. A sessão e o token nunca são enviados para a plataforma. */
 export function favoritoNegocio(site: string): string {
   return "javascript:" + encodeURIComponent(`(async()=>{
-    const S=${JSON.stringify(site)}, C=${JSON.stringify(CANAL_NEGOCIO)}, A=${JSON.stringify(ANALISADOR)};
+    const S=${JSON.stringify(site)}, C=${JSON.stringify(CANAL_NEGOCIO)}, A=${JSON.stringify(ANALISADOR)}, N=${JSON.stringify(NEGOCIO_MYOFFICE)};
     if(location.origin!==${JSON.stringify(MYOFFICE_NEGOCIO)}){alert('Abre primeiro o MyOffice, entra na tua conta e carrega novamente neste favorito.');return}
     const w=window.open(S+'/consultor/nova-area/negocio/atualizar?ponte=1','consultor-negocio-atualizar');
     if(!w){alert('Permite janelas do MyOffice e carrega novamente no favorito.');return}
@@ -33,9 +33,9 @@ export function favoritoNegocio(site: string): string {
       const {id,url}=e.data;
       const responder=d=>w.postMessage({canal:C,id,...d},S);
       const {token,email}=await contexto;
-      if(url==='identidade'){responder({corpo:JSON.stringify({email,versao:4}),status:200});return}
+      if(url==='identidade'){responder({corpo:JSON.stringify({email,versao:5}),status:200});return}
       let u;try{u=new URL(url)}catch{return}
-      if(u.origin+u.pathname===A){try{const r=await fetch(u.href,{credentials:'include',headers:token?{Authorization:'Bearer '+token}:{},signal:AbortSignal.timeout(180000)});responder({status:r.status,corpo:await r.text()})}catch{responder({erro:'O MyOffice não respondeu. Repete a atualização.'})}return}
+      if(u.origin+u.pathname===A||u.origin+u.pathname===N){try{const r=await fetch(u.href,{credentials:'include',headers:token?{Authorization:'Bearer '+token}:{},signal:AbortSignal.timeout(180000)});responder({status:r.status,corpo:await r.text()})}catch{responder({erro:'O MyOffice não respondeu. Repete a atualização.'})}return}
       if(u.origin!=='https://api.icligo.com'||!['/legacy-system/v1/team/affiliates','/legacy-system/v1/ranking/topPoints','/legacy-system/v1/stats/activeIncome','/legacy-system/v1/stats/passiveIncome'].includes(u.pathname)){responder({erro:'Endereço não permitido.'});return}
       try{const r=await fetch(u.href,{credentials:'include',headers:token?{Authorization:'Bearer '+token}:{},signal:AbortSignal.timeout(180000)});responder({status:r.status,corpo:await r.text()})}catch{responder({erro:'O MyOffice não respondeu. Repete a atualização.'})}
     };
@@ -44,42 +44,49 @@ export function favoritoNegocio(site: string): string {
 }
 
 type PedirMyOffice = (url: string) => Promise<unknown>;
+/** A função do servidor do MyOffice por trás de Negócio → Visão Geral do Negócio («O meu negócio»). */
+export const NEGOCIO_MYOFFICE = `${MYOFFICE_NEGOCIO}/_serverFn/b08e83ed56f14e68ed29ed2ec93d6132d46035fac5637de359d8e293aa37dfde`;
+/** O pedido no formato do MyOffice (seroval), igual ao filtro de datas personalizado da página. */
+export function pedidoNegocioMyOffice(inicio: string, fim: string): string {
+  const v = (x: string | undefined) => x === undefined ? {t: 2, s: 1} : {t: 1, s: x};
+  const corpo = {t: {t: 10, i: 0, p: {k: ["data"], v: [{t: 10, i: 1, p: {k: ["period", "startDate", "endDate", "country", "user"], v: [v("custom"), v(inicio), v(fim), v(undefined), v(undefined)]}, o: 0}]}, o: 0}, f: 127, m: []};
+  return `${NEGOCIO_MYOFFICE}?payload=${encodeURIComponent(JSON.stringify(corpo))}`;
+}
+const finito = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n);
 /**
- * `team/affiliates` omite a própria conta, por isso a faturação total (própria +
- * equipa) vem da raiz do Analisador de Organização, que inclui a pessoa e toda a
- * descendência. Os pontos totais são a linha da própria conta no Top Pontos da
- * equipa (`ranking/topPoints?team=true`), como no Início do MyOffice. As adesões
- * continuam a vir da equipa.
- * As duas fontes de rendimento são disjuntas: não somar também movimentos ou o gráfico total.
+ * Faturação e comissões são os mesmos valores de Negócio → Visão Geral do Negócio:
+ * Faturação Total (reservas + subscrições + gifts, pessoal + equipa) e Comissões
+ * Ativas + Passivas. Os pontos totais são a linha da própria conta no Top Pontos da
+ * equipa (`ranking/topPoints?team=true`), como no Início. `team/affiliates` omite a
+ * própria conta e só dá as adesões da equipa. O nome de utilizador vem da raiz do
+ * Analisador de Organização (a conta autenticada).
  */
 export async function recolherPeriodoNegocio(periodo: PeriodoNegocio, pedir: PedirMyOffice): Promise<TotaisNegocio> {
   const query = `startDate=${periodo.inicio}&endDate=${periodo.fim}`;
-  const equipa = await pedir(`${API}/team/affiliates?${query}&page=0&size=1`) as {stats?: {sales?: unknown; points?: unknown; subscriptions?: unknown}} | null;
+  const equipa = await pedir(`${API}/team/affiliates?${query}&page=0&size=1`) as {stats?: {points?: unknown; subscriptions?: unknown}} | null;
   const stats = equipa?.stats;
-  if (!stats || [stats.sales, stats.points, stats.subscriptions].some(n => typeof n !== "number" || !Number.isFinite(n))) {
+  if (!stats || !finito(stats.points) || !finito(stats.subscriptions)) {
     throw new Error("O MyOffice não devolveu os totais da equipa. Não foram usados zeros em falta.");
   }
-  const analisador = deSeroval(await pedir(pedidoAnalisador(periodo.inicio, periodo.fim, 0))) as {result?: {parent?: {bookingVolume?: unknown; username?: unknown}}} | null;
-  const total = analisador?.result?.parent?.bookingVolume, username = analisador?.result?.parent?.username;
-  if (typeof total !== "number" || !Number.isFinite(total) || typeof username !== "string" || !username.trim()) {
-    throw new Error("O MyOffice não devolveu a faturação total (própria + equipa). Os dados anteriores mantêm-se.");
+  const negocio = deSeroval(await pedir(pedidoNegocioMyOffice(periodo.inicio, periodo.fim))) as {result?: {currency?: unknown;
+    totalBillings?: {value?: unknown}; activeCommission?: {value?: unknown}; passiveCommission?: {value?: unknown}}} | null;
+  const r = negocio?.result;
+  if (!r || (r.currency !== undefined && r.currency !== "EUR") || !finito(r.totalBillings?.value)) {
+    throw new Error("O MyOffice não devolveu a Faturação Total em euros. Os dados anteriores mantêm-se.");
   }
+  if (!finito(r.activeCommission?.value) || !finito(r.passiveCommission?.value)) {
+    throw new Error("O MyOffice não devolveu as comissões ativas e passivas. Os dados anteriores mantêm-se.");
+  }
+  const analisador = deSeroval(await pedir(pedidoAnalisador(periodo.inicio, periodo.fim, 0))) as {result?: {parent?: {username?: unknown}}} | null;
+  const username = analisador?.result?.parent?.username;
+  if (typeof username !== "string" || !username.trim()) throw new Error("O MyOffice não identificou a tua conta. Os dados anteriores mantêm-se.");
   const ranking = await pedir(`${API}/ranking/topPoints?${query}&team=true&user=${encodeURIComponent(username)}&page=0&size=100`) as {content?: {username?: unknown; value?: unknown}[]} | null;
   if (!ranking || !Array.isArray(ranking.content)) throw new Error("O MyOffice não devolveu o Top Pontos. Os dados anteriores mantêm-se.");
   // A própria conta soma os pontos de toda a equipa, por isso fica no topo; sem
   // linha própria (sem pontos no período), os pontos totais são os da equipa.
   const linha = ranking.content.find(c => typeof c?.username === "string" && c.username.toLowerCase() === username.toLowerCase());
-  const pontos = linha === undefined ? stats.points as number : linha.value;
-  if (typeof pontos !== "number" || !Number.isFinite(pontos)) throw new Error("O MyOffice não devolveu os pontos totais. Os dados anteriores mantêm-se.");
-  const rendimento = async (tipo: "activeIncome" | "passiveIncome") => {
-    const corpo = await pedir(`${API}/stats/${tipo}?${query}`) as {totalCommissions?: unknown; currency?: unknown} | null;
-    if (!corpo || typeof corpo.totalCommissions !== "number" || !Number.isFinite(corpo.totalCommissions)
-      || (corpo.currency !== undefined && corpo.currency !== "EUR")) {
-      throw new Error(`O MyOffice não devolveu as comissões ${tipo === "activeIncome" ? "próprias" : "passivas"} em euros. Os dados anteriores mantêm-se.`);
-    }
-    return corpo.totalCommissions;
-  };
-  const proprias = await rendimento("activeIncome"), passivas = await rendimento("passiveIncome");
-  return {faturacao: total, pontos: arredondarNegocio(pontos), consultores: stats.subscriptions as number,
-    comissoes: arredondarNegocio(proprias + passivas)};
+  const pontos = linha === undefined ? stats.points : linha.value;
+  if (!finito(pontos)) throw new Error("O MyOffice não devolveu os pontos totais. Os dados anteriores mantêm-se.");
+  return {faturacao: arredondarNegocio(r.totalBillings.value), pontos: arredondarNegocio(pontos), consultores: stats.subscriptions,
+    comissoes: arredondarNegocio(r.activeCommission.value + r.passiveCommission.value)};
 }

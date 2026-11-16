@@ -33,34 +33,45 @@ assert.throws(() => validarTotaisNegocio({faturacao: 0}));
 assert.equal(validarTotaisNegocio({...totais(1), faturacao: -1.256}).faturacao, -1.26);
 
 const periodo = periodos[0]!;
-const raiz = (v: number) => ({t: 10, i: 0, p: {k: ["result"], v: [{t: 10, i: 1, p: {k: ["parent"], v: [{t: 10, i: 2, p: {k: ["bookingVolume", "username"], v: [{t: 0, s: v}, {t: 1, s: "Eu"}]}}]}}]}});
+// Respostas seroval simuladas: raiz do Analisador (nome de utilizador) e «O meu negócio».
+const seroval = (valor: unknown): unknown => {
+  if (typeof valor === "number") return {t: 0, s: valor};
+  if (typeof valor === "string") return {t: 1, s: valor};
+  const o = valor as Record<string, unknown>;
+  return {t: 10, p: {k: Object.keys(o), v: Object.values(o).map(seroval)}};
+};
+const raiz = () => seroval({result: {parent: {username: "Eu"}}});
+const negocio = (fat: number, ativas: number, passivas: number, currency = "EUR") =>
+  seroval({result: {currency, totalBillings: {value: fat, personal: 1, team: fat - 1}, activeCommission: {value: ativas}, passiveCommission: {value: passivas}}});
 const topo = (pontos?: number) => ({content: pontos === undefined ? [{username: "outra", value: 3}] : [{username: "eu", value: pontos}, {username: "outra", value: 3}]});
-const analisador = (url: string) => url.includes("/_serverFn/");
+const eNegocio = (url: string) => url.includes("/_serverFn/b08e83ed"), eAnalisador = (url: string) => url.includes("/_serverFn/4b457b9f");
+type Fontes = {neg?: unknown; ana?: unknown; top?: unknown; equipa?: unknown};
+const fontes = (f: Fontes = {}) => async (url: string) => {
+  if (eNegocio(url)) return f.neg ?? negocio(1250, 12.25, 30.5);
+  if (eAnalisador(url)) return f.ana ?? raiz();
+  if (url.includes("topPoints")) return f.top ?? topo(25.5);
+  if (url.includes("affiliates")) return f.equipa ?? {stats: {sales: 1000, points: 25, subscriptions: 2}};
+  throw new Error("Fonte inesperada: " + url);
+};
 const pedidos: string[] = [];
-const resultado = await recolherPeriodoNegocio(periodo, async url => {
-  pedidos.push(url);
-  if (analisador(url)) return raiz(1250);
-  if (url.includes("topPoints")) return topo(25.5);
-  if (url.includes("affiliates")) return {stats: {sales: 1000, points: 25, subscriptions: 2}};
-  if (url.includes("activeIncome")) return {totalCommissions: 12.25, currency: "EUR"};
-  if (url.includes("passiveIncome")) return {totalCommissions: 30.5, currency: "EUR"};
-  throw new Error("Fonte de comissões inesperada ou duplicada.");
-});
+const base = fontes();
+const resultado = await recolherPeriodoNegocio(periodo, async url => {pedidos.push(url); return base(url);});
 assert.deepEqual(resultado, {faturacao: 1250, pontos: 25.5, consultores: 2, comissoes: 42.75});
-assert.equal(pedidos.length, 5);
+assert.equal(pedidos.length, 4);
+assert(!pedidos.some(url => /activeIncome|passiveIncome|movements/.test(url)));
 assert(pedidos.some(url => url.includes("topPoints") && url.includes("team=true") && url.includes("user=Eu")));
-assert.equal((await recolherPeriodoNegocio(periodo, async url => analisador(url) ? raiz(0) : url.includes("topPoints") ? topo() : url.includes("affiliates") ? {stats: {sales: 0, points: 7, subscriptions: 0}} : {totalCommissions: 0, currency: "EUR"})).pontos, 7);
-await assert.rejects(() => recolherPeriodoNegocio(periodo, async url => analisador(url) ? raiz(0) : url.includes("topPoints") ? {} : url.includes("affiliates") ? {stats: {sales: 0, points: 7, subscriptions: 0}} : {totalCommissions: 0, currency: "EUR"}), /Top Pontos/);
-assert(pedidos.filter(url => !analisador(url)).every(url => url.includes("startDate=2019-01-01&endDate=2019-01-31")));
-assert(decodeURIComponent(pedidos.find(analisador)!).includes('"2019-01-31"'));
-await assert.rejects(() => recolherPeriodoNegocio(periodo, async url => analisador(url) ? {} : url.includes("topPoints") ? topo(1) : url.includes("affiliates") ? {stats: {sales: 1, points: 1, subscriptions: 0}} : {totalCommissions: 0, currency: "EUR"}), /faturação total/);
+assert(pedidos.filter(url => url.startsWith("https://api.icligo.com")).every(url => url.includes("startDate=2019-01-01&endDate=2019-01-31")));
+const pedidoNegocio = decodeURIComponent(pedidos.find(eNegocio)!);
+assert(pedidoNegocio.includes('"custom"') && pedidoNegocio.includes('"2019-01-01"') && pedidoNegocio.includes('"2019-01-31"'));
+assert.equal((await recolherPeriodoNegocio(periodo, fontes({top: topo(), equipa: {stats: {points: 7, subscriptions: 0}}}))).pontos, 7);
+await assert.rejects(() => recolherPeriodoNegocio(periodo, fontes({top: {}})), /Top Pontos/);
+await assert.rejects(() => recolherPeriodoNegocio(periodo, fontes({neg: seroval({result: {currency: "EUR"}})})), /Faturação Total/);
+await assert.rejects(() => recolherPeriodoNegocio(periodo, fontes({neg: negocio(1, 1, 1, "USD")})), /euros/);
+await assert.rejects(() => recolherPeriodoNegocio(periodo, fontes({neg: seroval({result: {currency: "EUR", totalBillings: {value: 1}, activeCommission: {value: 1}}})})), /comissões ativas e passivas/);
+await assert.rejects(() => recolherPeriodoNegocio(periodo, fontes({ana: seroval({result: {}})})), /identificou a tua conta/);
 await assert.rejects(() => recolherPeriodoNegocio(periodo, async () => ({})), /totais da equipa/);
-const equipaVazia = {stats: {sales: 0, points: 0, subscriptions: 0}};
-await assert.rejects(() => recolherPeriodoNegocio(periodo, async url => analisador(url) ? raiz(0) : url.includes("topPoints") ? topo(0) : url.includes("affiliates") ? equipaVazia : {}), /comissões próprias/);
-await assert.rejects(() => recolherPeriodoNegocio(periodo, async url => analisador(url) ? raiz(0) : url.includes("topPoints") ? topo(0) : url.includes("affiliates") ? equipaVazia : url.includes("activeIncome") ? {totalCommissions: 10} : {}), /comissões passivas/);
-await assert.rejects(() => recolherPeriodoNegocio(periodo, async url => analisador(url) ? raiz(0) : url.includes("topPoints") ? topo(0) : url.includes("affiliates") ? equipaVazia : {totalCommissions: 10, currency: "USD"}), /euros/);
-assert.equal((await recolherPeriodoNegocio(periodo, async url => analisador(url) ? raiz(0) : url.includes("topPoints") ? topo(0) : url.includes("affiliates") ? equipaVazia : {totalCommissions: 0, currency: "EUR"})).comissoes, 0);
-assert.equal((await recolherPeriodoNegocio(periodo, async url => analisador(url) ? raiz(0) : url.includes("topPoints") ? topo(0) : url.includes("affiliates") ? equipaVazia : {totalCommissions: url.includes("activeIncome") ? -5 : 30})).comissoes, 25);
+assert.equal((await recolherPeriodoNegocio(periodo, fontes({neg: negocio(0, 0, 0)}))).comissoes, 0);
+assert.equal((await recolherPeriodoNegocio(periodo, fontes({neg: negocio(10, -5, 30)}))).comissoes, 25);
 
 // Executa o favorito num MyOffice simulado: só a identidade e as respostas autorizadas saem da ponte.
 const mensagens: {corpo: Record<string, unknown>; origem: string}[] = [];
@@ -90,9 +101,10 @@ await receber(evento("https://api.icligo.com/legacy-system/v1/account/movements"
 await receber(evento("https://outro.example/roubar"));
 await receber(evento("https://api.icligo.com/legacy-system/v1/account/qualquer-coisa"));
 await receber(evento("https://myoffice.icligo.com/_serverFn/4b457b9f58baf866962a4eb026255982ff0e9deb00bd1b341b16408098b7584a?payload=x"));
+await receber(evento("https://myoffice.icligo.com/_serverFn/b08e83ed56f14e68ed29ed2ec93d6132d46035fac5637de359d8e293aa37dfde?payload=x"));
 await receber(evento("https://myoffice.icligo.com/_serverFn/outra-funcao"));
-assert.equal(chamadas.length, 6);
-assert.equal(JSON.parse(mensagens[0]!.corpo.corpo as string).versao, 4);
+assert.equal(chamadas.length, 7);
+assert.equal(JSON.parse(mensagens[0]!.corpo.corpo as string).versao, 5);
 assert(!JSON.stringify(mensagens).includes("token-privado"));
 
 // O MyOffice atual usa sessão por cookie e getMe em vez de /api/auth/session.

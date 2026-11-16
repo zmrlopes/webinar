@@ -84,14 +84,17 @@ chaves `consultor:negocio:`, separados do admin. Só uma recolha completa substi
 o dashboard; falhas mantêm os dados anteriores. Não importa a equipa nem altera
 ranking, campanhas ou os snapshots do admin. Correr `npm run test:negocio`.
 
-Por indicação de 16/11/2026, a faturação dos Mapas e Projeções é o total do
-negócio de cada TP (própria + equipa, como um só), lida na raiz do Analisador
-de Organização do MyOffice para cada período, porque `team/affiliates` omite
-a própria conta. Os pontos totais são a linha da própria conta em
-`ranking/topPoints?team=true` (o Top Pontos do Início), confirmada pelo
-utilizador; sem linha própria, usam os pontos da equipa. Novos consultores
-continuam a vir da equipa. O favorito passa à versão 4; dados de versões
-anteriores mostram um aviso até o TP voltar a atualizar.
+Por indicação de 16/11/2026, os Mapas e Projeções mostram o total do negócio
+de cada TP (próprio + equipa, como um só), com os mesmos valores do MyOffice.
+A faturação é a «Faturação Total» de Negócio → Visão Geral do Negócio
+(reservas + subscrições + gifts, pessoal + equipa) e as comissões são as
+Comissões Ativas + Passivas do mesmo separador, lidas para cada mês com o filtro
+de datas personalizado. Os pontos totais são a linha da própria conta em
+`ranking/topPoints?team=true` (o Top Pontos do Início); sem linha própria,
+usam os pontos da equipa. Novos consultores continuam a vir da equipa. Esta
+indicação substitui a soma de `stats/activeIncome` e `stats/passiveIncome`.
+O favorito passa à versão 5; dados de versões anteriores mostram um aviso até
+o TP voltar a atualizar.
 
 Por indicação do utilizador, o separador BLACKFRIDAY da nova área apresenta
 um bingo 5×5 inspirado em `docs/bingo.jpeg`, com gradiente escuro e progresso
