@@ -10,12 +10,19 @@ import { LINGUAS_FORMACOES } from "@/lib/formacoes-forum-icligo";
 
 const CATEGORIAS = Object.keys(NOMES_CATEGORIAS) as CategoriaAcontecimento[];
 const DIAS_SEMANA = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
-/** Logótipo da origem, quando há um — iCliGo ou Tropa de Elite (formações internas); as restantes categorias ficam só com o ponto de cor. */
-const LOGO_CATEGORIA: Partial<Record<CategoriaAcontecimento, string>> = {
-  icligo: "/icligo-logo.png", formacao: "/tropa-elite-logo.png",
-};
-function MarcaAcontecimento({ categoria }: { categoria: CategoriaAcontecimento }) {
-  const logo = LOGO_CATEGORIA[categoria];
+/**
+ * Logótipo da origem, quando há um. O da Tropa de Elite só identifica as
+ * formações criadas por nós (`criadaPeloAdmin`) — as sincronizadas da sala
+ * do Patrick são da comunidade geral e ficam só com o ponto de cor, como
+ * webinar/welcome/evento.
+ */
+function logoDoAcontecimento(categoria: CategoriaAcontecimento, criadaPeloAdmin?: boolean): string | null {
+  if (categoria === "icligo") return "/icligo-logo.png";
+  if (categoria === "formacao" && criadaPeloAdmin) return "/tropa-elite-logo.png";
+  return null;
+}
+function MarcaAcontecimento({ categoria, criadaPeloAdmin }: { categoria: CategoriaAcontecimento; criadaPeloAdmin?: boolean }) {
+  const logo = logoDoAcontecimento(categoria, criadaPeloAdmin);
   return <span className={s.marcaEvento}>
     {logo ? <img className={s.logoCategoria} src={logo} alt="" width={32} height={32} /> : <span className={s.ponto} aria-hidden="true" />}
   </span>;
@@ -168,7 +175,7 @@ export function CalendarioConsultor({ email, nome }: { email: string; nome: stri
 
   function lista(listaEventos: AcontecimentoCalendario[]) {
     return <div className={s.lista}>{listaEventos.map(a => <button type="button" key={a.id} className={s.itemAgenda} data-categoria={a.categoria} data-criado-pelo-admin={a.criadaPeloAdmin} onClick={() => abrirAcontecimento(a)}>
-      <MarcaAcontecimento categoria={a.categoria} />
+      <MarcaAcontecimento categoria={a.categoria} criadaPeloAdmin={a.criadaPeloAdmin} />
       <span className={s.itemTexto}><strong>{a.titulo}</strong><span>{horario(a)} · {NOMES_CATEGORIAS[a.categoria]}</span>{a.local && <small>{a.local}</small>}</span>
       <BandeiraFormacao lingua={a.lingua} className={s.bandeiraAgenda} />
       <span aria-hidden="true">↗</span>
@@ -224,7 +231,7 @@ export function CalendarioConsultor({ email, nome }: { email: string; nome: stri
           {diasDoMes(mes).map(dia => <div key={dia} className={s.dia} data-dia={dia} data-fora={!dia.startsWith(mes)} data-selecionado={diaSelecionado === dia}>
             <button type="button" className={s.numero} data-hoje={dia === hoje} aria-label={dataLonga(dia)} aria-pressed={diaSelecionado === dia} onClick={() => escolherDia(dia)}>{Number(dia.slice(-2))}</button>
             <div className={s.eventosDia}>{(porDia.get(dia) ?? []).map(a => <button type="button" className={s.acontecimento} key={a.id} data-categoria={a.categoria} data-criado-pelo-admin={a.criadaPeloAdmin} data-com-lingua={!!a.lingua} title={`${a.titulo} · ${horario(a)}${a.lingua ? ` · ${LINGUAS_FORMACOES[a.lingua].nome}` : ""}`} aria-label={`${a.titulo}, ${dataLonga(dia)}, ${horario(a)}${a.lingua ? `, ${LINGUAS_FORMACOES[a.lingua].nome}` : ""}`} aria-haspopup="dialog" onClick={() => { setDiaSelecionado(dia); abrirAcontecimento(a); }}>
-              <MarcaAcontecimento categoria={a.categoria} />
+              <MarcaAcontecimento categoria={a.categoria} criadaPeloAdmin={a.criadaPeloAdmin} />
               <span className={s.conteudoEvento}>
                 <span className={s.hora}>{a.diaInteiro ? "Hora por confirmar" : hora(a.comecaEm)}</span>
                 <span className={s.eventoTexto}>{a.titulo}</span>
@@ -246,7 +253,7 @@ export function CalendarioConsultor({ email, nome }: { email: string; nome: stri
     <dialog ref={dialogo} className={s.dialogo} aria-labelledby="titulo-acontecimento" onCancel={() => setSelecionado(null)} onClick={e => { if (e.target === e.currentTarget) setSelecionado(null); }}>
       {selecionado && <div>
         <button type="button" className={s.fechar} onClick={() => setSelecionado(null)} aria-label="Fechar detalhes">×</button>
-        <span className={s.tipoDetalhes} data-categoria={selecionado.categoria} data-criado-pelo-admin={selecionado.criadaPeloAdmin}><MarcaAcontecimento categoria={selecionado.categoria} />{NOMES_CATEGORIAS[selecionado.categoria]}</span>
+        <span className={s.tipoDetalhes} data-categoria={selecionado.categoria} data-criado-pelo-admin={selecionado.criadaPeloAdmin}><MarcaAcontecimento categoria={selecionado.categoria} criadaPeloAdmin={selecionado.criadaPeloAdmin} />{NOMES_CATEGORIAS[selecionado.categoria]}</span>
         <h2 id="titulo-acontecimento">{selecionado.titulo}</h2>
         <p>{selecionado.diaFim ? intervalo(selecionado) : dataLonga(diaDoAcontecimento(selecionado))}</p>
         <p><strong>{horario(selecionado)}</strong>{!selecionado.diaInteiro && " · Hora de Portugal"}</p>

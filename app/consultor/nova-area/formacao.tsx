@@ -54,7 +54,11 @@ function CartaoFormacao({ formacao, email, aoInscrever }: {
 
   const destaque = formacao.tipo === "externa" ? cartoes.icligo : formacao.criadaPeloAdmin ? cartoes.interna : "";
   return <article className={`${cartoes.cartao}${destaque ? ` ${destaque}` : ""}`}>
-    <span className={cartoes.etiqueta}><img src={formacao.tipo === "externa" ? "/icligo-logo.png" : "/tropa-elite-logo.png"} alt="" /> {formacao.tipo === "externa" ? "Formação iCliGo" : "Formação interna"}{formacao.tipo === "externa" && <BandeiraFormacao lingua={formacao.lingua} className={cartoes.bandeira} />}</span>
+    <span className={cartoes.etiqueta}>
+      {formacao.tipo === "externa" ? <img src="/icligo-logo.png" alt="" /> : formacao.criadaPeloAdmin && <img src="/tropa-elite-logo.png" alt="" />}
+      {" "}{formacao.tipo === "externa" ? "Formação iCliGo" : "Formação interna"}
+      {formacao.tipo === "externa" && <BandeiraFormacao lingua={formacao.lingua} className={cartoes.bandeira} />}
+    </span>
     <h2 className={cartoes.titulo}>{formacao.titulo}</h2>
     <p className={cartoes.data}><time dateTime={formacao.comecaEm}>{new Date(formacao.comecaEm).toLocaleString("pt-PT", {
       dateStyle: "long", timeStyle: "short", timeZone: "Europe/Lisbon",

@@ -92,8 +92,8 @@
   .eventosDia { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 4px; }
   .acontecimento { display: flex; flex-direction: row; align-items: center; width: 14px; height: 14px; border: none; border-radius: 50%; padding: 3px; gap: 0; justify-content: center; box-shadow: none; }
   .acontecimento[data-categoria=icligo] { width: 30px; height: 30px; padding: 2px; border: 1px solid #f0603f; border-radius: 8px; background: #fff0e6; }
-  .acontecimento[data-categoria=formacao] { width: 30px; height: 30px; padding: 2px; border: 1px solid #4b5320; border-radius: 8px; background: #e6e8d9; }
-  .acontecimento[data-categoria=formacao][data-criado-pelo-admin=true] { border-color: #d6368f; background: #fbdcee; }
+  /* Só as formações criadas por nós (Tropa de Elite) ganham a caixa com logótipo; as sincronizadas da sala do Patrick ficam só com o pontinho, como as restantes categorias. */
+  .acontecimento[data-categoria=formacao][data-criado-pelo-admin=true] { width: 30px; height: 30px; padding: 2px; border: 1px solid #d6368f; border-radius: 8px; background: #fbdcee; }
   .acontecimento .logoCategoria { width: 24px; height: 24px; }
   .conteudoEvento { display: none; }
   .bandeiraEvento { top: auto; bottom: -2px; right: -2px; border: 1px solid #fff; border-radius: 2px; }
