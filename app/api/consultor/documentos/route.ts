@@ -7,5 +7,5 @@ export async function POST(request: Request) {
   const email=c.email.trim().toLowerCase();
   if(!await buscarMembroEquipa(email)) return Response.json({erro:'esta área é só para a equipa'},{status:403});
   const [documentos,pastas]=await Promise.all([listarDocumentos(),listarPastasDocumentos()]);
-  return Response.json({documentos:documentos.map(d=>({...d,url:linkDocumento(d.id)})),pastas},{headers:{'Cache-Control':'private, no-store'}});
+  return Response.json({documentos:documentos.map(d=>({...d,url:d.link_externo??linkDocumento(d.id)})),pastas},{headers:{'Cache-Control':'private, no-store'}});
 }

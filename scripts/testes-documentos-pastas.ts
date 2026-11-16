@@ -58,6 +58,7 @@ try{
  const renomear=comandos((await readFile('migrations/050_documentos_pasta_madrid.sql','utf8'))+'\n'+(await readFile('migrations/051_documentos_pasta_be_a_leader.sql','utf8')));
  const setup=[
   ...comandos(schema).map(q=>sql.query(q)),
+  sql.query(`alter table documentos add column link_externo text`),
   sql.query(`insert into documentos(id,titulo,nome,tipo,categoria,descricao,tamanho,publicado,estado,conhecimento_estado,texto)
     values($1,'Congresso A','a.pdf','application/pdf','Be a Leader Madrid 2026','Descrição',1,true,'pronto','indexado','Conhecimento intacto'),
     ($2,'Congresso B','b.pdf','application/pdf','Be a Leader Madrid 2026','',1,false,'pronto','sem-texto',''),

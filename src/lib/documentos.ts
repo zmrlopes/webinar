@@ -5,12 +5,21 @@ import { fragmentarTexto, TAMANHO_PARTE } from './documentos-formatos';
 export interface Documento {
   id: string; titulo: string; nome: string; tipo: string; categoria: string; descricao: string;
   tamanho: number; publicado: boolean; conhecimento_estado: string; criado_em: string;
-  pasta_id: string | null;
+  pasta_id: string | null; link_externo: string | null;
 }
 export async function listarDocumentos(admin = false): Promise<Documento[]> {
   const { rows } = await db().query(`select id,titulo,nome,tipo,categoria,descricao,tamanho::float8 as tamanho,
-    publicado,conhecimento_estado,criado_em,pasta_id from documentos where estado='pronto' ${admin ? '' : 'and publicado'} order by categoria,titulo`);
+    publicado,conhecimento_estado,criado_em,pasta_id,link_externo from documentos where estado='pronto' ${admin ? '' : 'and publicado'} order by categoria,titulo`);
   return rows;
+}
+function urlExternaValida(v: unknown): v is string { return typeof v === 'string' && v.length <= 2000 && /^https:\/\//.test(v); }
+export async function criarDocumentoLink(dados: {titulo: string; categoria: string; descricao: string; pastaId: string | null; linkExterno: string}): Promise<string | null> {
+  if (!urlExternaValida(dados.linkExterno)) return null;
+  const { rows } = await db().query(`insert into documentos(titulo,nome,tipo,categoria,descricao,tamanho,estado,publicado,conhecimento_estado,pasta_id,link_externo)
+    select $1,'','link',$2,$3,0,'pronto',true,'sem-texto',$4::uuid,$5
+    where $4::uuid is null or exists(select 1 from documentos_pastas where id=$4::uuid)
+    returning id`, [dados.titulo.trim(), dados.categoria.trim() || 'Ligações', dados.descricao.trim(), dados.pastaId, dados.linkExterno]);
+  return rows[0]?.id ?? null;
 }
 export async function finalizarDocumento(id: string, texto: string): Promise<void> {
   const client = await db().connect();

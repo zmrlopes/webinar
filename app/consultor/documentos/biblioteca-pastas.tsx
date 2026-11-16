@@ -36,7 +36,9 @@ export function BibliotecaPastas({itens,pastas}: {itens: Item[]; pastas: PastaDo
       <div className={s.grade}>{visiveis.map(d=><article className={s.cartao} key={d.id}>
         {pastaAtiva===null && <button type="button" className={s.linkPasta} onClick={()=>abrir(d.pasta_id??'sem-pasta')}>Pasta: {nomePasta(d.pasta_id)}</button>}
         <span className={s.etiqueta}>{d.categoria}</span><h2>{d.titulo}</h2>{d.descricao && <p>{d.descricao}</p>}
-        <p className={s.meta}>{d.nome.split('.').pop()?.toUpperCase()} · {formatarTamanho(d.tamanho)}</p><div className={s.acoes}><a className={s.botao} href={d.url}>Descarregar</a></div>
+        {d.link_externo
+          ? <><p className={s.meta}>Ligação externa</p><div className={s.acoes}><a className={s.botao} href={d.url} target="_blank" rel="noopener noreferrer">Abrir</a></div></>
+          : <><p className={s.meta}>{d.nome.split('.').pop()?.toUpperCase()} · {formatarTamanho(d.tamanho)}</p><div className={s.acoes}><a className={s.botao} href={d.url}>Descarregar</a></div></>}
       </article>)}</div>
       {!visiveis.length && <p className={s.subtitulo}>{pesquisa.trim() ? 'Nenhum documento corresponde à pesquisa.' : 'Ainda não há documentos nesta pasta.'}</p>}
     </>}

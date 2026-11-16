@@ -26,6 +26,11 @@ export function GestorDocumentos({iniciais,pastasIniciais}:{iniciais:Documento[]
   const [mensagem,setMensagem]=useState('');
   const [erro,setErro]=useState('');
   const input=useRef<HTMLInputElement>(null);
+  const [pastaIdLink,setPastaIdLink]=useState(pastasIniciais.length===1 ? pastasIniciais[0]!.id : '');
+  const [tituloLink,setTituloLink]=useState('');
+  const [categoriaLink,setCategoriaLink]=useState('Ligações');
+  const [descricaoLink,setDescricaoLink]=useState('');
+  const [linkExterno,setLinkExterno]=useState('');
   async function atualizar(){const dados=await pedido('/api/admin/documentos');setItens(dados.documentos);setPastas(dados.pastas);}
   async function criarPasta(e:React.FormEvent) {
     e.preventDefault();setOcupado(true);setErro('');setMensagem('');
@@ -78,6 +83,15 @@ export function GestorDocumentos({iniciais,pastasIniciais}:{iniciais:Documento[]
     } catch(e) {setMensagem(concluidos ? `${concluidos} documento(s) já publicado(s).` : '');setErro(e instanceof Error ? e.message : 'falha no upload');}
     finally {await atualizar().catch(()=>{});setOcupado(false);}
   }
+  async function adicionarLink(e:React.FormEvent) {
+    e.preventDefault();if(!tituloLink.trim() || !linkExterno.trim() || !pastaIdLink) return;
+    setOcupado(true);setErro('');setMensagem('');
+    try {
+      await pedido('/api/admin/documentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({titulo:tituloLink,categoria:categoriaLink,descricao:descricaoLink,pastaId:pastaIdLink,linkExterno})});
+      await atualizar();setMensagem(`Ligação “${tituloLink}” publicada.`);setTituloLink('');setDescricaoLink('');setLinkExterno('');
+    } catch(e) {setErro(e instanceof Error ? e.message : 'não foi possível publicar a ligação');}
+    finally {setOcupado(false);}
+  }
   async function alterar(d:Documento,apagar=false) {
     if(apagar && !window.confirm(`Apagar “${d.titulo}” e o respetivo conhecimento?`)) return;
     setOcupado(true);setErro('');
@@ -101,8 +115,17 @@ export function GestorDocumentos({iniciais,pastasIniciais}:{iniciais:Documento[]
       <button disabled={ocupado || !ficheiros.length || !pastaId} className={s.botao}>Enviar e publicar</button>
       {ocupado && <progress aria-label="Progresso do upload" value={progresso} max={100}/>}
     </form>
+    <form onSubmit={e=>void adicionarLink(e)} className={s.formulario}>
+      <h2>Adicionar ligação</h2><small>Um cartão que abre um endereço à parte (por exemplo, um álbum de fotos), em vez de um ficheiro enviado.</small>
+      <label>Pasta<select disabled={ocupado} required value={pastaIdLink} onChange={e=>setPastaIdLink(e.target.value)}><option value="" disabled>Escolhe uma pasta</option>{pastas.map(p=><option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
+      <label>Título<input disabled={ocupado} required maxLength={250} value={tituloLink} onChange={e=>setTituloLink(e.target.value)} placeholder="Por exemplo: Fotos do Teambuilding"/></label>
+      <label>Categoria<input disabled={ocupado} required maxLength={150} value={categoriaLink} onChange={e=>setCategoriaLink(e.target.value)}/></label>
+      <label>Descrição<textarea disabled={ocupado} maxLength={2000} value={descricaoLink} onChange={e=>setDescricaoLink(e.target.value)}/></label>
+      <label>Endereço (https://…)<input disabled={ocupado} required type="url" maxLength={2000} value={linkExterno} onChange={e=>setLinkExterno(e.target.value)} placeholder="https://…"/></label>
+      <button disabled={ocupado || !tituloLink.trim() || !linkExterno.trim() || !pastaIdLink} className={s.botao}>Publicar ligação</button>
+    </form>
     {mensagem && <p role="status" className={s.sucesso}>{mensagem}</p>}{erro && <p role="alert" className={s.erro}>{erro}</p>}
-    <div className={s.grade}>{itens.map(d=><article key={d.id} className={s.cartao}><span className={s.etiqueta}>{d.categoria}</span><h2>{d.titulo}</h2><label>Pasta<select aria-label={`Pasta de ${d.titulo}`} disabled={ocupado} value={d.pasta_id??''} onChange={e=>void mudarPasta(d,e.target.value)}><option value="">Sem pasta</option>{pastas.map(p=><option key={p.id} value={p.id}>{p.nome}</option>)}</select></label><p className={s.meta}>{formatarTamanho(d.tamanho)} · {d.publicado?'Publicado':'Oculto'}</p><p className={s.meta}>{d.conhecimento_estado==='indexado'?'✓ Na base de conhecimento':'Sem texto na base de conhecimento'}</p><div className={s.acoes}><a href={`/api/admin/documentos/${d.id}`} className={`${s.botao} ${s.secundario}`}>Descarregar</a><button disabled={ocupado} onClick={()=>void alterar(d)} className={`${s.botao} ${s.secundario}`}>{d.publicado?'Ocultar':'Publicar'}</button><button disabled={ocupado} onClick={()=>void alterar(d,true)} className={`${s.botao} ${s.secundario}`}>Apagar</button></div></article>)}</div>
+    <div className={s.grade}>{itens.map(d=><article key={d.id} className={s.cartao}><span className={s.etiqueta}>{d.categoria}</span><h2>{d.titulo}</h2><label>Pasta<select aria-label={`Pasta de ${d.titulo}`} disabled={ocupado} value={d.pasta_id??''} onChange={e=>void mudarPasta(d,e.target.value)}><option value="">Sem pasta</option>{pastas.map(p=><option key={p.id} value={p.id}>{p.nome}</option>)}</select></label><p className={s.meta}>{d.link_externo?'Ligação externa':formatarTamanho(d.tamanho)} · {d.publicado?'Publicado':'Oculto'}</p><p className={s.meta}>{d.link_externo?d.link_externo:(d.conhecimento_estado==='indexado'?'✓ Na base de conhecimento':'Sem texto na base de conhecimento')}</p><div className={s.acoes}>{d.link_externo ? <a href={d.link_externo} target="_blank" rel="noopener noreferrer" className={`${s.botao} ${s.secundario}`}>Abrir</a> : <a href={`/api/admin/documentos/${d.id}`} className={`${s.botao} ${s.secundario}`}>Descarregar</a>}<button disabled={ocupado} onClick={()=>void alterar(d)} className={`${s.botao} ${s.secundario}`}>{d.publicado?'Ocultar':'Publicar'}</button><button disabled={ocupado} onClick={()=>void alterar(d,true)} className={`${s.botao} ${s.secundario}`}>Apagar</button></div></article>)}</div>
     {!itens.length && <p>Ainda não há documentos. Envia o primeiro acima.</p>}
   </div></main>;
 }
