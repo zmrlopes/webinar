@@ -82,7 +82,7 @@ export function SondagemCruzeiroTropaElite({ email }: { email: string }) {
   }
 
   return <article className={s.cartao} aria-labelledby="titulo-cruzeiro-tropa-elite">
-    <span className={estilos.etiqueta}><img className={s.logo} src="/icligo-logo.png" alt="" width={20} height={20} />EVENTO ICLIGO</span>
+    <span className={estilos.etiqueta}><img className={s.logo} src="/tropa-elite-logo.png" alt="" width={20} height={20} />EVENTO TROPA DE ELITE</span>
     <h2 id="titulo-cruzeiro-tropa-elite">{CRUZEIRO_TROPA_ELITE.titulo}</h2>
     <p className={s.data}><time dateTime={CRUZEIRO_TROPA_ELITE.inicio}>22</time> a <time dateTime={CRUZEIRO_TROPA_ELITE.fim}>29 de abril de 2027</time></p>
     <p className={s.descricao}>{CRUZEIRO_TROPA_ELITE.descricao}</p>
