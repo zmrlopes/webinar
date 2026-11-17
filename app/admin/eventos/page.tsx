@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ResultadosBeARock } from "./be-a-rock";
+import { ResultadosCruzeiroTropaElite } from "./cruzeiro-tropa-elite";
 import { resumirPresencasEvento } from "@/lib/eventos-presencas";
 import { ResumoPresencasEvento } from "./resumo-presencas";
 import { listarPedidosBilhete, totaisBilhetes } from "@/lib/bilhetes-convencao";
@@ -75,6 +76,7 @@ export default async function AdminEventos() {
 
         <div className="ad-eventos-grelha">
           <ResultadosBeARock />
+          <ResultadosCruzeiroTropaElite />
           <Link href="/admin/eventos/teambuilding" className="ad-evento-cartao">
             <p className="ad-evento-titulo">{EVENTO_TITULO}</p>
             <p className="ad-evento-meta">

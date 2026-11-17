@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { DadosEventosPresenciais } from "@/lib/consultor-nova-area";
 import { ConvencaoCartao } from "../convencao-cartao";
 import { SondagemBeARock } from "./be-a-rock";
+import { SondagemCruzeiroTropaElite } from "./cruzeiro-tropa-elite";
 import estilos from "./nova-area.module.css";
 import s from "./eventos.module.css";
 
@@ -49,6 +50,7 @@ export function EventosPresenciais({ email }: { email: string }) {
     </div>
     <div className={s.grade}>
       <SondagemBeARock key={email} email={email} />
+      <SondagemCruzeiroTropaElite key={email} email={email} />
       {estado === "carregar" && <p className={s.aviso} role="status">A carregar os restantes eventos…</p>}
       {estado === "erro" && <div className={s.erro} role="alert"><p>{erro}</p><button type="button" className={estilos.botaoSecundario} onClick={() => setTentativa(n => n + 1)}>Tentar novamente</button></div>}
       {estado === "pronto" && dados &&
