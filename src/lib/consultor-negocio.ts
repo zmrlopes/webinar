@@ -2,15 +2,16 @@
 export const METRICAS_NEGOCIO = ["faturacao", "comissoes", "pontos", "consultores"] as const;
 export type MetricaNegocio = typeof METRICAS_NEGOCIO[number];
 export type TotaisNegocio = Record<MetricaNegocio, number>;
+export const VERSAO_DADOS_NEGOCIO = 6;
 export const ROTULOS_NEGOCIO: Record<MetricaNegocio, string> = {
-  faturacao: "Faturação Total (própria + equipa)", comissoes: "Comissões totais", pontos: "Pontos totais (próprios + equipa)", consultores: "Novos consultores",
+  faturacao: "Faturação Total (própria + equipa)", comissoes: "Comissões totais", pontos: "Pontos totais (próprios + equipa)", consultores: "TPs totais (tu + equipa)",
 };
 export const MESES_NEGOCIO = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 export interface PeriodoNegocio { chave: string; inicio: string; fim: string }
-export interface PlanoNegocio { id: string; hoje: string; periodos: PeriodoNegocio[] }
+export interface PlanoNegocio { id: string; hoje: string; periodos: PeriodoNegocio[]; dataRegisto?: string | null }
 export interface DadosNegocio {
   ate: string; atualizadoEm: string; origemEmail: string;
-  versao?: 2 | 3 | 4 | 5; inicioHistorico?: string;
+  versao?: 2 | 3 | 4 | 5 | 6; inicioHistorico?: string;
   meses: Record<string, TotaisNegocio>;
   homologo: TotaisNegocio;
 }
@@ -54,11 +55,21 @@ export function validarTotaisNegocio(valor: unknown): TotaisNegocio {
 }
 export function resumoNegocio(dados: DadosNegocio, metrica: MetricaNegocio) {
   const ano = Number(dados.ate.slice(0, 4)), mes = Number(dados.ate.slice(5, 7));
+  if (metrica === "consultores" && dados.versao === VERSAO_DADOS_NEGOCIO) {
+    const atual = dados.meses[dados.ate.slice(0, 7)]?.consultores ?? 0, anterior = dados.homologo.consultores;
+    return {atual, anterior, variacao: anterior > 0 ? arredondarNegocio((atual / anterior - 1) * 100) : null};
+  }
   let atual = 0, anterior = dados.homologo[metrica];
   for (let m = 1; m <= mes; m++) atual += dados.meses[`${ano}-${dois(m)}`]?.[metrica] ?? 0;
   for (let m = 1; m < mes; m++) anterior += dados.meses[`${ano - 1}-${dois(m)}`]?.[metrica] ?? 0;
   atual = arredondarNegocio(atual); anterior = arredondarNegocio(anterior);
   return {atual, anterior, variacao: anterior > 0 ? arredondarNegocio((atual / anterior - 1) * 100) : null};
+}
+/** TPs são o tamanho da organização numa data, nunca a soma dos totais mensais. */
+export function totalAnoNegocio(dados: DadosNegocio, metrica: MetricaNegocio, ano: number): number {
+  const meses = Object.entries(dados.meses).filter(([chave]) => chave.startsWith(`${ano}-`)).sort(([a], [b]) => a.localeCompare(b));
+  if (metrica === "consultores" && dados.versao === VERSAO_DADOS_NEGOCIO) return meses.at(-1)?.[1].consultores ?? 0;
+  return arredondarNegocio(meses.reduce((soma, [, totais]) => soma + totais[metrica], 0));
 }
 export function fatorMedioNegocio(dados: DadosNegocio): number {
   const taxas = METRICAS_NEGOCIO.map(k => resumoNegocio(dados, k).variacao).filter((v): v is number => v !== null);

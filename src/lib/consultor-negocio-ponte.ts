@@ -44,6 +44,57 @@ export function favoritoNegocio(site: string): string {
 }
 
 type PedirMyOffice = (url: string) => Promise<unknown>;
+export interface OrganizacaoNegocio { inicio: string; datasEntrada: string[] }
+
+function dataEntrada(valor: unknown): string {
+  if (typeof valor !== "string" || !/^\d{4}-\d{2}-\d{2}(?:T|$)/.test(valor) || !Number.isFinite(Date.parse(valor)) || new Date(`${valor.slice(0, 10)}T12:00:00Z`).toISOString().slice(0, 10) !== valor.slice(0, 10)) {
+    throw new Error("O MyOffice não devolveu todas as datas de entrada dos TPs. Os dados anteriores mantêm-se.");
+  }
+  return new Intl.DateTimeFormat("en-CA", {timeZone: "Europe/Lisbon"}).format(new Date(valor));
+}
+
+/** Lê a organização completa uma vez por atualização; só as datas entram no cálculo. */
+export async function recolherOrganizacaoNegocio(hoje: string, dataRegisto: string | null | undefined, pedir: PedirMyOffice): Promise<OrganizacaoNegocio> {
+  if (!dataRegisto) throw new Error("Falta a tua data de entrada para incluir a tua conta nos totais mensais. Pede à Sara para completar a data no teu registo e volta a atualizar.");
+  const propriaData = dataEntrada(dataRegisto);
+  const raiz = deSeroval(await pedir(pedidoAnalisador(hoje, hoje, 0))) as {result?: {parent?: {username?: unknown}}} | null;
+  const username = raiz?.result?.parent?.username;
+  if (typeof username !== "string" || !username.trim()) throw new Error("O MyOffice não identificou a tua conta. Os dados anteriores mantêm-se.");
+  type Linha = {user?: {username?: unknown; creationDate?: unknown}};
+  type Lista = {content?: Linha[]; totalElements?: number; totalPages?: number};
+  const pedirPagina = async (pagina: number): Promise<Lista> => {
+    const resposta = await pedir(`${API}/team/affiliates?startDate=${hoje}&endDate=${hoje}&page=${pagina}&size=100`) as {list?: Lista} | null;
+    const lista = resposta?.list;
+    if (!lista || !Array.isArray(lista.content) || !Number.isSafeInteger(lista.totalElements) || lista.totalElements! < 0 || !Number.isSafeInteger(lista.totalPages) || lista.totalPages! < 0) {
+      throw new Error("O MyOffice não devolveu a lista completa de TPs. Os dados anteriores mantêm-se.");
+    }
+    return lista;
+  };
+  const primeira = await pedirPagina(0), total = primeira.totalElements!, paginas = primeira.totalPages!;
+  if (paginas > 10000 || paginas !== Math.ceil(total / 100)) throw new Error("A paginação dos TPs está incompleta. Repete a atualização.");
+  const pessoas = new Map<string, string>();
+  for (let pagina = 0; pagina < Math.max(1, paginas); pagina++) {
+    const lista = pagina === 0 ? primeira : await pedirPagina(pagina);
+    if (lista.totalElements !== total || lista.totalPages !== paginas || lista.content!.length !== Math.min(100, total - pagina * 100)) {
+      throw new Error("A organização mudou ou faltam TPs na recolha. Repete a atualização.");
+    }
+    for (const linha of lista.content!) {
+      const nome = linha.user?.username;
+      if (typeof nome !== "string" || !nome.trim()) throw new Error("O MyOffice devolveu um TP sem identificação. Os dados anteriores mantêm-se.");
+      const chave = nome.trim().toLowerCase();
+      if (pessoas.has(chave)) throw new Error("A lista de TPs tem páginas repetidas. Repete a atualização.");
+      pessoas.set(chave, dataEntrada(linha.user?.creationDate));
+    }
+  }
+  // A própria conta costuma estar ausente da lista. Se já vier, conta uma única vez.
+  pessoas.set(username.trim().toLowerCase(), propriaData);
+  return {inicio: propriaData, datasEntrada: [...pessoas.values()].sort()};
+}
+
+export function contarOrganizacaoNegocio(organizacao: OrganizacaoNegocio, ate: string): number {
+  if (ate < organizacao.inicio) return 0;
+  return organizacao.datasEntrada.filter(data => data <= ate).length;
+}
 /** A função do servidor do MyOffice por trás de Negócio → Visão Geral do Negócio («O meu negócio»). */
 export const NEGOCIO_MYOFFICE = `${MYOFFICE_NEGOCIO}/_serverFn/b08e83ed56f14e68ed29ed2ec93d6132d46035fac5637de359d8e293aa37dfde`;
 /** O pedido no formato do MyOffice (seroval), igual ao filtro de datas personalizado da página. */
@@ -58,14 +109,14 @@ const finito = (n: unknown): n is number => typeof n === "number" && Number.isFi
  * Faturação Total (reservas + subscrições + gifts, pessoal + equipa) e Comissões
  * Ativas + Passivas. Os pontos totais são a linha da própria conta no Top Pontos da
  * equipa (`ranking/topPoints?team=true`), como no Início. `team/affiliates` omite a
- * própria conta e só dá as adesões da equipa. O nome de utilizador vem da raiz do
- * Analisador de Organização (a conta autenticada).
+ * própria conta. Os TPs totais vêm da organização completa, incluindo a própria
+ * conta, pela data de entrada até ao fim de cada período.
  */
-export async function recolherPeriodoNegocio(periodo: PeriodoNegocio, pedir: PedirMyOffice): Promise<TotaisNegocio> {
+export async function recolherPeriodoNegocio(periodo: PeriodoNegocio, pedir: PedirMyOffice, organizacao: OrganizacaoNegocio): Promise<TotaisNegocio> {
   const query = `startDate=${periodo.inicio}&endDate=${periodo.fim}`;
-  const equipa = await pedir(`${API}/team/affiliates?${query}&page=0&size=1`) as {stats?: {points?: unknown; subscriptions?: unknown}} | null;
+  const equipa = await pedir(`${API}/team/affiliates?${query}&page=0&size=1`) as {stats?: {points?: unknown}} | null;
   const stats = equipa?.stats;
-  if (!stats || !finito(stats.points) || !finito(stats.subscriptions)) {
+  if (!stats || !finito(stats.points)) {
     throw new Error("O MyOffice não devolveu os totais da equipa. Não foram usados zeros em falta.");
   }
   const negocio = deSeroval(await pedir(pedidoNegocioMyOffice(periodo.inicio, periodo.fim))) as {result?: {currency?: unknown;
@@ -87,6 +138,6 @@ export async function recolherPeriodoNegocio(periodo: PeriodoNegocio, pedir: Ped
   const linha = ranking.content.find(c => typeof c?.username === "string" && c.username.toLowerCase() === username.toLowerCase());
   const pontos = linha === undefined ? stats.points : linha.value;
   if (!finito(pontos)) throw new Error("O MyOffice não devolveu os pontos totais. Os dados anteriores mantêm-se.");
-  return {faturacao: arredondarNegocio(r.totalBillings.value), pontos: arredondarNegocio(pontos), consultores: stats.subscriptions,
+  return {faturacao: arredondarNegocio(r.totalBillings.value), pontos: arredondarNegocio(pontos), consultores: contarOrganizacaoNegocio(organizacao, periodo.fim),
     comissoes: arredondarNegocio(r.activeCommission.value + r.passiveCommission.value)};
 }

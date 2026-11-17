@@ -3,8 +3,8 @@
 import Link from "next/link";
 import {useEffect, useState} from "react";
 import {podeVerNovaArea} from "@/lib/consultor-nova-area";
-import {CANAL_NEGOCIO, MYOFFICE_NEGOCIO, recolherPeriodoNegocio} from "@/lib/consultor-negocio-ponte";
-import type {PlanoNegocio} from "@/lib/consultor-negocio";
+import {CANAL_NEGOCIO, MYOFFICE_NEGOCIO, recolherOrganizacaoNegocio, recolherPeriodoNegocio} from "@/lib/consultor-negocio-ponte";
+import {VERSAO_DADOS_NEGOCIO, type PlanoNegocio} from "@/lib/consultor-negocio";
 import {lerEmailGuardado} from "../../../armazenamento";
 import estilos from "../../negocio.module.css";
 
@@ -41,7 +41,7 @@ export default function AtualizarNegocioConsultor() {
       try {window.opener.postMessage({canal: CANAL_NEGOCIO, id, url}, MYOFFICE_NEGOCIO);} catch {clearTimeout(timeout); pendentes.delete(id); rejeitar(new Error("A janela do MyOffice foi fechada. Abre-a e repete."));}
     });
     async function enviar(corpo: object) {
-      const r = await fetch("/api/consultor/nova-area/negocio", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({...corpo, email}), signal: controller.signal});
+      const r = await fetch("/api/consultor/nova-area/negocio", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({...corpo, email, versao: VERSAO_DADOS_NEGOCIO}), signal: controller.signal});
       const c = await r.json();
       if (!r.ok) throw new Error(c.erro ?? "Não foi possível guardar a atualização.");
       return c;
@@ -53,6 +53,8 @@ export default function AtualizarNegocioConsultor() {
         if (!identidade.email) throw new Error("Não foi possível confirmar o email da sessão do MyOffice. Entra novamente no MyOffice e repete o favorito.");
         if (identidade.versao !== 5) throw new Error("Substitui o favorito «Atualizar o meu negócio» pela versão disponível na nova área e volta a clicar nele no MyOffice. A nova versão usa os mesmos totais do separador Negócio do MyOffice.");
         const {plano} = await enviar({acao: "iniciar", origemEmail: identidade.email}) as {plano: PlanoNegocio};
+        setEstado("A contar todos os TPs da tua organização, incluindo a tua conta…");
+        const organizacao = await recolherOrganizacaoNegocio(plano.hoje, plano.dataRegisto, pedir);
         setProgresso({feitos: 0, total: plano.periodos.length});
         let seguinte = 0, feitos = 0, falhou = false;
         await Promise.all(Array.from({length: 3}, async () => {
@@ -60,7 +62,7 @@ export default function AtualizarNegocioConsultor() {
             const periodo = plano.periodos[seguinte++]!;
             setEstado(`A recolher o histórico desde ${plano.periodos[0]!.inicio.slice(0, 4)} · ${periodo.chave === "homologo" ? "período homólogo" : periodo.chave}…`);
             try {
-              const totais = await recolherPeriodoNegocio(periodo, pedir);
+              const totais = await recolherPeriodoNegocio(periodo, pedir, organizacao);
               await enviar({acao: "periodo", id: plano.id, periodo: periodo.chave, totais});
               if (ativo) setProgresso({feitos: ++feitos, total: plano.periodos.length});
             } catch (falha) {falhou = true; throw falha;}

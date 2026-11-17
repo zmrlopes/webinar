@@ -12,6 +12,19 @@ Por indicação explícita de 17/11/2026, os pedidos de alterações incluem
 publicá-las, depois das verificações, para o utilizador as poder ver logo.
 Publicar no branch ligado ao Vercel e confirmar o estado da publicação.
 
+Por indicação de 17/11/2026, em Estatísticas e projeções, os TPs são o total
+da organização de cada conta, incluindo o próprio TP e todos os diretos e
+indiretos, e não apenas as novas adesões do período. Recolher a lista completa
+no MyOffice e contar pelas datas de entrada até ao fim de cada mês; o mês
+atual termina na data da atualização. O cartão mostra o último total, sem
+somar os totais mensais; o homólogo compara a mesma data do ano anterior.
+Os meses anteriores refletem a organização atual pelas suas datas de entrada.
+Os dados passam à versão 6; recolhas antigas incompletas não podem publicá-la,
+e dados antigos mantêm a indicação de novas entradas até nova atualização.
+O favorito v5 continua compatível. Preservar faturação, comissões, pontos,
+privacidade por conta e os últimos dados completos perante falhas.
+Correr `npm run test:negocio`.
+
 Por indicação de 17/11/2026, a página Eventos presenciais dos consultores
 retira o card do Teambuilding de 14 de novembro e apresenta uma sondagem do
 Be a Rock de 8 a 10 de janeiro de 2027, para assistir em comunidade.

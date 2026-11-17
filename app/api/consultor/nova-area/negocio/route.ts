@@ -2,6 +2,7 @@ import {NextResponse} from "next/server";
 import { temAcessoNovaArea } from "@/lib/consultor-nova-area-servidor";
 import {buscarMembroEquipa} from "@/lib/equipa";
 import {atualizarNegocio, ErroNegocio, iniciarNegocio, lerNegocio} from "@/lib/consultor-negocio-servidor";
+import {VERSAO_DADOS_NEGOCIO} from "@/lib/consultor-negocio";
 
 export async function POST(request: Request): Promise<Response> {
   const json = (corpo: unknown, status = 200) => NextResponse.json(corpo, {status, headers: {"Cache-Control": "private, no-store"}});
@@ -15,6 +16,7 @@ export async function POST(request: Request): Promise<Response> {
   const email = typeof corpo?.email === "string" ? corpo.email.trim().toLowerCase() : "";
   if (!(await temAcessoNovaArea(email))) return json({erro: "Estatísticas e projeções ainda não está disponível para esta conta."}, 403);
   if (!["ler", "iniciar", "periodo", "concluir"].includes(corpo?.acao)) return json({erro: "Pedido inválido."}, 400);
+  if (corpo.acao !== "ler" && corpo.versao !== VERSAO_DADOS_NEGOCIO) return json({erro: "Esta janela usa a contagem anterior de TPs. Fecha-a e volta a clicar no favorito no MyOffice."}, 409);
   try {
     if (!await buscarMembroEquipa(email)) return json({erro: "Conta não encontrada na equipa."}, 403);
     if (corpo.acao === "ler") return json({dados: await lerNegocio(email)});

@@ -1,7 +1,7 @@
 "use client";
 
 import {useCallback, useEffect, useId, useRef, useState} from "react";
-import {anosNegocio, fatorMedioNegocio, MESES_NEGOCIO, METRICAS_NEGOCIO, projecoesNegocio, resumoNegocio, ROTULOS_NEGOCIO, type DadosNegocio, type MetricaNegocio} from "@/lib/consultor-negocio";
+import {anosNegocio, fatorMedioNegocio, MESES_NEGOCIO, METRICAS_NEGOCIO, projecoesNegocio, resumoNegocio, ROTULOS_NEGOCIO, totalAnoNegocio, VERSAO_DADOS_NEGOCIO, type DadosNegocio, type MetricaNegocio} from "@/lib/consultor-negocio";
 import {favoritoNegocio, MYOFFICE_NEGOCIO} from "@/lib/consultor-negocio-ponte";
 import gerais from "./nova-area.module.css";
 import estilos from "./negocio.module.css";
@@ -20,7 +20,7 @@ function formatarBarra(valor: number, k: MetricaNegocio) {
   return `${valor.toLocaleString("pt-PT", {maximumFractionDigits: 0})} €`;
 }
 
-function GraficoMensal({dados, metrica, anos}: {dados: DadosNegocio; metrica: MetricaNegocio; anos: number[]}) {
+function GraficoMensal({dados, metrica, anos, titulo}: {dados: DadosNegocio; metrica: MetricaNegocio; anos: number[]; titulo: string}) {
   const valores = anos.flatMap(a => MESES_NEGOCIO.map((_, i) => dados.meses[`${a}-${String(i + 1).padStart(2, "0")}`]?.[metrica] ?? 0));
   const minimo = Math.min(0, ...valores) * 1.18, maximo = Math.max(1, ...valores) * 1.18;
   const largura = 940, altura = 250, esquerda = 56, direita = 12, topo = 26, fundo = 30;
@@ -28,7 +28,7 @@ function GraficoMensal({dados, metrica, anos}: {dados: DadosNegocio; metrica: Me
   const larguraBarra = (larguraGrupo - intervalo * (anos.length + 1)) / Math.max(1, anos.length);
   const y = (v: number) => altura - fundo - (v - minimo) / (maximo - minimo) * (altura - topo - fundo);
   return <div className={estilos.graficoScroll}>
-    <svg className={estilos.grafico} viewBox={`0 0 ${largura} ${altura}`} role="img" aria-label={`${ROTULOS_NEGOCIO[metrica]} por mês, ${anos.join(" / ")}. Valores por cima das barras e valores exatos na tabela abaixo.`}>
+    <svg className={estilos.grafico} viewBox={`0 0 ${largura} ${altura}`} role="img" aria-label={`${titulo} por mês, ${anos.join(" / ")}. Valores por cima das barras e valores exatos na tabela abaixo.`}>
       {[0, .25, .5, .75, 1].map(t => {
         const valor = minimo + t * (maximo - minimo);
         return <g key={t}><line x1={esquerda} x2={largura - direita} y1={y(valor)} y2={y(valor)} stroke="#e8e8de" /><text x={esquerda - 7} y={y(valor) + 4} textAnchor="end">{formatarBarra(valor, metrica)}</text></g>;
@@ -51,14 +51,14 @@ function GraficoMensal({dados, metrica, anos}: {dados: DadosNegocio; metrica: Me
   </div>;
 }
 
-function GraficoProjecao({valores, metrica, ano}: {valores: number[]; metrica: MetricaNegocio; ano: number}) {
+function GraficoProjecao({valores, metrica, ano, titulo}: {valores: number[]; metrica: MetricaNegocio; ano: number; titulo: string}) {
   const [ativo, setAtivo] = useState<number | null>(null);
   const tooltipId = useId();
   const min = Math.min(0, ...valores), max = Math.max(1, ...valores);
   const y = (v: number) => 110 - (v - min) / (max - min) * 85;
   const pontos = valores.map((v, i) => `${30 + i * 55},${y(v)}`).join(" ");
   return <div className={estilos.projecaoInterativa} onPointerLeave={() => setAtivo(null)}>
-    <svg className={estilos.projecaoGrafico} viewBox="0 0 340 145" role="group" aria-label={`Cenário de ${ROTULOS_NEGOCIO[metrica]} entre ${ano} e ${ano + 5}. Passa pelo ponto de cada ano para ver o valor.`}>
+    <svg className={estilos.projecaoGrafico} viewBox="0 0 340 145" role="group" aria-label={`Cenário de ${titulo} entre ${ano} e ${ano + 5}. Passa pelo ponto de cada ano para ver o valor.`}>
     <line x1="24" x2="315" y1={y(0)} y2={y(0)} stroke="#e3e4d7" />
     <polyline points={pontos} fill="none" stroke="#4b5320" strokeWidth="2.5" strokeDasharray="5 4" />
     {valores.map((v, i) => <g key={i}>
@@ -117,7 +117,8 @@ export function NegocioNovaArea({email}: {email: string}) {
   const anos = dados ? anosNegocio(dados) : [];
   const anoMapa = anoSelecionado !== null && anos.includes(anoSelecionado) ? anoSelecionado : ano;
   const anosGrafico = [anoMapa - 2, anoMapa - 1, anoMapa].filter(a => anos.includes(a));
-  const rotulo = (k: MetricaNegocio) => k === "comissoes" && !dados?.versao ? "Comissões (por atualizar)" : ROTULOS_NEGOCIO[k];
+  const tpsTotais = dados?.versao === VERSAO_DADOS_NEGOCIO;
+  const rotulo = (k: MetricaNegocio) => k === "consultores" && !tpsTotais ? "Novos TPs da equipa (por atualizar)" : k === "comissoes" && !dados?.versao ? "Comissões (por atualizar)" : ROTULOS_NEGOCIO[k];
 
   return <section className={estilos.raiz} aria-label="Estatísticas e projeções">
     <div className={gerais.intro}><span className={gerais.etiqueta}>ESTATÍSTICAS E PROJEÇÕES</span><h1>Mapas e Projeções<span>.</span></h1><p>A evolução do teu negócio, com os números recolhidos da tua conta MyOffice.</p></div>
@@ -133,27 +134,28 @@ export function NegocioNovaArea({email}: {email: string}) {
     </details>
     {erro && <p className={estilos.erro} role="alert">{erro} <button type="button" className={estilos.secundario} onClick={() => void carregar()}>Tentar novamente</button></p>}
     {carregando ? <p role="status">A carregar os teus mapas…</p> : !dados ? <div className={estilos.vazio}><h2>O teu primeiro mapa começa aqui</h2><p>Atualiza pelo MyOffice para veres as comissões próprias e passivas, o histórico desde o teu ano de entrada (no máximo desde 2019) e as projeções.</p></div> : <>
-      {dados.versao !== 5 && <p className={estilos.aviso} role="status">Estes dados são da versão anterior e não coincidem com o separador Negócio do MyOffice. Substitui o favorito e atualiza pelo MyOffice para veres o total do teu negócio (próprio + equipa).</p>}
+      {dados.versao !== 5 && !tpsTotais && <p className={estilos.aviso} role="status">Estes dados são da versão anterior e não coincidem com o separador Negócio do MyOffice. Substitui o favorito e atualiza pelo MyOffice para veres o total do teu negócio (próprio + equipa).</p>}
+      {!tpsTotais && <p className={estilos.aviso} role="status">Atualiza pelo MyOffice para veres os TPs totais da tua organização, incluindo a tua conta. A contagem guardada ainda mostra as novas entradas da equipa.</p>}
       <div className={estilos.estado}><span>Dados até <strong>{dataCurta(dados.ate)}</strong> · Atualizado em {new Date(dados.atualizadoEm).toLocaleString("pt-PT", {dateStyle: "short", timeStyle: "short", timeZone: "Europe/Lisbon"})}</span><button type="button" className={estilos.secundario} onClick={() => void carregar()}>Recarregar dados guardados</button></div>
       <div className={estilos.abas} role="group" aria-label="Vista do negócio"><button type="button" aria-pressed={aba === "mapas"} onClick={() => setAba("mapas")}>Mapas</button><button type="button" aria-pressed={aba === "projecoes"} onClick={() => setAba("projecoes")}>Projeções</button></div>
       {aba === "mapas" ? <>
         <div className={estilos.cartoes}>{METRICAS_NEGOCIO.map(k => {
           const r = resumoNegocio(dados, k);
-          return <article className={estilos.cartao} key={k}><span>{rotulo(k)}</span><strong>{formatar(r.atual, k)}</strong><small>1 de janeiro a {dataCurta(dados.ate)}</small><p>{r.variacao === null ? "Sem base de comparação no ano anterior" : `${r.variacao > 0 ? "+" : ""}${r.variacao}% face aos mesmos dias de ${ano - 1}`}</p></article>;
+          return <article className={estilos.cartao} key={k}><span>{rotulo(k)}</span><strong>{formatar(r.atual, k)}</strong><small>{k === "consultores" && tpsTotais ? "Total em " : "1 de janeiro a "}{dataCurta(dados.ate)}</small><p>{r.variacao === null ? "Sem base de comparação no ano anterior" : `${r.variacao > 0 ? "+" : ""}${r.variacao}% face à mesma data de ${ano - 1}`}</p></article>;
         })}</div>
         <article className={estilos.painel}>
           <div className={estilos.cabecalho}><h2>Evolução mensal</h2><div className={estilos.filtros}><label htmlFor="negocio-indicador">Indicador <select id="negocio-indicador" value={metrica} onChange={e => setMetrica(e.target.value as MetricaNegocio)}>{METRICAS_NEGOCIO.map(k => <option key={k} value={k}>{rotulo(k)}</option>)}</select></label><label htmlFor="negocio-ano">Ano final <select id="negocio-ano" value={anoMapa} onChange={e => setAnoSelecionado(Number(e.target.value))}>{anos.map(a => <option key={a} value={a}>{a}</option>)}</select></label></div></div>
           <div className={estilos.legenda}>{anosGrafico.map((a, i) => <span key={a}><i style={{background: corAnoMapa(i, anosGrafico.length)}} />{a}</span>)}</div>
-          <GraficoMensal dados={dados} metrica={metrica} anos={anosGrafico} />
+          <GraficoMensal dados={dados} metrica={metrica} anos={anosGrafico} titulo={rotulo(metrica)} />
           <p className={estilos.nota}>O mês de {MESES_NEGOCIO[mes - 1]} de {ano} inclui apenas os dados até {dataCurta(dados.ate)}. Os cartões comparam os mesmos dias nos dois anos.</p>
         </article>
-        <div className={estilos.tabelaScroll}><table><caption>Mapa mensal · {rotulo(metrica)} · histórico {anos[0]}–{ano}</caption><thead><tr><th scope="col">Ano</th>{MESES_NEGOCIO.map(m => <th key={m} scope="col">{m}</th>)}<th scope="col">Total recolhido</th></tr></thead><tbody>{anos.map(a => <tr key={a}><th scope="row">{a}</th>{MESES_NEGOCIO.map((m, i) => {const v = dados.meses[`${a}-${String(i + 1).padStart(2, "0")}`]?.[metrica]; return <td key={m}>{v === undefined ? "—" : formatar(v, metrica)}</td>;})}<td><strong>{formatar(Object.entries(dados.meses).filter(([k]) => k.startsWith(`${a}-`)).reduce((s, [, v]) => s + v[metrica], 0), metrica)}</strong></td></tr>)}</tbody></table></div>
-        <p className={estilos.nota}>Faturação Total = reservas + subscrições + gifts, os teus e os da tua equipa, como em Negócio → Visão Geral do Negócio no MyOffice. Pontos totais = os teus pontos + os da tua equipa, como no Top Pontos do MyOffice. Novos consultores corresponde às adesões do período. Comissões totais = Comissões Ativas + Comissões Passivas, como no mesmo separador do MyOffice. O histórico começa no ano de entrada registado; sem essa data, procura desde 2019.</p>
+        <div className={estilos.tabelaScroll}><table><caption>Mapa mensal · {rotulo(metrica)} · histórico {anos[0]}–{ano}</caption><thead><tr><th scope="col">Ano</th>{MESES_NEGOCIO.map(m => <th key={m} scope="col">{m}</th>)}<th scope="col">{metrica === "consultores" && tpsTotais ? "Total na última data" : "Total recolhido"}</th></tr></thead><tbody>{anos.map(a => <tr key={a}><th scope="row">{a}</th>{MESES_NEGOCIO.map((m, i) => {const v = dados.meses[`${a}-${String(i + 1).padStart(2, "0")}`]?.[metrica]; return <td key={m}>{v === undefined ? "—" : formatar(v, metrica)}</td>;})}<td><strong>{formatar(totalAnoNegocio(dados, metrica, a), metrica)}</strong></td></tr>)}</tbody></table></div>
+        <p className={estilos.nota}>Faturação Total = reservas + subscrições + gifts, os teus e os da tua equipa, como em Negócio → Visão Geral do Negócio no MyOffice. Pontos totais = os teus pontos + os da tua equipa, como no Top Pontos do MyOffice. {tpsTotais ? "TPs totais = tu e todos os TPs diretos e indiretos da tua organização atual que já tinham entrado em cada data. Cada mês mostra o total até ao seu último dia; no mês atual, até à data da atualização. Estes totais não se somam entre meses." : "A contagem antiga de TPs corresponde apenas às novas entradas da equipa no período."} Comissões totais = Comissões Ativas + Comissões Passivas, como no mesmo separador do MyOffice. O histórico começa no ano de entrada registado; sem essa data, procura desde 2019.</p>
       </> : <>
         <article className={estilos.painel}><h2>Simula os próximos cinco anos</h2><p>O ponto de partida é o acumulado real até {dataCurta(dados.ate)}. Cada ano seguinte aplica o fator escolhido a essa base, como no dashboard admin.</p><div className={estilos.simulador}><label htmlFor="negocio-fator">Fator de crescimento anual<input id="negocio-fator" type="number" min="0" max="10" step="0.1" placeholder={String(medio)} value={fatorTexto} onChange={e => setFatorTexto(e.target.value)} aria-invalid={!fatorValido} /></label><button type="button" className={estilos.secundario} onClick={() => setFatorTexto("")}>Repor média atual (×{medio})</button></div>{!fatorValido && <p role="alert" className={estilos.erro}>Escolhe um fator entre 0 e 10. A pré-visualização usa a média atual até corrigires o valor.</p>}<p className={estilos.nota}>×1 mantém · ×1,1 cresce 10% · ×2 duplica por ano. A média usa apenas os indicadores com base de comparação; sem base, usa ×1. São cenários matemáticos sobre um acumulado parcial, sem garantia de resultados.</p></article>
         <div className={estilos.projecoes}>{METRICAS_NEGOCIO.map(k => {
           const valores = projecoesNegocio(resumoNegocio(dados, k).atual, fator);
-          return <article key={k} className={estilos.cartao}><h3>{rotulo(k)}</h3><GraficoProjecao valores={valores} metrica={k} ano={ano} /><span>Cenário para {ano + 5}</span><strong>{formatar(valores[5]!, k)}</strong><small>Fator ×{fator} por ano</small></article>;
+          return <article key={k} className={estilos.cartao}><h3>{rotulo(k)}</h3><GraficoProjecao valores={valores} metrica={k} ano={ano} titulo={rotulo(k)} /><span>Cenário para {ano + 5}</span><strong>{formatar(valores[5]!, k)}</strong><small>Fator ×{fator} por ano</small></article>;
         })}</div>
         <div className={estilos.tabelaScroll}><table><caption>Valores das projeções · fator ×{fator}</caption><thead><tr><th scope="col">Indicador</th>{Array.from({length: 6}, (_, i) => <th key={i} scope="col">{ano + i}{i === 0 ? " (real, parcial)" : " (cenário)"}</th>)}</tr></thead><tbody>{METRICAS_NEGOCIO.map(k => <tr key={k}><th scope="row">{rotulo(k)}</th>{projecoesNegocio(resumoNegocio(dados, k).atual, fator).map((v, i) => <td key={i}>{formatar(v, k)}</td>)}</tr>)}</tbody></table></div>
       </>}
