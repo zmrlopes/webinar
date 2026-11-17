@@ -47,7 +47,7 @@ export function SondagemBeARock({ email }: { email: string }) {
   }
 
   return <article className={s.cartao} aria-labelledby="titulo-be-a-rock">
-    <span className={estilos.etiqueta}>SONDAGEM · ENCONTRO DA EQUIPA</span>
+    <span className={estilos.etiqueta}><img className={s.logo} src="/icligo-logo.png" alt="" width={20} height={20} />EVENTO ICLIGO</span>
     <h2 id="titulo-be-a-rock">{BE_A_ROCK.titulo}</h2>
     <p className={s.data}><time dateTime={BE_A_ROCK.inicio}>8</time> a <time dateTime={BE_A_ROCK.fim}>10 de janeiro de 2027</time></p>
     <p className={s.descricao}>{BE_A_ROCK.descricao}</p>
