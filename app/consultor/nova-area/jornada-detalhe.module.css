@@ -16,10 +16,18 @@
 .opcao:focus-visible { outline: 3px solid #4b5320; outline-offset: 3px; }
 .escolhida { border: 2px solid #4b5320; padding: 17px; background: #f5f7ed; }
 .tituloOpcao { font-size: 15px; overflow-wrap: anywhere; }
-.totalOpcao { font-size: 24px; font-weight: 750; color: #4b5320; }
-.totalOpcao small { display: block; font-size: 11px; font-weight: 400; }
+.pessoasOpcao { display: grid; gap: 10px; width: 100%; }
+.pessoasOpcao > span { display: grid; gap: 2px; padding-top: 10px; border-top: 1px solid #dfe3d2; overflow-wrap: anywhere; }
+.pessoasOpcao > span > span { color: #626754; }
+.incompleta { font-weight: 650; }
 .selecionar { margin-top: auto; padding-top: 6px; font-weight: 700; color: #4b5320; }
-.explicacao { margin-top: 18px; padding: 18px; border-left: 3px solid #4b5320; border-radius: 0 12px 12px 0; background: #fafbf6; font-size: 13px; }
+.comparacao > .opcao { width: 100%; }
+.outrasOpcoes { margin-top: 14px; border: 1px solid #dfe3d2; border-radius: 12px; padding: 16px; }
+.outrasOpcoes summary, .criteriosComparacao summary { cursor: pointer; color: #4b5320; font-size: 13px; font-weight: 650; }
+.outrasOpcoes[open] > summary { margin-bottom: 14px; }
+.criteriosComparacao { margin-top: 16px; color: #626754; font-size: 12px; line-height: 1.6; }
+.outrasOpcoes summary:focus-visible, .criteriosComparacao summary:focus-visible, .distribuicao summary:focus-visible { outline: 3px solid #4b5320; outline-offset: 4px; }
+.explicacao { margin-top: 18px; padding: 18px; border-left: 3px solid #4b5320; border-radius: 0 12px 12px 0; background: #fafbf6; font-size: 13px; scroll-margin-top: 24px; }
 .explicacao p { margin: 10px 0; }
 .distribuicao { margin-top: 16px; }
 .distribuicao summary { cursor: pointer; font-weight: 650; color: #4b5320; }
@@ -29,7 +37,9 @@
 .tabela th, .tabela td { padding: 10px 8px; border-bottom: 1px solid #dfe3d2; min-width: 80px; overflow-wrap: anywhere; }
 .tabela th { color: #4b5320; }
 .motivo { margin: 12px 0; color: #626754; font-size: 12px; }
-.candidatos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.candidatos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 0; margin: 0; list-style: none; }
+.candidatos > li { min-width: 0; }
+.passo { display: block; margin: 0 0 7px 4px; color: #626d34; font-size: 10px; font-weight: 750; letter-spacing: .05em; }
 .candidato { min-width: 0; padding: 21px; border: 1px solid #dfe3d2; border-radius: 15px; background: #fff; }
 .etiqueta { color: #626d34; font-size: 10px; font-weight: 750; letter-spacing: .05em; overflow-wrap: anywhere; }
 .candidato h3 { margin: 8px 0; font-size: 17px; overflow-wrap: anywhere; }
