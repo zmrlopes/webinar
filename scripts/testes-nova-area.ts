@@ -63,7 +63,7 @@ async function main() {
     if(texto.startsWith("with recursive descendentes")) return {rows:[{email:tp}]};
     if(texto.startsWith("with recursive arvore")) return {rows:[{total:"1",ativos:"1",entradas:"1"}]};
     if(texto.startsWith("with recursive ascendentes")) return {rows:[{email:ana}]};
-    if(texto.includes("select membro.nome")) return {rows:chave===ana?[{nome:"Ana Custódia",upline_email:demo,upline_nome:"Mentor"}]:chave===tp||chave===outro?[{nome:"TP",upline_email:ana,upline_nome:"Ana Custódia"}]:[]};
+    if(texto.includes("select membro.nome")) return {rows:chave===ana?[{nome:"Ana Custódia",upline_email:demo,upline_nome:"Mentor",nivel:"MASTER",pontos:"120",atualizado_em:new Date("2026-11-17T10:00:00Z")}]:chave===tp||chave===outro?[{nome:"TP",upline_email:ana,upline_nome:"Ana Custódia",nivel:"JUNIOR",pontos:"2",atualizado_em:new Date("2026-11-17T10:00:00Z")}]:[]};
     if(texto.startsWith("select nome from equipa_afiliados")) return {rows:[ana,demo,tp,outro].includes(chave)?[{nome:chave===ana?"Ana Custódia":"TP"}]:[]};
     if(texto.includes("select referencia from links_consultor")) return {rows:[{referencia:"ana-custodia"}]};
     if(texto.startsWith("select r.valor")) {
@@ -95,12 +95,14 @@ async function main() {
     const entradaAna=await entrada(pedido({email:normalizado})); assert.equal(entradaAna.status,200);
     const pagina=await entradaAna.json();
     assert.equal(pagina.nome,"Ana Custódia"); assert.equal(pagina.linkPartilha,"http://localhost/ana-custodia");
+    assert.equal(pagina.jornada.patamarAtual,"Master"); assert.equal(pagina.jornada.pontos,120); assert.equal(pagina.jornada.faltam,130);
     assert.deepEqual(pagina.upline,{nome:"Mentor",email:demo},"Carrega o perfil completo, em vez dos dados vazios de Admin");
     assert.deepEqual(pagina.primeirosPassos,{feitos:[3,4,5],guardado:false});
     assert.equal(pagina.linkGrupoWelcomeAboard,"https://chat.whatsapp.com/CDFcyL0eYXc0kVl8Fp7XMK");
     assert.equal(pagina.acessoBlackfriday,true);
     const entradaTp=await entrada(pedido({email:tp})); assert.equal(entradaTp.status,200,"A nova área está aberta aos consultores da equipa");
     const paginaTp=await entradaTp.json(); assert.equal(paginaTp.nome,"TP"); assert.equal(paginaTp.acessoBlackfriday,true);
+    assert.equal(paginaTp.jornada.pontos,2); assert.equal(paginaTp.jornada.faltam,13,"Cada conta recebe apenas a própria jornada");
     const entradaOutro=await entrada(pedido({email:outro})); assert.equal(entradaOutro.status,200);
     assert.equal((await entradaOutro.json()).acessoBlackfriday,true,"O BLACKFRIDAY aparece também fora das equipas com meta própria");
     assert.equal((await entrada(pedido({email:semEquipa}))).status,403);

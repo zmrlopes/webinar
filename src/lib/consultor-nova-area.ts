@@ -1,5 +1,6 @@
 import { EMAIL_PAINEL_DEMONSTRACAO } from "./demo";
 import type { LinguaFormacao } from "./formacoes-forum-icligo";
+import type { JornadaConsultor } from "./consultor-jornada";
 
 /** Primeira migração real autorizada; não abrange a descendência da Ana. */
 export const EMAIL_PILOTO_NOVA_AREA = "apensarnaproxima@gmail.com";
@@ -52,6 +53,7 @@ export interface ProximoWebinarNovaArea {
 
 export interface DadosNovaArea {
   nome: string;
+  jornada: JornadaConsultor | null;
   linkGrupoWelcomeAboard: string;
   linkPartilha: string | null;
   upline: { nome: string | null; email: string } | null;

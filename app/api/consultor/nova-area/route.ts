@@ -10,9 +10,11 @@ import { obterAvisosConsultor } from "@/lib/avisos-consultor";
 import { obterLinkGrupoWelcomeAboard } from "@/lib/welcome-aboard-grupo";
 import { listarFormacoesForumFuturas } from "@/lib/forum-icligo";
 import { juntarFormacoesIcligo } from "@/lib/formacoes-forum-icligo";
+import { calcularJornadaConsultor } from "@/lib/consultor-jornada";
 
 /** Dados mínimos para quem só vê o separador "Admin" (líder de equipa), sem a carga do perfil completo. */
 const DADOS_VAZIOS_LIDER: Omit<DadosNovaArea, "nome"> = {
+  jornada: null,
   linkGrupoWelcomeAboard: "", linkPartilha: null, upline: null, welcomeAboard: null, proximaSessao: null,
   inscritoWelcomeAboard: false, proximoWebinar: null, proximasFormacoes: [],
   primeirosPassos: { feitos: [], guardado: true }, avisos: [], erroAvisos: false, acessoBlackfriday: false,
@@ -29,8 +31,8 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
-    const { rows } = await db().query<{ nome: string; upline_email: string | null; upline_nome: string | null }>(
-      `select membro.nome, membro.upline_email, upline.nome as upline_nome
+    const { rows } = await db().query<{ nome: string; upline_email: string | null; upline_nome: string | null; nivel: string | null; pontos: string | null; atualizado_em: Date | null }>(
+      `select membro.nome, membro.upline_email, upline.nome as upline_nome, membro.nivel, membro.pontos, membro.atualizado_em
        from equipa_afiliados membro
        left join equipa_afiliados upline on upline.email = membro.upline_email
        where membro.email = $1`,
@@ -92,6 +94,7 @@ export async function POST(request: Request): Promise<Response> {
     ]);
     const dados: DadosNovaArea = {
       nome: membro.nome,
+      jornada: calcularJornadaConsultor(membro.nivel, membro.pontos, membro.atualizado_em),
       linkGrupoWelcomeAboard,
       primeirosPassos,
       avisos: avisosInicio.avisos,

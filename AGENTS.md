@@ -12,6 +12,19 @@ Por indicação explícita de 17/11/2026, os pedidos de alterações incluem
 publicá-las, depois das verificações, para o utilizador as poder ver logo.
 Publicar no branch ligado ao Vercel e confirmar o estado da publicação.
 
+Por indicação de 17/11/2026, a área de cada TP apresenta “A minha jornada”
+logo abaixo do cabeçalho e antes do menu/conteúdo, em todas as secções.
+Mostra os pontos de carreira da própria conta, o patamar confirmado, a meta
+do seguinte e os pontos em falta, com barra crescente e movimento reduzido.
+Usa `equipa_afiliados.nivel`, `pontos` e a data da última atualização;
+não usa pontos mensais/anuais dos Mapas nem soma pontos da descendência.
+A escada partilhada é `src/lib/patamares-carreira.ts`. Atingir pontos não
+confirma uma promoção: mantém o nível registado e identifica a meta cumprida.
+Dados ausentes/desconhecidos não são apresentados como zero ou como Júnior.
+Atualiza a cada minuto enquanto visível e ao voltar à janela, com leituras
+privadas por conta; falhas preservam os últimos dados. Publicado para a equipa.
+Correr também `npx tsx scripts/testes-consultor-jornada.ts`.
+
 Por indicação de 17/11/2026, em Estatísticas e projeções, os TPs são o total
 da organização de cada conta, incluindo o próprio TP e todos os diretos e
 indiretos, e não apenas as novas adesões do período. Recolher a lista completa

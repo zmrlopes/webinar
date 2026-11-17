@@ -35,6 +35,7 @@ import { OperadoresNovaArea } from "./operadores";
 import { PedidosOrcamentoNovaArea } from "./orcamentos";
 import { ComecaAqui } from "./onboarding";
 import { NegocioNovaArea } from "./negocio";
+import { BarraJornada } from "./jornada";
 import { limparPrimeirosPassos, lerProgressoLocalPrimeirosPassos, chaveProgressoLocalPrimeirosPassos, RESUMO_PRIMEIROS_PASSOS, TOTAL_PRIMEIROS_PASSOS } from "@/lib/primeiros-passos";
 
 function Seta() {
@@ -281,7 +282,7 @@ export default function NovaAreaConsultor() {
   return (
     <div className={`${estilos.pagina} ${seccao === "negocio" ? estilos.paginaNegocio : ""}`}>
       <div className={estilos.contentor}>
-        <header className={estilos.topo}>
+        <header className={`${estilos.topo} ${!soAdmin ? estilos.topoComJornada : ""}`}>
           <div className={estilos.marca}>
             <span className={estilos.simbolo} aria-hidden="true"><img src="/icons/icon-192.png" alt="" width="44" height="44" /></span>
             <div><span className={estilos.etiqueta}>TROPA DE ELITE</span><p>A minha área</p></div>
@@ -297,6 +298,8 @@ export default function NovaAreaConsultor() {
             <button type="button" className={estilos.sair} onClick={() => { limparEmailGuardado(); setDados(null); setEstado("sem-acesso"); }}>Sair <Seta /></button>
           </div>
         </header>
+
+        {!soAdmin && <BarraJornada key={email} email={email} inicial={dados.jornada ?? null} />}
 
         <div className={estilos.layout}>
           <aside className={estilos.lateral}>
