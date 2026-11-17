@@ -16,7 +16,8 @@ assert.equal(calcularJornadaConsultor("SENIOR", 50.25, atualizado).faltam, 24.75
 const rumoPrata = calcularJornadaConsultor("BRONZE", 10000, atualizado);
 assert.equal(rumoPrata.proximoPatamar, "Prata"); assert.equal(rumoPrata.metaPontos, 12500);
 assert.equal(rumoPrata.faltam, 2500); assert.equal(rumoPrata.percentagem, 80);
-assert.equal(rumoPrata.estado, "progresso"); assert.equal(rumoPrata.criteriosPorConfirmar, true);
+assert.equal(rumoPrata.estado, "progresso");
+assert.deepEqual(rumoPrata.estrutura?.requisitos.map(r => [r.patamar, r.necessarios]), [["Diretor", 2], ["Coordenador", 3]]);
 assert.equal(calcularJornadaConsultor("BRONZE", 12499.99, atualizado).faltam, .01);
 assert.equal(calcularJornadaConsultor("BRONZE", 12500, atualizado).estado, "meta-atingida");
 for (let i = 0; i < ESCADA_PATAMARES.length - 1; i++) {
@@ -33,7 +34,14 @@ const coordenador = calcularJornadaConsultor("COORDENADOR", 1739.36, atualizado)
 assert.equal(coordenador.patamarAtual, "Coordenador"); assert.equal(coordenador.proximoPatamar, "Diretor");
 assert.equal(coordenador.estado, "meta-atingida"); assert.equal(coordenador.faltam, 0); assert.equal(coordenador.percentagem, 100);
 const ouro = calcularJornadaConsultor("OURO", 35000, atualizado);
-assert.equal(ouro.estado, "ultimo-patamar"); assert.equal(ouro.proximoPatamar, null); assert.equal(ouro.metaPontos, null);
+assert.equal(ouro.estado, "progresso"); assert.equal(ouro.proximoPatamar, "Platina"); assert.equal(ouro.metaPontos, 225000);
+assert.equal(calcularJornadaConsultor("SILVER", 12500, atualizado).metaPontos, 50000);
+for (const [nivel, nome, meta] of [["COORDINATOR", "Coordenador", 1000], ["DIRECTOR", "Diretor", 3500], ["GOLD", "Ouro", 225000], ["PLATINUM", "Platina", 1125000], ["SAFIRE", "Safira", 6500000]] as const) {
+  const jornada = calcularJornadaConsultor(nivel, 0, atualizado);
+  assert.equal(jornada.patamarAtual, nome); assert.equal(jornada.metaPontos, meta);
+}
+const esmeralda = calcularJornadaConsultor("EMERALD", 6500000, atualizado);
+assert.equal(esmeralda.estado, "ultimo-patamar"); assert.equal(esmeralda.proximoPatamar, null); assert.equal(esmeralda.metaPontos, null);
 for (const pontos of [null, undefined, NaN, Infinity, -1, "", " ", "inválido"]) {
   const jornada = calcularJornadaConsultor("JUNIOR", pontos, atualizado);
   assert.equal(jornada.estado, "sem-dados"); assert.equal(jornada.pontos, null); assert.equal(jornada.percentagem, null);

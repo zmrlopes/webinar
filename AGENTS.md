@@ -14,9 +14,17 @@ Publicar no branch ligado ao Vercel e confirmar o estado da publicação.
 
 Por correção explícita de 17/11/2026, Prata exige 12.500 pontos, substituindo
 os 10.000 da versão pública anterior, na jornada, nos cálculos e no admin.
-Os requisitos de equipa de Prata ainda aguardam indicação do utilizador:
-não mostrar que Prata não exige linhas nem inventar quantidades/patamares.
-Identificar os critérios de equipa como por confirmar até serem definidos.
+Por confirmação no PDF atual em 17/11/2026, Prata exige também 2 Diretores e
+3 Coordenadores em 5 canais independentes. A fonte atual é o Plano de Vendas
+e Incentivos, página 14: `https://s3.eu-central-2.wasabisys.com/icligo-legal/compensation_plan_pt.pdf`.
+A ligação foi encontrada no comunicado oficial da iCliGo de 10/04/2026 no
+fórum, que indica a localização MyOffice → Conta → Perfil, no fim da página.
+Este PDF substitui o antigo `backoffice.icligo.com/novoPlano` para estas regras.
+Ouro exige 50.000 pontos (3 Diretores + 2 Coordenadores em 5 canais), Platina
+225.000 (5 Bronze + 5 Diretores + 5 Coordenadores em 15 canais), Safira
+1.125.000 (7 Prata + 7 Bronze + 6 Diretores em 20 canais) e Esmeralda
+6.500.000 (8 Ouro + 7 Prata + 10 Bronze em 25 canais). A jornada e o detalhe
+usam a escada completa; reconhecer também os nomes ingleses do PDF/MyOffice.
 
 Por indicação de 17/11/2026, a área de cada TP apresenta “A minha jornada”
 logo abaixo do cabeçalho e antes do menu/conteúdo, em todas as secções.

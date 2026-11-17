@@ -49,8 +49,31 @@ const semPontosRaiz = pessoa("raiz", null, "COORDENADOR", null);
 assert.equal(analisarJornadaEquipa(semPontosRaiz, [semPontosRaiz]).jornada.estrutura?.faltamLinhas, 3, "Pode analisar linhas quando faltam pontos da própria conta");
 const rumoPrata = analisarJornadaEquipa(pessoa("bronze", null, "BRONZE", 4000), []);
 assert.equal(rumoPrata.jornada.metaPontos, 12500);
-assert.equal(rumoPrata.jornada.criteriosPorConfirmar, true, "Não confunde requisitos desconhecidos com ausência de requisitos");
-assert.equal(rumoPrata.jornada.estrutura, undefined); assert.equal(rumoPrata.plano.length, 0, "Não inventa candidatos sem conhecer os critérios");
+assert.deepEqual(rumoPrata.jornada.estrutura?.requisitos.map(r => [r.patamar, r.necessarios, r.faltam]), [["Diretor", 2, 2], ["Coordenador", 3, 3]]);
+assert.equal(rumoPrata.linhasPorCriar, 5); assert.equal(rumoPrata.plano.length, 0);
+const raizBronze = pessoa("bronze", null, "BRONZE", 12500);
+const equipaPrata = [raizBronze, pessoa("dir1", "bronze", "DIRECTOR", 1000), pessoa("dir2", "bronze", "DIRETOR", 1100),
+  pessoa("coord1", "bronze", "COORDINATOR", 250), pessoa("coord2", "bronze", "COORDENADOR", 260), pessoa("quase-coord", "bronze", "MASTER", 240)];
+const faltaCoordenador = analisarJornadaEquipa(raizBronze, equipaPrata);
+assert.equal(faltaCoordenador.jornada.estrutura?.faltamLinhas, 1, "Prata exige estrutura mesmo com 12.500 pontos");
+assert.deepEqual(faltaCoordenador.plano.map(c => [c.nome, c.objetivo, c.faltamPontos]), [["quase-coord", "Coordenador", 10]]);
+const prataCompleta = analisarJornadaEquipa(raizBronze, [...equipaPrata, pessoa("coord3", "quase-coord", "COORDENADOR", 250)]);
+assert.equal(prataCompleta.jornada.estrutura?.faltamLinhas, 0, "Os cinco canais de Prata podem qualificar em profundidade");
+assert.equal(prataCompleta.linhas.filter(l => l.contaPara).length, 5);
+for (const [atual, objetivo, pontos, requisitos] of [
+  ["OURO", "Platina", 225000, [["BRONZE", 5], ["DIRETOR", 5], ["COORDENADOR", 5]]],
+  ["PLATINUM", "Safira", 1125000, [["SILVER", 7], ["BRONZE", 7], ["DIRECTOR", 6]]],
+  ["SAFIRE", "Esmeralda", 6500000, [["GOLD", 8], ["SILVER", 7], ["BRONZE", 10]]],
+] as const) {
+  const lider = pessoa("lider", null, atual, pontos);
+  const canais = requisitos.flatMap(([nivel, quantidade]) => Array.from({length: quantidade}, (_, i) => pessoa(`${nivel}-${i}`, "lider", nivel, pontos)));
+  const completa = analisarJornadaEquipa(lider, [lider, ...canais]);
+  assert.equal(completa.jornada.proximoPatamar, objetivo); assert.equal(completa.jornada.metaPontos, pontos);
+  assert.equal(completa.jornada.estrutura?.faltamLinhas, 0);
+  assert.equal(completa.linhas.filter(l => l.contaPara).length, canais.length);
+  const incompleta = analisarJornadaEquipa(lider, [lider, ...canais.slice(0, -1)]);
+  assert.equal(incompleta.jornada.estrutura?.faltamLinhas, 1, `${objetivo}: não duplica canais entre requisitos`);
+}
 const ciclo = analisarJornadaEquipa(raiz, [...equipa, {...raiz, pai: "A1"}]);
 assert.equal(ciclo.jornada.estrutura?.linhasCumpridas, 1, "Ciclos não duplicam a raiz nem qualificações");
 const invertida = analisarJornadaEquipa(diretor, [...cinco].reverse());
