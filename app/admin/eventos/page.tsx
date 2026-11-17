@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ResultadosBeARock } from "./be-a-rock";
 import { resumirPresencasEvento } from "@/lib/eventos-presencas";
 import { ResumoPresencasEvento } from "./resumo-presencas";
 import { listarPedidosBilhete, totaisBilhetes } from "@/lib/bilhetes-convencao";
@@ -12,11 +13,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-/**
- * Lista de eventos. Por agora só existe um (o Teambuilding, com os detalhes
- * todos em constantes — ver src/lib/eventos.ts), mas a página já está
- * organizada como lista para receber os próximos sem mudar de forma.
- */
+/** Eventos, sondagens e histórico de inscrições. */
 export default async function AdminEventos() {
   const [inscricoes, inscricoesAbertas, pedidosBilhete] = await Promise.all([
     listarInscricoesEvento(),
@@ -73,10 +70,11 @@ export default async function AdminEventos() {
       <div className="ad-caixa">
         <h1>Eventos</h1>
         <p className="ad-subtitulo">
-          Clica num evento para veres as inscrições, os documentos e tudo o resto sobre ele.
+          Consulta as sondagens ou abre um evento para veres as inscrições e os documentos.
         </p>
 
         <div className="ad-eventos-grelha">
+          <ResultadosBeARock />
           <Link href="/admin/eventos/teambuilding" className="ad-evento-cartao">
             <p className="ad-evento-titulo">{EVENTO_TITULO}</p>
             <p className="ad-evento-meta">

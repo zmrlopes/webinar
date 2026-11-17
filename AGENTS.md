@@ -8,6 +8,19 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+Por indicação explícita de 17/11/2026, os pedidos de alterações incluem
+publicá-las, depois das verificações, para o utilizador as poder ver logo.
+Publicar no branch ligado ao Vercel e confirmar o estado da publicação.
+
+Por indicação de 17/11/2026, a página Eventos presenciais dos consultores
+retira o card do Teambuilding de 14 de novembro e apresenta uma sondagem do
+Be a Rock de 8 a 10 de janeiro de 2027, para assistir em comunidade.
+Cada consultor da equipa pode votar NORTE ou SUL e alterar a escolha,
+com um único voto persistente por conta. Em `/admin/eventos`, um card mostra
+os totais e os votantes por zona, apenas ao admin. O histórico e os formulários
+auxiliares do Teambuilding mantêm-se. Correr também
+`npx tsx scripts/testes-be-a-rock.ts`.
+
 Por indicação explícita mais recente do utilizador, a nova área completa está
 publicada para todos os consultores da equipa (`equipa_afiliados`), incluindo
 Reservas (Criar templates, Travel planner, Propostas, Onde posso vender) e as

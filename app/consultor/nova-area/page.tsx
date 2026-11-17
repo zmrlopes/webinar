@@ -398,7 +398,7 @@ export default function NovaAreaConsultor() {
             {seccao === "testemunhos" && <TestemunhosNovaArea />}
             {assistenteAberto && <div hidden={seccao !== "assistente"}><AssistenteEquipa email={email} /></div>}
             {seccao === "documentos" && <DocumentosNovaArea />}
-            {seccao === "eventos-presenciais" && <EventosPresenciais email={email} nome={dados.nome} />}
+            {seccao === "eventos-presenciais" && <EventosPresenciais email={email} />}
             <footer className={estilos.rodape}><span className={estilos.ponto} />{soAdmin ? "Área de administração da tua equipa" : email === EMAIL_PAINEL_DEMONSTRACAO ? <>Nova área em construção <span>·</span> Conta de teste</> : "Nova área de consultor"}</footer>
           </main>
         </div>

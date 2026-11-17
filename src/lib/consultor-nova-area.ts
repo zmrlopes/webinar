@@ -88,9 +88,6 @@ export type FormacaoNovaArea = {
   | { tipo: "externa"; link: string; lingua: LinguaFormacao | null });
 
 export interface DadosEventosPresenciais {
-  teambuilding: {
-    titulo: string; data: string; local: string; precoAdulto: number; precoCrianca: number; inscricoesAbertas: boolean;
-  };
   convencao: {
     titulo: string; data: string; erroPedido: boolean;
     pedido: {

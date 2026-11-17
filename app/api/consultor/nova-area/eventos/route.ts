@@ -4,7 +4,6 @@ import { temAcessoNovaArea } from "@/lib/consultor-nova-area-servidor";
 import { buscarMembroEquipa } from "@/lib/equipa";
 import { buscarPedidoDoConsultor } from "@/lib/bilhetes-convencao";
 import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
-import { EVENTO_TITULO, EVENTO_LOCAL, EVENTO_PRECO_ADULTO, EVENTO_PRECO_CRIANCA_MAIS10, estaoInscricoesAbertas } from "@/lib/eventos";
 
 export async function POST(request: Request): Promise<Response> {
   const corpo = await request.json().catch(() => null);
@@ -15,18 +14,11 @@ export async function POST(request: Request): Promise<Response> {
   try {
     const membro = await buscarMembroEquipa(email);
     if (!membro) return NextResponse.json({ erro: "Não encontrámos esta conta na equipa." }, { status: 403 });
-    const [inscricoesAbertas, pedido] = await Promise.all([
-      estaoInscricoesAbertas(),
-      buscarPedidoDoConsultor(email, membro.nome).catch(erro => {
+    const pedido = await buscarPedidoDoConsultor(email, membro.nome).catch(erro => {
         console.error("falha ao carregar o pedido da Convenção na nova área:", erro);
         return "erro" as const;
-      }),
-    ]);
+      });
     const dados: DadosEventosPresenciais = {
-      teambuilding: {
-        titulo: EVENTO_TITULO, data: "2026-11-14", local: EVENTO_LOCAL,
-        precoAdulto: EVENTO_PRECO_ADULTO, precoCrianca: EVENTO_PRECO_CRIANCA_MAIS10, inscricoesAbertas,
-      },
       convencao: {
         titulo: "Convenção Nacional iCliGo", data: "2027-03-13", erroPedido: pedido === "erro",
         pedido: pedido && pedido !== "erro" ? {
@@ -42,7 +34,7 @@ export async function POST(request: Request): Promise<Response> {
     };
     return NextResponse.json(dados, { headers: { "Cache-Control": "private, no-store" } });
   } catch (erro) {
-    console.error("falha ao carregar os eventos presenciais da conta de teste:", erro);
+    console.error("falha ao carregar os eventos presenciais:", erro);
     return NextResponse.json({ erro: "Não foi possível carregar os eventos. Tenta novamente." }, { status: 500 });
   }
 }
