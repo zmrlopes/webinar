@@ -67,10 +67,9 @@ export function BarraJornada({email, inicial}: {email: string; inicial: JornadaC
         <span className={s.preenchimento} style={{width: `${jornada!.percentagem}%`}} />
       </div>
       <div className={s.rodape}>
-        <span>{jornada!.metaPontos !== null ? `Meta de ${jornada!.proximoPatamar}: ${numero(jornada!.metaPontos)} pontos` : "Continua a construir a tua jornada."}</span>
+        <span>{jornada!.metaPontos !== null ? `Pontos necessários para ${jornada!.proximoPatamar}: ${numero(jornada!.metaPontos)} no total` : "Continua a construir a tua jornada."}</span>
         {jornada!.atualizadoEm && <span>Dados da equipa · <time dateTime={jornada!.atualizadoEm}>{new Date(jornada!.atualizadoEm).toLocaleDateString("pt-PT", {timeZone: "Europe/Lisbon"})}</time></span>}
       </div>
-      {metaAtingida && <p className={s.nota}>A meta de pontos está cumprida. A subida de patamar depende da confirmação dos restantes requisitos no MyOffice.</p>}
     </>}
     {erro && <p className={s.erro} role="status">{erro} <button type="button" disabled={aAtualizar} onClick={() => setTentativa(n => n + 1)}>Tentar novamente</button></p>}
   </section>;

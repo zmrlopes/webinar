@@ -20,6 +20,8 @@ Usa `equipa_afiliados.nivel`, `pontos` e a data da última atualização;
 não usa pontos mensais/anuais dos Mapas nem soma pontos da descendência.
 A escada partilhada é `src/lib/patamares-carreira.ts`. Atingir pontos não
 confirma uma promoção: mantém o nível registado e identifica a meta cumprida.
+Por indicação mais recente, não mostra a frase sobre confirmar requisitos no
+MyOffice; explicita “Pontos necessários para [patamar]: [meta] no total”.
 Dados ausentes/desconhecidos não são apresentados como zero ou como Júnior.
 Atualiza a cada minuto enquanto visível e ao voltar à janela, com leituras
 privadas por conta; falhas preservam os últimos dados. Publicado para a equipa.
