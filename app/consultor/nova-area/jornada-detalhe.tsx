@@ -8,10 +8,11 @@ import s from "./jornada-detalhe.module.css";
 const n = (valor: number) => valor.toLocaleString("pt-PT", {maximumFractionDigits: 2});
 const faltaApoio = (c: CandidatoJornada) => c.criteriosEmFalta.map(r => `${r.quantidade} ${nomePatamarQuantidade(r.patamar, r.quantidade)} em linhas distintas`).join(" e ");
 
-function CartaoCandidato({candidato: c}: {candidato: CandidatoJornada}) {
+function CartaoCandidato({candidato: c, contavaPara}: {candidato: CandidatoJornada; contavaPara?: string | null}) {
   return <article className={s.candidato}>
     <span className={s.etiqueta}>LINHA DE {c.linhaNome}</span>
     <h3>{c.nome}</h3>
+    <p className={s.motivo}>{contavaPara ? <>Esta linha já conta para <strong>{contavaPara}</strong>. Para passar a ocupar uma vaga de <strong>{c.objetivo}</strong>, é preciso assegurar as restantes vagas noutras linhas.</> : <>Esta linha ainda não ocupa uma das vagas atuais. Ao atingir <strong>{c.objetivo}</strong>, pode passar a contar para essa vaga.</>}</p>
     <p className={s.patamar}>{c.patamarAtual} <span aria-hidden="true">→</span> Objetivo: <strong>{c.objetivo}</strong></p>
     <div className={s.pontos}><strong>{n(c.pontos)}</strong> / {n(c.metaPontos)} pontos</div>
     <p className={s.faltam}>{c.faltamPontos > 0 ? <>{c.faltamPontos === 1 ? "Falta" : "Faltam"} <strong>{n(c.faltamPontos)} {c.faltamPontos === 1 ? "ponto" : "pontos"}</strong> para {c.objetivo}.</> : <>Pontos para {c.objetivo} já cumpridos; patamar registado: {c.patamarAtual}.</>}</p>
@@ -26,6 +27,7 @@ export function DetalheJornadaNovaArea({email}: {email: string}) {
   const [erro, setErro] = useState("");
   const [tentativa, setTentativa] = useState(0);
   const [limite, setLimite] = useState(12);
+  const [caminhoId, setCaminhoId] = useState<string | null>(null);
   const titulo = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     titulo.current?.focus({preventScroll: true});
@@ -52,7 +54,10 @@ export function DetalheJornadaNovaArea({email}: {email: string}) {
   }, [email, tentativa]);
   const jornada = dados?.jornada, estrutura = jornada?.estrutura;
   const usados = dados?.linhas.filter(l => l.contaPara) ?? [];
-  const planoIds = new Set(dados?.plano.map(c => `${c.id}:${c.objetivo}`));
+  const comparacoes = dados?.comparacoes ?? [];
+  const caminho = comparacoes.find(c => c.id === caminhoId) ?? comparacoes[0];
+  const plano = caminho?.passos ?? dados?.plano ?? [];
+  const planoIds = new Set(plano.map(c => `${c.id}:${c.objetivo}`));
   const alternativas = dados?.proximos.filter(c => !planoIds.has(`${c.id}:${c.objetivo}`)) ?? [];
 
   return <section className={s.raiz} aria-labelledby="titulo-detalhe-jornada">
@@ -73,13 +78,38 @@ export function DetalheJornadaNovaArea({email}: {email: string}) {
         </article>)}</div>
         <p className={s.nota}>Cada linha direta conta uma única vez. Um TP qualificado pode estar mais abaixo nessa linha. Um patamar superior também cumpre os patamares anteriores.</p>
 
-        {dados!.plano.length > 0 && <><h3>Por onde começar</h3><p className={s.introducao}>Um acompanhamento sugerido por linha que falta, dando prioridade à proximidade em pontos e aos requisitos de equipa ainda por cumprir.</p><div className={s.candidatos}>{dados!.plano.map(c => <CartaoCandidato key={`${c.id}:${c.objetivo}`} candidato={c} />)}</div></>}
+        {comparacoes.length > 0 && <div className={s.comparacao}>
+          <h3>Comparar caminhos</h3>
+          <p className={s.introducao}>Até três caminhos com os dados disponíveis: manter a distribuição atual ou trocar as vagas entre linhas. A ordem dá prioridade a cobrir mais vagas, depois a menos requisitos de equipa por cumprir e, por fim, à menor soma de pontos em falta.</p>
+          <div className={s.opcoes} role="group" aria-label="Escolher um caminho para comparar">
+            {comparacoes.map((c, i) => <button key={c.id} type="button" className={`${s.opcao} ${c.id === caminho?.id ? s.escolhida : ""}`} aria-pressed={c.id === caminho?.id} onClick={() => setCaminhoId(c.id)}>
+              <span className={s.etiqueta}>{i === 0 ? "PRIMEIRO NA COMPARAÇÃO" : `CAMINHO ${i + 1}`}</span>
+              <strong className={s.tituloOpcao}>{c.titulo}</strong>
+              <span className={s.totalOpcao}>{n(c.pontosEmFalta)} <small>pontos em falta nos TPs deste caminho</small></span>
+              <span>{c.passos.length} {c.passos.length === 1 ? "pessoa a acompanhar" : "pessoas a acompanhar"} · {c.linhas.length}/{estrutura.linhasNecessarias} vagas com pessoa identificada</span>
+              <span>{c.requisitosEmFalta ? `${c.requisitosEmFalta} requisitos de equipa adicionais nos TPs` : "Sem requisitos de equipa adicionais nos TPs"}</span>
+              <span className={s.selecionar}>{c.id === caminho?.id ? "Caminho selecionado" : "Ver este caminho →"}</span>
+            </button>)}
+          </div>
+          <p className={s.nota}>A soma compara os pontos que faltam às pessoas indicadas. Não é uma previsão nem substitui os {jornada.faltam === null ? "pontos em falta na tua meta" : `${n(jornada.faltam)} pontos que faltam na tua própria meta`}. Os requisitos de equipa dos candidatos também têm de ser cumpridos. Confirma com cada pessoa a disponibilidade e o interesse em avançar.</p>
+          {comparacoes.length === 1 && <p className={s.nota}>Com os dados atuais, só foi identificado este caminho distinto.</p>}
+          {caminho && <div aria-live="polite" aria-atomic="true" className={s.explicacao}>
+            <strong>{caminho.titulo}</strong>
+            {caminho.linhas.filter(l => l.contavaPara && l.contavaPara !== l.contaPara).map(l => <p key={l.id}>A linha de <strong>{l.nome}</strong> passa da vaga de {l.contavaPara} para a de <strong>{l.contaPara}</strong>. As restantes vagas são redistribuídas entre as outras linhas deste caminho.</p>)}
+            {!caminho.linhas.some(l => l.contavaPara && l.contavaPara !== l.contaPara) && <p>As vagas que já contam mantêm-se. O acompanhamento indicado procura completar as restantes linhas.</p>}
+            {caminho.vagasSemCandidato > 0 && <p>Ainda {caminho.vagasSemCandidato === 1 ? "falta identificar uma pessoa para 1 vaga" : `faltam identificar pessoas para ${caminho.vagasSemCandidato} vagas`}. Este caminho está incompleto; os pontos apresentados não incluem essas vagas.</p>}
+            <details className={s.distribuicao}><summary>Ver como ficariam as linhas ({caminho.linhas.length}/{estrutura.linhasNecessarias})</summary>
+              <div className={s.tabela}><table><caption>Distribuição prevista se os objetivos deste caminho forem atingidos</caption><thead><tr><th>Linha direta</th><th>Pessoa que conta</th><th>Vaga</th><th>Situação</th></tr></thead><tbody>{caminho.linhas.map(l => <tr key={l.id}><td>{l.nome}</td><td>{l.representante?.nome}</td><td>{l.contaPara}</td><td>{l.aDesenvolver ? "Por atingir" : "Já qualificada"}</td></tr>)}</tbody></table></div>
+            </details>
+          </div>}
+        </div>}
+        {plano.length > 0 && <><h3>Quem acompanhar neste caminho</h3><p className={s.introducao}>Uma pessoa por linha, com o motivo da escolha e o que ainda falta para o objetivo. As promoções são possibilidades de desenvolvimento; os patamares registados mantêm-se.</p><div className={s.candidatos}>{plano.map(c => <CartaoCandidato key={`${c.id}:${c.objetivo}`} candidato={c} contavaPara={dados!.linhas.find(l => l.id === c.linhaId)?.contaPara} />)}</div></>}
         {dados!.linhasPorCriar > 0 && <p className={s.aviso}>Precisas de desenvolver mais {dados!.linhasPorCriar} {dados!.linhasPorCriar === 1 ? "linha direta" : "linhas diretas"} para ter as {estrutura.linhasNecessarias} linhas distintas exigidas.</p>}
-        {estrutura.faltamLinhas! > 0 && dados!.plano.length === 0 && dados!.linhasPorCriar === 0 && <p className={s.aviso}>Ainda não há candidatos com patamar e pontos suficientes registados para sugerir um acompanhamento. Revê os dados da equipa e as linhas que podes desenvolver.</p>}
+        {estrutura.faltamLinhas! > 0 && plano.length === 0 && dados!.linhasPorCriar === 0 && <p className={s.aviso}>Ainda não há candidatos com patamar e pontos conhecidos nas linhas necessárias para sugerir um acompanhamento. Revê os dados da equipa e as linhas que podes desenvolver.</p>}
         {estrutura.faltamLinhas === 0 && <p className={s.sucesso}>Os requisitos de linhas estão cumpridos nos dados atuais.</p>}
 
         {usados.length > 0 && <details className={s.linhas}><summary>Linhas que já contam · {usados.length}</summary><ul>{usados.map(l => <li key={l.id}><strong>Linha de {l.nome}</strong><span>{l.representante!.nome} · {l.representante!.patamar}</span><small>Conta para: {l.contaPara}</small></li>)}</ul></details>}
-        {alternativas.length > 0 && <><h3>Outras pessoas próximas do objetivo</h3><p className={s.introducao}>Alternativas com até 15% do intervalo de pontos em falta, ou até 3 pontos para Master. Pessoas da mesma linha são alternativas; não contam como linhas diferentes.</p><div className={s.candidatos}>{alternativas.slice(0, limite).map(c => <CartaoCandidato key={`${c.id}:${c.objetivo}`} candidato={c} />)}</div>{alternativas.length > limite && <button type="button" className={s.mais} onClick={() => setLimite(l => l + 12)}>Mostrar mais pessoas ({alternativas.length - limite})</button>}</>}
+        {alternativas.length > 0 && <><h3>Outras pessoas próximas do objetivo</h3><p className={s.introducao}>Alternativas com até 15% do intervalo de pontos em falta, ou até 3 pontos para Master. Podem exigir outra distribuição de vagas. Pessoas da mesma linha são alternativas; não contam como linhas diferentes.</p><div className={s.candidatos}>{alternativas.slice(0, limite).map(c => <CartaoCandidato key={`${c.id}:${c.objetivo}`} candidato={c} contavaPara={dados!.linhas.find(l => l.id === c.linhaId)?.contaPara} />)}</div>{alternativas.length > limite && <button type="button" className={s.mais} onClick={() => setLimite(l => l + 12)}>Mostrar mais pessoas ({alternativas.length - limite})</button>}</>}
         {(dados!.semPatamar > 0 || dados!.semPontos > 0) && <p className={s.nota}>Há registos por completar: {dados!.semPatamar} sem patamar reconhecido e {dados!.semPontos} sem pontos. Não são inferidas qualificações a partir de dados em falta.</p>}
       </> : <p className={s.aviso}>{jornada.proximoPatamar ? "Este próximo patamar não tem novos requisitos de linhas. Acompanha a tua meta de pontos na barra e nos Mapas." : jornada.estado === "ultimo-patamar" ? "Já estás no último patamar desta escada." : "Atualiza o patamar e os pontos da tua conta para veres o objetivo seguinte."}</p>}
       <p className={s.fonte}>Análise da tua organização atual, com os patamares registados na equipa{(estrutura?.atualizadoEm ?? jornada.atualizadoEm) && <> · Dados de {new Date((estrutura?.atualizadoEm ?? jornada.atualizadoEm)!).toLocaleDateString("pt-PT", {timeZone: "Europe/Lisbon"})}</>}. <a href={FONTE_CRITERIOS_PATAMARES} target="_blank" rel="noopener noreferrer">Consultar os critérios do plano</a>.</p>

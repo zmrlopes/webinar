@@ -1,5 +1,6 @@
 import { calcularJornadaConsultor, type CriterioJornada, type EstruturaJornada, type JornadaConsultor } from "./consultor-jornada";
 import { CRITERIOS_LINHAS, ESCADA_PATAMARES, indicePatamar } from "./patamares-carreira";
+import { compararCaminhosJornada, type CaminhoJornada } from "./consultor-jornada-comparacoes";
 
 export interface PessoaJornada {
   id: string; pai: string | null; nome: string; nivel: string | null;
@@ -23,6 +24,7 @@ export interface DetalheJornada {
   linhasPorCriar: number;
   semPontos: number;
   semPatamar: number;
+  comparacoes: CaminhoJornada[];
 }
 
 function arvore(pessoas: PessoaJornada[]) {
@@ -61,7 +63,7 @@ function distribuir(raiz: string, objetivo: string, arv: ReturnType<typeof arvor
 
 export function analisarJornadaEquipa(raiz: PessoaJornada, pessoas: PessoaJornada[], incluirCandidatos = true): DetalheJornada {
   const jornada = calcularJornadaConsultor(raiz.nivel, raiz.pontos, raiz.atualizadoEm);
-  const vazio: DetalheJornada = {jornada, linhas: [], plano: [], proximos: [], linhasPorCriar: 0, semPontos: 0, semPatamar: 0};
+  const vazio: DetalheJornada = {jornada, linhas: [], plano: [], proximos: [], linhasPorCriar: 0, semPontos: 0, semPatamar: 0, comparacoes: []};
   if (!jornada.proximoPatamar || !CRITERIOS_LINHAS[jornada.proximoPatamar]) return vazio;
   const arv = arvore(pessoas), {linhas, utilizadas, requisitos} = distribuir(raiz.id, jornada.proximoPatamar, arv);
   const membros = [...new Map(linhas.flatMap(l => l.membros).map(p => [p.id, p])).values()];
@@ -78,25 +80,38 @@ export function analisarJornadaEquipa(raiz: PessoaJornada, pessoas: PessoaJornad
     })};
   if (!incluirCandidatos || !estrutura.faltamLinhas) return resultado;
   const candidatos: CandidatoJornada[] = [];
-  for (const requisito of requisitos.filter(r => r.faltam! > 0)) {
+  const qualificadas: Parameters<typeof compararCaminhosJornada>[2] = [];
+  const apoios = new Map<string, CriterioJornada[]>();
+  for (const requisito of requisitos) {
     const alvo = indicePatamar(requisito.patamar), meta = ESCADA_PATAMARES[alvo]!.pontos;
-    for (const linha of linhas.filter(l => !utilizadas.has(l.pessoa.id))) for (const pessoa of linha.membros) {
-      const atual = indicePatamar(pessoa.nivel);
-      if (atual < 0 || atual >= alvo || pessoa.pontos === null || !Number.isFinite(pessoa.pontos) || pessoa.pontos < 0) continue;
-      const faltamPontos = Math.max(0, Math.round((meta - pessoa.pontos) * 100) / 100);
-      const apoio = distribuir(pessoa.id, requisito.patamar, arv).requisitos;
-      const criteriosEmFalta = apoio.filter(r => r.faltam! > 0).map(r => ({patamar: r.patamar, quantidade: r.faltam!}));
-      const distancia = faltamPontos / meta + apoio.reduce((s, r) => s + r.faltam!, 0) / Math.max(1, apoio.reduce((s, r) => s + r.necessarios, 0));
-      candidatos.push({id: pessoa.id, nome: pessoa.nome, patamarAtual: ESCADA_PATAMARES[atual]!.nome, linhaId: linha.pessoa.id, linhaNome: linha.pessoa.nome,
-        objetivo: requisito.patamar, pontos: pessoa.pontos, metaPontos: meta, faltamPontos, criteriosEmFalta,
-        perto: faltamPontos / (meta - ESCADA_PATAMARES[atual]!.pontos) <= .15 || (alvo === 2 && faltamPontos <= 3),
-        distancia, estado: pessoa.estado, atualizadoEm: pessoa.atualizadoEm});
+    for (const linha of linhas) {
+      const qualificada = linha.membros.filter(p => indicePatamar(p.nivel) >= alvo)
+        .sort((a, b) => indicePatamar(b.nivel) - indicePatamar(a.nivel) || (b.pontos ?? -1) - (a.pontos ?? -1) || a.nome.localeCompare(b.nome, "pt-PT"))[0];
+      if (qualificada) {
+        qualificadas.push({linhaId: linha.pessoa.id, objetivo: requisito.patamar,
+          representante: {nome: qualificada.nome, patamar: ESCADA_PATAMARES[indicePatamar(qualificada.nivel)]!.nome}});
+        continue;
+      }
+      for (const pessoa of linha.membros) {
+        const atual = indicePatamar(pessoa.nivel);
+        if (atual < 0 || atual >= alvo || pessoa.pontos === null || !Number.isFinite(pessoa.pontos) || pessoa.pontos < 0) continue;
+        const faltamPontos = Math.max(0, Math.round((meta - pessoa.pontos) * 100) / 100);
+        const chaveApoio = `${pessoa.id}:${requisito.patamar}`;
+        const apoio = apoios.get(chaveApoio) ?? distribuir(pessoa.id, requisito.patamar, arv).requisitos;
+        apoios.set(chaveApoio, apoio);
+        const criteriosEmFalta = apoio.filter(r => r.faltam! > 0).map(r => ({patamar: r.patamar, quantidade: r.faltam!}));
+        const distancia = faltamPontos / meta + apoio.reduce((s, r) => s + r.faltam!, 0) / Math.max(1, apoio.reduce((s, r) => s + r.necessarios, 0));
+        candidatos.push({id: pessoa.id, nome: pessoa.nome, patamarAtual: ESCADA_PATAMARES[atual]!.nome, linhaId: linha.pessoa.id, linhaNome: linha.pessoa.nome,
+          objetivo: requisito.patamar, pontos: pessoa.pontos, metaPontos: meta, faltamPontos, criteriosEmFalta,
+          perto: faltamPontos / (meta - ESCADA_PATAMARES[atual]!.pontos) <= .15 || (alvo === 2 && faltamPontos <= 3),
+          distancia, estado: pessoa.estado, atualizadoEm: pessoa.atualizadoEm});
+      }
     }
   }
   candidatos.sort((a, b) => a.distancia - b.distancia || a.faltamPontos - b.faltamPontos || a.nome.localeCompare(b.nome, "pt-PT"));
   const escolhidas = new Set<string>();
   for (const requisito of requisitos) {
-    const opcoes = candidatos.filter(c => c.objetivo === requisito.patamar && !escolhidas.has(c.linhaId));
+    const opcoes = candidatos.filter(c => c.objetivo === requisito.patamar && !utilizadas.has(c.linhaId) && !escolhidas.has(c.linhaId));
     let vagas = requisito.faltam!;
     for (const candidato of opcoes) if (vagas && !escolhidas.has(candidato.linhaId)) {
       resultado.plano.push(candidato); escolhidas.add(candidato.linhaId); vagas--;
@@ -104,5 +119,7 @@ export function analisarJornadaEquipa(raiz: PessoaJornada, pessoas: PessoaJornad
   }
   resultado.proximos = candidatos.filter(c => c.perto);
   resultado.linhasPorCriar = Math.max(0, total - linhas.length);
+  resultado.comparacoes = compararCaminhosJornada(requisitos, resultado.linhas, qualificadas, candidatos, resultado.plano);
+  resultado.plano = resultado.comparacoes[0]?.passos ?? resultado.plano;
   return resultado;
 }

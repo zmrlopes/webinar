@@ -54,6 +54,21 @@ pessoa, além das linhas que já contam e das alternativas próximas. Só lê a
 própria conta e descendência; nunca expõe outra equipa. Não envia comunicações.
 Correr também `npx tsx scripts/testes-consultor-jornada-equipa.ts`.
 
+Por indicação de 17/11/2026, o detalhe do próximo patamar permite comparar
+até três caminhos, incluindo manter as linhas que já contam e redistribuir
+as vagas entre linhas (por exemplo, promover um Master a Coordenador e
+desenvolver outro Master noutra linha). A atribuição global usa uma vaga
+por linha: prioriza cobrir mais vagas, menos requisitos de equipa adicionais
+dos candidatos e depois menor soma dos pontos individuais em falta. Explica
+as trocas, mostra a distribuição prevista, os motivos de cada pessoa e
+permite selecionar outro caminho. Não altera patamares nem critérios atuais;
+não confunde a soma dos défices dos candidatos com a meta do próprio TP,
+não conta vagas sem dados como custo zero e não prevê atividade/interesse.
+As comparações só são calculadas no pedido de detalhe e continuam privadas
+por organização. A escolha de um caminho não grava nem envia comunicações.
+Correr `npx tsx scripts/testes-consultor-jornada-equipa.ts`, incluindo a
+regressão da troca de vagas e a comparação com enumeração de casos pequenos.
+
 Por indicação de 17/11/2026, em Estatísticas e projeções, os TPs são o total
 da organização de cada conta, incluindo o próprio TP e todos os diretos e
 indiretos, e não apenas as novas adesões do período. Recolher a lista completa

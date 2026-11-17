@@ -32,6 +32,15 @@ o código partilhado das metas e requisitos está em
 `src/lib/patamares-carreira.ts`. Os requisitos de canais usam uma única vaga
 por linha, mesmo que essa linha contenha várias pessoas qualificadas.
 
+O detalhe compara até três caminhos de desenvolvimento: preservar as vagas
+atuais e redistribuí-las entre linhas, permitindo promover uma pessoa que já
+conta para um patamar inferior e preencher essa vaga com outra linha. Primeiro
+maximiza as vagas com pessoa identificada, depois minimiza os requisitos de
+equipa ainda em falta nos candidatos e a soma dos seus défices de pontos.
+Expõe cada pessoa, troca e distribuição prevista sem alterar qualificações.
+A soma dos défices dos candidatos não substitui a meta de pontos do titular,
+não inclui vagas sem dados e não mede interesse ou disponibilidade pessoal.
+
 O documento anterior em `backoffice.icligo.com/novoPlano` diverge deste plano:
 indicava Prata com 10.000 pontos, omitia os seus canais e terminava em Ouro
 com 30.000 pontos. Não usar essa versão antiga para a jornada atual.

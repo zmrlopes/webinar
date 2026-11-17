@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { analisarJornadaEquipa, type PessoaJornada } from "../src/lib/consultor-jornada-equipa";
 import { db, fecharDb } from "../src/lib/db";
 import { POST } from "../app/api/consultor/nova-area/jornada/route";
+import { compararCaminhosJornada } from "../src/lib/consultor-jornada-comparacoes";
 
 const data = "2026-11-17T10:00:00Z";
 const pessoa = (id: string, pai: string | null, nivel = "JUNIOR", pontos: number | null = 0): PessoaJornada => ({id, pai, nome: id, nivel, pontos, estado: "ACTIVE", atualizadoEm: data});
@@ -79,6 +80,61 @@ assert.equal(ciclo.jornada.estrutura?.linhasCumpridas, 1, "Ciclos não duplicam 
 const invertida = analisarJornadaEquipa(diretor, [...cinco].reverse());
 assert.deepEqual(invertida.jornada.estrutura, bronze.jornada.estrutura, "A contagem não depende da ordem das linhas");
 
+// Regressão: reservar primeiro os Masters escondia uma troca mais próxima.
+const liderTroca = pessoa("lider-troca", null, "DIRETOR", 1979.54);
+const equipaTroca = [liderTroca, pessoa("coord-a", liderTroca.id, "COORDENADOR", 720.6), pessoa("coord-b", liderTroca.id, "COORDENADOR", 561.58),
+  pessoa("master-proximo", liderTroca.id, "MASTER", 148.01), pessoa("master-b", liderTroca.id, "MASTER", 108.04),
+  pessoa("senior-proximo", liderTroca.id, "SENIOR", 73.19), pessoa("master-mesma-linha", "coord-a", "MASTER", 197.93)];
+const troca = analisarJornadaEquipa(liderTroca, equipaTroca);
+const melhorTroca = troca.comparacoes[0]!;
+assert.equal(troca.jornada.faltam, 1520.46, "A comparação não altera nem substitui os pontos do titular");
+assert.equal(melhorTroca.pontosEmFalta, 103.8);
+assert.deepEqual(melhorTroca.passos.map(c => [c.nome, c.objetivo, c.faltamPontos]).sort(), [
+  ["master-proximo", "Coordenador", 101.99], ["senior-proximo", "Master", 1.81],
+].sort());
+assert(melhorTroca.linhas.some(l => l.nome === "master-proximo" && l.contavaPara === "Master" && l.contaPara === "Coordenador"));
+assert.equal(melhorTroca.vagasSemCandidato, 0);
+const manterTroca = troca.comparacoes.find(c => c.id === "manter")!;
+assert.equal(manterTroca.pontosEmFalta, 176.81);
+assert.deepEqual(manterTroca.passos.map(c => [c.nome, c.objetivo]), [["senior-proximo", "Coordenador"]]);
+for (const c of troca.comparacoes) {
+  assert.equal(new Set(c.linhas.map(l => l.id)).size, c.linhas.length, "Cada caminho usa uma vaga por linha");
+  assert.equal(c.linhas.filter(l => l.contaPara === "Coordenador").length, 3);
+  assert.equal(c.linhas.filter(l => l.contaPara === "Master").length, 2);
+  assert(!c.passos.some(p => p.id === "master-mesma-linha"), "Não liberta uma linha que já é necessária como Coordenador sem a substituir");
+}
+assert.deepEqual(analisarJornadaEquipa(liderTroca, [...equipaTroca].reverse()).comparacoes, troca.comparacoes, "A comparação é estável ao inverter os dados");
+assert.deepEqual(analisarJornadaEquipa(liderTroca, equipaTroca, false).comparacoes, [], "A barra não calcula nem devolve comparações privadas desnecessárias");
+assert(troca.plano.every(p => melhorTroca.passos.includes(p)), "O acompanhamento inicial usa o primeiro caminho da comparação");
+assert.equal(semDados.comparacoes[0]?.vagasSemCandidato, 3, "Dados em falta não são transformados em promoções a custo zero");
+assert.equal(semDados.comparacoes[0]?.passos.length, 0);
+assert.equal(quatro.comparacoes[0]?.vagasSemCandidato, 1, "A redistribuição não inventa a quinta linha");
+assert.equal(ouro.comparacoes[0]?.requisitosEmFalta, 1, "A comparação mantém o Master que falta na organização do candidato a Diretor");
+
+// Oráculo independente para atribuições pequenas: enumera todas as escolhas de
+// 3 linhas distintas e compara com o otimizador, incluindo conflitos de vagas.
+for (let caso = 0; caso < 24; caso++) {
+  const requisitos = [{patamar: "Coordenador", necessarios: 1, cumpridos: 0, faltam: 1}, {patamar: "Master", necessarios: 2, cumpridos: 0, faltam: 2}];
+  const linhas = Array.from({length: 4}, (_, i) => ({id: `linha-${i}`, nome: `Linha ${i}`, contaPara: null, representante: null}));
+  const candidatos = linhas.flatMap((l, i) => ["Coordenador", "Master"].flatMap((objetivo, j) => {
+    if ((caso + i * 3 + j) % 7 === 0) return [];
+    return [{id: `pessoa-${i}`, nome: `Pessoa ${i}`, linhaId: l.id, linhaNome: l.nome, patamarAtual: "Júnior", objetivo,
+      pontos: 0, metaPontos: objetivo === "Master" ? 75 : 250, faltamPontos: (caso * 17 + i * 31 + j * 13) % 100,
+      criteriosEmFalta: (caso + i + j) % 4 === 0 ? [{patamar: "Master", quantidade: 1}] : [], perto: false, distancia: 0, estado: "ACTIVE", atualizadoEm: data}];
+  }));
+  const pontuacao = (cs: typeof candidatos) => [3 - cs.length, cs.reduce((s, c) => s + c.criteriosEmFalta.length, 0), cs.reduce((s, c) => s + c.faltamPontos, 0), cs.length];
+  const comparar = (a: number[], b: number[]) => a.reduce((r, n, i) => r || n - b[i]!, 0);
+  let minimo = [Infinity];
+  const enumerar = (vaga: number, escolhidas: typeof candidatos) => {
+    if (vaga === 3) {const p = pontuacao(escolhidas); if (comparar(p, minimo) < 0) minimo = p; return;}
+    enumerar(vaga + 1, escolhidas);
+    for (const c of candidatos.filter(c => c.objetivo === (vaga === 0 ? "Coordenador" : "Master") && !escolhidas.some(e => e.linhaId === c.linhaId))) enumerar(vaga + 1, [...escolhidas, c]);
+  };
+  enumerar(0, []);
+  const calculado = compararCaminhosJornada(requisitos, linhas, [], candidatos, [])[0]!;
+  assert.deepEqual([calculado.vagasSemCandidato, calculado.requisitosEmFalta, calculado.pontosEmFalta, calculado.passos.length], minimo, `Comparação global ${caso}`);
+}
+
 process.env.DATABASE_URL ||= "postgres://test:test@localhost/test";
 const pool = db(), original = pool.query;
 const emails = ["raiz@example.com", "outra@example.com"];
@@ -104,5 +160,5 @@ try {
   const outro = await (await POST(pedido(emails[1]!, true))).json();
   assert.equal(outro.jornada.estrutura.requisitos[0].cumpridos, 1); assert(!JSON.stringify(outro).includes('"nome":"B"'));
   assert.equal((await POST(pedido("fora@example.com", true))).status, 403);
-  console.log("Jornada da organização: linhas distintas, requisitos mistos, patamares superiores, candidatos, estrutura dos candidatos, dados ausentes, ciclos e privacidade verificados.");
+  console.log("Jornada da organização: linhas distintas, requisitos, candidatos, troca de vagas, comparação global por enumeração, dados ausentes, ciclos e privacidade verificados.");
 } finally {pool.query = original; await fecharDb();}
