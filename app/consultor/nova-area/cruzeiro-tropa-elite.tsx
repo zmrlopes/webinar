@@ -6,6 +6,7 @@ import {
   MAXIMO_ACOMPANHANTES_CRUZEIRO,
   OPCOES_CRUZEIRO_TROPA_ELITE,
   opcaoIncluiCruzeiro,
+  perguntaDividirCabine,
   ROTULO_OPCAO_CRUZEIRO_TROPA_ELITE,
   type OpcaoCruzeiroTropaElite,
   type VotoCruzeiroTropaElite,
@@ -22,6 +23,8 @@ export function SondagemCruzeiroTropaElite({ email }: { email: string }) {
   const [confirmacao, setConfirmacao] = useState("");
   const [acompanhantes, setAcompanhantes] = useState("0");
   const [aGuardarAcompanhantes, setAGuardarAcompanhantes] = useState(false);
+  const [dispostoDividirCabine, setDispostoDividirCabine] = useState<boolean | null>(null);
+  const [aGuardarCabine, setAGuardarCabine] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -36,6 +39,7 @@ export function SondagemCruzeiroTropaElite({ email }: { email: string }) {
       if (!controller.signal.aborted) {
         setVoto(corpo.voto);
         setAcompanhantes(String(corpo.voto?.acompanhantes ?? 0));
+        setDispostoDividirCabine(corpo.voto?.dispostoDividirCabine ?? null);
         setCarregar(false);
       }
     }).catch(falha => {
@@ -44,23 +48,28 @@ export function SondagemCruzeiroTropaElite({ email }: { email: string }) {
     return () => controller.abort();
   }, [email, tentativa]);
 
-  async function votar(opcao: OpcaoCruzeiroTropaElite, numeroAcompanhantes: string): Promise<VotoCruzeiroTropaElite> {
+  async function votar(opcao: OpcaoCruzeiroTropaElite, numeroAcompanhantes: string, dispostoCabine: boolean | null): Promise<VotoCruzeiroTropaElite> {
     const r = await fetch("/api/consultor/nova-area/eventos/cruzeiro-tropa-elite", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, acao: "votar", opcao, acompanhantes: Number(numeroAcompanhantes) || 0 }),
+      body: JSON.stringify({ email, acao: "votar", opcao, acompanhantes: Number(numeroAcompanhantes) || 0, dispostoDividirCabine: dispostoCabine }),
     });
     const corpo = await r.json();
     if (!r.ok) throw new Error(corpo.erro ?? "Não foi possível guardar o teu voto.");
     return corpo.voto;
   }
 
+  function aplicarVoto(novoVoto: VotoCruzeiroTropaElite) {
+    setVoto(novoVoto);
+    setAcompanhantes(String(novoVoto.acompanhantes ?? 0));
+    setDispostoDividirCabine(novoVoto.dispostoDividirCabine ?? null);
+  }
+
   async function escolher(opcao: OpcaoCruzeiroTropaElite) {
     if (guardar || carregar) return;
     setGuardar(opcao); setErro(""); setConfirmacao("");
     try {
-      const novoVoto = await votar(opcao, opcaoIncluiCruzeiro(opcao) ? acompanhantes : "0");
-      setVoto(novoVoto);
-      setAcompanhantes(String(novoVoto.acompanhantes ?? 0));
+      const novoVoto = await votar(opcao, opcaoIncluiCruzeiro(opcao) ? acompanhantes : "0", dispostoDividirCabine);
+      aplicarVoto(novoVoto);
       setConfirmacao(`Voto guardado: ${ROTULO_OPCAO_CRUZEIRO_TROPA_ELITE[novoVoto.opcao as OpcaoCruzeiroTropaElite]}.`);
     } catch (falha) {
       setErro(falha instanceof Error ? falha.message : "Falha de ligação. Tenta novamente.");
@@ -72,13 +81,24 @@ export function SondagemCruzeiroTropaElite({ email }: { email: string }) {
     if (!voto || aGuardarAcompanhantes) return;
     setAGuardarAcompanhantes(true); setErro(""); setConfirmacao("");
     try {
-      const novoVoto = await votar(voto.opcao, acompanhantes);
-      setVoto(novoVoto);
-      setAcompanhantes(String(novoVoto.acompanhantes ?? 0));
+      const novoVoto = await votar(voto.opcao, acompanhantes, dispostoDividirCabine);
+      aplicarVoto(novoVoto);
       setConfirmacao("Número de acompanhantes guardado.");
     } catch (falha) {
       setErro(falha instanceof Error ? falha.message : "Falha de ligação. Tenta novamente.");
     } finally { setAGuardarAcompanhantes(false); }
+  }
+
+  async function escolherCabine(resposta: boolean) {
+    if (!voto || aGuardarCabine) return;
+    setAGuardarCabine(true); setErro(""); setConfirmacao("");
+    try {
+      const novoVoto = await votar(voto.opcao, acompanhantes, resposta);
+      aplicarVoto(novoVoto);
+      setConfirmacao("Resposta sobre a cabine guardada.");
+    } catch (falha) {
+      setErro(falha instanceof Error ? falha.message : "Falha de ligação. Tenta novamente.");
+    } finally { setAGuardarCabine(false); }
   }
 
   return <article className={s.cartao} aria-labelledby="titulo-cruzeiro-tropa-elite">
@@ -101,6 +121,14 @@ export function SondagemCruzeiroTropaElite({ email }: { email: string }) {
         <button type="submit" className={estilos.botaoSecundario} disabled={aGuardarAcompanhantes}>{aGuardarAcompanhantes ? "A guardar…" : "Guardar"}</button>
       </div>
     </form>}
+    {voto && perguntaDividirCabine(voto.opcao, voto.acompanhantes) && <div className={s.acompanhantes}>
+      <p>Sem acompanhantes: estás disposto a dividir uma cabine?</p>
+      <div className={s.opcoesSondagem} role="group" aria-label="Disposto a dividir uma cabine">
+        {([["Sim", true], ["Não", false]] as const).map(([rotulo, valor]) => <button key={rotulo} type="button" className={s.opcaoSondagem} aria-pressed={dispostoDividirCabine === valor} disabled={aGuardarCabine} onClick={() => void escolherCabine(valor)}>
+          {rotulo}{dispostoDividirCabine === valor && <span aria-hidden="true"> ✓</span>}
+        </button>)}
+      </div>
+    </div>}
     <p className={s.estadoSondagem} role="status">{carregar ? "A consultar o teu voto…" : confirmacao || (voto ? `A tua escolha: ${ROTULO_OPCAO_CRUZEIRO_TROPA_ELITE[voto.opcao]}. Podes alterar o teu voto.` : "Escolhe uma opção para registar o teu interesse.")}</p>
     {erro && <div className={s.erro} role="alert"><p>{erro}</p><button type="button" className={estilos.botaoSecundario} disabled={guardar !== null} onClick={() => setTentativa(n => n + 1)}>Consultar novamente</button></div>}
     <p className={s.nota}>Um voto por consultor. Esta sondagem serve para organizar o encontro e não substitui a inscrição no evento.</p>

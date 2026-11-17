@@ -18,7 +18,7 @@ export async function POST(request: Request): Promise<Response> {
     const membro = await buscarMembroEquipa(email);
     if (!membro) return NextResponse.json({ erro: "Não encontrámos esta conta na equipa." }, { status: 403 });
     const voto = corpo.acao === "votar"
-      ? await guardarVotoCruzeiroTropaElite(email, membro.nome, corpo.opcao, corpo.acompanhantes)
+      ? await guardarVotoCruzeiroTropaElite(email, membro.nome, corpo.opcao, corpo.acompanhantes, corpo.dispostoDividirCabine)
       : await lerVotoCruzeiroTropaElite(email);
     return NextResponse.json({ voto }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (erro) {

@@ -3,6 +3,7 @@ import {
   ehOpcaoCruzeiroTropaElite,
   MAXIMO_ACOMPANHANTES_CRUZEIRO,
   opcaoIncluiCruzeiro,
+  perguntaDividirCabine,
   type OpcaoCruzeiroTropaElite,
   type VotoCruzeiroTropaElite,
 } from "./cruzeiro-tropa-elite";
@@ -17,22 +18,33 @@ function normalizarAcompanhantes(opcao: OpcaoCruzeiroTropaElite, valor: unknown)
   return Math.min(numero, MAXIMO_ACOMPANHANTES_CRUZEIRO);
 }
 
+function normalizarDispostoDividirCabine(opcao: OpcaoCruzeiroTropaElite, acompanhantes: number, valor: unknown): boolean | null {
+  if (!perguntaDividirCabine(opcao, acompanhantes)) return null;
+  return typeof valor === "boolean" ? valor : null;
+}
+
+function normalizarVoto(voto: VotoCruzeiroTropaElite | undefined): VotoCruzeiroTropaElite | null {
+  if (!voto || !ehOpcaoCruzeiroTropaElite(voto.opcao)) return null;
+  return { ...voto, dispostoDividirCabine: normalizarDispostoDividirCabine(voto.opcao, voto.acompanhantes, voto.dispostoDividirCabine) };
+}
+
 export async function lerVotoCruzeiroTropaElite(email: string): Promise<VotoCruzeiroTropaElite | null> {
   const { rows } = await db().query<{ valor: VotoCruzeiroTropaElite }>(
     "select valor from dashboard_config where chave = $1", [chaveVoto(email)],
   );
-  const voto = rows[0]?.valor;
-  return voto && ehOpcaoCruzeiroTropaElite(voto.opcao) ? voto : null;
+  return normalizarVoto(rows[0]?.valor);
 }
 
 /** Uma chave por evento e conta: repetir ou mudar a escolha nunca duplica votos. */
 export async function guardarVotoCruzeiroTropaElite(
-  email: string, nome: string, opcao: OpcaoCruzeiroTropaElite, acompanhantes: unknown,
+  email: string, nome: string, opcao: OpcaoCruzeiroTropaElite, acompanhantes: unknown, dispostoDividirCabine: unknown,
 ): Promise<VotoCruzeiroTropaElite> {
   if (!ehOpcaoCruzeiroTropaElite(opcao)) throw new Error("Escolhe uma das opções do cruzeiro.");
+  const totalAcompanhantes = normalizarAcompanhantes(opcao, acompanhantes);
   const voto: VotoCruzeiroTropaElite = {
     email: email.trim().toLowerCase(), nome, opcao,
-    acompanhantes: normalizarAcompanhantes(opcao, acompanhantes),
+    acompanhantes: totalAcompanhantes,
+    dispostoDividirCabine: normalizarDispostoDividirCabine(opcao, totalAcompanhantes, dispostoDividirCabine),
     atualizadoEm: new Date().toISOString(),
   };
   await db().query(`insert into dashboard_config (chave, valor) values ($1, $2::jsonb)
@@ -45,5 +57,5 @@ export async function listarVotosCruzeiroTropaElite(): Promise<VotoCruzeiroTropa
   const { rows } = await db().query<{ valor: VotoCruzeiroTropaElite }>(
     "select valor from dashboard_config where starts_with(chave, $1)", [PREFIXO],
   );
-  return rows.map(r => r.valor).filter(v => ehOpcaoCruzeiroTropaElite(v.opcao)).sort((a, b) => a.nome.localeCompare(b.nome, "pt-PT"));
+  return rows.map(r => normalizarVoto(r.valor)).filter((v): v is VotoCruzeiroTropaElite => v !== null).sort((a, b) => a.nome.localeCompare(b.nome, "pt-PT"));
 }

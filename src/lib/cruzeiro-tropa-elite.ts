@@ -30,7 +30,14 @@ export interface VotoCruzeiroTropaElite {
   nome: string;
   opcao: OpcaoCruzeiroTropaElite;
   acompanhantes: number;
+  /** Só perguntado a quem embarca sem acompanhantes; null enquanto não respondido ou não aplicável. */
+  dispostoDividirCabine: boolean | null;
   atualizadoEm: string;
+}
+
+/** A pergunta da cabine só faz sentido a quem vai no cruzeiro e não leva acompanhantes. */
+export function perguntaDividirCabine(opcao: OpcaoCruzeiroTropaElite, acompanhantes: number): boolean {
+  return opcaoIncluiCruzeiro(opcao) && acompanhantes === 0;
 }
 
 export function resumirVotosCruzeiroTropaElite(votos: VotoCruzeiroTropaElite[]) {
@@ -38,5 +45,6 @@ export function resumirVotosCruzeiroTropaElite(votos: VotoCruzeiroTropaElite[]) 
     OPCOES_CRUZEIRO_TROPA_ELITE.map(opcao => [opcao, votos.filter(v => v.opcao === opcao)]),
   ) as Record<OpcaoCruzeiroTropaElite, VotoCruzeiroTropaElite[]>;
   const totalAcompanhantes = votos.reduce((soma, v) => soma + (opcaoIncluiCruzeiro(v.opcao) ? v.acompanhantes : 0), 0);
-  return { total: votos.length, totalAcompanhantes, ...porOpcao };
+  const dispostosDividirCabine = votos.filter(v => perguntaDividirCabine(v.opcao, v.acompanhantes) && v.dispostoDividirCabine === true);
+  return { total: votos.length, totalAcompanhantes, dispostosDividirCabine, ...porOpcao };
 }
