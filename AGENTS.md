@@ -27,6 +27,19 @@ Atualiza a cada minuto enquanto visível e ao voltar à janela, com leituras
 privadas por conta; falhas preservam os últimos dados. Publicado para a equipa.
 Correr também `npx tsx scripts/testes-consultor-jornada.ts`.
 
+Por indicação de 17/11/2026, a jornada mostra também os requisitos de linhas
+para o patamar seguinte e “Ver em detalhe”, que abre Estatísticas e projeções
+→ Próximo patamar (`?seccao=negocio&vista=patamar`), mantendo o menu lateral.
+Diretor exige 3 Masters em 3 linhas; Bronze, 3 Coordenadores e 2 Masters em
+5 linhas; Ouro, 3 Diretores e 2 Coordenadores em 5 linhas. Patamares superiores
+incluem os anteriores; uma linha direta só ocupa uma vaga, mesmo com vários
+qualificados na sua descendência. Usa a hierarquia atual e patamares registados,
+sem promover por pontos nem inferir dados em falta. O detalhe sugere uma pessoa
+por linha a desenvolver, com pontos em falta e os requisitos de equipa dessa
+pessoa, além das linhas que já contam e das alternativas próximas. Só lê a
+própria conta e descendência; nunca expõe outra equipa. Não envia comunicações.
+Correr também `npx tsx scripts/testes-consultor-jornada-equipa.ts`.
+
 Por indicação de 17/11/2026, em Estatísticas e projeções, os TPs são o total
 da organização de cada conta, incluindo o próprio TP e todos os diretos e
 indiretos, e não apenas as novas adesões do período. Recolher a lista completa

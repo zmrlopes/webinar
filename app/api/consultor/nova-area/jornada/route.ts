@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { temAcessoNovaArea } from "@/lib/consultor-nova-area-servidor";
 import { calcularJornadaConsultor } from "@/lib/consultor-jornada";
+import { obterJornadaEquipa } from "@/lib/consultor-jornada-servidor";
 
-/** Apenas os pontos e patamar da própria conta; não devolve dados da descendência. */
+/** Resumo privado da jornada; o detalhe só percorre a descendência da própria conta. */
 export async function POST(request: Request): Promise<Response> {
   const corpo = await request.json().catch(() => null);
   const email = typeof corpo?.email === "string" ? corpo.email.trim().toLowerCase() : "";
@@ -15,7 +16,13 @@ export async function POST(request: Request): Promise<Response> {
     );
     if (!rows[0]) return json({erro: "Não encontrámos esta conta na equipa."}, 403);
     const membro = rows[0];
-    return json({jornada: calcularJornadaConsultor(membro.nivel, membro.pontos, membro.atualizado_em)});
+    const jornada = calcularJornadaConsultor(membro.nivel, membro.pontos, membro.atualizado_em);
+    if (jornada.estrutura || corpo.detalhe === true) {
+      const detalhe = await obterJornadaEquipa(email, corpo.detalhe === true);
+      if (!detalhe) return json({erro: "Não encontrámos esta conta na equipa."}, 403);
+      return json({jornada: detalhe.jornada, ...(corpo.detalhe === true ? {detalhe} : {})});
+    }
+    return json({jornada});
   } catch (erro) {
     console.error("Falha ao carregar a jornada do consultor:", erro);
     return json({erro: "Não foi possível atualizar os teus pontos. Tenta novamente."}, 500);

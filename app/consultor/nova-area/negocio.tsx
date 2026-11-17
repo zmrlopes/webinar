@@ -5,6 +5,7 @@ import {anosNegocio, fatorMedioNegocio, MESES_NEGOCIO, METRICAS_NEGOCIO, projeco
 import {favoritoNegocio, MYOFFICE_NEGOCIO} from "@/lib/consultor-negocio-ponte";
 import gerais from "./nova-area.module.css";
 import estilos from "./negocio.module.css";
+import { DetalheJornadaNovaArea } from "./jornada-detalhe";
 
 const euros = (k: MetricaNegocio) => k === "faturacao" || k === "comissoes";
 function formatar(valor: number, k: MetricaNegocio, compacto = false) {
@@ -79,11 +80,12 @@ function GraficoProjecao({valores, metrica, ano, titulo}: {valores: number[]; me
   </div>;
 }
 
-export function NegocioNovaArea({email}: {email: string}) {
+export function NegocioNovaArea({email, vistaInicial = "mapas"}: {email: string; vistaInicial?: "mapas" | "patamar"}) {
   const [dados, setDados] = useState<DadosNegocio | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
-  const [aba, setAba] = useState<"mapas" | "projecoes">("mapas");
+  const [aba, setAba] = useState<"mapas" | "projecoes" | "patamar">(vistaInicial);
+  useEffect(() => {setAba(vistaInicial);}, [vistaInicial]);
   const [metrica, setMetrica] = useState<MetricaNegocio>("faturacao");
   const [anoSelecionado, setAnoSelecionado] = useState<number | null>(null);
   const [fatorTexto, setFatorTexto] = useState("");
@@ -102,11 +104,12 @@ export function NegocioNovaArea({email}: {email: string}) {
     finally {pedido.current = false; setCarregando(false);}
   }, [email]);
   useEffect(() => {
+    if (aba === "patamar") return;
     void carregar();
     const aoVoltar = () => {if (document.visibilityState === "visible") void carregar();};
     window.addEventListener("focus", aoVoltar); document.addEventListener("visibilitychange", aoVoltar);
     return () => {window.removeEventListener("focus", aoVoltar); document.removeEventListener("visibilitychange", aoVoltar);};
-  }, [carregar]);
+  }, [carregar, aba]);
   useEffect(() => {favorito.current?.setAttribute("href", favoritoNegocio(window.location.origin));}, [carregando]);
   const medio = dados ? fatorMedioNegocio(dados) : 1;
   const digitado = Number(fatorTexto.replace(",", "."));
@@ -121,7 +124,9 @@ export function NegocioNovaArea({email}: {email: string}) {
   const rotulo = (k: MetricaNegocio) => k === "consultores" && !tpsTotais ? "Novos TPs da equipa (por atualizar)" : k === "comissoes" && !dados?.versao ? "Comissões (por atualizar)" : ROTULOS_NEGOCIO[k];
 
   return <section className={estilos.raiz} aria-label="Estatísticas e projeções">
-    <div className={gerais.intro}><span className={gerais.etiqueta}>ESTATÍSTICAS E PROJEÇÕES</span><h1>Mapas e Projeções<span>.</span></h1><p>A evolução do teu negócio, com os números recolhidos da tua conta MyOffice.</p></div>
+    <div className={gerais.intro}><span className={gerais.etiqueta}>ESTATÍSTICAS E PROJEÇÕES</span><h1>{aba === "patamar" ? "O teu próximo patamar" : "Mapas e Projeções"}<span>.</span></h1><p>{aba === "patamar" ? "Os requisitos que faltam e as pessoas da tua organização que podes acompanhar." : "A evolução do teu negócio, com os números recolhidos da tua conta MyOffice."}</p></div>
+    <div className={estilos.abas} role="group" aria-label="Vista do negócio"><button type="button" aria-pressed={aba === "mapas"} onClick={() => setAba("mapas")}>Mapas</button><button type="button" aria-pressed={aba === "projecoes"} onClick={() => setAba("projecoes")}>Projeções</button><button type="button" aria-pressed={aba === "patamar"} onClick={() => setAba("patamar")}>Próximo patamar</button></div>
+    {aba === "patamar" ? <DetalheJornadaNovaArea key={email} email={email} /> : <>
     <details className={estilos.instrucoes} open={!carregando && !dados ? true : undefined}>
       <summary>Atualizar os dados pelo MyOffice</summary>
       <div className={estilos.instrucoesCorpo}>
@@ -137,7 +142,6 @@ export function NegocioNovaArea({email}: {email: string}) {
       {dados.versao !== 5 && !tpsTotais && <p className={estilos.aviso} role="status">Estes dados são da versão anterior e não coincidem com o separador Negócio do MyOffice. Substitui o favorito e atualiza pelo MyOffice para veres o total do teu negócio (próprio + equipa).</p>}
       {!tpsTotais && <p className={estilos.aviso} role="status">Atualiza pelo MyOffice para veres os TPs totais da tua organização, incluindo a tua conta. A contagem guardada ainda mostra as novas entradas da equipa.</p>}
       <div className={estilos.estado}><span>Dados até <strong>{dataCurta(dados.ate)}</strong> · Atualizado em {new Date(dados.atualizadoEm).toLocaleString("pt-PT", {dateStyle: "short", timeStyle: "short", timeZone: "Europe/Lisbon"})}</span><button type="button" className={estilos.secundario} onClick={() => void carregar()}>Recarregar dados guardados</button></div>
-      <div className={estilos.abas} role="group" aria-label="Vista do negócio"><button type="button" aria-pressed={aba === "mapas"} onClick={() => setAba("mapas")}>Mapas</button><button type="button" aria-pressed={aba === "projecoes"} onClick={() => setAba("projecoes")}>Projeções</button></div>
       {aba === "mapas" ? <>
         <div className={estilos.cartoes}>{METRICAS_NEGOCIO.map(k => {
           const r = resumoNegocio(dados, k);
@@ -159,6 +163,7 @@ export function NegocioNovaArea({email}: {email: string}) {
         })}</div>
         <div className={estilos.tabelaScroll}><table><caption>Valores das projeções · fator ×{fator}</caption><thead><tr><th scope="col">Indicador</th>{Array.from({length: 6}, (_, i) => <th key={i} scope="col">{ano + i}{i === 0 ? " (real, parcial)" : " (cenário)"}</th>)}</tr></thead><tbody>{METRICAS_NEGOCIO.map(k => <tr key={k}><th scope="row">{rotulo(k)}</th>{projecoesNegocio(resumoNegocio(dados, k).atual, fator).map((v, i) => <td key={i}>{formatar(v, k)}</td>)}</tr>)}</tbody></table></div>
       </>}
+    </>}
     </>}
   </section>;
 }

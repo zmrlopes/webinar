@@ -58,6 +58,8 @@ export default function NovaAreaConsultor() {
   const [aEntrar, setAEntrar] = useState(false);
   const [categoriaInicial, setCategoriaInicial] = useState<string | null>(null);
   const [dados, setDados] = useState<DadosNovaArea | null>(null);
+  const [vistaNegocio, setVistaNegocio] = useState<"mapas" | "patamar">("mapas");
+  const [pedidoNegocio, setPedidoNegocio] = useState(0);
   const [feitos, setFeitos] = useState<number[]>([]);
   const [erro, setErro] = useState("");
   const [aInscrever, setAInscrever] = useState(false);
@@ -144,6 +146,7 @@ export default function NovaAreaConsultor() {
       setReservasAberto(pedida === "reservas");
       setCoreAberto(pedida === "core-rank");
       setCategoriaInicial(new URLSearchParams(window.location.search).get("categoria"));
+      setVistaNegocio(new URLSearchParams(window.location.search).get("vista") === "patamar" ? "patamar" : "mapas");
     }
     const controller = new AbortController();
     setEmail(conta);
@@ -299,7 +302,7 @@ export default function NovaAreaConsultor() {
           </div>
         </header>
 
-        {!soAdmin && <BarraJornada key={email} email={email} inicial={dados.jornada ?? null} />}
+        {!soAdmin && <BarraJornada key={email} email={email} inicial={dados.jornada ?? null} aoVerDetalhe={() => {setVistaNegocio("patamar"); setPedidoNegocio(n => n + 1); abrirSeccao("negocio");}} />}
 
         <div className={estilos.layout}>
           <aside className={estilos.lateral}>
@@ -337,7 +340,7 @@ export default function NovaAreaConsultor() {
                   <button type="button" className={seccao === "testemunhos" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("testemunhos")} aria-current={seccao === "testemunhos" ? "page" : undefined} aria-controls="conteudo-nova-area">Testemunhos</button>
                 </GrupoMenu>
                 <GrupoMenu titulo="Gestão do negócio" ativo={seccao === "core-rank" || seccao === "calculadoras" || seccao === "negocio"}>
-                  <button type="button" className={seccao === "negocio" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("negocio")} aria-current={seccao === "negocio" ? "page" : undefined} aria-controls="conteudo-nova-area">Estatísticas e projeções</button>
+                  <button type="button" className={seccao === "negocio" ? estilos.navAtivo : estilos.navItem} onClick={() => {setVistaNegocio("mapas"); setPedidoNegocio(n => n + 1); abrirSeccao("negocio");}} aria-current={seccao === "negocio" ? "page" : undefined} aria-controls="conteudo-nova-area">Estatísticas e projeções</button>
                   <button type="button" className={seccao === "core-rank" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("core-rank")} aria-current={seccao === "core-rank" ? "page" : undefined} aria-controls="conteudo-nova-area">Core Rank</button>
                   <button type="button" className={seccao === "calculadoras" ? estilos.navAtivo : estilos.navItem} onClick={() => abrirSeccao("calculadoras")} aria-current={seccao === "calculadoras" ? "page" : undefined} aria-controls="conteudo-nova-area">Calculadoras</button>
                 </GrupoMenu>
@@ -384,7 +387,7 @@ export default function NovaAreaConsultor() {
             {seccao === "calendario-criativo" && <CalendarioCriativo email={email} />}
             {seccao === "blackfriday" && <BlackFriday email={email} />}
             {seccao === "calculadoras" && <CalculadorasNovaArea />}
-            {seccao === "negocio" && <NegocioNovaArea email={email} />}
+            {seccao === "negocio" && <NegocioNovaArea key={`${email}:${pedidoNegocio}`} email={email} vistaInicial={vistaNegocio} />}
             {seccao === "destino-dia" && <DestinoDiaNovaArea aoCriarTemplate={criarTemplateComDestinoDia} />}
             {reservasAberto && <div hidden={seccao !== "reservas"}><ReservasNovaArea email={email} destinoDia={destinoParaTemplate} /></div>}
             {seccao === "travel-planner" && <TravelPlannerNovaArea email={email} />}

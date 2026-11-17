@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { JornadaConsultor } from "@/lib/consultor-jornada";
+import { nomePatamarQuantidade } from "@/lib/patamares-carreira";
 import s from "./jornada.module.css";
 
 const numero = (valor: number) => valor.toLocaleString("pt-PT", {maximumFractionDigits: 2});
 
-export function BarraJornada({email, inicial}: {email: string; inicial: JornadaConsultor | null}) {
+export function BarraJornada({email, inicial, aoVerDetalhe}: {email: string; inicial: JornadaConsultor | null; aoVerDetalhe: () => void}) {
   const [jornada, setJornada] = useState(inicial);
   const [erro, setErro] = useState("");
   const [aAtualizar, setAAtualizar] = useState(false);
@@ -34,7 +35,7 @@ export function BarraJornada({email, inicial}: {email: string; inicial: JornadaC
       }
     }
     const aoVoltar = () => {void atualizar();};
-    if (!inicialRef.current || tentativa) void atualizar();
+    if (!inicialRef.current || inicialRef.current.estrutura?.estado === "por-atualizar" || tentativa) void atualizar();
     const intervalo = setInterval(aoVoltar, 60_000);
     window.addEventListener("focus", aoVoltar);
     document.addEventListener("visibilitychange", aoVoltar);
@@ -57,7 +58,7 @@ export function BarraJornada({email, inicial}: {email: string; inicial: JornadaC
       </div>
       <div className={s.pontos}>
         {jornada?.pontos != null && <strong>{numero(jornada.pontos)} <span>pontos atuais</span></strong>}
-        {!semDados && !final && <span className={s.faltam}>{metaAtingida ? "Meta de pontos atingida" : <>Faltam <strong>{numero(jornada!.faltam!)} pontos</strong></>}</span>}
+        {!semDados && !final && <span className={s.faltam}>{metaAtingida ? "Meta de pontos atingida" : <>{jornada!.faltam === 1 ? "Falta" : "Faltam"} <strong>{numero(jornada!.faltam!)} {jornada!.faltam === 1 ? "ponto" : "pontos"}</strong></>}</span>}
         {final && <span className={s.faltam}>Último patamar da escada: {jornada!.patamarAtual}</span>}
       </div>
     </div>
@@ -71,6 +72,14 @@ export function BarraJornada({email, inicial}: {email: string; inicial: JornadaC
         {jornada!.atualizadoEm && <span>Dados da equipa · <time dateTime={jornada!.atualizadoEm}>{new Date(jornada!.atualizadoEm).toLocaleDateString("pt-PT", {timeZone: "Europe/Lisbon"})}</time></span>}
       </div>
     </>}
+    {jornada?.proximoPatamar && <div className={s.criterios}>
+      <div>
+        {jornada.estrutura?.estado === "por-atualizar" ? <span role="status">A consultar os requisitos da tua organização…</span> : jornada.estrutura ? <>
+          {jornada.estrutura.requisitos.map(r => <span key={r.patamar}>{r.faltam === 0 ? <><strong>{r.cumpridos}/{r.necessarios}</strong> linhas com {r.patamar} ou superior</> : <>{r.faltam === 1 ? "Falta" : "Faltam"} <strong>{r.faltam} {nomePatamarQuantidade(r.patamar, r.faltam!)}</strong> em {r.faltam === 1 ? "nova linha" : "linhas distintas"}</>}</span>)}
+        </> : <span>Próximo objetivo: <strong>{jornada.proximoPatamar}</strong></span>}
+      </div>
+      <a href="/consultor/nova-area?seccao=negocio&vista=patamar" onClick={e => {if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {e.preventDefault(); aoVerDetalhe();}}}>Ver em detalhe <span aria-hidden="true">→</span></a>
+    </div>}
     {erro && <p className={s.erro} role="status">{erro} <button type="button" disabled={aAtualizar} onClick={() => setTentativa(n => n + 1)}>Tentar novamente</button></p>}
   </section>;
 }

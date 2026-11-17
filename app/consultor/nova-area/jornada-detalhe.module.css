@@ -1,0 +1,35 @@
+.raiz { color: #202519; }
+.raiz h2 { margin: 24px 0 18px; font-size: 23px; line-height: 1.35; scroll-margin-top: 24px; }
+.raiz h3 { margin: 28px 0 10px; font-size: 18px; line-height: 1.4; }
+.resumo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.resumo article, .requisitos article { padding: 18px; border: 1px solid #dfe3d2; border-radius: 14px; background: #fafbf6; }
+.resumo span, .resumo small { display: block; color: #626754; font-size: 12px; }
+.resumo strong { display: block; margin-top: 7px; color: #4b5320; font-size: 26px; overflow-wrap: anywhere; }
+.requisitos { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.requisitos strong { color: #4b5320; font-size: 25px; }
+.requisitos span { display: block; margin-top: 3px; font-size: 13px; }
+.requisitos p { margin: 10px 0 0; font-size: 12px; font-weight: 650; color: #4b5320; }
+.introducao { margin: 0 0 16px; color: #626754; font-size: 13px; }
+.candidatos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.candidato { min-width: 0; padding: 21px; border: 1px solid #dfe3d2; border-radius: 15px; background: #fff; }
+.etiqueta { color: #626d34; font-size: 10px; font-weight: 750; letter-spacing: .05em; overflow-wrap: anywhere; }
+.candidato h3 { margin: 8px 0; font-size: 17px; overflow-wrap: anywhere; }
+.patamar { margin: 0 0 16px; color: #626754; font-size: 12px; }
+.patamar > span { margin: 0 5px; }
+.pontos { color: #626754; font-size: 12px; }
+.pontos strong { color: #4b5320; font-size: 23px; }
+.faltam { margin: 8px 0 0; color: #343d1f; font-size: 13px; }
+.apoio { margin: 12px 0 0; font-size: 12px; color: #626754; }
+.acao { margin: 16px 0 0; padding-top: 12px; border-top: 1px solid #eceee4; font-size: 12px; color: #4b5320; }
+.aviso, .sucesso { margin: 20px 0; padding: 16px; border: 1px solid #dfe3d2; border-radius: 12px; background: #f5f7ed; color: #4b5320; font-size: 13px; }
+.linhas { margin: 22px 0; padding: 17px; border: 1px solid #dfe3d2; border-radius: 12px; }
+.linhas summary { cursor: pointer; color: #4b5320; font-size: 14px; font-weight: 650; }
+.linhas ul { display: grid; gap: 12px; margin: 16px 0 0; padding: 0; list-style: none; }
+.linhas li { display: grid; gap: 3px; padding-top: 10px; border-top: 1px solid #eceee4; font-size: 13px; overflow-wrap: anywhere; }
+.linhas small, .nota, .fonte { color: #626754; font-size: 12px; }
+.fonte { margin: 28px 0 0; }
+.fonte a { color: #4b5320; }
+.erro { padding: 15px; border: 1px solid #e6ccc7; border-radius: 12px; color: #973e32; font-size: 13px; }
+.erro button, .mais { padding: 8px 12px; border: 1px solid #bcc4a1; border-radius: 10px; background: #fff; color: #4b5320; cursor: pointer; }
+.mais { margin-top: 16px; }
+@media (max-width: 650px) { .candidatos { grid-template-columns: minmax(0, 1fr); } .resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; } .resumo article { padding: 12px; } .resumo article:first-child { grid-column: 1 / -1; } .resumo strong { font-size: 20px; } .resumo span, .resumo small { font-size: 11px; } .raiz h2 { font-size: 21px; } .candidato { padding: 18px; } }
