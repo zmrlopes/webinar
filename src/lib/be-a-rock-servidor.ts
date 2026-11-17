@@ -14,7 +14,7 @@ export async function lerVotoBeARock(email: string): Promise<ZonaBeARock | null>
 
 /** Uma chave por evento e conta: repetir ou mudar a escolha nunca duplica votos. */
 export async function guardarVotoBeARock(email: string, nome: string, zona: ZonaBeARock): Promise<ZonaBeARock> {
-  if (!ehZonaBeARock(zona)) throw new Error("Escolhe NORTE ou SUL.");
+  if (!ehZonaBeARock(zona)) throw new Error("Escolhe NORTE, SUL ou Vejo em casa.");
   const voto: VotoBeARock = { email: email.trim().toLowerCase(), nome, zona, atualizadoEm: new Date().toISOString() };
   await db().query(`insert into dashboard_config (chave, valor) values ($1, $2::jsonb)
     on conflict (chave) do update set valor = excluded.valor, atualizado_em = now()`,

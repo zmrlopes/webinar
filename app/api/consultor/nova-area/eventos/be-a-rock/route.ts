@@ -10,7 +10,7 @@ export async function POST(request: Request): Promise<Response> {
     return NextResponse.json({ erro: "Pedido inválido." }, { status: 400 });
   }
   if (corpo.acao === "votar" && !ehZonaBeARock(corpo.zona)) {
-    return NextResponse.json({ erro: "Escolhe NORTE ou SUL." }, { status: 400 });
+    return NextResponse.json({ erro: "Escolhe NORTE, SUL ou Vejo em casa." }, { status: 400 });
   }
   const email = typeof corpo.email === "string" ? corpo.email.trim().toLowerCase() : "";
   try {

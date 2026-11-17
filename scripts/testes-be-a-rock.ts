@@ -30,7 +30,7 @@ async function main() {
   }) as typeof pool.query;
   try {
     assert.equal(BE_A_ROCK.inicio, "2027-01-08"); assert.equal(BE_A_ROCK.fim, "2027-01-10");
-    assert.deepEqual(resumirVotosBeARock([]), { total: 0, NORTE: [], SUL: [] });
+    assert.deepEqual(resumirVotosBeARock([]), { total: 0, NORTE: [], SUL: [], CASA: [] });
     for (const corpo of [null, {}, { email: "ana@example.com", acao: "apagar" }, { email: "ana@example.com", acao: "votar", zona: "CENTRO" }]) {
       assert.equal((await POST(pedido(corpo))).status, 400);
     }
@@ -62,8 +62,12 @@ async function main() {
     assert.equal(resumo.total, 2); assert.equal(resumo.NORTE.length, 1); assert.equal(resumo.SUL.length, 1);
     await votar("ana@example.com", "SUL");
     votos = await listarVotosBeARock(); resumo = resumirVotosBeARock(votos);
-    assert.equal(resumo.total, 2); assert.equal(resumo.NORTE.length, 0); assert.equal(resumo.SUL.length, 2);
+    assert.equal(resumo.total, 2); assert.equal(resumo.NORTE.length, 0); assert.equal(resumo.SUL.length, 2); assert.equal(resumo.CASA.length, 0);
     assert.deepEqual(await consultar("ana@example.com"), { voto: "SUL" }, "A escolha fica guardada para nova visita");
+    equipa.set("carla@example.com", "Carla");
+    await votar("carla@example.com", "CASA");
+    votos = await listarVotosBeARock(); resumo = resumirVotosBeARock(votos);
+    assert.equal(resumo.total, 3); assert.equal(resumo.CASA.length, 1); assert.equal(resumo.CASA[0]!.nome, "Carla");
     equipa.delete("ana@example.com");
     assert.equal((await POST(pedido({ email: "ana@example.com", acao: "votar", zona: "NORTE" }))).status, 403, "Revalida a pertença à equipa");
     const senha = process.env.ADMIN_PASSWORD;
@@ -71,7 +75,7 @@ async function main() {
       process.env.ADMIN_PASSWORD = "senha-de-teste";
       assert.equal(proxy(new NextRequest("http://localhost/admin/eventos")).status, 401, "Resultados e identidades reservados ao admin");
     } finally { if (senha === undefined) delete process.env.ADMIN_PASSWORD; else process.env.ADMIN_PASSWORD = senha; }
-    console.log("Be a Rock: acesso, privacidade, persistência, voto único, alteração e totais Norte/Sul verificados.");
+    console.log("Be a Rock: acesso, privacidade, persistência, voto único, alteração e totais Norte/Sul/Vejo em casa verificados.");
   } finally { pool.query = originalQuery; await fecharDb(); }
 }
 main().catch(erro => { console.error(erro); process.exitCode = 1; });

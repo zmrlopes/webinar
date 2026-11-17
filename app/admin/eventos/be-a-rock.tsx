@@ -1,4 +1,4 @@
-import { BE_A_ROCK, ZONAS_BE_A_ROCK, resumirVotosBeARock } from "@/lib/be-a-rock";
+import { BE_A_ROCK, ROTULO_ZONA_BE_A_ROCK, ZONAS_BE_A_ROCK, resumirVotosBeARock } from "@/lib/be-a-rock";
 import { listarVotosBeARock } from "@/lib/be-a-rock-servidor";
 import s from "./be-a-rock.module.css";
 
@@ -19,9 +19,9 @@ export async function ResultadosBeARock() {
       const quantidade = resultados[zona].length;
       const percentagem = resultados.total ? Math.round(quantidade / resultados.total * 100) : 0;
       return <div key={zona} className={s.zona}>
-        <div className={s.total}><strong>{zona}</strong><span>{quantidade} {quantidade === 1 ? "voto" : "votos"} · {percentagem}%</span></div>
+        <div className={s.total}><strong>{ROTULO_ZONA_BE_A_ROCK[zona]}</strong><span>{quantidade} {quantidade === 1 ? "voto" : "votos"} · {percentagem}%</span></div>
         <div className={s.barra} aria-hidden="true"><span style={{ width: `${percentagem}%` }} /></div>
-        {quantidade > 0 && <details className={s.detalhes}><summary>Ver quem votou {zona}</summary><ul>{resultados[zona].map(voto => <li key={voto.email}><strong>{voto.nome}</strong><span>{voto.email}</span></li>)}</ul></details>}
+        {quantidade > 0 && <details className={s.detalhes}><summary>Ver quem votou {ROTULO_ZONA_BE_A_ROCK[zona]}</summary><ul>{resultados[zona].map(voto => <li key={voto.email}><strong>{voto.nome}</strong><span>{voto.email}</span></li>)}</ul></details>}
       </div>;
     })}
     {resultados.total === 0 && <p className="ad-evento-meta">Ainda não há votos.</p>}
