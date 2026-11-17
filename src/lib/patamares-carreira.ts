@@ -6,7 +6,7 @@ export const ESCADA_PATAMARES: { nome: string; pontos: number }[] = [
   { nome: "Coordenador", pontos: 250 },
   { nome: "Diretor", pontos: 1000 },
   { nome: "Bronze", pontos: 3500 },
-  { nome: "Prata", pontos: 10000 },
+  { nome: "Prata", pontos: 12500 },
   { nome: "Ouro", pontos: 30000 },
 ];
 
@@ -15,6 +15,8 @@ export const CRITERIOS_LINHAS: Record<string, {patamar: string; quantidade: numb
   Bronze: [{patamar: "Coordenador", quantidade: 3}, {patamar: "Master", quantidade: 2}],
   Ouro: [{patamar: "Diretor", quantidade: 3}, {patamar: "Coordenador", quantidade: 2}],
 };
+/** A versão pública anterior omite os requisitos de Prata; não os tratar como inexistentes. */
+export const CRITERIOS_POR_CONFIRMAR = ["Prata"];
 export const FONTE_CRITERIOS_PATAMARES = "https://backoffice.icligo.com/novoPlano/index.html?page=15";
 
 export function indicePatamar(nivel: string | null | undefined): number {

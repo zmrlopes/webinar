@@ -1,4 +1,4 @@
-import { CRITERIOS_LINHAS, ESCADA_PATAMARES, indicePatamar } from "./patamares-carreira";
+import { CRITERIOS_LINHAS, CRITERIOS_POR_CONFIRMAR, ESCADA_PATAMARES, indicePatamar } from "./patamares-carreira";
 
 export interface CriterioJornada {
   patamar: string;
@@ -26,6 +26,7 @@ export interface JornadaConsultor {
   percentagem: number | null;
   atualizadoEm: string | null;
   estrutura?: EstruturaJornada;
+  criteriosPorConfirmar?: boolean;
 }
 
 /** Usa o patamar confirmado; atingir pontos não confirma os restantes requisitos. */
@@ -39,6 +40,7 @@ export function calcularJornadaConsultor(nivel: string | null | undefined, valor
   const base: JornadaConsultor = {estado: "sem-dados", patamarAtual: atual?.nome ?? null, pontos,
     proximoPatamar: atual && proximo ? proximo.nome : null, metaPontos: atual && proximo ? proximo.pontos : null, faltam: null, percentagem: null, atualizadoEm};
   const regras = atual && proximo ? CRITERIOS_LINHAS[proximo.nome] : undefined;
+  if (atual && proximo && CRITERIOS_POR_CONFIRMAR.includes(proximo.nome)) base.criteriosPorConfirmar = true;
   if (regras) base.estrutura = {estado: "por-atualizar", requisitos: regras.map(r => ({patamar: r.patamar, necessarios: r.quantidade, cumpridos: null, faltam: null})),
     linhasNecessarias: regras.reduce((s, r) => s + r.quantidade, 0), linhasCumpridas: null, faltamLinhas: null, semPatamar: 0, atualizadoEm: null};
   if (!atual || pontos === null) return base;

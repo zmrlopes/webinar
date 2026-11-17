@@ -12,6 +12,12 @@ Por indicação explícita de 17/11/2026, os pedidos de alterações incluem
 publicá-las, depois das verificações, para o utilizador as poder ver logo.
 Publicar no branch ligado ao Vercel e confirmar o estado da publicação.
 
+Por correção explícita de 17/11/2026, Prata exige 12.500 pontos, substituindo
+os 10.000 da versão pública anterior, na jornada, nos cálculos e no admin.
+Os requisitos de equipa de Prata ainda aguardam indicação do utilizador:
+não mostrar que Prata não exige linhas nem inventar quantidades/patamares.
+Identificar os critérios de equipa como por confirmar até serem definidos.
+
 Por indicação de 17/11/2026, a área de cada TP apresenta “A minha jornada”
 logo abaixo do cabeçalho e antes do menu/conteúdo, em todas as secções.
 Mostra os pontos de carreira da própria conta, o patamar confirmado, a meta

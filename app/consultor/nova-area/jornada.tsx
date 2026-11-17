@@ -74,7 +74,7 @@ export function BarraJornada({email, inicial, aoVerDetalhe}: {email: string; ini
     </>}
     {jornada?.proximoPatamar && <div className={s.criterios}>
       <div>
-        {jornada.estrutura?.estado === "por-atualizar" ? <span role="status">A consultar os requisitos da tua organização…</span> : jornada.estrutura ? <>
+        {jornada.criteriosPorConfirmar ? <span>Critérios de equipa para {jornada.proximoPatamar} por confirmar.</span> : jornada.estrutura?.estado === "por-atualizar" ? <span role="status">A consultar os requisitos da tua organização…</span> : jornada.estrutura ? <>
           {jornada.estrutura.requisitos.map(r => <span key={r.patamar}>{r.faltam === 0 ? <><strong>{r.cumpridos}/{r.necessarios}</strong> linhas com {r.patamar} ou superior</> : <>{r.faltam === 1 ? "Falta" : "Faltam"} <strong>{r.faltam} {nomePatamarQuantidade(r.patamar, r.faltam!)}</strong> em {r.faltam === 1 ? "nova linha" : "linhas distintas"}</>}</span>)}
         </> : <span>Próximo objetivo: <strong>{jornada.proximoPatamar}</strong></span>}
       </div>

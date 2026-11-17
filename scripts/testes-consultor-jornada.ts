@@ -13,6 +13,12 @@ assert.equal(junior.pontos, 12.5); assert.equal(junior.estado, "progresso");
 assert(Math.abs(junior.percentagem! - 83.3333333333) < .001);
 assert.equal(calcularJornadaConsultor(" jÚnior ", 0, atualizado).percentagem, 0);
 assert.equal(calcularJornadaConsultor("SENIOR", 50.25, atualizado).faltam, 24.75);
+const rumoPrata = calcularJornadaConsultor("BRONZE", 10000, atualizado);
+assert.equal(rumoPrata.proximoPatamar, "Prata"); assert.equal(rumoPrata.metaPontos, 12500);
+assert.equal(rumoPrata.faltam, 2500); assert.equal(rumoPrata.percentagem, 80);
+assert.equal(rumoPrata.estado, "progresso"); assert.equal(rumoPrata.criteriosPorConfirmar, true);
+assert.equal(calcularJornadaConsultor("BRONZE", 12499.99, atualizado).faltam, .01);
+assert.equal(calcularJornadaConsultor("BRONZE", 12500, atualizado).estado, "meta-atingida");
 for (let i = 0; i < ESCADA_PATAMARES.length - 1; i++) {
   const atual = ESCADA_PATAMARES[i]!, seguinte = ESCADA_PATAMARES[i + 1]!;
   const jornada = calcularJornadaConsultor(atual.nome, atual.pontos, atualizado);
