@@ -162,7 +162,9 @@ export const DESTINOS: Destino[] = [
   { id: "montenegro", nome: "Montenegro", pais: "Montenegro", grupos: ["Montenegro", "Balcãs", EUR], termos: ["TIV", "tivat", "budva"] },
   { id: "veneza", nome: "Veneza", pais: "Itália", grupos: ["Itália", EUR], termos: ["TSF", "treviso", "venice", "venezia"] },
   { id: "creta", nome: "Creta", pais: "Grécia", grupos: ["Grécia", EUR], termos: ["HER", "heraklion", "crete"] },
+  { id: "corfu", nome: "Corfu", pais: "Grécia", grupos: ["Grécia", EUR], termos: ["CFU", "corfu", "kerkyra"] },
   { id: "atenas-ilhas", nome: "Atenas, Mykonos e Santorini", pais: "Grécia", grupos: ["Grécia", EUR], termos: ["ATH", "atenas", "mykonos", "miconos", "santorini", "santorinni"] },
+  { id: "sardenha", nome: "Sardenha", pais: "Itália", grupos: ["Itália", EUR], termos: ["CAG", "OLB", "sardenha", "sardinia", "cagliari", "olbia"] },
   { id: "turquia-capadocia", nome: "Capadócia", pais: "Turquia", grupos: ["Turquia", EUR, ASI], termos: ["NAV", "capadocia", "cappadocia", "nevsehir"] },
   { id: "turquia-circuitos", nome: "Circuitos na Turquia", pais: "Turquia", grupos: ["Turquia", EUR, ASI], termos: ["ESB", "ancara", "istambul", "istanbul"] },
   { id: "disneyland", nome: "Disneyland Paris", pais: "França", grupos: ["França", EUR], termos: ["disney", "disneylandia", "eurodisney", "paris"] },
@@ -707,6 +709,44 @@ const DESTINOS_CONFIRMADOS_MOTOR: Partial<Record<IdOperador, Linha[]>> = {
   nortravel: [{ destino: "hurghada", bloco: "Motor iCliGo", detalhe: "Pacotes para Hurghada identificados no motor iCliGo. Confirmado pela equipa a 15/11/2026." }],
 };
 
+// Confirmação explícita do utilizador em 18/11/2026: a categoria "# Charter"
+// do site da Viajar Tours (Corfu, Creta, Djerba, Saídia, Sardenha e Monastir/
+// Tunísia, voos de Lisboa e Porto) está confirmada para reserva manual, como
+// o resto do operador — a FAQ atual não lista estes destinos por extenso.
+// Não estende a confirmação a outros destinos nem a outros operadores.
+const LINHAS_CONFIRMADAS_MANUAL: Partial<Record<IdOperador, Linha[]>> = {
+  "viajar-tours": (() => {
+    const categoria = (subcategoria: string) =>
+      `https://www.viajartours.pt/produtos.php?category=%23+Charter&subcategoria=${subcategoria}`;
+    const confirmado = (destino: string, subcategoria: string, titulo: string, detalhe: string): Linha => ({
+      destino, bloco: "Charter · confirmado pela equipa", detalhe: `${detalhe} Confirmado pela equipa a 18/11/2026.`,
+      fonte: { url: categoria(subcategoria), titulo, consultadoEm: "2026-11-18" },
+    });
+    return [
+      confirmado("corfu", "Corfu", "Categoria Charter · Corfu", "5562 Corfu Black Friday (OPO) · 5646 Corfu Excellence (OPO)."),
+      confirmado("creta", "Creta", "Categoria Charter · Creta", "5554 Creta Black Friday (LIS) · 5286 Creta 14 Noites · 5266 Creta Excellence · 5244 Creta+Mykonos · 5362 Creta+Naxos · 5364 Creta+Paros · 5243 Creta+Santorini (LIS)."),
+      confirmado("djerba", "Djerba", "Categoria Charter · Djerba", "5555 Djerba Black Friday (LIS) · 5556 Djerba Black Friday (OPO) · 5719 Djerba Black Friday Páscoa (LIS)."),
+      confirmado("saidia", "Saidia", "Categoria Charter · Saídia", "5557 Saídia Black Friday (OPO)."),
+      confirmado("sardenha", "Sardenha", "Categoria Charter · Sardenha", "5561 Sardenha Black Friday (OPO) · 5340 Sardenha 14 Noites (OPO)."),
+      confirmado("monastir", "Tunísia", "Categoria Charter · Tunísia (Monastir)", "5558 Tunísia Monastir Black Friday (OPO) · 5559 Tunísia Monastir Black Friday (LIS)."),
+    ];
+  })(),
+};
+
+/**
+ * As confirmações explícitas acima podem referir destinos novos (ex.: Corfu,
+ * Sardenha) que ainda não estavam na recolha de FAQs publicada. Garante que
+ * esses destinos ficam sempre disponíveis para pesquisa, sem alterar os
+ * restantes dados da recolha.
+ */
+export function comDestinosConfirmados(catalogo: CatalogoOperadores): CatalogoOperadores {
+  const usados = new Set([...Object.values(DESTINOS_CONFIRMADOS_MOTOR), ...Object.values(LINHAS_CONFIRMADAS_MANUAL)]
+    .flat().map(l => l!.destino));
+  const existentes = new Set(catalogo.destinos.map(d => d.id));
+  const faltam = DESTINOS.filter(d => usados.has(d.id) && !existentes.has(d.id));
+  return faltam.length ? { ...catalogo, destinos: [...catalogo.destinos, ...faltam] } : catalogo;
+}
+
 /** Destinos que correspondem à pesquisa, já expandidos (país → cidades, tema → linhas do tema). */
 export function procurarDestinos(consulta: string, catalogo = CATALOGO_BASE): Destino[] {
   const DESTINOS = catalogo.destinos;
@@ -737,7 +777,8 @@ export function pesquisarOperadores(consulta: string, filtroDestino?: string, ca
   const operadores: ResultadoOperador[] = [];
   for (const o of OPERADORES) {
     const base = { id: o.id, nome: o.nome, motor: o.motor, sinal: o.sinal, atualizado: o.atualizado, faq: o.faq, resumo: o.resumo, permitido: o.permitido, proibido: o.proibido, avisos: o.avisos ?? [] };
-    const doOperador = o.linhas.filter(l => (ids.has(l.destino) || l.temas?.some(t => temas.has(t))) &&
+    const todasLinhas = [...o.linhas, ...(LINHAS_CONFIRMADAS_MANUAL[o.id] ?? [])];
+    const doOperador = todasLinhas.filter(l => (ids.has(l.destino) || l.temas?.some(t => temas.has(t))) &&
       (!l.termosPesquisa?.length || l.termosPesquisa.some(t => correspondeTermo(normalizar(consulta), t) || correspondeTermo(normalizar(consulta), t, "contida"))));
     if (doOperador.length) {
       operadores.push({ ...base, tipo: "programacao", linhas: doOperador.map(({ temas: _t, ...l }) => ({ ...l, nomeDestino: POR_ID.get(l.destino)?.nome ?? l.destino })) });
