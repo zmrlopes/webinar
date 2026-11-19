@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import {CASAS_BF, CONFIG_BF, hojeBF, periodoBF, referenciaBF, resumirBF, validarReservaBF, type InscricaoBF} from "../src/lib/blackfriday";
+import {CASAS_BF, CONFIG_BF, calcularLinhasDiretasBF, calcularMetricasOrgBF, hojeBF, periodoBF, referenciaBF, resumirBF, validarReservaBF, type InscricaoBF} from "../src/lib/blackfriday";
 import {dataSimulacaoBF} from "../src/lib/blackfriday-simulacao";
 import {EMAIL_PAINEL_DEMONSTRACAO} from "../src/lib/demo";
 import {detetarNovasLinhasBF} from "../src/lib/blackfriday-celebracao";
@@ -76,9 +76,9 @@ const membrosRanking = Array.from({length: 12}, (_, i) => ({user: {username: `TP
 const atualizadoRanking = "2026-11-12T15:00:00Z";
 const prepararRanking = (bruto: Parameters<typeof prepararRankingBF>[0], configuracao = config) => prepararRankingBF(bruto, configuracao, "2026-11-12", atualizadoRanking);
 const ranking = prepararRanking(recolhaRanking(membrosRanking))!;
-assert.equal(ranking.consultores.length, 10);
+assert.equal(ranking.consultores.length, 12, "Guarda todos os que já venderam, não só o Top 10.");
 assert.equal(ranking.consultores[0]?.valor, 12000, "Ordena pelas vendas próprias, sem usar o total geral da equipa.");
-assert.equal(ranking.consultores.at(-1)?.valor, 3000);
+assert.equal(ranking.consultores.at(-1)?.valor, 1000);
 assert.equal(ranking.inicio, config.inicio);
 assert.equal(ranking.atualizadoEm, atualizadoRanking);
 assert.deepEqual(prepararRanking(recolhaRanking(membrosRanking), {...config, periodoFaturacao: "anual"}), ranking, "Mudar a barra para anual mantém o ranking no desafio.");
@@ -99,7 +99,40 @@ assert.deepEqual(prepararRanking(rankingSeparado, {...config, periodoFaturacao: 
 const empatados = [{user: {username: "b", name: "Beatriz"}, stats: {sales: 1234.567}}, {user: {username: "a", name: "Ana"}, stats: {sales: 1234.57}}];
 assert.deepEqual(prepararRanking(recolhaRanking(empatados))?.consultores.map(c => c.nome), ["Ana", "Beatriz"]);
 assert.equal(prepararRankingBF(recolhaRanking(membrosRanking), config, "2026-11-08", atualizadoRanking), null);
-console.log("OK: top 10 por faturação própria, páginas completas, empates, período do desafio independente do anual e rejeição de falhas ou valores inválidos.");
+console.log("OK: ranking completo por faturação própria, páginas completas, empates, período do desafio independente do anual e rejeição de falhas ou valores inválidos.");
+
+const pessoasOrg = [
+  {email: "direto1@example.com", uplineEmail: "lider@example.com"},
+  {email: "neto1@example.com", uplineEmail: "direto1@example.com"},
+  {email: "direto2@example.com", uplineEmail: "lider@example.com"},
+  {email: "direto-sem-equipa@example.com", uplineEmail: "lider@example.com"},
+  // A Ana (outro líder fixo) está tecnicamente abaixo do direto2, mas tem variante própria:
+  // a linha do direto2 não deve incluir a Ana nem a equipa dela.
+  {email: "ana@example.com", uplineEmail: "direto2@example.com"},
+  {email: "equipa-da-ana@example.com", uplineEmail: "ana@example.com"},
+];
+const lideresOrg = [{email: "lider@example.com", nome: "Líder"}, {email: "ana@example.com", nome: "Ana"}];
+const linhasOrg = calcularLinhasDiretasBF(pessoasOrg, lideresOrg);
+assert.deepEqual(linhasOrg.map(l => l.tpEmail).sort(),
+  ["direto1@example.com", "direto2@example.com", "direto-sem-equipa@example.com", "equipa-da-ana@example.com"].sort(),
+  "Um TP direto é sempre uma linha, mesmo sem equipa; a equipa-da-ana é uma linha própria da Ana, não do Líder.");
+const linhaDireto1 = linhasOrg.find(l => l.tpEmail === "direto1@example.com")!;
+assert.deepEqual(linhaDireto1.membros.sort(), ["direto1@example.com", "neto1@example.com"]);
+const linhaDireto2 = linhasOrg.find(l => l.tpEmail === "direto2@example.com")!;
+assert.deepEqual(linhaDireto2.membros, ["direto2@example.com"], "O ramo da Ana (outro líder fixo) fica de fora da linha do direto2.");
+const linhaEquipaDaAna = linhasOrg.find(l => l.tpEmail === "equipa-da-ana@example.com")!;
+assert.equal(linhaEquipaDaAna.lider, "Ana", "É uma linha direta da própria Ana, com o seu nome de líder.");
+assert.equal(linhasOrg.find(l => l.tpEmail === "ana@example.com"), undefined, "A própria Ana nunca é uma linha (é líder, não TP direto de outro).");
+
+const metricasOrg = calcularMetricasOrgBF(
+  [{email: "neto1@example.com", valor: 1000}, {email: "direto2@example.com", valor: 3000}, {email: "equipa-da-ana@example.com", valor: 500}],
+  linhasOrg,
+);
+assert.equal(metricasOrg.tpsQueVenderam, 3);
+assert.equal(metricasOrg.ticketMedioTP, 1500, "(1000 + 3000 + 500) / 3.");
+assert.equal(metricasOrg.totalLinhas, 4, "direto1, direto2, direto-sem-equipa (do Líder) e equipa-da-ana (da Ana).");
+assert.equal(metricasOrg.linhasAFaturar, 3, "direto1 (pelo neto1), direto2 e equipa-da-ana vendem; direto-sem-equipa não vende.");
+console.log("OK: linhas diretas por líder de topo, exclusão dos ramos de outro líder fixo, TPs que já venderam e ticket médio da organização.");
 
 if (process.argv.includes("--db")) {
   const {loadEnvConfig} = await import("@next/env");
@@ -250,16 +283,31 @@ if (process.argv.includes("--db")) {
       await calcularDashboard(true);
       assert.equal((await api.dadosBF(email)).faturacao?.valor, 0);
       console.log("OK: atualização real do dashboard alimenta a barra; falhas e simulações preservam o snapshot anterior; total zero é válido.");
+      // Linhas diretas reais: v2quadrado (Nós) com 3 TPs diretos — dois deles
+      // (tp0 e tp11) estão no ranking do desafio, o terceiro nunca vende.
+      await db().query(
+        `insert into equipa_afiliados (email, nome, upline_email) values
+           ('v2quadrado@gmail.com', 'Nós', null),
+           ('tp0@example.com', 'Consultor 0', 'v2quadrado@gmail.com'),
+           ('tp11@example.com', 'Consultor 11', 'v2quadrado@gmail.com'),
+           ('tp-sem-venda@example.com', 'Sem venda', 'v2quadrado@gmail.com')`,
+      );
       const listaRanking = {stats: {sales: 500_000}, list: {content: membrosRanking, totalElements: membrosRanking.length}};
       await guardarBruto("equipa-blackfriday-2026:p0", listaRanking);
       const rankingRecuperado = await (await admin.GET(new Request("http://localhost/api/admin/blackfriday"))).json();
       assert.equal(rankingRecuperado.ranking.consultores[0].valor, 12000, "A API recupera a recolha completa anterior sem nova sincronização.");
+      assert.equal(rankingRecuperado.metricas.tpsQueVenderam, 12, "Os 12 consultores do ranking completo, não só o Top 10.");
+      assert.equal(rankingRecuperado.metricas.ticketMedioTP, 6500, "Faturação total dos 12 (78 000) a dividir por 12.");
+      assert.equal(rankingRecuperado.metricas.totalLinhas, 3, "tp0, tp11 e tp-sem-venda são as 3 linhas diretas de Nós.");
+      assert.equal(rankingRecuperado.metricas.linhasAFaturar, 2, "tp0 e tp11 vendem; tp-sem-venda não aparece no ranking.");
       await calcularDashboard(true);
       const rankingGuardado = (await api.dadosAdminBF()).ranking!;
-      assert.equal(rankingGuardado.consultores.length, 10);
+      assert.equal(rankingGuardado.consultores.length, 12, "Guarda todos os que já venderam, não só o Top 10.");
       assert.equal(rankingGuardado.consultores[0]?.valor, 12000);
       assert.equal("ranking" in await api.dadosBF(email), false, "As APIs do consultor não recebem o ranking.");
+      assert.equal((await api.dadosAdminBF()).metricas?.linhasAFaturar, 2);
       assert.equal((await api.dadosAdminBF(true)).ranking, null, "A simulação nunca recebe o ranking real.");
+      assert.equal((await api.dadosAdminBF(true)).metricas, null, "A simulação nunca recebe as métricas reais da organização.");
       await guardarBruto("equipa-blackfriday-2026:p0", {...listaRanking, list: {...listaRanking.list, content: membrosRanking.slice(0, 5)}});
       await calcularDashboard(true);
       assert.deepEqual((await api.dadosAdminBF()).ranking, rankingGuardado, "Uma lista parcial mantém o último ranking confirmado.");
@@ -271,7 +319,7 @@ if (process.argv.includes("--db")) {
       await api.guardarConfigBF({...c, periodoFaturacao: "desafio"});
       const planoDesafio = await (await sincronizar.GET(new Request("http://localhost/api/admin/dashboard-negocio/sincronizar"))).json();
       assert.equal(planoDesafio.periodos.some((p: {chave: string}) => p.chave === "blackfriday-ranking-2026"), false, "Reutiliza o mesmo pedido quando a barra já usa o desafio.");
-      console.log("OK: API admin recupera e guarda o top 10, preserva-o em falhas e separa os dados dos consultores, da simulação e do acumulado anual.");
+      console.log("OK: API admin recupera e guarda o ranking completo e as métricas da organização, preserva-os em falhas e separa os dados dos consultores, da simulação e do acumulado anual.");
     } finally {await fecharDb();}
   } finally {
     process.env.DATABASE_URL = original;

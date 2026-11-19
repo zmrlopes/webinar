@@ -487,7 +487,7 @@ export interface LiderAdmin {
  * Custódia está tecnicamente abaixo do Vitor no CSV, mas continua a ser
  * tratada como líder de topo própria).
  */
-const LIDERES_TOPO: { email: string; nome: string }[] = [
+export const LIDERES_TOPO: { email: string; nome: string }[] = [
   { email: "v2quadrado@gmail.com", nome: "Nós" },
   { email: "apensarnaproxima@gmail.com", nome: "Ana Custódia" },
   { email: "viajarviversonhar@gmail.com", nome: "Lara Rodrigues" },

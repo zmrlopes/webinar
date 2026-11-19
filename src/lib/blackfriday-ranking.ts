@@ -36,6 +36,9 @@ export function prepararRankingBF(bruto: Bruto, config: ConfiguracaoBF, hoje: st
   }
   // Uma lista incompleta nunca substitui o último ranking confirmado.
   if (esperado === undefined || consultores.size !== esperado) return null;
+  // Guarda todos os que já venderam (não só o Top 10) — o painel admin usa a
+  // lista completa para "TPs que já venderam", "linhas a faturar" e o ticket
+  // médio; a vista "Top 10" escolhe apenas os primeiros 10 ao mostrar.
   return {...intervalo, atualizadoEm, consultores: [...consultores.values()].filter(c => c.valor > 0)
-    .sort((a, b) => b.valor - a.valor || a.nome.localeCompare(b.nome, "pt-PT") || a.username.localeCompare(b.username)).slice(0, 10)};
+    .sort((a, b) => b.valor - a.valor || a.nome.localeCompare(b.nome, "pt-PT") || a.username.localeCompare(b.username))};
 }

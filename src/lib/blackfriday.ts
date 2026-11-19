@@ -38,7 +38,17 @@ export interface RankingBF {
   inicio: string; fim: string; atualizadoEm: string;
   consultores: {username: string; email: string; nome: string; valor: number}[];
 }
-export interface DadosAdminBF extends DadosBF {ranking: RankingBF | null}
+export interface MetricasOrgBF {
+  /** TPs (de qualquer uma das organizações) com faturação própria positiva durante o desafio. */
+  tpsQueVenderam: number;
+  /** Faturação própria total dos TPs que venderam, dividida por esse número. */
+  ticketMedioTP: number | null;
+  /** Linhas diretas (um TP direto de um dos líderes de topo + a sua equipa, exceto ramos de outro líder) com pelo menos uma venda. */
+  linhasAFaturar: number;
+  /** Total de linhas diretas existentes, para dar contexto ao número anterior. */
+  totalLinhas: number;
+}
+export interface DadosAdminBF extends DadosBF {ranking: RankingBF | null; metricas: MetricasOrgBF | null}
 export function hojeBF(agora = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", {timeZone: "Europe/Lisbon"}).format(agora);
 }
@@ -62,6 +72,64 @@ export function resumirBF(inscricoes: InscricaoBF[], config: ConfiguracaoBF, ape
   return {casas: casas.size, linhas, bingo,
     bingoEm: bingo ? validas.reduce((maisRecente, i) => i.enviadoEm > maisRecente ? i.enviadoEm : maisRecente, "") : null};
 }
+export interface LinhaDiretaBF {
+  tpEmail: string;
+  lider: string;
+  /** O próprio TP direto + toda a sua descendência, em minúsculas. */
+  membros: string[];
+}
+
+/**
+ * As linhas diretas da organização: um TP direto de um dos líderes de topo
+ * (upline_email = email do líder) e toda a sua equipa — exceto os ramos que
+ * pertencem a outro dos líderes fixos, que ficam só com esse líder mesmo que
+ * estruturalmente apareçam como descendência deste. Função pura, a partir
+ * dos pares email/upline já lidos da base de dados.
+ */
+export function calcularLinhasDiretasBF(
+  pessoas: {email: string; uplineEmail: string | null}[],
+  lideres: {email: string; nome: string}[],
+): LinhaDiretaBF[] {
+  const norm = (v: string) => v.trim().toLowerCase();
+  const emailsLideres = new Set(lideres.map(l => norm(l.email)));
+  const filhosPorUpline = new Map<string, string[]>();
+  for (const p of pessoas) {
+    if (!p.uplineEmail) continue;
+    const chave = norm(p.uplineEmail);
+    const lista = filhosPorUpline.get(chave) ?? [];
+    lista.push(norm(p.email));
+    filhosPorUpline.set(chave, lista);
+  }
+  const linhas: LinhaDiretaBF[] = [];
+  for (const lider of lideres) {
+    const diretos = (filhosPorUpline.get(norm(lider.email)) ?? []).filter(e => !emailsLideres.has(e));
+    for (const direto of diretos) {
+      const membros = [direto];
+      const pilha = [direto];
+      while (pilha.length) {
+        const atual = pilha.pop()!;
+        for (const filho of filhosPorUpline.get(atual) ?? []) {
+          if (emailsLideres.has(filho)) continue; // ramo de outro líder de topo: fica só com ele
+          membros.push(filho);
+          pilha.push(filho);
+        }
+      }
+      linhas.push({tpEmail: direto, lider: lider.nome, membros});
+    }
+  }
+  return linhas;
+}
+
+/** TPs que já venderam, ticket médio entre eles e quantas linhas diretas têm pelo menos uma venda. */
+export function calcularMetricasOrgBF(consultoresComVenda: {email: string; valor: number}[], linhas: LinhaDiretaBF[]): MetricasOrgBF {
+  const tpsQueVenderam = consultoresComVenda.length;
+  const totalValor = consultoresComVenda.reduce((soma, c) => soma + c.valor, 0);
+  const ticketMedioTP = tpsQueVenderam ? Math.round((totalValor / tpsQueVenderam) * 100) / 100 : null;
+  const emailsComVenda = new Set(consultoresComVenda.map(c => c.email.trim().toLowerCase()).filter(Boolean));
+  const linhasAFaturar = linhas.filter(l => l.membros.some(m => emailsComVenda.has(m))).length;
+  return {tpsQueVenderam, ticketMedioTP, linhasAFaturar, totalLinhas: linhas.length};
+}
+
 export function referenciaBF(valor: string): string {
   return valor.trim().toUpperCase().replace(/[\s._-]+/g, "");
 }

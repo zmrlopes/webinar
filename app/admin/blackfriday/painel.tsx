@@ -74,10 +74,6 @@ export function PainelBlackFriday() {
     return {email, nome: inscricoes[0]!.nome, envios: inscricoes.length, pendentes: inscricoes.filter(i => i.estado === "pendente").length, progresso: resumirBF(inscricoes, dados.config), confirmado: resumirBF(inscricoes, dados.config, true)};
   }).sort((a, b) => a.progresso.bingoEm && b.progresso.bingoEm ? a.progresso.bingoEm.localeCompare(b.progresso.bingoEm) || a.email.localeCompare(b.email) : Number(b.progresso.bingo) - Number(a.progresso.bingo) || b.progresso.casas - a.progresso.casas) : [];
   const primeiroConfirmado = participantes.filter(p => p.confirmado.bingoEm).sort((a, b) => a.confirmado.bingoEm!.localeCompare(b.confirmado.bingoEm!))[0];
-  const tpsComVenda = participantes.filter(p => p.confirmado.casas > 0);
-  const totalLinhasAFaturar = participantes.reduce((soma, p) => soma + p.confirmado.linhas.length, 0);
-  const valorAprovadoTotal = dados?.inscricoes.filter(i => i.estado === "aprovada").reduce((soma, i) => soma + i.valorCentimos, 0) ?? 0;
-  const ticketMedioTP = tpsComVenda.length ? valorAprovadoTotal / tpsComVenda.length / 100 : null;
   const listaConsultores = participantes.filter(p => `${p.nome} ${p.email}`.toLocaleLowerCase("pt-PT").includes(pesquisaConsultor.trim().toLocaleLowerCase("pt-PT")));
   const consultorAtual = participantes.find(p => p.email === consultorSelecionado);
   const visiveis = dados?.inscricoes.filter(i => i.email === consultorAtual?.email && (filtro === "todas" || i.estado === filtro) && `${i.referencia} ${CASAS_BF[i.casa]}`.toLowerCase().includes(pesquisa.toLowerCase())).sort((a, b) => b.enviadoEm.localeCompare(a.enviadoEm)) ?? [];
@@ -96,11 +92,20 @@ export function PainelBlackFriday() {
         <p className={css.nota}>Os 10 consultores da equipa com maior faturação própria durante o desafio, de {dados.config.inicio.split("-").reverse().join("/")} a {dados.config.fim.split("-").reverse().join("/")}. Inclui quem ainda não enviou comprovativos para o bingo.</p>
         {dados.ranking ? <>
           <p className={css.nota}>Faturação até {dados.ranking.fim.split("-").reverse().join("/")} · Atualizado em {dataHora(dados.ranking.atualizadoEm)}.</p>
-          {dados.ranking.consultores.length ? <div className={`${css.tabela} ${css.ranking}`}><table><thead><tr><th scope="col">Posição</th><th scope="col">Consultor</th><th scope="col">Faturação própria</th></tr></thead><tbody>{dados.ranking.consultores.map((c, indice) => <tr key={c.username}><td><span className={css.posicao}>{indice + 1}º</span></td><th scope="row">{c.nome}</th><td>{euros(c.valor)}</td></tr>)}</tbody></table></div> : <p>Ainda não há faturação própria positiva no período recolhido.</p>}
+          {dados.ranking.consultores.length ? <div className={`${css.tabela} ${css.ranking}`}><table><thead><tr><th scope="col">Posição</th><th scope="col">Consultor</th><th scope="col">Faturação própria</th></tr></thead><tbody>{dados.ranking.consultores.slice(0, 10).map((c, indice) => <tr key={c.username}><td><span className={css.posicao}>{indice + 1}º</span></td><th scope="row">{c.nome}</th><td>{euros(c.valor)}</td></tr>)}</tbody></table></div> : <p>Ainda não há faturação própria positiva no período recolhido.</p>}
         </> : <p className={css.nota}>{dados.hoje < dados.config.inicio ? "O ranking fica disponível após o início do desafio." : "O ranking aguarda uma recolha completa da faturação do desafio."}</p>}
         <p className={css.nota}>Atualiza com <Link href="/admin/dashboard-negocio/atualizar">Atualizar dados do MyOffice</Link>. Usa as vendas próprias devolvidas pelo MyOffice; os valores de equipa e os comprovativos do bingo não são somados a cada consultor.</p>
       </section>}
-      <div className={css.indicadores}><div><strong>{participantes.length}</strong><span>Participantes</span></div><div><strong>{dados.inscricoes.filter(i => i.estado === "pendente").length}</strong><span>Por validar</span></div><div><strong>{participantes.filter(p => p.confirmado.linhas.length).length}</strong><span>TPs com linha validada</span></div><div><strong>{participantes.filter(p => p.confirmado.bingo).length}</strong><span>Bingos validados</span></div><div><strong>{tpsComVenda.length}</strong><span>TPs que já venderam</span></div><div><strong>{totalLinhasAFaturar}</strong><span>Linhas a faturar</span></div><div><strong>{ticketMedioTP === null ? "—" : euros(ticketMedioTP)}</strong><span>Ticket médio por TP com reservas</span></div></div>
+      {!simulacao && <section className={css.bloco} aria-labelledby="bf-org-titulo">
+        <h2 id="bf-org-titulo">Vendas da organização · Faturação real (MyOffice)</h2>
+        <p className={css.nota}>TPs com faturação própria positiva durante o desafio ({dados.config.inicio.split("-").reverse().join("/")} a {dados.config.fim.split("-").reverse().join("/")}), e quantas linhas diretas (um TP direto de um dos líderes de topo + a sua equipa) já têm pelo menos uma venda. Nada disto soma os comprovativos do bingo.</p>
+        {dados.metricas ? <div className={css.indicadores}>
+          <div><strong>{dados.metricas.tpsQueVenderam}</strong><span>TPs que já venderam</span></div>
+          <div><strong>{dados.metricas.linhasAFaturar}/{dados.metricas.totalLinhas}</strong><span>Linhas diretas a faturar</span></div>
+          <div><strong>{dados.metricas.ticketMedioTP === null ? "—" : euros(dados.metricas.ticketMedioTP)}</strong><span>Ticket médio por TP com vendas</span></div>
+        </div> : <p className={css.nota}>{dados.hoje < dados.config.inicio ? "Estas métricas ficam disponíveis após o início do desafio." : "Estas métricas aguardam uma recolha completa da faturação do desafio."}</p>}
+      </section>}
+      <div className={css.indicadores}><div><strong>{participantes.length}</strong><span>Participantes</span></div><div><strong>{dados.inscricoes.filter(i => i.estado === "pendente").length}</strong><span>Por validar</span></div><div><strong>{participantes.filter(p => p.confirmado.linhas.length).length}</strong><span>TPs com linha validada</span></div><div><strong>{participantes.filter(p => p.confirmado.bingo).length}</strong><span>Bingos validados</span></div></div>
       {!simulacao && <details className={css.bloco}><summary>Datas, avião e prémios</summary>
         <form onSubmit={configurar} className={css.config}>
           <p className={css.nota}>As datas podem ser ajustadas até ao primeiro envio. O avião exige sempre uma reserva de pelo menos 5.000 € com comprovativo.</p>

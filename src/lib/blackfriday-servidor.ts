@@ -4,10 +4,11 @@ import type {Pool, PoolClient} from "pg";
 import {db} from "./db";
 import {EMAIL_PAINEL_DEMONSTRACAO} from "./demo";
 import {dataSimulacaoBF} from "./blackfriday-simulacao";
-import {CAMPANHA_BF, CONFIG_BF, dataValidaBF, hojeBF, periodoBF, validarReservaBF, type ConfiguracaoBF, type DadosBF, type DadosAdminBF, type FaturacaoBF, type InscricaoBF, type RankingBF} from "./blackfriday";
+import {CAMPANHA_BF, CONFIG_BF, calcularLinhasDiretasBF, calcularMetricasOrgBF, dataValidaBF, hojeBF, periodoBF, validarReservaBF, type ConfiguracaoBF, type DadosBF, type DadosAdminBF, type FaturacaoBF, type InscricaoBF, type RankingBF} from "./blackfriday";
 import {prepararRankingBF} from "./blackfriday-ranking";
 import {LIDERES_EQUIPA_BF} from "./lideres-equipa";
 import {equipaDoLider} from "./lideres-equipa-servidor";
+import {LIDERES_TOPO} from "./admin";
 
 const PREFIXO = `blackfriday:${CAMPANHA_BF}:`;
 export const CHAVE_FATURACAO_BF = PREFIXO + "faturacao";
@@ -55,28 +56,46 @@ async function emailsComRevisaoPropria(): Promise<Set<string>> {
   return new Set(todos.flat());
 }
 
-/** Só a API do admin recebe o top 10 da equipa. */
+/**
+ * As linhas diretas da organização (um TP direto de um dos 4 líderes de
+ * topo fixos + a sua equipa) — só os pares email/upline, sem mais nenhum
+ * dado sensível, para a contagem de "linhas a faturar" do painel admin.
+ */
+async function obterLinhasDiretasBF() {
+  const {rows} = await db().query<{email: string; upline_email: string | null}>(
+    "select email, upline_email from equipa_afiliados");
+  return calcularLinhasDiretasBF(rows.map(r => ({email: r.email, uplineEmail: r.upline_email})), LIDERES_TOPO);
+}
+
+/** Só a API do admin recebe o ranking completo e as métricas da organização. */
 export async function dadosAdminBF(simulacao = false): Promise<DadosAdminBF> {
   const dados = await dadosBF(undefined, simulacao);
   if (!simulacao) {
     const excluidos = await emailsComRevisaoPropria();
     dados.inscricoes = dados.inscricoes.filter(i => !excluidos.has(i.email.trim().toLowerCase()));
   }
-  if (simulacao) return {...dados, ranking: null};
+  if (simulacao) return {...dados, ranking: null, metricas: null};
   const {rows} = await db().query<{valor: RankingBF}>("select valor from dashboard_config where chave = $1", [CHAVE_RANKING_BF]);
   const intervalo = periodoBF({...dados.config, periodoFaturacao: "desafio"}, dados.hoje);
-  const ranking = rows[0]?.valor;
-  if (ranking && ranking.inicio === intervalo.inicio && ranking.fim >= intervalo.inicio && ranking.fim <= intervalo.fim) return {...dados, ranking};
-  // Aproveita a última recolha já existente, sem exigir uma nova atualização
-  // para estrear o painel. Nunca usa faturação anual nem uma lista parcial.
-  const {rows: recolha} = await db().query<{chave: string; corpo: unknown; recebido_em: Date}>(
-    "select chave, corpo, recebido_em from dashboard_bruto where chave in ('plano', 'falhas') or starts_with(chave, $1)", [`equipa-blackfriday-`]);
-  const bruto = Object.fromEntries(recolha.map(r => [r.chave, {corpo: r.corpo}]));
-  const atualizadoEm = recolha.filter(r => r.chave.startsWith("equipa-blackfriday-"))
-    .map(r => new Date(r.recebido_em).toISOString()).sort().at(-1) ?? new Date().toISOString();
-  const hojeRecolha = (bruto.plano?.corpo as {hoje?: string} | undefined)?.hoje;
-  return {...dados, ranking: dataValidaBF(hojeRecolha) && hojeRecolha <= dados.hoje
-    ? prepararRankingBF(bruto, dados.config, hojeRecolha, atualizadoEm) : null};
+  const cache = rows[0]?.valor;
+  let ranking: RankingBF | null;
+  if (cache && cache.inicio === intervalo.inicio && cache.fim >= intervalo.inicio && cache.fim <= intervalo.fim) {
+    ranking = cache;
+  } else {
+    // Aproveita a última recolha já existente, sem exigir uma nova
+    // atualização para estrear o painel. Nunca usa faturação anual nem uma
+    // lista parcial.
+    const {rows: recolha} = await db().query<{chave: string; corpo: unknown; recebido_em: Date}>(
+      "select chave, corpo, recebido_em from dashboard_bruto where chave in ('plano', 'falhas') or starts_with(chave, $1)", [`equipa-blackfriday-`]);
+    const bruto = Object.fromEntries(recolha.map(r => [r.chave, {corpo: r.corpo}]));
+    const atualizadoEm = recolha.filter(r => r.chave.startsWith("equipa-blackfriday-"))
+      .map(r => new Date(r.recebido_em).toISOString()).sort().at(-1) ?? new Date().toISOString();
+    const hojeRecolha = (bruto.plano?.corpo as {hoje?: string} | undefined)?.hoje;
+    ranking = dataValidaBF(hojeRecolha) && hojeRecolha <= dados.hoje
+      ? prepararRankingBF(bruto, dados.config, hojeRecolha, atualizadoEm) : null;
+  }
+  const metricas = ranking ? calcularMetricasOrgBF(ranking.consultores, await obterLinhasDiretasBF()) : null;
+  return {...dados, ranking, metricas};
 }
 
 export async function guardarConfigBF(corpo: unknown) {
