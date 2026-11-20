@@ -161,12 +161,28 @@ export async function comprimirImagemReserva(ficheiro: File): Promise<string> {
   if (ficheiro.size > 15_000_000) throw new Error("A imagem deve ter menos de 15 MB.");
   const url = URL.createObjectURL(ficheiro);
   try {
-    const img = await carregarImagem(url); const escala = Math.min(1, 1500 / Math.max(img.width, img.height));
-    const c = document.createElement("canvas"); c.width = Math.round(img.width * escala); c.height = Math.round(img.height * escala);
-    const ctx = c.getContext("2d"); if (!ctx) throw new Error("Não foi possível preparar a imagem.");
-    ctx.drawImage(img, 0, 0, c.width, c.height);
-    for (const qualidade of [.86, .72, .55]) {const resultado = c.toDataURL("image/webp", qualidade); if (resultado.length <= 1_100_000) return resultado;}
-    throw new Error("A imagem é demasiado complexa. Escolhe uma versão mais pequena.");
+    const img = await carregarImagem(url);
+    const c = document.createElement("canvas");
+    for (const lado of [1500, 1280, 1080, 900]) {
+      const escala = Math.min(1, lado / Math.max(img.width, img.height));
+      c.width = Math.max(1, Math.round(img.width * escala)); c.height = Math.max(1, Math.round(img.height * escala));
+      const ctx = c.getContext("2d"); if (!ctx) throw new Error("Não foi possível preparar a imagem.");
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      for (const tipo of ["image/webp", "image/jpeg"]) {
+        if (tipo === "image/jpeg") {
+          // O JPEG não tem transparência: evita converter zonas transparentes em preto.
+          ctx.save(); ctx.globalCompositeOperation = "destination-over"; ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, c.width, c.height); ctx.restore();
+        }
+        for (const qualidade of [.86, .72, .55]) {
+          const resultado = c.toDataURL(tipo, qualidade);
+          if (/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]/.test(resultado) && resultado.length <= 1_100_000) return resultado;
+          // Sem codificador WebP, alguns navegadores devolvem PNG e ignoram a qualidade.
+          if (!resultado.startsWith(`data:${tipo};base64,`)) break;
+        }
+      }
+    }
+    throw new Error("Não foi possível reduzir a imagem para envio. Exporta a referência em JPG e tenta novamente.");
   } finally {URL.revokeObjectURL(url); imagens.delete(url);}
 }
 export async function pngReserva(material: MaterialReserva): Promise<Blob> {
