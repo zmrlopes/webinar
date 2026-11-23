@@ -18,22 +18,26 @@ function Icone({ tipo }: { tipo: AvisoInicio["icone"] | "comunicado" }) {
   </svg>;
 }
 
-function CartaoQuestionario({ aviso }: { aviso: AvisoInicio }) {
+function CartaoQuestionario({ aviso, aoAbrirEventos }: { aviso: AvisoInicio; aoAbrirEventos?: () => void }) {
   return <article className={estilos.cartao} data-aviso={aviso.id}>
-    <Link className={estilos.cartaoLink} href={`${aviso.href}?origem=nova-area`}>
+    <Link className={estilos.cartaoLink} href={`${aviso.href}${aviso.href.includes("?") ? "&" : "?"}origem=nova-area`} onClick={evento => {
+      if (aviso.categoria === "sondagem" && aoAbrirEventos && !evento.ctrlKey && !evento.metaKey && !evento.shiftKey && !evento.altKey) {
+        evento.preventDefault(); aoAbrirEventos();
+      }
+    }}>
       <div className={estilos.cartaoTopo}>
         <span className={estilos.icone}><Icone tipo={aviso.icone} /></span>
         <span className={estilos.etiqueta}>{aviso.anonimo ? "Anónimo" : "Por responder"}</span>
       </div>
       <div className={estilos.cartaoTexto}><h3>{aviso.titulo}</h3><p>{aviso.texto}</p></div>
       <span className={estilos.responder}>
-        <span className={estilos.responderTexto}>Responder ao questionário</span> <span aria-hidden="true">→</span>
+        <span className={estilos.responderTexto}>{aviso.categoria === "sondagem" ? "Responder à sondagem" : "Responder ao questionário"}</span> <span aria-hidden="true">→</span>
       </span>
     </Link>
   </article>;
 }
 
-export function InicioNovaArea({ avisos, erroAvisos, feitos, aoComecar, acabadoAgora, email, aoAbrirCore }: {
+export function InicioNovaArea({ avisos, erroAvisos, feitos, aoComecar, acabadoAgora, email, aoAbrirCore, aoAbrirEventos }: {
   avisos: AvisoInicio[];
   erroAvisos: boolean;
   feitos: number;
@@ -41,14 +45,16 @@ export function InicioNovaArea({ avisos, erroAvisos, feitos, aoComecar, acabadoA
   acabadoAgora: boolean;
   email: string;
   aoAbrirCore: () => void;
+  aoAbrirEventos: () => void;
 }) {
   const evento = avisos.filter(a => a.categoria === "evento");
   const equipa = avisos.filter(a => a.categoria === "equipa");
+  const sondagens = avisos.filter(a => a.categoria === "sondagem");
   return <section id="inicio-nova-area" aria-labelledby="titulo-inicio">
     <div className={comuns.intro}>
       <span className={comuns.etiqueta}>A TUA EQUIPA, NUM SÓ LUGAR</span>
       <h1 id="titulo-inicio">Início<span>.</span></h1>
-      <p>Os teus avisos, questionários e novidades da equipa.</p>
+      <p>Os teus avisos, questionários, sondagens e novidades da equipa.</p>
     </div>
 
     <div className={estilos.destaquesDiarios}>
@@ -71,7 +77,7 @@ export function InicioNovaArea({ avisos, erroAvisos, feitos, aoComecar, acabadoA
 
     <section id="questionarios-inicio" className={estilos.seccao} tabIndex={-1} aria-labelledby="titulo-questionarios-inicio">
       <div className={estilos.cabecalho}>
-        <div><span className={comuns.etiqueta}>AVISOS PARA TI</span><h2 id="titulo-questionarios-inicio">Questionários por responder</h2></div>
+        <div><span className={comuns.etiqueta}>AVISOS PARA TI</span><h2 id="titulo-questionarios-inicio">Questionários e sondagens por responder</h2></div>
         {!erroAvisos && avisos.length > 0 && <span className={estilos.contador}>{avisos.length} {avisos.length === 1 ? "pendente" : "pendentes"}</span>}
       </div>
       {erroAvisos && <p role="alert" className={comuns.erroOrganizacao}>Não foi possível carregar todos os avisos. Atualiza a página para tentar novamente.</p>}
@@ -89,8 +95,12 @@ export function InicioNovaArea({ avisos, erroAvisos, feitos, aoComecar, acabadoA
         <h3 className={estilos.tituloGrupo}>A nossa equipa</h3>
         <div className={estilos.grelha}>{equipa.map(aviso => <CartaoQuestionario key={aviso.id} aviso={aviso} />)}</div>
       </div>}
+      {sondagens.length > 0 && <div className={estilos.grupo}>
+        <h3 className={estilos.tituloGrupo}>Sondagens dos eventos presenciais</h3>
+        <div className={estilos.grelha}>{sondagens.map(aviso => <CartaoQuestionario key={aviso.id} aviso={aviso} aoAbrirEventos={aoAbrirEventos} />)}</div>
+      </div>}
       {!erroAvisos && avisos.length === 0 && <div className={estilos.vazio}>
-        <span className={estilos.icone} aria-hidden="true">✓</span><div><strong>Está tudo em dia.</strong><p>Não tens questionários por responder neste momento.</p></div>
+        <span className={estilos.icone} aria-hidden="true">✓</span><div><strong>Está tudo em dia.</strong><p>Não tens questionários nem sondagens por responder neste momento.</p></div>
       </div>}
     </section>
 

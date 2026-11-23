@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   LINK_CURSO_TRAVEL_PARTNER,
   podeVerNovaArea,
@@ -38,6 +38,7 @@ import { PedidosOrcamentoNovaArea } from "./orcamentos";
 import { ComecaAqui } from "./onboarding";
 import { NegocioNovaArea } from "./negocio";
 import { BarraJornada } from "./jornada";
+import type { AtualizarAvisoSondagem } from "@/lib/sondagens-eventos";
 import { limparPrimeirosPassos, lerProgressoLocalPrimeirosPassos, chaveProgressoLocalPrimeirosPassos, RESUMO_PRIMEIROS_PASSOS, TOTAL_PRIMEIROS_PASSOS } from "@/lib/primeiros-passos";
 
 function Seta() {
@@ -82,6 +83,11 @@ export default function NovaAreaConsultor() {
   const [pedidoNavegacao, setPedidoNavegacao] = useState(0);
   const [pedidoAvisos, setPedidoAvisos] = useState(0);
   const [mostrarVoltarAoMenu, setMostrarVoltarAoMenu] = useState(false);
+  const atualizarAvisoSondagem: AtualizarAvisoSondagem = useCallback((id, aviso) => {
+    setDados(atual => atual ? {
+      ...atual, avisos: [...atual.avisos.filter(a => a.id !== id), ...(aviso ? [aviso] : [])],
+    } : atual);
+  }, []);
 
   useEffect(() => {
     if (!pedidoAvisos) return;
@@ -282,8 +288,8 @@ export default function NovaAreaConsultor() {
   const soAdmin = souLider && !podeVerNovaArea(email);
   const totalFeitos = feitos.length;
   const primeiroNome = dados.nome.split(" ")[0];
-  const questionariosPendentes = dados.erroAvisos ? 0 : (dados.avisos?.length ?? 0);
-  const avisoQuestionarios = `${questionariosPendentes} ${questionariosPendentes === 1 ? "questionário" : "questionários"} por responder`;
+  const respostasPendentes = dados.avisos?.length ?? 0;
+  const avisoRespostas = `${respostasPendentes} ${respostasPendentes === 1 ? "resposta pendente" : "respostas pendentes"}`;
   return (
     <div className={`${estilos.pagina} ${seccao === "negocio" ? estilos.paginaNegocio : ""}`}>
       <div className={estilos.contentor}>
@@ -295,9 +301,9 @@ export default function NovaAreaConsultor() {
           <div className={estilos.conta}>
             <div className={estilos.identidadeConta}>
               <div><strong>Olá, {primeiroNome}</strong><span className={estilos.emailConta}>{email}</span></div>
-              {questionariosPendentes > 0 && <button type="button" className={estilos.avisosConta} aria-label={`${avisoQuestionarios}. Ver avisos.`} title={avisoQuestionarios} aria-controls="questionarios-inicio" onClick={() => { setSeccao("inicio"); setPedidoAvisos(pedido => pedido + 1); }}>
+              {respostasPendentes > 0 && <button type="button" className={estilos.avisosConta} aria-label={`${avisoRespostas}. Ver questionários e sondagens.`} title={avisoRespostas} aria-controls="questionarios-inicio" onClick={() => { setSeccao("inicio"); setPedidoAvisos(pedido => pedido + 1); }}>
                 <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4M12 2V1" /></svg>
-                <span className={estilos.numeroAvisos} aria-hidden="true">{questionariosPendentes}</span>
+                <span className={estilos.numeroAvisos} aria-hidden="true">{respostasPendentes}</span>
               </button>}
             </div>
             <button type="button" className={estilos.sair} onClick={() => { limparEmailGuardado(); setDados(null); setEstado("sem-acesso"); }}>Sair <Seta /></button>
@@ -374,7 +380,7 @@ export default function NovaAreaConsultor() {
               {email === EMAIL_EQUIPA_ANA_BE_A_ROCK && <AdminBeARock key={email} email={email} />}
               <AdminBlackFriday email={email} />
             </>}
-            {seccao === "inicio" && <InicioNovaArea email={email} aoAbrirCore={() => {setAbrirRelatoriosCore(n => n + 1); abrirSeccao("core-rank");}} avisos={dados.avisos ?? []} erroAvisos={dados.erroAvisos ?? false} feitos={totalFeitos} aoComecar={() => abrirSeccao("comeca-aqui")} acabadoAgora={acabadoAgora} />}
+            {seccao === "inicio" && <InicioNovaArea email={email} aoAbrirEventos={() => abrirSeccao("eventos-presenciais")} aoAbrirCore={() => {setAbrirRelatoriosCore(n => n + 1); abrirSeccao("core-rank");}} avisos={dados.avisos ?? []} erroAvisos={dados.erroAvisos ?? false} feitos={totalFeitos} aoComecar={() => abrirSeccao("comeca-aqui")} acabadoAgora={acabadoAgora} />}
             {seccao === "comeca-aqui" && <ComecaAqui
               linkGrupo={dados.linkGrupoWelcomeAboard || null} linkCurso={LINK_CURSO_TRAVEL_PARTNER}
               abrir={abrirSeccao} nome={dados.nome} nomeUpline={dados.upline?.nome}
@@ -409,7 +415,7 @@ export default function NovaAreaConsultor() {
             {seccao === "testemunhos" && <TestemunhosNovaArea />}
             {assistenteAberto && <div hidden={seccao !== "assistente"}><AssistenteEquipa email={email} /></div>}
             {seccao === "documentos" && <DocumentosNovaArea />}
-            {seccao === "eventos-presenciais" && <EventosPresenciais email={email} />}
+            {seccao === "eventos-presenciais" && <EventosPresenciais email={email} aoAtualizarAviso={atualizarAvisoSondagem} />}
             <footer className={estilos.rodape}><span className={estilos.ponto} />{soAdmin ? "Área de administração da tua equipa" : email === EMAIL_PAINEL_DEMONSTRACAO ? <>Nova área em construção <span>·</span> Conta de teste</> : "Nova área de consultor"}</footer>
           </main>
         </div>

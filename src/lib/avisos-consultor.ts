@@ -3,11 +3,15 @@ import { precisaResponderTrofeus } from "./trofeus";
 import { precisaResponderHotel } from "./hotel";
 import { questionariosPendentes } from "./questionarios";
 import type { AvisoInicio } from "./consultor-nova-area";
+import { lerVotoBeARock } from "./be-a-rock-servidor";
+import { lerVotoCruzeiroTropaElite } from "./cruzeiro-tropa-elite-servidor";
+import { avisoSondagemBeARock, avisoSondagemCruzeiro } from "./sondagens-eventos";
 
-export async function obterAvisosConsultor(email: string): Promise<AvisoInicio[]> {
-  const [teambuilding, trofeus, hotel, questionarios] = await Promise.all([
+export async function obterAvisosConsultor(email: string, agora = new Date()): Promise<AvisoInicio[]> {
+  const [teambuilding, trofeus, hotel, questionarios, beARock, cruzeiro] = await Promise.all([
     precisaResponderTeambuilding(email), precisaResponderTrofeus(email),
     precisaResponderHotel(email), questionariosPendentes(email),
+    lerVotoBeARock(email), lerVotoCruzeiroTropaElite(email),
   ]);
   const avisos: AvisoInicio[] = [];
   if (teambuilding) avisos.push({ id: "teambuilding", categoria: "evento", icone: "questionario",
@@ -21,5 +25,8 @@ export async function obterAvisosConsultor(email: string): Promise<AvisoInicio[]
     href: "/consultor/hotel" });
   avisos.push(...questionarios.map(q => ({ id: q.slug, categoria: "equipa" as const, icone: "questionario" as const,
     titulo: q.titulo, texto: q.chamada, href: `/consultor/questionario/${q.slug}`, anonimo: true })));
+  for (const aviso of [avisoSondagemBeARock(beARock, agora), avisoSondagemCruzeiro(cruzeiro, agora)]) {
+    if (aviso) avisos.push(aviso);
+  }
   return avisos;
 }

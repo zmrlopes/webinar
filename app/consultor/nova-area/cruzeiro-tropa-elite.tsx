@@ -13,8 +13,9 @@ import {
 } from "@/lib/cruzeiro-tropa-elite";
 import estilos from "./nova-area.module.css";
 import s from "./eventos.module.css";
+import { avisoSondagemCruzeiro, type AtualizarAvisoSondagem } from "@/lib/sondagens-eventos";
 
-export function SondagemCruzeiroTropaElite({ email }: { email: string }) {
+export function SondagemCruzeiroTropaElite({ email, aoAtualizarAviso }: { email: string; aoAtualizarAviso?: AtualizarAvisoSondagem }) {
   const [voto, setVoto] = useState<VotoCruzeiroTropaElite | null>(null);
   const [carregar, setCarregar] = useState(true);
   const [guardar, setGuardar] = useState<OpcaoCruzeiroTropaElite | null>(null);
@@ -41,12 +42,13 @@ export function SondagemCruzeiroTropaElite({ email }: { email: string }) {
         setAcompanhantes(String(corpo.voto?.acompanhantes ?? 0));
         setDispostoDividirCabine(corpo.voto?.dispostoDividirCabine ?? null);
         setCarregar(false);
+        aoAtualizarAviso?.("sondagem-cruzeiro-tropa-elite", avisoSondagemCruzeiro(corpo.voto));
       }
     }).catch(falha => {
       if (!controller.signal.aborted) { setErro(falha instanceof Error ? falha.message : "Falha de ligação. Tenta novamente."); setCarregar(false); }
     });
     return () => controller.abort();
-  }, [email, tentativa]);
+  }, [email, tentativa, aoAtualizarAviso]);
 
   async function votar(opcao: OpcaoCruzeiroTropaElite, numeroAcompanhantes: string, dispostoCabine: boolean | null): Promise<VotoCruzeiroTropaElite> {
     const r = await fetch("/api/consultor/nova-area/eventos/cruzeiro-tropa-elite", {
@@ -59,6 +61,7 @@ export function SondagemCruzeiroTropaElite({ email }: { email: string }) {
   }
 
   function aplicarVoto(novoVoto: VotoCruzeiroTropaElite) {
+    aoAtualizarAviso?.("sondagem-cruzeiro-tropa-elite", avisoSondagemCruzeiro(novoVoto));
     setVoto(novoVoto);
     setAcompanhantes(String(novoVoto.acompanhantes ?? 0));
     setDispostoDividirCabine(novoVoto.dispostoDividirCabine ?? null);

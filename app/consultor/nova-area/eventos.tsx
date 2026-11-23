@@ -7,12 +7,13 @@ import { SondagemBeARock } from "./be-a-rock";
 import { SondagemCruzeiroTropaElite } from "./cruzeiro-tropa-elite";
 import estilos from "./nova-area.module.css";
 import s from "./eventos.module.css";
+import type { AtualizarAvisoSondagem } from "@/lib/sondagens-eventos";
 
 function dataEvento(dia: string): string {
   return new Date(`${dia}T12:00:00Z`).toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Lisbon" });
 }
 
-export function EventosPresenciais({ email }: { email: string }) {
+export function EventosPresenciais({ email, aoAtualizarAviso }: { email: string; aoAtualizarAviso?: AtualizarAvisoSondagem }) {
   const [dados, setDados] = useState<DadosEventosPresenciais | null>(null);
   const [estado, setEstado] = useState<"carregar" | "pronto" | "erro">("carregar");
   const [erro, setErro] = useState("");
@@ -49,8 +50,8 @@ export function EventosPresenciais({ email }: { email: string }) {
       <p>Os próximos encontros da equipa e da iCliGo. Consulta as datas e prepara a tua participação.</p>
     </div>
     <div className={s.grade}>
-      <SondagemBeARock key={email} email={email} />
-      <SondagemCruzeiroTropaElite key={email} email={email} />
+      <SondagemBeARock key={email} email={email} aoAtualizarAviso={aoAtualizarAviso} />
+      <SondagemCruzeiroTropaElite key={email} email={email} aoAtualizarAviso={aoAtualizarAviso} />
       {estado === "carregar" && <p className={s.aviso} role="status">A carregar os restantes eventos…</p>}
       {estado === "erro" && <div className={s.erro} role="alert"><p>{erro}</p><button type="button" className={estilos.botaoSecundario} onClick={() => setTentativa(n => n + 1)}>Tentar novamente</button></div>}
       {estado === "pronto" && dados &&

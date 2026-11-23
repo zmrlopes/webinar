@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { BE_A_ROCK, ROTULO_ZONA_BE_A_ROCK, ZONAS_BE_A_ROCK, type ZonaBeARock } from "@/lib/be-a-rock";
 import estilos from "./nova-area.module.css";
 import s from "./eventos.module.css";
+import { avisoSondagemBeARock, type AtualizarAvisoSondagem } from "@/lib/sondagens-eventos";
 
-export function SondagemBeARock({ email }: { email: string }) {
+export function SondagemBeARock({ email, aoAtualizarAviso }: { email: string; aoAtualizarAviso?: AtualizarAvisoSondagem }) {
   const [voto, setVoto] = useState<ZonaBeARock | null>(null);
   const [carregar, setCarregar] = useState(true);
   const [guardar, setGuardar] = useState<ZonaBeARock | null>(null);
@@ -23,12 +24,15 @@ export function SondagemBeARock({ email }: { email: string }) {
     }).then(async r => {
       const corpo = await r.json();
       if (!r.ok) throw new Error(corpo.erro ?? "Não foi possível consultar o teu voto.");
-      if (!controller.signal.aborted) { setVoto(corpo.voto); setCarregar(false); }
+      if (!controller.signal.aborted) {
+        setVoto(corpo.voto); setCarregar(false);
+        aoAtualizarAviso?.("sondagem-be-a-rock", avisoSondagemBeARock(corpo.voto));
+      }
     }).catch(falha => {
       if (!controller.signal.aborted) { setErro(falha instanceof Error ? falha.message : "Falha de ligação. Tenta novamente."); setCarregar(false); }
     });
     return () => controller.abort();
-  }, [email, tentativa]);
+  }, [email, tentativa, aoAtualizarAviso]);
 
   async function votar(zona: ZonaBeARock) {
     if (guardar || carregar) return;
@@ -41,6 +45,7 @@ export function SondagemBeARock({ email }: { email: string }) {
       const corpo = await r.json();
       if (!r.ok) throw new Error(corpo.erro ?? "Não foi possível guardar o teu voto.");
       setVoto(corpo.voto); setConfirmacao(`Voto guardado: ${ROTULO_ZONA_BE_A_ROCK[corpo.voto as ZonaBeARock]}.`);
+      aoAtualizarAviso?.("sondagem-be-a-rock", avisoSondagemBeARock(corpo.voto));
     } catch (falha) {
       setErro(falha instanceof Error ? falha.message : "Falha de ligação. Tenta novamente.");
     } finally { setGuardar(null); }

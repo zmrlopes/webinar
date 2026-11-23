@@ -71,7 +71,7 @@ export interface DadosNovaArea {
 
 export interface AvisoInicio {
   id: string;
-  categoria: "evento" | "equipa";
+  categoria: "evento" | "equipa" | "sondagem";
   icone: "questionario" | "trofeu" | "hotel";
   titulo: string;
   texto: string;
