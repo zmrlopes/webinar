@@ -10,7 +10,7 @@
 .barra span { display: block; height: 100%; border-radius: inherit; background: #4b5320; }
 .detalhes { margin-top: 10px; font-size: 13px; }
 .detalhes summary { color: #4b5320; cursor: pointer; }
-.detalhes ul { display: grid; gap: 12px; max-height: 280px; overflow-y: auto; margin: 12px 0 0; padding: 0; list-style: none; }
+.detalhes ul { display: grid; gap: 12px; margin: 12px 0 0; padding: 0; list-style: none; }
 .detalhes li { display: grid; gap: 3px; overflow-wrap: anywhere; }
 .detalhes li span { color: #6b6a63; font-size: 12px; }
 .atualizar { color: #4b5320; font-size: 13px; font-weight: 650; }
