@@ -10,6 +10,11 @@
 .metricasGlobais strong { font-size: clamp(20px, 2.2vw, 29px); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 .metricasGlobais span { font-size: 14px; font-weight: 600; }
 .metricasGlobais small { font-size: 12px; color: #636953; line-height: 1.5; }
+.comparacaoEquipa { border-top: 1px solid #dce1d2; padding-top: 20px; margin-top: 20px; }
+.comparacaoEquipa h3 { font-size: 18px; margin: 0; }
+.indicadores.nossaEquipa { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.nossaEquipa > div { background: #f5f7ef; }
+@media (max-width: 700px) { .indicadores.nossaEquipa { grid-template-columns: 1fr; } }
 .cartaoConsultor {
   --bf-oliva: #c6d49a;
   --bf-borda: #ffffff22;

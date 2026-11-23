@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import {resumirVendasGlobaisBF, type PaginaVendasGlobalBF} from "../src/lib/blackfriday-globais";
+import {compararEquipaEmpresaBF, resumirVendasGlobaisBF, type MetricasGlobaisBF, type PaginaVendasGlobalBF} from "../src/lib/blackfriday-globais";
 const linha = (id: string, salesVolume: number, bookingsCount = salesVolume > 0 ? 1 : 0) => ({userId: id, salesVolume, bookingsCount, currency: "EUR"});
 const paginas: PaginaVendasGlobalBF[] = [
   {page: 0, size: 2, totalElements: 3, totalPages: 2, items: [linha("a", 100.01), linha("b", 0)]},
@@ -21,3 +21,21 @@ const ajustes = resumirVendasGlobaisBF([{page: 0, size: 100, totalElements: 2, t
 assert.equal(ajustes.totalVendas, 90);
 assert.equal(ajustes.mediaPorConsultor, 100, "A média usa apenas os consultores com reservas e faturação positiva.");
 console.log("OK: métricas globais, apenas vendedores na média, euros exatos e rejeição de listas incompletas, repetidas ou inconsistentes.");
+const base: MetricasGlobaisBF = {inicio: "2026-11-13", fim: "2026-11-23", atualizadoEm: "2026-11-23T21:00:00Z", fonte: "myoffice-top-reservas", intravel: null,
+  empresa: {totalVendas: 1000, vendasConsultoresComVendas: 1000, mediaPorConsultor: 100, consultoresComVendas: 10, contasLidas: 20, paginasLidas: 1},
+  equipa: {inicio: "2026-11-13", fim: "2026-11-23", atualizadoEm: "2026-11-23T21:00:00Z", totalVendas: 400, vendasConsultoresComVendas: 400, mediaPorConsultor: 200, consultoresComVendas: 2, contasLidas: 5, paginasLidas: 1}};
+const comparacao = compararEquipaEmpresaBF(base)!;
+assert.equal(comparacao.percentagemVendas, 40);
+assert.equal(comparacao.percentagemMedia, 200, "Uma média superior à da empresa pode ultrapassar 100%.");
+assert.equal(comparacao.percentagemConsultores, 20);
+assert.equal(compararEquipaEmpresaBF(null), null);
+assert.equal(compararEquipaEmpresaBF({...base, equipa: undefined}), null);
+assert.equal(compararEquipaEmpresaBF({...base, equipa: {...base.equipa!, inicio: "2026-11-09"}}), null, "Não compara o desafio de 09/11 com a campanha oficial.");
+assert.equal(compararEquipaEmpresaBF({...base, equipa: {...base.equipa!, fim: "2026-11-22"}}), null);
+assert.equal(compararEquipaEmpresaBF({...base, equipa: {...base.equipa!, atualizadoEm: "2026-11-23T20:00:00Z"}}), null, "Não apresenta recolhas de horas diferentes como a mesma recolha.");
+const semBase = compararEquipaEmpresaBF({...base, empresa: {...base.empresa, totalVendas: 0, consultoresComVendas: 0, mediaPorConsultor: null}})!;
+assert.equal(semBase.percentagemVendas, null);
+assert.equal(semBase.percentagemMedia, null);
+assert.equal(semBase.percentagemConsultores, null);
+assert.equal(compararEquipaEmpresaBF({...base, equipa: {...base.equipa!, totalVendas: 0, consultoresComVendas: 0, mediaPorConsultor: null}})?.percentagemVendas, 0);
+console.log("OK: percentagens da equipa, médias acima de 100%, ausência de dados e períodos incompatíveis.");

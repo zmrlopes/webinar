@@ -5,8 +5,10 @@ import {BarraBlackFriday} from "../../consultor/nova-area/blackfriday";
 import {GrelhaBlackFriday} from "../../consultor/nova-area/blackfriday-grelha";
 import cartaoCss from "../../consultor/nova-area/blackfriday.module.css";
 import {CASAS_BF, resumirBF, type ConfiguracaoBF, type DadosAdminBF, type InscricaoBF} from "@/lib/blackfriday";
+import {compararEquipaEmpresaBF} from "@/lib/blackfriday-globais";
 import css from "./painel.module.css";
 const euros = (v: number) => new Intl.NumberFormat("pt-PT", {style: "currency", currency: "EUR"}).format(v);
+const percentagem = (v: number) => new Intl.NumberFormat("pt-PT", {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(v) + " %";
 const dataHora = (v: string) => new Intl.DateTimeFormat("pt-PT", {dateStyle: "short", timeStyle: "medium", timeZone: "Europe/Lisbon"}).format(new Date(v));
 export function PainelBlackFriday() {
   const [dados, setDados] = useState<DadosAdminBF | null>(null);
@@ -78,6 +80,7 @@ export function PainelBlackFriday() {
   const primeiroConfirmado = participantes.filter(p => p.confirmado.bingoEm).sort((a, b) => a.confirmado.bingoEm!.localeCompare(b.confirmado.bingoEm!))[0];
   const listaConsultores = participantes.filter(p => `${p.nome} ${p.email}`.toLocaleLowerCase("pt-PT").includes(pesquisaConsultor.trim().toLocaleLowerCase("pt-PT")));
   const consultorAtual = participantes.find(p => p.email === consultorSelecionado);
+  const comparacao = compararEquipaEmpresaBF(dados?.metricasGlobais);
   const visiveis = consultorAtual?.inscricoes.filter(i => (filtro === "todas" || i.estado === filtro) && `${i.referencia} ${CASAS_BF[i.casa]}`.toLowerCase().includes(pesquisa.toLowerCase())).sort((a, b) => b.enviadoEm.localeCompare(a.enviadoEm)) ?? [];
   return <main className={css.pagina}>
     <Link href="/admin">← Início</Link>
@@ -99,6 +102,17 @@ export function PainelBlackFriday() {
         </div>
         {dados.metricasGlobais ? <p className={css.nota}>Dados de {dados.metricasGlobais.inicio.split("-").reverse().join("/")} a {dados.metricasGlobais.fim.split("-").reverse().join("/")} · Recolhidos em {dataHora(dados.metricasGlobais.atualizadoEm)}. Fonte: MyOffice, Top Reservas, âmbito Todos, sem filtro de país. Recolha pontual; o botão Atualizar painel volta a ler os dados guardados.</p> : <p className={css.nota}>Estas métricas aguardam uma recolha completa do MyOffice.</p>}
         {!dados.metricasGlobais?.intravel && <p className={css.nota}>Intravel: o MyOffice limita o Analisador à descendência da conta autenticada. Falta uma recolha autorizada da organização da Joana e do Patrick para preencher os dois valores.</p>}
+        <div className={css.comparacaoEquipa}>
+          <h3>A nossa equipa · Comparação com a iCliGo</h3>
+          {comparacao ? <>
+            <div className={`${css.indicadores} ${css.metricasGlobais} ${css.nossaEquipa}`}>
+              <div><span>Vendas totais · A nossa equipa</span><strong>{euros(comparacao.equipa.totalVendas)}</strong><small>{comparacao.percentagemVendas === null ? "Sem base de comparação" : `${percentagem(comparacao.percentagemVendas)} das vendas totais da iCliGo`}</small></div>
+              <div><span>Média por consultor · A nossa equipa</span><strong>{comparacao.equipa.mediaPorConsultor === null ? "—" : euros(comparacao.equipa.mediaPorConsultor)}</strong><small>{comparacao.percentagemMedia === null ? "Sem base de comparação" : `${percentagem(comparacao.percentagemMedia)} da média por consultor da iCliGo`}</small></div>
+              <div><span>Consultores com faturação · A nossa equipa</span><strong>{comparacao.equipa.consultoresComVendas.toLocaleString("pt-PT")}</strong><small>{comparacao.percentagemConsultores === null ? "Sem base de comparação" : `${percentagem(comparacao.percentagemConsultores)} dos consultores com faturação da iCliGo`}</small></div>
+            </div>
+            <p className={css.nota}>Mesmo período e mesma recolha dos valores da empresa: {comparacao.equipa.inicio.split("-").reverse().join("/")} a {comparacao.equipa.fim.split("-").reverse().join("/")}. A média considera apenas quem faturou reservas. A sua percentagem compara a média da equipa com a média da iCliGo.</p>
+          </> : <p className={css.nota}>A comparação aguarda dados completos da equipa para o mesmo período da iCliGo.</p>}
+        </div>
       </section>}
       {!simulacao && <><BarraBlackFriday dados={dados}/><p className={css.nota}>A faturação vem do total geral da equipa no MyOffice para o período escolhido e atualiza com <Link href="/admin/dashboard-negocio/atualizar">Atualizar dados</Link>. Os comprovativos do bingo não são somados à barra.</p></>}
       {!simulacao && <section className={css.bloco} aria-labelledby="bf-ranking-titulo">

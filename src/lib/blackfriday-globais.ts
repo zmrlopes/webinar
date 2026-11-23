@@ -16,6 +16,18 @@ export interface MetricasGlobaisBF {
   fonte: "myoffice-top-reservas";
   empresa: ResumoVendasGlobalBF;
   intravel: ResumoVendasGlobalBF | null;
+  equipa?: ResumoVendasGlobalBF & {inicio: string; fim: string; atualizadoEm: string};
+}
+
+/** Percentagens só entre recolhas com o mesmo período e a mesma definição de vendas. */
+export function compararEquipaEmpresaBF(dados: MetricasGlobaisBF | null | undefined) {
+  const equipa = dados?.equipa;
+  if (!dados || !equipa || equipa.inicio !== dados.inicio || equipa.fim !== dados.fim || equipa.atualizadoEm !== dados.atualizadoEm) return null;
+  const percentagem = (valor: number | null, base: number | null) =>
+    valor !== null && base !== null && Number.isFinite(valor) && Number.isFinite(base) && base > 0 ? valor / base * 100 : null;
+  return {equipa, percentagemVendas: percentagem(equipa.totalVendas, dados.empresa.totalVendas),
+    percentagemMedia: percentagem(equipa.mediaPorConsultor, dados.empresa.mediaPorConsultor),
+    percentagemConsultores: percentagem(equipa.consultoresComVendas, dados.empresa.consultoresComVendas)};
 }
 export interface PaginaVendasGlobalBF {
   page: number;
