@@ -4,6 +4,7 @@ import {CASAS_BF, META_BF, resumirBF, type DadosBF, type InscricaoBF} from "@/li
 import {EMAIL_PAINEL_DEMONSTRACAO} from "@/lib/demo";
 import {enviarComprovativoBF} from "@/lib/blackfriday-envio";
 import {detetarNovasLinhasBF, type MemoriaLinhasBF} from "@/lib/blackfriday-celebracao";
+import {GrelhaBlackFriday} from "./blackfriday-grelha";
 import css from "./blackfriday.module.css";
 
 const euros = (v: number) => new Intl.NumberFormat("pt-PT", {style: "currency", currency: "EUR", maximumFractionDigits: 0}).format(v);
@@ -32,14 +33,6 @@ function BarraEquipaBF({dados}: {dados: DadosBF}) {
     <p>{valor >= metaEquipa.meta ? "Meta da equipa atingida! Todos os bingos validados dão acesso ao prémio." : <>Faltam <b>{euros(Math.max(0, metaEquipa.meta - valor))}</b> para a tua equipa desbloquear o prémio para todos os bingos.</>}</p>
     <small>{dados.config.periodoFaturacao === "anual" ? "Acumulado anual da equipa" : `Faturação da equipa de ${data(dados.config.inicio)} a ${data(dados.config.fim)}`}{metaEquipa.faturacao ? ` · Dados até ${data(metaEquipa.faturacao.fim)} · Atualizado em ${new Intl.DateTimeFormat("pt-PT", {dateStyle: "short", timeStyle: "short", timeZone: "Europe/Lisbon"}).format(new Date(metaEquipa.faturacao.atualizadoEm))}` : " · A tua líder ainda não atualizou os dados da equipa"}</small>
   </div>;
-}
-function Aviao() {return <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4L22 2Z" strokeLinejoin="round"/><path d="m11 13 6-6" strokeLinecap="round"/></svg>;}
-// Decorativos: cada casa mantém o nome acessível e o estado da reserva.
-// Os restantes desenhos foram vetorizados diretamente da referencia bingo.jpeg.
-function IconeCasa({casa}: {casa: number}) {
-  if (casa === 21) return <svg className={css.iconeDestino} width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2 21 10 5l9 16H2Zm8-16 2 16m4-6 3-9 4 15h-4M2 23h21"/></svg>;
-  if (casa === 13) return <svg className={css.iconeDestino} width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 15c2-5 6-5 8 0 4 5 0 7-4 5-4 2-8 0-4-5ZM7 8a2 3 0 1 1-4 0 2 3 0 0 1 4 0Zm6-3a2 3 0 1 1-4 0 2 3 0 0 1 4 0Zm6 1a2 3 0 1 1-4 0 2 3 0 0 1 4 0Zm4 5a2 3 0 1 1-4 0 2 3 0 0 1 4 0Z"/></svg>;
-  return <span className={`${css.iconeDestino} ${css.iconeReferencia}`} style={{maskImage: `url(/blackfriday/icones/casa-${casa}.svg)`, WebkitMaskImage: `url(/blackfriday/icones/casa-${casa}.svg)`}} aria-hidden="true"/>;
 }
 
 type CelebracaoBF = {id: number; linhas: number[]; emValidacao: boolean; previsualizacao?: boolean};
@@ -177,20 +170,7 @@ export function BlackFriday({email}: {email: string}) {
         <div className={css.cartao} ref={cartaoBingo}>
           {celebracao && <ParabensLinha key={celebracao.id} conquista={celebracao}/>}
           <div className={css.cartaoTopo}><div><span className={css.selo}>{simulacao ? "CARTÃO DE SIMULAÇÃO" : "O TEU CARTÃO"}</span><h2>Próxima paragem: bingo.</h2></div><span className={css.contador}>{resumo.casas}<small>/25</small></span></div>
-          <div className={css.letras} aria-hidden="true">{"BINGO".split("").map(l => <span key={l}>{l}</span>)}</div>
-          <div className={css.grelha}>
-            {CASAS_BF.map((titulo, n) => {
-              const i = dados.inscricoes.filter(r => r.casa === n).at(-1);
-              const e = i?.estado ?? "vazia";
-              return <button key={n} type="button" className={css.casa} data-estado={e} data-cor={n % 6} data-linha={resumo.linhas.includes(Math.floor(n / 5))} data-celebrar={celebracao?.linhas.includes(Math.floor(n / 5)) ?? false} aria-label={`${titulo}: ${e === "vazia" ? "por preencher" : e}. Ver detalhes.`} onClick={ev => abrir(n, ev.currentTarget)}>
-                {e === "aprovada" && <span className={css.check} aria-hidden="true">✓</span>}
-                {n === 12 ? <><Aviao/><span className={`${css.destino} ${css.nomeCentro}`}>{titulo}</span></> : <><IconeCasa casa={n}/><span className={css.destino}>{titulo}</span></>}
-                <small>{e === "pendente" ? "◷ Em validação" : e === "aprovada" ? "Validada" : e === "recusada" ? "Rever envio" : n === 12 ? "Reserva ≥ 5.000 €" : "+ Reserva"}</small>
-                {i?.curinga && e !== "recusada" && <span className={css.joker}>5K</span>}
-              </button>;
-            })}
-          </div>
-          <div className={css.legenda}><span>○ Por preencher</span><span>◷ Em validação</span><span>✓ Validada</span></div>
+          <GrelhaBlackFriday inscricoes={dados.inscricoes} linhas={resumo.linhas} linhasCelebradas={celebracao?.linhas} aoAbrirCasa={abrir}/>
           <p className={css.resultado}>{resumo.bingo ? confirmado.bingo ? "BINGO VALIDADO! Cartão completo." : "BINGO! O teu cartão está completo e aguarda validação." : resumo.linhas.length ? confirmado.linhas.length ? "Primeira linha validada! Continua até ao bingo." : "Linha completa! O prémio aguarda validação." : "Completa uma linha horizontal para conquistar o primeiro prémio."}</p>
           {!aberto && <p className={css.nota}>{dados.hoje < dados.config.inicio ? `O desafio começa a ${data(dados.config.inicio)}. Até lá, prepara a tua estratégia.` : "O período de envio terminou. Podes continuar a acompanhar a validação do teu cartão."}</p>}
         </div>

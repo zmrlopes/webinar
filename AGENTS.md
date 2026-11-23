@@ -211,6 +211,10 @@ consultor, com filtros de estado e pesquisa dentro do seu detalhe, além de
 voltar à lista. Não mostra uma lista conjunta de reservas na entrada.
 A organização é a mesma no desafio real e no modo de simulação, preservando
 aprovações, recusas, ficheiros e atualização automática.
+Ao abrir um participante em `/admin/blackfriday`, o detalhe mostra também o
+cartão de bingo 5×5, atualizado com os comprovativos desse TP no modo escolhido.
+Os filtros de reservas não alteram o cartão. Usar a mesma grelha, ícones e
+estados do cartão do consultor.
 Todos os TPs que completem a sua primeira linha horizontal validada recebem
 a entrada no evento Mindset Elite, uma vez por TP, apenas a entrada no evento.
 Depois de submeter uma casa, o TP não pode trocar a reserva para outra casa.
