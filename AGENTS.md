@@ -91,6 +91,16 @@ os totais e os votantes por zona, apenas ao admin. O histórico e os formulário
 auxiliares do Teambuilding mantêm-se. Correr também
 `npx tsx scripts/testes-be-a-rock.ts`.
 
+Por indicação de 23/11/2026, os resultados do Be a Rock de janeiro são separados:
+`/admin/eventos` exclui a Ana Custódia (`apensarnaproxima@gmail.com`) e toda a
+sua descendência. O separador Admin da Ana mostra apenas os votos desse grupo,
+com totais, percentagens e votantes por opção. Resolver a hierarquia atual no
+servidor, também para votos anteriores, sem apagar, copiar ou reiniciar votos.
+A API de resultados da equipa é exclusiva da Ana e não aceita âmbito do cliente.
+Manter a votação e a alteração de escolha para todos os consultores.
+Correr `npx tsx scripts/testes-be-a-rock.ts` e
+`npx tsx scripts/testes-be-a-rock-equipas-db.ts` (tabelas temporárias isoladas).
+
 Por indicação explícita mais recente do utilizador, a nova área completa está
 publicada para todos os consultores da equipa (`equipa_afiliados`), incluindo
 Reservas (Criar templates, Travel planner, Propostas, Onde posso vender) e as

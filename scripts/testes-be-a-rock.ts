@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { NextRequest } from "next/server";
 import { db, fecharDb } from "../src/lib/db";
-import { BE_A_ROCK, resumirVotosBeARock, type VotoBeARock } from "../src/lib/be-a-rock";
+import { BE_A_ROCK, EMAIL_EQUIPA_ANA_BE_A_ROCK, resumirVotosBeARock, type VotoBeARock } from "../src/lib/be-a-rock";
 import { listarVotosBeARock } from "../src/lib/be-a-rock-servidor";
 import { POST } from "../app/api/consultor/nova-area/eventos/be-a-rock/route";
+import { POST as resultadosAna } from "../app/api/consultor/nova-area/eventos/be-a-rock/resultados/route";
 import { proxy } from "../proxy";
 import { EMAIL_PAINEL_DEMONSTRACAO } from "../src/lib/demo";
 
@@ -16,11 +17,15 @@ async function main() {
   const pool = db(), originalQuery = pool.query;
   const registos = new Map<string, VotoBeARock>();
   const equipa = new Map([["ana@example.com", "Ana"], ["bruno@example.com", "Bruno"]]);
+  const emailsAna = new Set([EMAIL_EQUIPA_ANA_BE_A_ROCK, "direto@example.com", "indireto@example.com"]);
   let escritas = 0;
   pool.query = (async (sql: string, args: unknown[] = []) => {
     if (sql.startsWith("select nome from equipa_afiliados")) return { rows: equipa.has(String(args[0])) ? [{ nome: equipa.get(String(args[0])) }] : [] };
     if (sql.startsWith("select valor from dashboard_config where chave = $1")) return { rows: registos.has(String(args[0])) ? [{ valor: structuredClone(registos.get(String(args[0]))) }] : [] };
-    if (sql.startsWith("select valor from dashboard_config where starts_with")) return { rows: [...registos].filter(([k]) => k.startsWith(String(args[0]))).map(([, valor]) => ({ valor: structuredClone(valor) })) };
+    if (sql.startsWith("with recursive equipa_ana")) {
+      assert.equal(args[1], EMAIL_EQUIPA_ANA_BE_A_ROCK);
+      return { rows: [...registos].filter(([k, v]) => k.startsWith(String(args[0])) && emailsAna.has(v.email.trim().toLowerCase()) === args[2]).map(([, valor]) => ({ valor: structuredClone(valor) })) };
+    }
     if (sql.startsWith("insert into dashboard_config")) {
       assert(sql.includes("on conflict (chave) do update"), "Gravação atómica por conta");
       registos.set(String(args[0]), JSON.parse(String(args[1]))); escritas++;
@@ -70,6 +75,24 @@ async function main() {
     assert.equal(resumo.total, 3); assert.equal(resumo.CASA.length, 1); assert.equal(resumo.CASA[0]!.nome, "Carla");
     equipa.delete("ana@example.com");
     assert.equal((await POST(pedido({ email: "ana@example.com", acao: "votar", zona: "NORTE" }))).status, 403, "Revalida a pertença à equipa");
+    for (const email of ["", "bruno@example.com", EMAIL_PAINEL_DEMONSTRACAO, "outra-lider@example.com"]) {
+      assert.equal((await resultadosAna(pedido({ email, liderEmail: EMAIL_EQUIPA_ANA_BE_A_ROCK }))).status, 403);
+    }
+    assert.equal((await resultadosAna(pedido({ email: EMAIL_EQUIPA_ANA_BE_A_ROCK }))).status, 403, "A líder tem de continuar na equipa");
+    for (const [email, zona] of [[EMAIL_EQUIPA_ANA_BE_A_ROCK, "NORTE"], ["direto@example.com", "SUL"], ["indireto@example.com", "CASA"]]) {
+      equipa.set(email!, email!); await votar(email!, zona!);
+    }
+    const antes = structuredClone([...registos]);
+    assert.equal((await listarVotosBeARock()).length, 3, "Admin geral exclui Ana, diretos e indiretos");
+    const respostaAna = await resultadosAna(pedido({ email: ` ${EMAIL_EQUIPA_ANA_BE_A_ROCK.toUpperCase()} `, ambito: "geral" }));
+    assert.equal(respostaAna.status, 200);
+    assert.equal(respostaAna.headers.get("cache-control"), "private, no-store");
+    const soAna = (await respostaAna.json()).votos as VotoBeARock[];
+    assert.equal(soAna.length, 3); assert(soAna.every(v => emailsAna.has(v.email)), "O cliente não pode escolher outro âmbito");
+    assert.deepEqual([...registos], antes, "Separar resultados preserva os votos e as datas");
+    await votar("direto@example.com", "CASA");
+    assert.equal(resumirVotosBeARock(await listarVotosBeARock("ana")).CASA.length, 2);
+    assert.equal((await listarVotosBeARock()).length, 3, "Alterar voto da Ana não altera o total geral");
     const senha = process.env.ADMIN_PASSWORD;
     try {
       process.env.ADMIN_PASSWORD = "senha-de-teste";

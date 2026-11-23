@@ -10,6 +10,8 @@ import {
 import { podeVerAreaEquipa } from "@/lib/lideres-equipa";
 import { EMAIL_PAINEL_DEMONSTRACAO } from "@/lib/demo";
 import { AdminBlackFriday } from "./admin-blackfriday";
+import { AdminBeARock } from "./admin-be-a-rock";
+import { EMAIL_EQUIPA_ANA_BE_A_ROCK } from "@/lib/be-a-rock";
 import { lerEmailGuardado, limparEmailGuardado, guardarEmail } from "../armazenamento";
 import { seccaoEntradaNovaArea, type SeccaoNovaArea } from "@/lib/consultor-navegacao";
 import estilos from "./nova-area.module.css";
@@ -368,7 +370,10 @@ export default function NovaAreaConsultor() {
           </aside>
 
           <main id="conteudo-nova-area" ref={conteudo} tabIndex={-1} aria-label="Conteúdo da secção" className={estilos.conteudo}>
-            {seccao === "admin" && souLider && <AdminBlackFriday email={email} />}
+            {seccao === "admin" && souLider && <>
+              {email === EMAIL_EQUIPA_ANA_BE_A_ROCK && <AdminBeARock key={email} email={email} />}
+              <AdminBlackFriday email={email} />
+            </>}
             {seccao === "inicio" && <InicioNovaArea email={email} aoAbrirCore={() => {setAbrirRelatoriosCore(n => n + 1); abrirSeccao("core-rank");}} avisos={dados.avisos ?? []} erroAvisos={dados.erroAvisos ?? false} feitos={totalFeitos} aoComecar={() => abrirSeccao("comeca-aqui")} acabadoAgora={acabadoAgora} />}
             {seccao === "comeca-aqui" && <ComecaAqui
               linkGrupo={dados.linkGrupoWelcomeAboard || null} linkCurso={LINK_CURSO_TRAVEL_PARTNER}

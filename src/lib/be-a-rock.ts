@@ -7,6 +7,7 @@ export const BE_A_ROCK = {
 } as const;
 
 export const ZONAS_BE_A_ROCK = ["NORTE", "SUL", "CASA"] as const;
+export const EMAIL_EQUIPA_ANA_BE_A_ROCK = "apensarnaproxima@gmail.com";
 export type ZonaBeARock = typeof ZONAS_BE_A_ROCK[number];
 export function ehZonaBeARock(valor: unknown): valor is ZonaBeARock {
   return ZONAS_BE_A_ROCK.includes(valor as ZonaBeARock);

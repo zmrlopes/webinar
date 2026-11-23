@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { ehZonaBeARock, type VotoBeARock, type ZonaBeARock } from "./be-a-rock";
+import { EMAIL_EQUIPA_ANA_BE_A_ROCK, ehZonaBeARock, type VotoBeARock, type ZonaBeARock } from "./be-a-rock";
 
 const PREFIXO = "eventos:be-a-rock:2027:sondagem:";
 const chaveVoto = (email: string) => `${PREFIXO}${email.trim().toLowerCase()}`;
@@ -22,9 +22,19 @@ export async function guardarVotoBeARock(email: string, nome: string, zona: Zona
   return zona;
 }
 
-export async function listarVotosBeARock(): Promise<VotoBeARock[]> {
+/** Separa na leitura os votos existentes e futuros pela hierarquia atual, sem os alterar. */
+export async function listarVotosBeARock(ambito: "geral" | "ana" = "geral"): Promise<VotoBeARock[]> {
   const { rows } = await db().query<{ valor: VotoBeARock }>(
-    "select valor from dashboard_config where starts_with(chave, $1)", [PREFIXO],
+    `with recursive equipa_ana(email) as (
+       select $2::text
+       union
+       select lower(trim(e.email)) from equipa_afiliados e
+       join equipa_ana a on lower(trim(e.upline_email)) = a.email
+     )
+     select valor from dashboard_config
+     where starts_with(chave, $1)
+       and exists (select 1 from equipa_ana a where a.email = lower(trim(valor->>'email'))) = $3`,
+    [PREFIXO, EMAIL_EQUIPA_ANA_BE_A_ROCK, ambito === "ana"],
   );
   return rows.map(r => r.valor).filter(v => ehZonaBeARock(v.zona)).sort((a, b) => a.nome.localeCompare(b.nome, "pt-PT"));
 }
