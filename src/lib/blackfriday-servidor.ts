@@ -9,6 +9,7 @@ import {prepararRankingBF} from "./blackfriday-ranking";
 import {LIDERES_EQUIPA_BF} from "./lideres-equipa";
 import {equipaDoLider} from "./lideres-equipa-servidor";
 import {LIDERES_TOPO} from "./admin";
+import {CHAVE_METRICAS_GLOBAIS_BF, type MetricasGlobaisBF} from "./blackfriday-globais";
 
 const PREFIXO = `blackfriday:${CAMPANHA_BF}:`;
 export const CHAVE_FATURACAO_BF = PREFIXO + "faturacao";
@@ -74,7 +75,7 @@ export async function dadosAdminBF(simulacao = false): Promise<DadosAdminBF> {
     const excluidos = await emailsComRevisaoPropria();
     dados.inscricoes = dados.inscricoes.filter(i => !excluidos.has(i.email.trim().toLowerCase()));
   }
-  if (simulacao) return {...dados, ranking: null, metricas: null};
+  if (simulacao) return {...dados, ranking: null, metricas: null, metricasGlobais: null};
   const {rows} = await db().query<{valor: RankingBF}>("select valor from dashboard_config where chave = $1", [CHAVE_RANKING_BF]);
   const intervalo = periodoBF({...dados.config, periodoFaturacao: "desafio"}, dados.hoje);
   const cache = rows[0]?.valor;
@@ -95,7 +96,8 @@ export async function dadosAdminBF(simulacao = false): Promise<DadosAdminBF> {
       ? prepararRankingBF(bruto, dados.config, hojeRecolha, atualizadoEm) : null;
   }
   const metricas = ranking ? calcularMetricasOrgBF(ranking.consultores, await obterLinhasDiretasBF()) : null;
-  return {...dados, ranking, metricas};
+  const {rows: globais} = await db().query<{valor: MetricasGlobaisBF}>("select valor from dashboard_config where chave = $1", [CHAVE_METRICAS_GLOBAIS_BF]);
+  return {...dados, ranking, metricas, metricasGlobais: globais[0]?.valor ?? null};
 }
 
 export async function guardarConfigBF(corpo: unknown) {

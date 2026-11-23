@@ -88,6 +88,18 @@ export function PainelBlackFriday() {
     {erro && <p role="alert" className={css.erro}>{erro}</p>}{aviso && <p role="status" className={css.aviso}>{aviso}</p>}
     {!dados && !erro && <p>A carregar o desafio…</p>}
     {dados && config && <>
+      {!simulacao && <section className={css.bloco} aria-labelledby="bf-globais-titulo">
+        <h2 id="bf-globais-titulo">Black Friday · Empresa e Intravel</h2>
+        <p className={css.nota}>Campanha oficial iCliGo · 13/11 a 07/12/2026. Faturação de reservas, em euros. A média inclui apenas consultores com reservas faturadas e faturação própria positiva nesse período.</p>
+        <div className={`${css.indicadores} ${css.metricasGlobais}`}>
+          <div><span>Vendas totais · iCliGo</span><strong>{dados.metricasGlobais ? euros(dados.metricasGlobais.empresa.totalVendas) : "—"}</strong><small>Empresa inteira</small></div>
+          <div><span>Vendas totais · Intravel</span><strong>{dados.metricasGlobais?.intravel ? euros(dados.metricasGlobais.intravel.totalVendas) : "—"}</strong><small>Organização da Joana e do Patrick</small></div>
+          <div><span>Média por consultor · iCliGo</span><strong>{dados.metricasGlobais?.empresa.mediaPorConsultor != null ? euros(dados.metricasGlobais.empresa.mediaPorConsultor) : "—"}</strong><small>{dados.metricasGlobais ? `${dados.metricasGlobais.empresa.consultoresComVendas.toLocaleString("pt-PT")} consultores com faturação` : "Aguarda recolha do MyOffice"}</small></div>
+          <div><span>Média por consultor · Intravel</span><strong>{dados.metricasGlobais?.intravel?.mediaPorConsultor != null ? euros(dados.metricasGlobais.intravel.mediaPorConsultor) : "—"}</strong><small>{dados.metricasGlobais?.intravel ? `${dados.metricasGlobais.intravel.consultoresComVendas.toLocaleString("pt-PT")} consultores com faturação` : "Aguarda dados autorizados da Intravel"}</small></div>
+        </div>
+        {dados.metricasGlobais ? <p className={css.nota}>Dados de {dados.metricasGlobais.inicio.split("-").reverse().join("/")} a {dados.metricasGlobais.fim.split("-").reverse().join("/")} · Recolhidos em {dataHora(dados.metricasGlobais.atualizadoEm)}. Fonte: MyOffice, Top Reservas, âmbito Todos, sem filtro de país. Recolha pontual; o botão Atualizar painel volta a ler os dados guardados.</p> : <p className={css.nota}>Estas métricas aguardam uma recolha completa do MyOffice.</p>}
+        {!dados.metricasGlobais?.intravel && <p className={css.nota}>Intravel: o MyOffice limita o Analisador à descendência da conta autenticada. Falta uma recolha autorizada da organização da Joana e do Patrick para preencher os dois valores.</p>}
+      </section>}
       {!simulacao && <><BarraBlackFriday dados={dados}/><p className={css.nota}>A faturação vem do total geral da equipa no MyOffice para o período escolhido e atualiza com <Link href="/admin/dashboard-negocio/atualizar">Atualizar dados</Link>. Os comprovativos do bingo não são somados à barra.</p></>}
       {!simulacao && <section className={css.bloco} aria-labelledby="bf-ranking-titulo">
         <h2 id="bf-ranking-titulo">Top 10 Black Friday · Faturação própria</h2>

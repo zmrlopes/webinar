@@ -48,7 +48,7 @@ export interface MetricasOrgBF {
   /** Total de linhas diretas existentes, para dar contexto ao número anterior. */
   totalLinhas: number;
 }
-export interface DadosAdminBF extends DadosBF {ranking: RankingBF | null; metricas: MetricasOrgBF | null}
+export interface DadosAdminBF extends DadosBF {ranking: RankingBF | null; metricas: MetricasOrgBF | null; metricasGlobais?: import("./blackfriday-globais").MetricasGlobaisBF | null}
 export function hojeBF(agora = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", {timeZone: "Europe/Lisbon"}).format(agora);
 }

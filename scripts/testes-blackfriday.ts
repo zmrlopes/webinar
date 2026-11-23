@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import "./testes-blackfriday-globais";
 import {CASAS_BF, CONFIG_BF, calcularLinhasDiretasBF, calcularMetricasOrgBF, hojeBF, periodoBF, referenciaBF, resumirBF, validarReservaBF, type InscricaoBF} from "../src/lib/blackfriday";
 import {dataSimulacaoBF} from "../src/lib/blackfriday-simulacao";
 import {EMAIL_PAINEL_DEMONSTRACAO} from "../src/lib/demo";
